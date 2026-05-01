@@ -1,5 +1,8 @@
 import aiohttp
+from aiohttp import BasicAuth
 from app.config import settings
+
+FT_AUTH = BasicAuth("freqtrade", "freqtrade")
 
 
 class FreqtradeClient:
@@ -11,7 +14,7 @@ class FreqtradeClient:
     async def _get(self, path: str) -> dict:
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.get(f"{self.base_url}{path}") as resp:
+                async with session.get(f"{self.base_url}{path}", auth=FT_AUTH) as resp:
                     if resp.status == 200:
                         return await resp.json()
                     return {"error": f"HTTP {resp.status}", "detail": await resp.text()}
@@ -21,7 +24,7 @@ class FreqtradeClient:
     async def _post(self, path: str, data: dict | None = None) -> dict:
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.post(f"{self.base_url}{path}", json=data) as resp:
+                async with session.post(f"{self.base_url}{path}", json=data, auth=FT_AUTH) as resp:
                     if resp.status == 200:
                         return await resp.json()
                     return {"error": f"HTTP {resp.status}", "detail": await resp.text()}

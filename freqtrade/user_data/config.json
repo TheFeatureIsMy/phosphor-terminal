@@ -19,6 +19,9 @@
         "name": "binance",
         "key": "",
         "secret": "",
+        "ccxt_config": {
+            "sandbox": true
+        },
         "ccxt_sync_config": {},
         "ccxt_async_config": {},
         "pair_whitelist": [
