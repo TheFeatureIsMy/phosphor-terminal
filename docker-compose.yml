@@ -1,0 +1,34 @@
+version: "3.8"
+
+services:
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./backend:/app
+    environment:
+      - DATABASE_URL=sqlite:///./data/cyberquant.db
+      - FREQTRADE_URL=http://freqtrade:8080
+      - FREQTRADE_DB_PATH=../freqtrade/user_data/tradesv3.sqlite
+      - CORS_ORIGINS=["http://localhost:5173"]
+    depends_on:
+      - freqtrade
+    restart: unless-stopped
+
+  freqtrade:
+    image: freqtradeorg/freqtrade:stable
+    volumes:
+      - ./freqtrade/user_data:/freqtrade/user_data
+    ports:
+      - "8080:8080"
+    command: >
+      trade
+      --logfile /freqtrade/user_data/logs/freqtrade.log
+      --config /freqtrade/user_data/config.json
+      --strategy SampleStrategy
+      --dry-run
+    restart: unless-stopped
