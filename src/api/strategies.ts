@@ -26,6 +26,8 @@ export async function createStrategy(data: Partial<Strategy>): Promise<Strategy>
       type: data.type || 'ma_cross',
       parameters: data.parameters || {},
       source: 'manual',
+      market: data.market || 'crypto',
+      exchange: data.exchange || 'binance',
       version: 1,
       status: 'draft',
       created_at: new Date().toISOString(),

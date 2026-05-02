@@ -1,28 +1,36 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: #0a0e17;
-  --color-surface: #111827;
-  --color-surface-hover: #1f2937;
-  --color-surface-active: #374151;
-  --color-border: #1f2937;
-  --color-border-hover: #374151;
+  --color-background: #0a0a0a;
+  --color-surface: rgba(255, 255, 255, 0.04);
+  --color-surface-hover: rgba(255, 255, 255, 0.06);
+  --color-surface-active: rgba(255, 255, 255, 0.08);
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-hover: rgba(255, 255, 255, 0.16);
 
-  --color-primary: #3b82f6;
-  --color-primary-hover: #2563eb;
-  --color-success: #10b981;
-  --color-warning: #f59e0b;
-  --color-danger: #ef4444;
-  --color-info: #06b6d4;
+  --color-primary: #00ff9d;
+  --color-primary-hover: #33ffb1;
+  --color-primary-dim: rgba(0, 255, 157, 0.10);
+  --color-accent: #ffb800;
+  --color-accent-dim: rgba(255, 184, 0, 0.10);
+  --color-success: #00ff9d;
+  --color-success-dim: rgba(0, 255, 157, 0.10);
+  --color-warning: #ffb800;
+  --color-warning-dim: rgba(255, 184, 0, 0.10);
+  --color-danger: #ff3b3b;
+  --color-danger-dim: rgba(255, 59, 59, 0.10);
+  --color-info: #00c2ff;
 
-  --color-text-primary: #f9fafb;
-  --color-text-secondary: #9ca3af;
-  --color-text-muted: #6b7280;
+  --color-text-primary: #e0e0e0;
+  --color-text-secondary: #888888;
+  --color-text-muted: #555555;
 
-  --color-profit: #10b981;
-  --color-loss: #ef4444;
+  --color-profit: #00ff9d;
+  --color-loss: #ff3b3b;
 
-  --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  --font-display: 'Instrument Sans', sans-serif;
+  --font-body: 'IBM Plex Mono', monospace;
+  --font-mono: 'IBM Plex Mono', monospace;
 }
 
 * {
@@ -32,31 +40,580 @@
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background-color: var(--color-background);
+  font-family: 'IBM Plex Mono', monospace;
+  background-color: #0a0a0a;
   color: var(--color-text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  font-size: 13px;
+  line-height: 1.5;
 }
 
-::-webkit-scrollbar {
+/* ==================== Background Overlays ==================== */
+.bg-mesh {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 70% 50% at 15% 15%, rgba(0, 255, 157, 0.04) 0%, transparent 50%),
+    radial-gradient(ellipse 50% 40% at 85% 75%, rgba(255, 184, 0, 0.03) 0%, transparent 50%);
+}
+
+/* CRT Scanline overlay */
+.bg-mesh::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.03) 2px,
+    rgba(0, 0, 0, 0.03) 4px
+  );
+  z-index: 1;
+}
+
+/* Noise overlay */
+.noise-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px 256px;
+}
+
+/* Grid overlay */
+.grid-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.02;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+/* ==================== Skip Link ==================== */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 16px;
+  z-index: 9999;
+  padding: 8px 16px;
+  background: var(--color-primary);
+  color: #0a0a0a;
+  font-weight: 600;
+  font-size: 12px;
+  font-family: 'IBM Plex Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: 2px;
+  text-decoration: none;
+  transition: top 0.2s ease;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+/* ==================== Focus States ==================== */
+:focus-visible {
+  outline: 2px solid rgba(0, 255, 157, 0.5);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid rgba(0, 255, 157, 0.5);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(0, 255, 157, 0.1);
+}
+
+/* ==================== Reduced Motion ==================== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .animate-in {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .stagger > * {
+    animation-delay: 0ms !important;
+  }
+
+  .noise-overlay,
+  .grid-overlay {
+    display: none;
+  }
+}
+
+/* ==================== Cards ==================== */
+.card {
+  background: #111111;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 2px;
+  transition: border-color 0.15s ease;
+}
+
+.card:hover {
+  border-color: rgba(0, 255, 157, 0.2);
+}
+
+.card-accent {
+  background: rgba(0, 255, 157, 0.04);
+  border: 1px solid rgba(0, 255, 157, 0.12);
+  border-radius: 2px;
+}
+
+.glass {
+  background: #111111;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 2px;
+  transition: border-color 0.15s ease;
+}
+
+.glass:hover {
+  border-color: rgba(0, 255, 157, 0.2);
+}
+
+.glass-strong {
+  background: #151515;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  transition: border-color 0.15s ease;
+}
+
+.glass-strong:hover {
+  border-color: rgba(0, 255, 157, 0.2);
+}
+
+/* ==================== Buttons ==================== */
+.btn-primary {
+  background: #00ff9d;
+  color: #0a0a0a;
+  font-weight: 700;
+  font-size: 12px;
+  font-family: 'IBM Plex Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border: none;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-height: 40px;
+  padding: 0 20px;
+}
+
+.btn-primary:hover {
+  background: #33ffb1;
+  box-shadow: 0 0 20px rgba(0, 255, 157, 0.2);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-ghost {
+  background: transparent;
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  color: var(--color-text-secondary);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  min-height: 40px;
+  padding: 0 20px;
+}
+
+.btn-ghost:hover {
+  border-style: solid;
+  border-color: rgba(0, 255, 157, 0.3);
+  color: var(--color-primary);
+  background: rgba(0, 255, 157, 0.04);
+}
+
+/* ==================== Inputs ==================== */
+input, select, textarea {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  color: var(--color-text-primary);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  font-family: 'IBM Plex Mono', monospace;
+  min-height: 40px;
+  font-size: 13px;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: rgba(0, 255, 157, 0.5);
+  box-shadow: 0 0 0 2px rgba(0, 255, 157, 0.08), inset 0 0 12px rgba(0, 255, 157, 0.03);
+  background: rgba(0, 255, 157, 0.02);
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--color-text-muted);
+}
+
+/* Select */
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23555' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 36px;
+  cursor: pointer;
+}
+
+select option {
+  background: #111111;
+  color: var(--color-text-primary);
+  padding: 8px;
+}
+
+/* Checkbox */
+input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  min-height: 18px;
+  border-radius: 2px;
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  position: relative;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+input[type="checkbox"]:checked {
+  background: #00ff9d;
+  border-color: transparent;
+}
+
+input[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 2px;
+  width: 5px;
+  height: 9px;
+  border: solid #0a0a0a;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+/* Toggle Switch */
+.toggle {
+  width: 40px;
+  height: 22px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.08);
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.toggle.active {
+  background: #00ff9d;
+}
+
+.toggle::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 1px;
+  background: #0a0a0a;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.toggle.active::after {
+  transform: translateX(18px);
+}
+
+/* ==================== Typography ==================== */
+.heading-xl {
+  font-size: 2.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  font-family: 'Instrument Sans', sans-serif;
+  color: var(--color-text-primary);
+}
+
+@media (min-width: 768px) {
+  .heading-xl {
+    font-size: 3.25rem;
+  }
+}
+
+.heading-lg {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  font-family: 'Instrument Sans', sans-serif;
+}
+
+.heading-md {
+  font-size: 1.125rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  font-family: 'Instrument Sans', sans-serif;
+}
+
+.glow-text {
+  color: #00ff9d;
+  text-shadow: 0 0 20px rgba(0, 255, 157, 0.3), 0 0 40px rgba(0, 255, 157, 0.1);
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #00ff9d 0%, #00c2ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ==================== Terminal Utilities ==================== */
+.terminal-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.terminal-label::before {
+  content: '// ';
+  color: rgba(0, 255, 157, 0.4);
+}
+
+.cursor-blink::after {
+  content: '█';
+  animation: blink 1s step-end infinite;
+  color: #00ff9d;
+  margin-left: 2px;
+  font-weight: 400;
+}
+
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+.led-pulse {
+  position: relative;
+}
+
+.led-pulse::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  border: 1px solid currentColor;
+  opacity: 0;
+  animation: led-ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes led-ping {
+  0% { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(2); opacity: 0; }
+}
+
+/* ==================== Table ==================== */
+.table-row {
+  transition: background 0.1s ease;
+}
+
+.table-row:hover {
+  background: rgba(0, 255, 157, 0.02);
+}
+
+/* ==================== Badge ==================== */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 2px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  font-family: 'IBM Plex Mono', monospace;
+  text-transform: uppercase;
+}
+
+/* ==================== Status Dot ==================== */
+.status-dot {
   width: 6px;
   height: 6px;
+  border-radius: 50%;
+  position: relative;
+}
+
+.status-dot::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 1px solid currentColor;
+  opacity: 0.3;
+  animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes ping {
+  75%, 100% { transform: scale(1.8); opacity: 0; }
+}
+
+/* ==================== Skeleton Loading ==================== */
+.skeleton {
+  background: linear-gradient(90deg,
+    rgba(255, 255, 255, 0.03) 25%,
+    rgba(255, 255, 255, 0.06) 50%,
+    rgba(255, 255, 255, 0.03) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+  border-radius: 2px;
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ==================== Scrollbar ==================== */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-background);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-surface-active);
-  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 1px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-text-muted);
+  background: rgba(0, 255, 157, 0.2);
 }
 
+/* ==================== Utilities ==================== */
 .font-tabular {
   font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+.divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.section-label {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+/* ==================== Animations ==================== */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-in {
+  animation: fadeInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease both;
+}
+
+/* Glow effect */
+.glow {
+  box-shadow: 0 0 15px rgba(0, 255, 157, 0.1), 0 0 40px rgba(0, 255, 157, 0.04);
+}
+
+.glow-strong {
+  box-shadow: 0 0 25px rgba(0, 255, 157, 0.15), 0 0 60px rgba(0, 255, 157, 0.06);
+}
+
+/* Stagger children */
+.stagger > *:nth-child(1) { animation-delay: 0ms; }
+.stagger > *:nth-child(2) { animation-delay: 50ms; }
+.stagger > *:nth-child(3) { animation-delay: 100ms; }
+.stagger > *:nth-child(4) { animation-delay: 150ms; }
+.stagger > *:nth-child(5) { animation-delay: 200ms; }
+.stagger > *:nth-child(6) { animation-delay: 250ms; }
+.stagger > *:nth-child(7) { animation-delay: 300ms; }
+.stagger > *:nth-child(8) { animation-delay: 350ms; }
+
+/* ==================== Link Styles ==================== */
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+a:hover {
+  color: #33ffb1;
+}
+
+/* ==================== System Status Bar ==================== */
+.sys-bar {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+/* ==================== Boot Sequence ==================== */
+@keyframes typewriter {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+@keyframes scanline-sweep {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
 }

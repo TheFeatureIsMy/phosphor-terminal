@@ -1,47 +1,74 @@
 import { useState } from 'react'
-import { Save, Shield, Bell, Key, Server } from 'lucide-react'
+import { Save, Shield, Bell, Key, Server, Eye, EyeOff } from 'lucide-react'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { cn } from '@/lib/utils'
 
-interface SettingsSection {
-  id: string
-  label: string
-  icon: React.ElementType
-}
+type Section = 'exchange' | 'risk' | 'notifications' | 'api'
 
-const sections: SettingsSection[] = [
-  { id: 'exchange', label: '交易所配置', icon: Server },
-  { id: 'risk', label: '风控参数', icon: Shield },
-  { id: 'notifications', label: '通知设置', icon: Bell },
-  { id: 'api', label: 'API密钥', icon: Key },
+const sections: { id: Section; label: string; desc: string; icon: React.ElementType }[] = [
+  { id: 'exchange', label: '交易所配置', desc: 'API连接与交易模式', icon: Server },
+  { id: 'risk', label: '风控参数', desc: '止损、回撤与仓位限制', icon: Shield },
+  { id: 'notifications', label: '通知设置', desc: 'Telegram通知渠道与类型', icon: Bell },
+  { id: 'api', label: 'API密钥', desc: '第三方服务密钥管理', icon: Key },
 ]
 
 export function SettingsPage() {
-  const [activeSection, setActiveSection] = useState('exchange')
+  const [activeSection, setActiveSection] = useState<Section>('exchange')
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold">系统设置</h1>
+    <div className="space-y-5">
+      <PageHeader title="系统设置" />
 
-      <div className="flex gap-6">
-        {/* Sidebar */}
-        <div className="w-48 shrink-0 space-y-1">
-          {sections.map(({ id, label, icon: Icon }) => (
-            <button
-              key={id}
-              onClick={() => setActiveSection(id)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
-                activeSection === id
-                  ? 'bg-primary/15 text-primary'
-                  : 'text-text-secondary hover:text-text-primary hover:bg-surface-hover'
-              }`}
-            >
-              <Icon className="w-4 h-4" />
-              {label}
-            </button>
-          ))}
+      <div className="flex gap-5 items-start">
+        {/* Side Navigation - wider with descriptions */}
+        <div className="hidden md:block w-60 shrink-0">
+          <div className="card p-2 space-y-0.5 sticky top-20" style={{ borderRadius: '2px' }}>
+            {sections.map(({ id, label, desc, icon: Icon }) => (
+              <button
+                key={id}
+                onClick={() => setActiveSection(id)}
+                className={cn(
+                  'w-full text-left px-4 py-3 transition-all duration-200',
+                  activeSection === id ? 'text-white' : 'text-text-muted hover:text-text-secondary hover:bg-white/[0.04]'
+                )}
+                style={activeSection === id ? {
+                  background: 'rgba(0, 255, 157, 0.06)',
+                  borderLeft: '2px solid #00ff9d',
+                } : { borderLeft: '2px solid transparent' }}
+              >
+                <div className="flex items-center gap-2.5">
+                  <Icon className="w-3.5 h-3.5 shrink-0" style={{ color: activeSection === id ? '#00ff9d' : '#555' }} />
+                  <span className="text-[12px] font-mono font-medium">{label}</span>
+                </div>
+                <div className="text-[10px] font-mono mt-0.5 ml-[26px]" style={{ color: '#444' }}>{desc}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Mobile: horizontal tab bar */}
+        <div className="md:hidden w-full">
+          <div className="flex gap-0 mb-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            {sections.map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                onClick={() => setActiveSection(id)}
+                className={cn(
+                  'flex-1 flex items-center justify-center gap-1.5 px-2 py-2.5 text-[11px] font-mono font-medium transition-all duration-150 relative',
+                  activeSection === id ? 'text-[#e0e0e0]' : 'text-[#555]'
+                )}
+              >
+                {activeSection === id && (
+                  <div className="absolute bottom-0 left-0 right-0 h-[2px]" style={{ background: '#00ff9d' }} />
+                )}
+                <Icon className="w-3.5 h-3.5" /> <span className="truncate">{label}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Content */}
-        <div className="flex-1 bg-surface rounded-xl p-6 border border-border">
+        <div className="flex-1 min-w-0 card p-6">
           {activeSection === 'exchange' && <ExchangeSettings />}
           {activeSection === 'risk' && <RiskSettings />}
           {activeSection === 'notifications' && <NotificationSettings />}
@@ -55,21 +82,37 @@ export function SettingsPage() {
 function ExchangeSettings() {
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-medium">交易所配置</h2>
-      <div className="space-y-4">
-        <Field label="交易所" defaultValue="Binance" />
-        <Field label="API Key" type="password" placeholder="输入 Binance API Key" />
-        <Field label="API Secret" type="password" placeholder="输入 Binance API Secret" />
-        <Field label="交易模式" defaultValue="现货" />
-        <div className="flex items-center gap-3 pt-2">
-          <label className="flex items-center gap-2 text-sm text-text-secondary">
-            <input type="checkbox" className="rounded" defaultChecked /> 启用合约交易
-          </label>
-          <label className="flex items-center gap-2 text-sm text-text-secondary">
-            <input type="checkbox" className="rounded" /> 模拟模式 (Dry-run)
-          </label>
+      <SectionHeader title="交易所配置" desc="配置交易所API连接和交易模式" />
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="text-[12px] text-text-muted block mb-2">交易所</label>
+          <select defaultValue="binance" className="w-full px-4 py-2.5 text-[14px]">
+            <option value="binance">Binance</option>
+            <option value="okx">OKX</option>
+            <option value="bybit">Bybit</option>
+            <option value="gate">Gate.io</option>
+          </select>
         </div>
+        <div>
+          <label className="text-[12px] text-text-muted block mb-2">交易模式</label>
+          <select defaultValue="spot" className="w-full px-4 py-2.5 text-[14px]">
+            <option value="spot">现货</option>
+            <option value="futures">合约</option>
+            <option value="margin">杠杆</option>
+          </select>
+        </div>
+        <PasswordField label="API Key" placeholder="输入 Binance API Key" />
+        <PasswordField label="API Secret" placeholder="输入 Binance API Secret" />
       </div>
+
+      <div className="divider" />
+
+      <div className="space-y-1">
+        <Toggle label="启用合约交易" defaultChecked />
+        <Toggle label="模拟模式 (Dry-run)" description="开启后不会实际下单，仅模拟运行" />
+      </div>
+
       <SaveButton />
     </div>
   )
@@ -78,20 +121,21 @@ function ExchangeSettings() {
 function RiskSettings() {
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-medium">风控参数</h2>
-      <div className="space-y-4">
-        <Field label="最大单笔亏损 (%)" type="number" defaultValue="2" />
-        <Field label="策略最大回撤 (%)" type="number" defaultValue="15" />
-        <Field label="单日总回撤 (%)" type="number" defaultValue="5" />
-        <Field label="单品种最大仓位占比 (%)" type="number" defaultValue="30" />
-        <Field label="高相关品种组总仓位上限 (%)" type="number" defaultValue="50" />
-        <Field label="相关性预警阈值" type="number" defaultValue="0.8" />
-        <div className="flex items-center gap-3 pt-2">
-          <label className="flex items-center gap-2 text-sm text-text-secondary">
-            <input type="checkbox" className="rounded" defaultChecked /> 触发风控时自动暂停策略
-          </label>
-        </div>
+      <SectionHeader title="风控参数" desc="设置止损、回撤和仓位限制，保护资金安全" />
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <NumberField label="最大单笔亏损 (%)" defaultValue="2" />
+        <NumberField label="策略最大回撤 (%)" defaultValue="15" />
+        <NumberField label="单日总回撤 (%)" defaultValue="5" />
+        <NumberField label="单品种最大仓位占比 (%)" defaultValue="30" />
+        <NumberField label="高相关品种组总仓位上限 (%)" defaultValue="50" />
+        <NumberField label="相关性预警阈值" defaultValue="0.8" step="0.1" />
       </div>
+
+      <div className="divider" />
+
+      <Toggle label="触发风控时自动暂停策略" defaultChecked description="当风控规则被触发时，自动暂停所有运行中的策略" />
+
       <SaveButton />
     </div>
   )
@@ -100,79 +144,169 @@ function RiskSettings() {
 function NotificationSettings() {
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-medium">通知设置</h2>
-      <div className="space-y-4">
-        <Field label="Telegram Bot Token" type="password" placeholder="输入 Bot Token" />
+      <SectionHeader title="通知渠道" desc="配置Telegram Bot接收交易和风控通知" />
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <PasswordField label="Telegram Bot Token" placeholder="输入 Bot Token" />
         <Field label="Telegram Chat ID" placeholder="输入 Chat ID" />
-        <div className="space-y-2 pt-2">
-          <label className="flex items-center gap-2 text-sm text-text-secondary">
-            <input type="checkbox" className="rounded" defaultChecked /> 交易执行通知
-          </label>
-          <label className="flex items-center gap-2 text-sm text-text-secondary">
-            <input type="checkbox" className="rounded" defaultChecked /> 风控预警通知
-          </label>
-          <label className="flex items-center gap-2 text-sm text-text-secondary">
-            <input type="checkbox" className="rounded" defaultChecked /> 每日盈亏日报
-          </label>
-          <label className="flex items-center gap-2 text-sm text-text-secondary">
-            <input type="checkbox" className="rounded" /> 相关性预警通知
-          </label>
-        </div>
       </div>
+
+      <div className="divider" />
+
+      <span className="terminal-label block">通知类型</span>
+      <div className="space-y-1">
+        <Toggle label="交易执行通知" defaultChecked description="策略下单、成交、撤单时通知" />
+        <Toggle label="风控预警通知" defaultChecked description="触发止损、熔断、异常检测时通知" />
+        <Toggle label="每日盈亏日报" defaultChecked description="每天 00:00 推送当日盈亏总结" />
+        <Toggle label="相关性预警通知" description="品种间相关性超过阈值时通知" />
+      </div>
+
       <SaveButton />
     </div>
   )
 }
 
 function APISettings() {
+  const [keys, setKeys] = useState([
+    { id: 'binance', name: 'Binance API', key: '', secret: '', configured: true, date: '2026-04-28' },
+    { id: 'telegram', name: 'Telegram Bot', key: '', secret: '', configured: false, date: '' },
+    { id: 'openai', name: 'OpenAI API', key: '', secret: '', configured: false, date: '' },
+  ])
+
+  const updateKey = (id: string, field: 'key' | 'secret', value: string) => {
+    setKeys(prev => prev.map(k => k.id === id ? { ...k, [field]: value } : k))
+  }
+
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-medium">API 密钥管理</h2>
-      <div className="bg-background rounded-lg p-4 border border-border">
-        <p className="text-sm text-text-secondary mb-3">
-          所有 API 密钥均加密存储。建议使用环境变量或外部 Secret Vault 管理敏感信息。
-        </p>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between p-3 bg-surface rounded-lg">
-            <div>
-              <div className="text-sm font-medium">Binance API</div>
-              <div className="text-xs text-text-muted">最后更新: 2026-04-28</div>
+      <SectionHeader title="API 密钥管理" desc="所有 API 密钥均加密存储。建议使用环境变量或外部 Secret Vault 管理敏感信息。" />
+
+      <div className="space-y-4">
+        {keys.map(api => (
+          <div key={api.id} className="p-5" style={{ background: 'rgba(255,255,255,0.02)', borderRadius: '2px', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="min-w-0">
+                <div className="text-[14px] font-medium">{api.name}</div>
+                <div className="text-[12px] text-text-muted">
+                  {api.date ? `最后更新: ${api.date}` : '未配置'}
+                </div>
+              </div>
+              <span className={cn('badge shrink-0 ml-3', api.configured ? 'bg-success-dim text-success' : 'bg-surface-active text-text-muted')}>
+                {api.configured ? '已配置' : '未配置'}
+              </span>
             </div>
-            <span className="px-2 py-0.5 rounded text-xs bg-success/15 text-success">已配置</span>
-          </div>
-          <div className="flex items-center justify-between p-3 bg-surface rounded-lg">
-            <div>
-              <div className="text-sm font-medium">Telegram Bot</div>
-              <div className="text-xs text-text-muted">未配置</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <PasswordField
+                label="API Key"
+                placeholder={`输入 ${api.name} Key`}
+                value={api.key}
+                onChange={v => updateKey(api.id, 'key', v)}
+              />
+              <PasswordField
+                label="API Secret"
+                placeholder={`输入 ${api.name} Secret`}
+                value={api.secret}
+                onChange={v => updateKey(api.id, 'secret', v)}
+              />
             </div>
-            <span className="px-2 py-0.5 rounded text-xs bg-text-muted/15 text-text-muted">未配置</span>
           </div>
-        </div>
+        ))}
       </div>
+
+      <SaveButton />
     </div>
   )
 }
 
-function Field({ label, type = 'text', defaultValue, placeholder }: {
-  label: string; type?: string; defaultValue?: string; placeholder?: string
+// ==================== Shared Components ====================
+
+function SectionHeader({ title, desc }: { title: string; desc?: string }) {
+  return (
+    <div>
+      <span className="terminal-label block">{title}</span>
+      {desc && <p className="text-[12px] font-mono mt-1" style={{ color: '#555' }}>{desc}</p>}
+    </div>
+  )
+}
+
+function Field({ label, type = 'text', defaultValue, placeholder, value, onChange }: {
+  label: string; type?: string; defaultValue?: string; placeholder?: string; value?: string; onChange?: (v: string) => void
 }) {
   return (
     <div>
-      <label className="text-sm text-text-secondary block mb-1">{label}</label>
+      <label className="text-[12px] text-text-muted block mb-2">{label}</label>
       <input
         type={type}
         defaultValue={defaultValue}
         placeholder={placeholder}
-        className="w-full px-3 py-2 bg-background border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary text-sm"
+        value={value}
+        onChange={onChange ? e => onChange(e.target.value) : undefined}
+        className="w-full px-4 py-2.5 text-[14px]"
       />
     </div>
   )
 }
 
+function NumberField({ label, defaultValue, step }: { label: string; defaultValue: string; step?: string }) {
+  return (
+    <div>
+      <label className="text-[12px] text-text-muted block mb-2">{label}</label>
+      <input type="number" defaultValue={defaultValue} step={step} className="w-full px-4 py-2.5 text-[14px] font-tabular" />
+    </div>
+  )
+}
+
+function PasswordField({ label, placeholder, value, onChange }: {
+  label: string; placeholder?: string; value?: string; onChange?: (v: string) => void
+}) {
+  const [show, setShow] = useState(false)
+  return (
+    <div>
+      <label className="text-[12px] text-text-muted block mb-2">{label}</label>
+      <div className="relative">
+        <input
+          type={show ? 'text' : 'password'}
+          placeholder={placeholder}
+          value={value}
+          onChange={onChange ? e => onChange(e.target.value) : undefined}
+          className="w-full px-4 py-2.5 pr-10 text-[14px]"
+        />
+        <button
+          type="button"
+          onClick={() => setShow(!show)}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary transition-colors"
+        >
+          {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function Toggle({ label, defaultChecked, description }: { label: string; defaultChecked?: boolean; description?: string }) {
+  const [active, setActive] = useState(!!defaultChecked)
+  return (
+    <button
+      type="button"
+      onClick={() => setActive(!active)}
+      className="w-full flex items-center justify-between p-3.5 hover:bg-white/[0.02] transition-colors text-left"
+      style={{ borderRadius: '2px' }}
+    >
+      <div className="min-w-0">
+        <div className="text-[13px] font-mono font-medium">{label}</div>
+        {description && <div className="text-[11px] font-mono mt-0.5" style={{ color: '#555' }}>{description}</div>}
+      </div>
+      <div className={cn('toggle shrink-0 ml-3', active && 'active')} />
+    </button>
+  )
+}
+
 function SaveButton() {
   return (
-    <button className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors">
-      <Save className="w-4 h-4" /> 保存设置
-    </button>
+    <div className="flex justify-end pt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+      <button className="btn-primary flex items-center gap-1.5 px-5 py-2.5 text-[12px]">
+        <Save className="w-3.5 h-3.5" /> 保存设置
+      </button>
+    </div>
   )
 }

@@ -45,6 +45,8 @@ export function mockStrategies(): Strategy[] {
     type: (['ma_cross', 'breakout', 'grid', 'mean_reversion', 'rag_generated'] as const)[i % 5],
     parameters: { period: randomChoice([14, 20, 50, 100]), threshold: randomBetween(0.01, 0.05) },
     source: i < 6 ? 'manual' : i === 6 ? 'optimized' : 'rag_generated',
+    market: 'crypto',
+    exchange: 'binance',
     version: Math.floor(randomBetween(1, 5)),
     status: i < 2 ? 'active' : i < 4 ? 'paused' : i < 6 ? 'backtested' : 'draft',
     sharpe_ratio: Math.round(randomBetween(0.5, 2.5) * 100) / 100,

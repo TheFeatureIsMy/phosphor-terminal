@@ -9,61 +9,60 @@ import {
 import '@xyflow/react/dist/style.css'
 import { Database, BarChart3, GitBranch, Zap, ArrowLeft } from 'lucide-react'
 
-// Custom Node Components
 function DataSourceNode({ data }: { data: { label: string; source: string } }) {
   return (
-    <div className="bg-surface border border-info/50 rounded-lg p-3 min-w-[160px] shadow-lg">
-      <div className="flex items-center gap-2 mb-1">
-        <Database className="w-4 h-4 text-info" />
-        <span className="text-xs font-medium text-info">数据源</span>
+    <div className="bg-surface rounded-xl p-3 min-w-[160px]" style={{ border: '1px solid rgba(96, 165, 250, 0.25)' }}>
+      <div className="flex items-center gap-1.5 mb-1">
+        <Database className="w-3.5 h-3.5 text-info" />
+        <span className="text-[11px] font-medium text-info tracking-wider uppercase">数据源</span>
       </div>
-      <div className="text-sm font-medium text-text-primary">{data.label}</div>
-      <div className="text-xs text-text-muted mt-1">{data.source}</div>
-      <Handle type="source" position={Position.Right} className="!bg-info" />
+      <div className="text-[13px] font-medium">{data.label}</div>
+      <div className="text-[11px] text-text-muted font-mono mt-0.5">{data.source}</div>
+      <Handle type="source" position={Position.Right} className="!bg-info !w-1.5 !h-1.5" />
     </div>
   )
 }
 
 function IndicatorNode({ data }: { data: { label: string; params: string } }) {
   return (
-    <div className="bg-surface border border-primary/50 rounded-lg p-3 min-w-[160px] shadow-lg">
-      <Handle type="target" position={Position.Left} className="!bg-primary" />
-      <div className="flex items-center gap-2 mb-1">
-        <BarChart3 className="w-4 h-4 text-primary" />
-        <span className="text-xs font-medium text-primary">指标</span>
+    <div className="bg-surface rounded-xl p-3 min-w-[160px]" style={{ border: '1px solid rgba(139, 124, 248, 0.25)' }}>
+      <Handle type="target" position={Position.Left} className="!bg-primary !w-1.5 !h-1.5" />
+      <div className="flex items-center gap-1.5 mb-1">
+        <BarChart3 className="w-3.5 h-3.5 text-primary" />
+        <span className="text-[11px] font-medium text-primary tracking-wider uppercase">指标</span>
       </div>
-      <div className="text-sm font-medium text-text-primary">{data.label}</div>
-      <div className="text-xs text-text-muted mt-1">{data.params}</div>
-      <Handle type="source" position={Position.Right} className="!bg-primary" />
+      <div className="text-[13px] font-medium">{data.label}</div>
+      <div className="text-[11px] text-text-muted font-mono mt-0.5">{data.params}</div>
+      <Handle type="source" position={Position.Right} className="!bg-primary !w-1.5 !h-1.5" />
     </div>
   )
 }
 
 function LogicGateNode({ data }: { data: { label: string; condition: string } }) {
   return (
-    <div className="bg-surface border border-warning/50 rounded-lg p-3 min-w-[160px] shadow-lg">
-      <Handle type="target" position={Position.Left} className="!bg-warning" />
-      <div className="flex items-center gap-2 mb-1">
-        <GitBranch className="w-4 h-4 text-warning" />
-        <span className="text-xs font-medium text-warning">逻辑门</span>
+    <div className="bg-surface rounded-xl p-3 min-w-[160px]" style={{ border: '1px solid rgba(110, 231, 240, 0.25)' }}>
+      <Handle type="target" position={Position.Left} className="!bg-accent !w-1.5 !h-1.5" />
+      <div className="flex items-center gap-1.5 mb-1">
+        <GitBranch className="w-3.5 h-3.5 text-accent" />
+        <span className="text-[11px] font-medium text-accent tracking-wider uppercase">逻辑门</span>
       </div>
-      <div className="text-sm font-medium text-text-primary">{data.label}</div>
-      <div className="text-xs text-text-muted mt-1">{data.condition}</div>
-      <Handle type="source" position={Position.Right} className="!bg-warning" />
+      <div className="text-[13px] font-medium">{data.label}</div>
+      <div className="text-[11px] text-text-muted font-mono mt-0.5">{data.condition}</div>
+      <Handle type="source" position={Position.Right} className="!bg-accent !w-1.5 !h-1.5" />
     </div>
   )
 }
 
 function ExecutorNode({ data }: { data: { label: string; action: string } }) {
   return (
-    <div className="bg-surface border border-success/50 rounded-lg p-3 min-w-[160px] shadow-lg">
-      <Handle type="target" position={Position.Left} className="!bg-success" />
-      <div className="flex items-center gap-2 mb-1">
-        <Zap className="w-4 h-4 text-success" />
-        <span className="text-xs font-medium text-success">执行器</span>
+    <div className="bg-surface rounded-xl p-3 min-w-[160px]" style={{ border: '1px solid rgba(52, 211, 153, 0.25)' }}>
+      <Handle type="target" position={Position.Left} className="!bg-success !w-1.5 !h-1.5" />
+      <div className="flex items-center gap-1.5 mb-1">
+        <Zap className="w-3.5 h-3.5 text-success" />
+        <span className="text-[11px] font-medium text-success tracking-wider uppercase">执行器</span>
       </div>
-      <div className="text-sm font-medium text-text-primary">{data.label}</div>
-      <div className="text-xs text-text-muted mt-1">{data.action}</div>
+      <div className="text-[13px] font-medium">{data.label}</div>
+      <div className="text-[11px] text-text-muted font-mono mt-0.5">{data.action}</div>
     </div>
   )
 }
@@ -84,11 +83,11 @@ const initialNodes: Node[] = [
 ]
 
 const initialEdges: Edge[] = [
-  { id: 'e1-2', source: '1', target: '2', animated: true, style: { stroke: '#06b6d4' } },
-  { id: 'e1-3', source: '1', target: '3', animated: true, style: { stroke: '#06b6d4' } },
-  { id: 'e2-4', source: '2', target: '4', style: { stroke: '#3b82f6' } },
-  { id: 'e3-4', source: '3', target: '4', style: { stroke: '#3b82f6' } },
-  { id: 'e4-5', source: '4', target: '5', animated: true, style: { stroke: '#10b981' } },
+  { id: 'e1-2', source: '1', target: '2', animated: true, style: { stroke: '#60a5fa' } },
+  { id: 'e1-3', source: '1', target: '3', animated: true, style: { stroke: '#60a5fa' } },
+  { id: 'e2-4', source: '2', target: '4', style: { stroke: '#8b7cf8' } },
+  { id: 'e3-4', source: '3', target: '4', style: { stroke: '#8b7cf8' } },
+  { id: 'e4-5', source: '4', target: '5', animated: true, style: { stroke: '#34d399' } },
 ]
 
 export function StrategyCanvasPage() {
@@ -103,26 +102,21 @@ export function StrategyCanvasPage() {
   )
 
   return (
-    <div className="h-[calc(100vh-11rem)] flex flex-col">
-      <div className="flex items-center gap-4 mb-4">
-        <button
-          onClick={() => navigate('/strategies')}
-          className="flex items-center gap-1 text-sm text-text-secondary hover:text-text-primary transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" /> 返回
+    <div className="h-[calc(100vh-10rem)] flex flex-col">
+      <div className="flex items-center gap-3 mb-4">
+        <button onClick={() => navigate('/strategies')} className="flex items-center gap-1 text-[13px] text-text-secondary hover:text-text-primary transition-colors">
+          <ArrowLeft className="w-3.5 h-3.5" /> 返回
         </button>
-        <h1 className="text-xl font-bold">策略画布 #{id}</h1>
-        <div className="flex items-center gap-2 ml-auto">
-          <div className="flex items-center gap-1 text-xs text-text-muted">
-            <span className="w-3 h-3 rounded bg-info/50" /> 数据源
-            <span className="w-3 h-3 rounded bg-primary/50 ml-2" /> 指标
-            <span className="w-3 h-3 rounded bg-warning/50 ml-2" /> 逻辑门
-            <span className="w-3 h-3 rounded bg-success/50 ml-2" /> 执行器
-          </div>
+        <h1 className="text-lg font-semibold">策略画布 #{id}</h1>
+        <div className="flex items-center gap-3 ml-auto text-[11px] text-text-muted">
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-info/40" />数据源</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-primary/40" />指标</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-accent/40" />逻辑门</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-success/40" />执行器</span>
         </div>
       </div>
 
-      <div className="flex-1 bg-surface rounded-xl border border-border overflow-hidden">
+      <div className="flex-1 card overflow-hidden">
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -133,16 +127,16 @@ export function StrategyCanvasPage() {
           fitView
           className="bg-background"
         >
-          <Background color="#1f2937" gap={20} />
-          <Controls className="!bg-surface !border-border !text-text-primary" />
+          <Background color="rgba(255,255,255,0.03)" gap={20} />
+          <Controls className="!bg-surface !border-border" />
           <MiniMap
             nodeColor={(node) => {
               switch (node.type) {
-                case 'dataSource': return '#06b6d4'
-                case 'indicator': return '#3b82f6'
-                case 'logicGate': return '#f59e0b'
-                case 'executor': return '#10b981'
-                default: return '#6b7280'
+                case 'dataSource': return '#60a5fa'
+                case 'indicator': return '#8b7cf8'
+                case 'logicGate': return '#6ee7f0'
+                case 'executor': return '#34d399'
+                default: return '#4a5068'
               }
             }}
             className="!bg-surface !border-border"

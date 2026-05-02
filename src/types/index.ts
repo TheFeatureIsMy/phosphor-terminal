@@ -21,6 +21,8 @@ export interface Strategy {
   type: StrategyType
   parameters: Record<string, unknown>
   source: StrategySource
+  market: string
+  exchange: string
   version: number
   status: StrategyStatus
   sharpe_ratio?: number
@@ -107,7 +109,7 @@ export interface CorrelationSnapshot {
   symbol_b: string
   correlation: number
   window_days: number
-  alert_level: 'normal' | 'yellow' | 'red'
+  alert_level?: 'normal' | 'yellow' | 'red'
   created_at: string
 }
 
@@ -178,7 +180,7 @@ export interface RiskEvent {
   event_type: 'stop_loss' | 'circuit_breaker' | 'api_error' | 'data_anomaly' | 'correlation_warning'
   strategy_id?: number
   severity: 'low' | 'medium' | 'high' | 'critical'
-  description: string
+  description?: string
   action_taken?: string
   created_at: string
 }

@@ -1,25 +1,24 @@
 import { Outlet } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { Sidebar } from './Sidebar'
 import { TopBar } from './TopBar'
-import { useAppStore } from '@/stores/app-store'
 
 export function AppShell() {
-  const { sidebarCollapsed } = useAppStore()
-
   return (
-    <div className="min-h-screen bg-background">
-      <Sidebar />
-      <motion.div
-        animate={{ marginLeft: sidebarCollapsed ? 64 : 240 }}
-        transition={{ duration: 0.2 }}
-        className="min-h-screen flex flex-col"
-      >
-        <TopBar />
-        <main className="flex-1 p-6 overflow-auto">
+    <div className="min-h-dvh relative" style={{ background: '#0a0a0a' }}>
+      <a href="#main-content" className="skip-link">
+        跳转到主内容
+      </a>
+
+      {/* Background layers */}
+      <div className="bg-mesh" aria-hidden="true" />
+      <div className="grid-overlay" aria-hidden="true" />
+      <div className="noise-overlay" aria-hidden="true" />
+
+      <TopBar />
+      <div className="min-h-dvh flex flex-col relative z-10" style={{ paddingTop: '52px' }}>
+        <main id="main-content" className="flex-1 overflow-auto" style={{ padding: '20px 24px' }} tabIndex={-1}>
           <Outlet />
         </main>
-      </motion.div>
+      </div>
     </div>
   )
 }
