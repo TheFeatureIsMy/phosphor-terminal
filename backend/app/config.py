@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     freqtrade_db_path: str = os.path.join(PROJECT_ROOT, "freqtrade", "user_data", "tradesv3.sqlite")
 
     # CORS
-    cors_origins: list[str] = ["http://localhost:5173"]
+    cors_origins: list[str] = ["http://localhost:5173", "http://localhost:5174"]
 
     # Security
     secret_key: str = "cyberquant-dev-secret-change-in-production"
