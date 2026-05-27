@@ -205,3 +205,16 @@ export interface DashboardKPIs {
   todays_trades: number
   open_positions: number
 }
+
+// Constants
+export const EXCHANGES = ['binance', 'okx', 'bybit', 'gate'] as const
+export type Exchange = typeof EXCHANGES[number]
+
+export const TRADING_MODES = ['spot', 'futures', 'margin'] as const
+export type TradingMode = typeof TRADING_MODES[number]
+
+export const MARKETS = ['crypto', 'forex', 'stocks'] as const
+export type Market = typeof MARKETS[number]
+
+export const TIMEFRAMES = ['1m', '5m', '15m', '1h', '4h', '1d'] as const
+export type Timeframe = typeof TIMEFRAMES[number]
