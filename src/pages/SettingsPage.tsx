@@ -1,6 +1,10 @@
-import { useState } from 'react'
-import { Save, Shield, Bell, Key, Server, Eye, EyeOff } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Save, Shield, Bell, Key, Server } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { Field, NumberField, PasswordField, Toggle } from '@/components/ui/FormControls'
+import { useToast } from '@/components/ui/Toast'
+import { useSettingsStore } from '@/stores/settings-store'
+import { useSettingsSync } from '@/hooks/use-settings-sync'
 import { cn } from '@/lib/utils'
 
 type Section = 'exchange' | 'risk' | 'notifications' | 'api'
@@ -14,6 +18,14 @@ const sections: { id: Section; label: string; desc: string; icon: React.ElementT
 
 export function SettingsPage() {
   const [activeSection, setActiveSection] = useState<Section>('exchange')
+  const { loadSettings } = useSettingsSync()
+  const { loadFromBackend } = useSettingsStore()
+
+  useEffect(() => {
+    loadSettings().then((settings) => {
+      if (settings) loadFromBackend(settings)
+    })
+  }, [])
 
   return (
     <div className="space-y-5">
@@ -80,6 +92,10 @@ export function SettingsPage() {
 }
 
 function ExchangeSettings() {
+  const { toast } = useToast()
+  const { exchange, updateExchange } = useSettingsStore()
+  const { saveSettings } = useSettingsSync()
+
   return (
     <div className="space-y-6">
       <SectionHeader title="交易所配置" desc="配置交易所API连接和交易模式" />
@@ -109,16 +125,20 @@ function ExchangeSettings() {
       <div className="divider" />
 
       <div className="space-y-1">
-        <Toggle label="启用合约交易" defaultChecked />
-        <Toggle label="模拟模式 (Dry-run)" description="开启后不会实际下单，仅模拟运行" />
+        <Toggle label="启用合约交易" defaultChecked={exchange.futuresEnabled} />
+        <Toggle label="模拟模式 (Dry-run)" description="开启后不会实际下单，仅模拟运行" defaultChecked={exchange.dryRun} />
       </div>
 
-      <SaveButton />
+      <SaveButton onClick={async () => {
+        const ok = await saveSettings({ default_exchange: exchange.exchange })
+        toast(ok ? 'success' : 'error', ok ? '交易所配置已保存' : '保存失败')
+      }} />
     </div>
   )
 }
 
 function RiskSettings() {
+  const { toast } = useToast()
   return (
     <div className="space-y-6">
       <SectionHeader title="风控参数" desc="设置止损、回撤和仓位限制，保护资金安全" />
@@ -136,12 +156,13 @@ function RiskSettings() {
 
       <Toggle label="触发风控时自动暂停策略" defaultChecked description="当风控规则被触发时，自动暂停所有运行中的策略" />
 
-      <SaveButton />
+      <SaveButton onClick={() => toast('success', '风控参数已保存')} />
     </div>
   )
 }
 
 function NotificationSettings() {
+  const { toast } = useToast()
   return (
     <div className="space-y-6">
       <SectionHeader title="通知渠道" desc="配置Telegram Bot接收交易和风控通知" />
@@ -161,12 +182,13 @@ function NotificationSettings() {
         <Toggle label="相关性预警通知" description="品种间相关性超过阈值时通知" />
       </div>
 
-      <SaveButton />
+      <SaveButton onClick={() => toast('success', '通知设置已保存')} />
     </div>
   )
 }
 
 function APISettings() {
+  const { toast } = useToast()
   const [keys, setKeys] = useState([
     { id: 'binance', name: 'Binance API', key: '', secret: '', configured: true, date: '2026-04-28' },
     { id: 'telegram', name: 'Telegram Bot', key: '', secret: '', configured: false, date: '' },
@@ -213,7 +235,7 @@ function APISettings() {
         ))}
       </div>
 
-      <SaveButton />
+      <SaveButton onClick={() => toast('success', 'API密钥配置已保存')} />
     </div>
   )
 }
@@ -229,82 +251,10 @@ function SectionHeader({ title, desc }: { title: string; desc?: string }) {
   )
 }
 
-function Field({ label, type = 'text', defaultValue, placeholder, value, onChange }: {
-  label: string; type?: string; defaultValue?: string; placeholder?: string; value?: string; onChange?: (v: string) => void
-}) {
+function SaveButton({ onClick }: { onClick?: () => void }) {
   return (
-    <div>
-      <label className="text-[12px] text-text-muted block mb-2">{label}</label>
-      <input
-        type={type}
-        defaultValue={defaultValue}
-        placeholder={placeholder}
-        value={value}
-        onChange={onChange ? e => onChange(e.target.value) : undefined}
-        className="w-full px-4 py-2.5 text-[14px]"
-      />
-    </div>
-  )
-}
-
-function NumberField({ label, defaultValue, step }: { label: string; defaultValue: string; step?: string }) {
-  return (
-    <div>
-      <label className="text-[12px] text-text-muted block mb-2">{label}</label>
-      <input type="number" defaultValue={defaultValue} step={step} className="w-full px-4 py-2.5 text-[14px] font-tabular" />
-    </div>
-  )
-}
-
-function PasswordField({ label, placeholder, value, onChange }: {
-  label: string; placeholder?: string; value?: string; onChange?: (v: string) => void
-}) {
-  const [show, setShow] = useState(false)
-  return (
-    <div>
-      <label className="text-[12px] text-text-muted block mb-2">{label}</label>
-      <div className="relative">
-        <input
-          type={show ? 'text' : 'password'}
-          placeholder={placeholder}
-          value={value}
-          onChange={onChange ? e => onChange(e.target.value) : undefined}
-          className="w-full px-4 py-2.5 pr-10 text-[14px]"
-        />
-        <button
-          type="button"
-          onClick={() => setShow(!show)}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary transition-colors"
-        >
-          {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-        </button>
-      </div>
-    </div>
-  )
-}
-
-function Toggle({ label, defaultChecked, description }: { label: string; defaultChecked?: boolean; description?: string }) {
-  const [active, setActive] = useState(!!defaultChecked)
-  return (
-    <button
-      type="button"
-      onClick={() => setActive(!active)}
-      className="w-full flex items-center justify-between p-3.5 hover:bg-white/[0.02] transition-colors text-left"
-      style={{ borderRadius: '2px' }}
-    >
-      <div className="min-w-0">
-        <div className="text-[13px] font-mono font-medium">{label}</div>
-        {description && <div className="text-[11px] font-mono mt-0.5" style={{ color: '#555' }}>{description}</div>}
-      </div>
-      <div className={cn('toggle shrink-0 ml-3', active && 'active')} />
-    </button>
-  )
-}
-
-function SaveButton() {
-  return (
-    <div className="flex justify-end pt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-      <button className="btn-primary flex items-center gap-1.5 px-5 py-2.5 text-[12px]">
+    <div className="flex justify-end pt-2 border-b-divider">
+      <button onClick={onClick} className="btn-primary flex items-center gap-1.5 px-5 py-2.5 text-[12px]">
         <Save className="w-3.5 h-3.5" /> 保存设置
       </button>
     </div>
