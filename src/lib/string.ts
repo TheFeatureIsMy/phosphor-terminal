@@ -19,7 +19,7 @@ export function snakeCase(str: string): string {
     .replace(/([A-Z])/g, '_$1')
     .toLowerCase()
     .replace(/^_/, '')
-    .replace(/[\s\-]+/g, '_')
+    .replace(/[\s-]+/g, '_')
 }
 
 export function kebabCase(str: string): string {
