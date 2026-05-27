@@ -6,6 +6,8 @@ import {
 } from 'lucide-react'
 import { useSystemStatus } from '@/hooks/use-dashboard'
 import { useAuthStore } from '@/stores/auth-store'
+import { SearchModal } from '@/components/search/SearchModal'
+import { NotificationCenter } from '@/components/notifications/NotificationCenter'
 import { cn } from '@/lib/utils'
 
 const navItems = [
@@ -55,6 +57,7 @@ export function TopBar() {
   const isConnected = status?.api_status === 'connected'
   const { user, logout } = useAuthStore()
   const [showUserMenu, setShowUserMenu] = useState(false)
+  const [showSearch, setShowSearch] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
 
@@ -77,6 +80,8 @@ export function TopBar() {
   }, [])
 
   return (
+    <>
+    <SearchModal open={showSearch} onClose={() => setShowSearch(false)} />
     <header
       className="fixed top-0 left-0 right-0 z-50"
       style={{
@@ -157,6 +162,7 @@ export function TopBar() {
           </div>
 
           <button
+            onClick={() => setShowSearch(true)}
             className="p-1.5 cursor-pointer transition-colors duration-150"
             style={{ color: '#555', borderRadius: '2px' }}
             aria-label="搜索"
@@ -164,14 +170,7 @@ export function TopBar() {
             <Search className="w-3.5 h-3.5" />
           </button>
 
-          <button
-            className="relative p-1.5 cursor-pointer transition-colors duration-150"
-            style={{ color: '#555', borderRadius: '2px' }}
-            aria-label="通知"
-          >
-            <Bell className="w-3.5 h-3.5" />
-            <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full" style={{ background: '#ff3b3b' }} />
-          </button>
+          <NotificationCenter />
 
           {/* Separator */}
           <div className="w-px h-4" style={{ background: 'rgba(255,255,255,0.06)' }} />
@@ -234,5 +233,6 @@ export function TopBar() {
         </div>
       </div>
     </header>
+    </>
   )
 }
