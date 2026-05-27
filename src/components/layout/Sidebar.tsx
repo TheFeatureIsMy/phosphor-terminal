@@ -8,6 +8,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/stores/app-store'
 import { useSystemStatus } from '@/hooks/use-dashboard'
+import { prefetchRoute } from '@/lib/prefetch'
 
 const navSections = [
   {
@@ -99,6 +100,7 @@ export function Sidebar() {
                   key={to + label}
                   to={to}
                   end={to === '/dashboard'}
+                  onMouseEnter={() => prefetchRoute(to)}
                   className={({ isActive }) => cn(
                     'flex items-center gap-2.5 transition-all duration-150 cursor-pointer',
                     sidebarCollapsed ? 'justify-center px-0 py-2' : 'px-3 py-2',
