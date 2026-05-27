@@ -45,14 +45,18 @@ function PageLoader() {
   )
 }
 
-function App() {
+function GlobalShortcuts() {
   useGlobalShortcuts()
+  return null
+}
 
+function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <ToastProvider>
           <BrowserRouter>
+            <GlobalShortcuts />
             <Suspense fallback={<PageLoader />}>
               <Routes>
                 <Route path="/" element={<LandingPage />} />
