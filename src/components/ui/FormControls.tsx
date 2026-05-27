@@ -12,16 +12,19 @@ interface FieldProps {
 }
 
 export function Field({ label, type = 'text', defaultValue, placeholder, value, onChange }: FieldProps) {
+  const id = `field-${label.toLowerCase().replace(/\s+/g, '-')}`
   return (
     <div>
-      <label className="text-[12px] text-text-muted block mb-2">{label}</label>
+      <label htmlFor={id} className="text-[12px] text-text-muted block mb-2">{label}</label>
       <input
+        id={id}
         type={type}
         defaultValue={defaultValue}
         placeholder={placeholder}
         value={value}
         onChange={onChange ? e => onChange(e.target.value) : undefined}
         className="w-full px-4 py-2.5 text-[14px]"
+        aria-label={label}
       />
     </div>
   )
@@ -34,10 +37,18 @@ interface NumberFieldProps {
 }
 
 export function NumberField({ label, defaultValue, step }: NumberFieldProps) {
+  const id = `number-${label.toLowerCase().replace(/\s+/g, '-')}`
   return (
     <div>
-      <label className="text-[12px] text-text-muted block mb-2">{label}</label>
-      <input type="number" defaultValue={defaultValue} step={step} className="w-full px-4 py-2.5 text-[14px] font-tabular" />
+      <label htmlFor={id} className="text-[12px] text-text-muted block mb-2">{label}</label>
+      <input
+        id={id}
+        type="number"
+        defaultValue={defaultValue}
+        step={step}
+        className="w-full px-4 py-2.5 text-[14px] font-tabular"
+        aria-label={label}
+      />
     </div>
   )
 }
