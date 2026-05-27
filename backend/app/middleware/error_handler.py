@@ -21,6 +21,6 @@ class ErrorHandlerMiddleware(BaseHTTPMiddleware):
                 status_code=500,
                 content={
                     "detail": "Internal server error",
-                    "message": str(e) if request.app.debug else "An unexpected error occurred",
+                    "message": str(e),
                 },
             )
