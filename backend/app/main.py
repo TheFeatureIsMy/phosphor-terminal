@@ -15,7 +15,14 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="CyberQuant OS", version="1.0.0", lifespan=lifespan)
+app = FastAPI(
+    title="CyberQuant OS",
+    description="AI驱动的加密货币量化交易API",
+    version="0.3.0",
+    lifespan=lifespan,
+    docs_url="/docs",
+    redoc_url="/redoc",
+)
 
 app.add_middleware(ErrorHandlerMiddleware)
 app.add_middleware(
