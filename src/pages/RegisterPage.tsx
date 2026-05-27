@@ -1,18 +1,20 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Activity, Eye, EyeOff, ArrowRight, Check } from 'lucide-react'
+import { register } from '@/api/auth'
 
 export function RegisterPage() {
   const navigate = useNavigate()
   const [form, setForm] = useState({ username: '', email: '', password: '', confirm: '' })
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
   const [step, setStep] = useState<'form' | 'success'>('form')
 
   const update = (key: string, value: string) => setForm(prev => ({ ...prev, [key]: value }))
 
   const passwordRules = [
-    { label: '至少8个字符', valid: form.password.length >= 8 },
+    { label: '至少6个字符', valid: form.password.length >= 6 },
     { label: '包含大写字母', valid: /[A-Z]/.test(form.password) },
     { label: '包含数字', valid: /\d/.test(form.password) },
   ]
@@ -20,14 +22,19 @@ export function RegisterPage() {
   const canSubmit = form.username && form.email && form.password && form.confirm &&
     form.password === form.confirm && passwordRules.every(r => r.valid)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!canSubmit) return
+    setError('')
     setLoading(true)
-    setTimeout(() => {
-      setLoading(false)
+    try {
+      await register(form.username, form.email, form.password)
       setStep('success')
-    }, 1000)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '注册失败')
+    } finally {
+      setLoading(false)
+    }
   }
 
   if (step === 'success') {
@@ -43,7 +50,7 @@ export function RegisterPage() {
           </div>
           <h1 className="text-xl font-bold font-mono mb-3" style={{ color: '#e0e0e0' }}>注册成功</h1>
           <p className="text-[13px] font-mono mb-8" style={{ color: '#555' }}>
-            账号 <span style={{ color: '#888' }}>{form.email}</span> 已创建成功
+            账号 <span style={{ color: '#888' }}>{form.username}</span> 已创建成功
           </p>
           <button onClick={() => navigate('/login')} className="btn-primary px-8 py-3 text-[14px] flex items-center gap-2 mx-auto">
             去登录 <ArrowRight className="w-4 h-4" />
@@ -64,7 +71,6 @@ export function RegisterPage() {
       <div className="grid-overlay" aria-hidden="true" />
 
       <div className="w-full max-w-sm relative z-10">
-        {/* Logo */}
         <div className="text-center mb-8">
           <div className="w-10 h-10 flex items-center justify-center mx-auto mb-4"
             style={{ background: 'rgba(0,255,157,0.08)', border: '1px solid rgba(0,255,157,0.15)', borderRadius: '2px' }}>
@@ -75,6 +81,12 @@ export function RegisterPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="card p-6 space-y-4">
+          {error && (
+            <div className="p-3 text-[13px] font-mono rounded" style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)' }}>
+              {error}
+            </div>
+          )}
+
           <div>
             <label className="text-[11px] font-mono font-medium block mb-2" style={{ color: '#888' }}>用户名</label>
             <input
@@ -115,7 +127,6 @@ export function RegisterPage() {
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
-            {/* Password rules */}
             {form.password && (
               <div className="mt-2 space-y-1">
                 {passwordRules.map(rule => (

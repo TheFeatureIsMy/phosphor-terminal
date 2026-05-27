@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     freqtrade_url: str = "http://localhost:8080"
     freqtrade_db_path: str = os.path.join(PROJECT_ROOT, "freqtrade", "user_data", "tradesv3.sqlite")
     cors_origins: list[str] = ["http://localhost:5173"]
+    secret_key: str = "cyberquant-dev-secret-change-in-production"
 
     model_config = {"env_file": ".env"}
 

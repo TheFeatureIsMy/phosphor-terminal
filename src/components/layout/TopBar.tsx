@@ -1,15 +1,18 @@
 import { useState, useRef, useEffect } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
-  Activity, LayoutDashboard, GitBranch, Settings,
+  Activity, LayoutDashboard, GitBranch, Settings, ArrowLeftRight, BarChart3,
   Bell, User, LogOut, ChevronDown, Search, Cpu, HardDrive, Wifi
 } from 'lucide-react'
 import { useSystemStatus } from '@/hooks/use-dashboard'
+import { useAuthStore } from '@/stores/auth-store'
 import { cn } from '@/lib/utils'
 
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: '总览', desc: 'DATA', end: true },
   { to: '/strategies', icon: GitBranch, label: '策略', desc: 'STRATEGY', end: false },
+  { to: '/trades', icon: ArrowLeftRight, label: '交易', desc: 'TRADES', end: false },
+  { to: '/backtest', icon: BarChart3, label: '回测', desc: 'BACKTEST', end: false },
   { to: '/settings', icon: Settings, label: '系统', desc: 'CONFIG', end: false },
 ]
 
@@ -50,6 +53,7 @@ function SystemMetrics() {
 export function TopBar() {
   const { data: status } = useSystemStatus()
   const isConnected = status?.api_status === 'connected'
+  const { user, logout } = useAuthStore()
   const [showUserMenu, setShowUserMenu] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
@@ -99,7 +103,7 @@ export function TopBar() {
         </NavLink>
 
         {/* === Separator === */}
-        <div className="w-px h-5 mx-1" style={{ background: 'rgba(255,255,255,0.06)' }} />
+        <div className="w-px h-5 mx-1 hidden sm:block" style={{ background: 'rgba(255,255,255,0.06)' }} />
 
         {/* === Nav === */}
         <nav className="flex-1 flex items-center gap-1 px-2" role="navigation">
@@ -121,8 +125,8 @@ export function TopBar() {
                   {isActive && (
                     <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-4" style={{ background: '#00ff9d', boxShadow: '0 0 8px rgba(0,255,157,0.3)' }} />
                   )}
-                  <Icon className="w-3.5 h-3.5" style={{ color: isActive ? '#00ff9d' : undefined }} />
-                  <span className="text-[12px] font-medium font-mono tracking-wide">{label}</span>
+                  <Icon className="w-3.5 h-3.5 shrink-0" style={{ color: isActive ? '#00ff9d' : undefined }} />
+                  <span className="text-[12px] font-medium font-mono tracking-wide hidden sm:block">{label}</span>
                   <span className="text-[9px] font-mono tracking-widest hidden xl:block" style={{ color: isActive ? 'rgba(0,255,157,0.4)' : 'rgba(255,255,255,0.12)' }}>
                     {desc}
                   </span>
@@ -137,10 +141,10 @@ export function TopBar() {
           <SystemMetrics />
 
           {/* Clock */}
-          <TerminalClock />
+          <div className="hidden md:block"><TerminalClock /></div>
 
           {/* Separator */}
-          <div className="w-px h-4" style={{ background: 'rgba(255,255,255,0.06)' }} />
+          <div className="w-px h-4 hidden md:block" style={{ background: 'rgba(255,255,255,0.06)' }} />
 
           {/* Status LED */}
           <div className="hidden sm:flex items-center gap-1.5">
@@ -189,7 +193,7 @@ export function TopBar() {
                   color: '#00ff9d',
                   borderRadius: '2px',
                 }}>
-                Q
+                {user?.username?.[0]?.toUpperCase() || 'Q'}
               </div>
               <ChevronDown className={cn('w-3 h-3 transition-transform duration-150', showUserMenu && 'rotate-180')} style={{ color: '#555' }} />
             </button>
@@ -205,23 +209,22 @@ export function TopBar() {
                   borderRadius: '2px',
                 }}
               >
-                <div className="px-3 py-2.5 mb-1" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                  <div className="text-[12px] font-mono font-semibold" style={{ color: '#e0e0e0' }}>QuantTrader</div>
-                  <div className="text-[10px] font-mono" style={{ color: '#555' }}>trader@cyberquant.io</div>
+                <div className="px-3 py-2.5 mb-1 border-b-divider">
+                  <div className="text-[12px] font-mono font-semibold text-text-primary">{user?.username || 'QuantTrader'}</div>
+                  <div className="text-[10px] font-mono text-text-muted">{user?.email || 'trader@cyberquant.io'}</div>
                 </div>
                 <button
                   role="menuitem"
                   onClick={() => { navigate('/profile'); setShowUserMenu(false) }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 cursor-pointer text-[12px] font-mono transition-colors"
-                  style={{ color: '#888' }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 cursor-pointer text-[12px] font-mono transition-colors text-text-secondary"
                 >
                   <User className="w-3.5 h-3.5" /> 个人中心
                 </button>
-                <div className="my-1 mx-2 border-t" style={{ borderColor: 'rgba(255,255,255,0.06)' }} />
+                <div className="my-1 mx-2 border-t border-border" />
                 <button
                   role="menuitem"
-                  className="w-full flex items-center gap-2.5 px-3 py-2 cursor-pointer text-[12px] font-mono transition-colors"
-                  style={{ color: '#ff3b3b' }}
+                  onClick={() => { logout(); navigate('/'); setShowUserMenu(false) }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 cursor-pointer text-[12px] font-mono transition-colors text-danger"
                 >
                   <LogOut className="w-3.5 h-3.5" /> 退出登录
                 </button>

@@ -1,26 +1,37 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Activity, Eye, EyeOff, ArrowRight } from 'lucide-react'
+import { login, getMe } from '@/api/auth'
+import { useAuthStore } from '@/stores/auth-store'
 
 export function LoginPage() {
   const navigate = useNavigate()
-  const [email, setEmail] = useState('')
+  const { setTokens, setUser } = useAuthStore()
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError('')
     setLoading(true)
-    // Mock login - just navigate to dashboard
-    setTimeout(() => {
+    try {
+      const tokens = await login(username, password)
+      setTokens(tokens.access_token, tokens.refresh_token)
+      const user = await getMe(tokens.access_token)
+      setUser(user)
       navigate('/dashboard')
-    }, 800)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '登录失败')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
     <div className="min-h-dvh flex items-center justify-center px-6" style={{ background: '#0a0a0a' }}>
-      {/* Background */}
       <div className="fixed inset-0 pointer-events-none" style={{
         background: `
           radial-gradient(ellipse 60% 50% at 30% 20%, rgba(0,255,157,0.04) 0%, transparent 50%),
@@ -30,7 +41,6 @@ export function LoginPage() {
       <div className="grid-overlay" aria-hidden="true" />
 
       <div className="w-full max-w-sm relative z-10">
-        {/* Logo */}
         <div className="text-center mb-10">
           <div className="w-10 h-10 flex items-center justify-center mx-auto mb-4"
             style={{
@@ -44,15 +54,20 @@ export function LoginPage() {
           <p className="text-[12px] mt-2 font-mono" style={{ color: '#555' }}>登录到量化交易控制台</p>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleLogin} className="card p-6 space-y-5">
+          {error && (
+            <div className="p-3 text-[13px] font-mono rounded" style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)' }}>
+              {error}
+            </div>
+          )}
+
           <div>
-            <label className="text-[11px] font-mono font-medium block mb-2" style={{ color: '#888' }}>邮箱</label>
+            <label className="text-[11px] font-mono font-medium block mb-2" style={{ color: '#888' }}>用户名</label>
             <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="trader@cyberquant.io"
+              type="text"
+              value={username}
+              onChange={e => setUsername(e.target.value)}
+              placeholder="输入用户名"
               className="w-full px-4 py-3 text-[14px]"
               required
             />
