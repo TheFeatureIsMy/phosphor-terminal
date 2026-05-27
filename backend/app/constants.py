@@ -1,0 +1,39 @@
+"""
+Application constants
+"""
+
+# API
+API_PREFIX = "/api/v1"
+API_VERSION = "0.3.0"
+
+# Pagination
+DEFAULT_PAGE_SIZE = 20
+MAX_PAGE_SIZE = 100
+
+# Cache
+CACHE_TTL_SHORT = 60  # 1 minute
+CACHE_TTL_MEDIUM = 300  # 5 minutes
+CACHE_TTL_LONG = 3600  # 1 hour
+
+# Rate limiting
+RATE_LIMIT_PER_MINUTE = 60
+RATE_LIMIT_BURST = 10
+
+# JWT
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+REFRESH_TOKEN_EXPIRE_DAYS = 7
+
+# Database
+DB_POOL_SIZE = 5
+DB_MAX_OVERFLOW = 10
+
+# Trading
+DEFAULT_EXCHANGE = "binance"
+DEFAULT_MARKET = "crypto"
+DEFAULT_TIMEFRAME = "1h"
+
+# Risk
+MAX_POSITION_SIZE = 0.3  # 30%
+MAX_DRAWDOWN = 0.15  # 15%
+STOP_LOSS_DEFAULT = 0.02  # 2%
+TAKE_PROFIT_DEFAULT = 0.06  # 6%
