@@ -5,6 +5,7 @@ import { AppShell } from '@/components/layout/AppShell'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import { ToastProvider } from '@/components/ui/Toast'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
+import { useGlobalShortcuts } from '@/hooks/use-keyboard-shortcuts'
 
 // Lazy load pages for code splitting
 const LandingPage = lazy(() => import('@/pages/LandingPage').then(m => ({ default: m.LandingPage })))
@@ -45,6 +46,8 @@ function PageLoader() {
 }
 
 function App() {
+  useGlobalShortcuts()
+
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
