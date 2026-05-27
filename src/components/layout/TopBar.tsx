@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
   Activity, LayoutDashboard, GitBranch, Settings, ArrowLeftRight, BarChart3,
-  Bell, User, LogOut, ChevronDown, Search, Cpu, HardDrive, Wifi
+  User, LogOut, ChevronDown, Search, Cpu, HardDrive, Wifi
 } from 'lucide-react'
 import { useSystemStatus } from '@/hooks/use-dashboard'
 import { useAuthStore } from '@/stores/auth-store'

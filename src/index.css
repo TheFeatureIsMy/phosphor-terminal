@@ -11,8 +11,12 @@
   --color-primary: #00ff9d;
   --color-primary-hover: #33ffb1;
   --color-primary-dim: rgba(0, 255, 157, 0.10);
+  --color-primary-15: rgba(0, 255, 157, 0.15);
+  --color-primary-20: rgba(0, 255, 157, 0.20);
   --color-accent: #ffb800;
   --color-accent-dim: rgba(255, 184, 0, 0.10);
+  --color-accent-15: rgba(255, 184, 0, 0.15);
+  --color-accent-20: rgba(255, 184, 0, 0.20);
   --color-success: #00ff9d;
   --color-success-dim: rgba(0, 255, 157, 0.10);
   --color-warning: #ffb800;
@@ -20,6 +24,9 @@
   --color-danger: #ff3b3b;
   --color-danger-dim: rgba(255, 59, 59, 0.10);
   --color-info: #00c2ff;
+  --color-info-dim: rgba(0, 194, 255, 0.10);
+  --color-info-15: rgba(0, 194, 255, 0.15);
+  --color-info-20: rgba(0, 194, 255, 0.20);
 
   --color-text-primary: #e0e0e0;
   --color-text-secondary: #888888;
@@ -27,6 +34,9 @@
 
   --color-profit: #00ff9d;
   --color-loss: #ff3b3b;
+
+  --color-card: #111111;
+  --color-card-strong: #151515;
 
   --font-display: 'Instrument Sans', sans-serif;
   --font-body: 'IBM Plex Mono', monospace;
@@ -169,51 +179,51 @@ a:focus-visible,
 
 /* ==================== Cards ==================== */
 .card {
-  background: #111111;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
   border-radius: 2px;
   transition: border-color 0.15s ease;
 }
 
 .card:hover {
-  border-color: rgba(0, 255, 157, 0.2);
+  border-color: var(--color-primary-20);
 }
 
 .card-accent {
-  background: rgba(0, 255, 157, 0.04);
-  border: 1px solid rgba(0, 255, 157, 0.12);
+  background: var(--color-primary-dim);
+  border: 1px solid var(--color-primary-15);
   border-radius: 2px;
 }
 
 .glass {
-  background: #111111;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
   border-radius: 2px;
   transition: border-color 0.15s ease;
 }
 
 .glass:hover {
-  border-color: rgba(0, 255, 157, 0.2);
+  border-color: var(--color-primary-20);
 }
 
 .glass-strong {
-  background: #151515;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--color-card-strong);
+  border: 1px solid var(--color-border-hover);
   border-radius: 2px;
   transition: border-color 0.15s ease;
 }
 
 .glass-strong:hover {
-  border-color: rgba(0, 255, 157, 0.2);
+  border-color: var(--color-primary-20);
 }
 
 /* ==================== Buttons ==================== */
 .btn-primary {
-  background: #00ff9d;
-  color: #0a0a0a;
+  background: var(--color-primary);
+  color: var(--color-background);
   font-weight: 700;
   font-size: 12px;
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: var(--font-mono);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   border: none;
@@ -225,8 +235,8 @@ a:focus-visible,
 }
 
 .btn-primary:hover {
-  background: #33ffb1;
-  box-shadow: 0 0 20px rgba(0, 255, 157, 0.2);
+  background: var(--color-primary-hover);
+  box-shadow: 0 0 20px var(--color-primary-dim);
 }
 
 .btn-primary:active {
@@ -235,12 +245,12 @@ a:focus-visible,
 
 .btn-ghost {
   background: transparent;
-  border: 1px dashed rgba(255, 255, 255, 0.12);
+  border: 1px dashed var(--color-border-hover);
   color: var(--color-text-secondary);
   border-radius: 2px;
   cursor: pointer;
   transition: all 0.15s ease;
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -250,28 +260,28 @@ a:focus-visible,
 
 .btn-ghost:hover {
   border-style: solid;
-  border-color: rgba(0, 255, 157, 0.3);
+  border-color: var(--color-primary-dim);
   color: var(--color-primary);
-  background: rgba(0, 255, 157, 0.04);
+  background: var(--color-primary-dim);
 }
 
 /* ==================== Inputs ==================== */
 input, select, textarea {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 2px;
   color: var(--color-text-primary);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: var(--font-mono);
   min-height: 40px;
   font-size: 13px;
 }
 
 input:focus, select:focus, textarea:focus {
   outline: none;
-  border-color: rgba(0, 255, 157, 0.5);
-  box-shadow: 0 0 0 2px rgba(0, 255, 157, 0.08), inset 0 0 12px rgba(0, 255, 157, 0.03);
-  background: rgba(0, 255, 157, 0.02);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-dim);
+  background: var(--color-primary-dim);
 }
 
 input::placeholder, textarea::placeholder {
@@ -537,7 +547,26 @@ input[type="checkbox"]:checked::after {
 
 .divider {
   height: 1px;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--color-border);
+}
+
+.surface-subtle {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 2px;
+}
+
+.border-b-divider {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.icon-box {
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
 }
 
 .section-label {

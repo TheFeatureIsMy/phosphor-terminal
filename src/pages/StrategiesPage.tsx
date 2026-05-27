@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { Plus, Play, Pause, Trash2, TrendingUp, GitBranch, BarChart3, AlertTriangle, ArrowRight } from 'lucide-react'
 import { useStrategies, useCreateStrategy, useDeleteStrategy, useUpdateStrategy } from '@/hooks/use-strategies'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { useToast } from '@/components/ui/Toast'
+import { CardSkeleton } from '@/components/ui/Skeleton'
 import { cn } from '@/lib/utils'
 import type { Strategy, StrategyStatus, StrategyType } from '@/types'
 
@@ -26,6 +28,7 @@ const typeColors: Record<StrategyType, string> = {
 
 export function StrategiesPage() {
   const navigate = useNavigate()
+  const { toast } = useToast()
   const { data: strategies, isLoading } = useStrategies()
   const createStrategy = useCreateStrategy()
   const deleteStrategy = useDeleteStrategy()
@@ -36,19 +39,29 @@ export function StrategiesPage() {
   const handleCreate = () => {
     if (!newName.trim()) return
     createStrategy.mutate({ name: newName, type: 'ma_cross' }, {
-      onSuccess: () => { setNewName(''); setShowCreate(false) }
+      onSuccess: () => { setNewName(''); setShowCreate(false); toast('success', '策略创建成功') },
+      onError: (err) => toast('error', `创建失败: ${err.message}`),
     })
   }
 
   const handleToggleStatus = (e: React.MouseEvent, strategy: Strategy) => {
     e.stopPropagation()
     const newStatus = strategy.status === 'active' ? 'paused' : 'active'
-    updateStrategy.mutate({ id: strategy.id, data: { status: newStatus } })
+    updateStrategy.mutate(
+      { id: strategy.id, data: { status: newStatus } },
+      { onError: (err) => toast('error', `操作失败: ${err.message}`) },
+    )
   }
 
   if (isLoading) return (
-    <div className="flex items-center justify-center h-64">
-      <div className="text-text-muted text-sm font-mono animate-pulse">加载中...</div>
+    <div className="space-y-6">
+      <PageHeader title="策略管理" />
+      <div className="grid grid-cols-3 gap-4">
+        <CardSkeleton /><CardSkeleton /><CardSkeleton />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <CardSkeleton /><CardSkeleton /><CardSkeleton />
+      </div>
     </div>
   )
 
@@ -191,7 +204,13 @@ export function StrategiesPage() {
                     </button>
                   )}
                   <button
-                    onClick={(e) => { e.stopPropagation(); deleteStrategy.mutate(strategy.id) }}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      deleteStrategy.mutate(strategy.id, {
+                        onSuccess: () => toast('success', '策略已删除'),
+                        onError: (err) => toast('error', `删除失败: ${err.message}`),
+                      })
+                    }}
                     className="p-1.5 text-text-muted hover:text-danger transition-colors"
                     style={{ borderRadius: '2px' }}
                   >

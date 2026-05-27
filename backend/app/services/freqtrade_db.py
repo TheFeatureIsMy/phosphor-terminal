@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import create_engine, text
 from app.config import settings
@@ -67,7 +67,7 @@ class FreqtradeDB:
         active = self._query("SELECT COUNT(*) as cnt FROM trades WHERE is_open = 1")
         today = self._query(
             "SELECT COUNT(*) as cnt FROM trades WHERE open_date >= :today",
-            {"today": datetime.utcnow().strftime("%Y-%m-%d")},
+            {"today": datetime.now(timezone.utc).strftime("%Y-%m-%d")},
         )
 
         total_count = total[0]["cnt"] if total else 0
@@ -85,7 +85,7 @@ class FreqtradeDB:
         }
 
     def get_equity_curve(self, days: int = 90) -> list[dict]:
-        start = (datetime.utcnow() - timedelta(days=days)).strftime("%Y-%m-%d")
+        start = (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%d")
         sql = """
             SELECT DATE(close_date) as date,
                    SUM(profit) as daily_pnl

@@ -1,5 +1,5 @@
 import random
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter
 
 from app.services.freqtrade_client import freqtrade_client
@@ -122,7 +122,7 @@ async def run_backtest(request: BacktestRequest):
             win_rate=ft_result.get("win_rate", 0),
             total_return=ft_result.get("total_return", 0),
             passed=ft_result.get("sharpe_ratio", 0) > 1.0,
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
         )
 
     # Fallback to mock data
@@ -141,7 +141,7 @@ async def run_backtest(request: BacktestRequest):
         win_rate=mock["win_rate"],
         total_return=mock["total_return"],
         passed=mock["sharpe_ratio"] > 1.0,
-        created_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc),
     )
 
 
@@ -162,5 +162,5 @@ async def get_backtest(backtest_id: int):
         win_rate=mock["win_rate"],
         total_return=mock["total_return"],
         passed=mock["sharpe_ratio"] > 1.0,
-        created_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc),
     )

@@ -26,15 +26,18 @@ export function SearchModal({ open, onClose }: Props) {
 
   useEffect(() => {
     if (open) {
-      setQuery('')
-      setResults([])
-      setTimeout(() => inputRef.current?.focus(), 50)
+      // Reset search state when modal opens
+      const timer = setTimeout(() => {
+        setQuery('')
+        setResults([])
+        inputRef.current?.focus()
+      }, 0)
+      return () => clearTimeout(timer)
     }
   }, [open])
 
   useEffect(() => {
     if (!query.trim()) {
-      setResults([])
       return
     }
     const timer = setTimeout(async () => {
@@ -113,7 +116,7 @@ export function SearchModal({ open, onClose }: Props) {
             </div>
           )}
 
-          {!loading && results.map((r, i) => (
+          {!loading && results.map((r) => (
             <button
               key={`${r.type}-${r.id}`}
               onClick={() => handleSelect(r.url)}

@@ -2,11 +2,25 @@ import { apiGet, apiPost, apiPut, apiDelete } from './client'
 import { mockStrategies } from './mock-data'
 import type { Strategy } from '@/types'
 
+const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false'
+
 const strategies: Strategy[] = mockStrategies()
 let nextId = strategies.length + 1
 
+interface PaginatedStrategies {
+  items: Strategy[]
+  total: number
+  page: number
+  page_size: number
+  pages: number
+}
+
 export async function getStrategies(): Promise<Strategy[]> {
-  return apiGet('/api/strategies', () => [...strategies])
+  if (USE_MOCK) {
+    return [...strategies]
+  }
+  const res = await apiGet<PaginatedStrategies>('/api/strategies', () => ({ items: [...strategies], total: strategies.length, page: 1, page_size: 20, pages: 1 }))
+  return res.items
 }
 
 export async function getStrategy(id: number): Promise<Strategy> {

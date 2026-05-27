@@ -1,23 +1,47 @@
 from datetime import datetime
+from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+
+# --- Enums ---
+class StrategyType(str, Enum):
+    ma_cross = "ma_cross"
+    breakout = "breakout"
+    grid = "grid"
+    mean_reversion = "mean_reversion"
+    rag_generated = "rag_generated"
+
+
+class StrategyStatus(str, Enum):
+    draft = "draft"
+    backtested = "backtested"
+    active = "active"
+    paused = "paused"
+    retired = "retired"
+
+
+class StrategySource(str, Enum):
+    manual = "manual"
+    rag_generated = "rag_generated"
+    optimized = "optimized"
 
 
 # --- Strategy ---
 class StrategyCreate(BaseModel):
-    name: str
-    type: str = "ma_cross"
+    name: str = Field(..., min_length=1, max_length=200)
+    type: StrategyType = StrategyType.ma_cross
     parameters: dict[str, Any] = {}
     market: str = "crypto"
     exchange: str = "binance"
 
 
 class StrategyUpdate(BaseModel):
-    name: str | None = None
-    type: str | None = None
+    name: str | None = Field(None, min_length=1, max_length=200)
+    type: StrategyType | None = None
     parameters: dict[str, Any] | None = None
-    status: str | None = None
+    status: StrategyStatus | None = None
     market: str | None = None
     exchange: str | None = None
 
@@ -26,19 +50,27 @@ class StrategyResponse(BaseModel):
     id: int
     user_id: int = 1
     name: str
-    type: str
+    type: StrategyType
     parameters: dict[str, Any]
-    source: str
+    source: StrategySource
     market: str
     exchange: str
     version: int
-    status: str
+    status: StrategyStatus
     sharpe_ratio: float | None
     max_drawdown: float | None
     created_at: datetime
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class PaginatedResponse(BaseModel):
+    items: list[Any]
+    total: int
+    page: int
+    page_size: int
+    pages: int
 
 
 # --- Order ---

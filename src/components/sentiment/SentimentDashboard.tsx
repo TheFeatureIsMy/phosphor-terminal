@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts'
-import { TrendingUp, TrendingDown, Minus, Activity } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { XAxis, YAxis, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts'
+import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
@@ -51,7 +50,7 @@ export function SentimentDashboard() {
           const d = await res.json()
           setData(d)
         }
-      } catch {} finally {
+      } catch { /* fetch failed */ } finally {
         setLoading(false)
       }
     }
@@ -66,7 +65,7 @@ export function SentimentDashboard() {
           const d = await res.json()
           setTrendData(d.trend || [])
         }
-      } catch {}
+      } catch { /* fetch failed */ }
     }
     fetchTrend()
   }, [trendSymbol])

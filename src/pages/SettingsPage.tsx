@@ -25,6 +25,7 @@ export function SettingsPage() {
     loadSettings().then((settings) => {
       if (settings) loadFromBackend(settings)
     })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return (
@@ -93,7 +94,7 @@ export function SettingsPage() {
 
 function ExchangeSettings() {
   const { toast } = useToast()
-  const { exchange, updateExchange } = useSettingsStore()
+  const { exchange } = useSettingsStore()
   const { saveSettings } = useSettingsSync()
 
   return (

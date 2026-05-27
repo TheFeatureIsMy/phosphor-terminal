@@ -1,3 +1,8 @@
+# Environment
+.env
+.env.*
+!.env.example
+
 # Logs
 logs
 *.log
@@ -31,8 +36,9 @@ __pycache__/
 venv/
 
 # Data (SQLite databases)
-data/*.db
+data/
 *.sqlite
+*.db
 
 # Freqtrade user data (keep config, ignore generated)
 freqtrade/user_data/logs/

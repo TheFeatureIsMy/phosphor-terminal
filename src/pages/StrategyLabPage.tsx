@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Upload, Sparkles, Code, BookOpen, Send, Copy, Check, FileText, Trash2 } from 'lucide-react'
+import { Upload, Sparkles, Code, BookOpen, Copy, Check, FileText } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { cn } from '@/lib/utils'
 
@@ -49,7 +49,7 @@ export function StrategyLabPage() {
         const data = await res.json()
         setResult(data)
       }
-    } catch {} finally {
+    } catch { /* generate failed */ } finally {
       setGenerating(false)
     }
   }
@@ -65,7 +65,7 @@ export function StrategyLabPage() {
       if (res.ok) {
         loadDocuments()
       }
-    } catch {} finally {
+    } catch { /* upload failed */ } finally {
       setUploading(false)
     }
   }
@@ -77,7 +77,7 @@ export function StrategyLabPage() {
         const data = await res.json()
         setDocuments(data.documents || [])
       }
-    } catch {}
+    } catch { /* load failed */ }
   }
 
   const copyCode = () => {

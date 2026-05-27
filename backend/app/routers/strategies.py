@@ -1,18 +1,41 @@
-from datetime import datetime
+import math
+from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 
 from app.database import get_db
 from app.models.strategy import Strategy
-from app.schemas.api import StrategyCreate, StrategyUpdate, StrategyResponse
+from app.schemas.api import (
+    StrategyCreate, StrategyUpdate, StrategyResponse,
+    StrategyStatus, PaginatedResponse,
+)
 
 router = APIRouter(prefix="/api/strategies", tags=["strategies"])
 
 
-@router.get("", response_model=list[StrategyResponse])
-def list_strategies(db: Session = Depends(get_db)):
-    return db.query(Strategy).all()
+@router.get("", response_model=PaginatedResponse)
+def list_strategies(
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    status: StrategyStatus | None = None,
+    db: Session = Depends(get_db),
+):
+    query = db.query(Strategy)
+    if status:
+        query = query.filter(Strategy.status == status.value)
+
+    total = query.count()
+    items = query.order_by(Strategy.updated_at.desc()).offset((page - 1) * page_size).limit(page_size).all()
+
+    return PaginatedResponse(
+        items=[StrategyResponse.model_validate(s) for s in items],
+        total=total,
+        page=page,
+        page_size=page_size,
+        pages=math.ceil(total / page_size) if total > 0 else 0,
+    )
 
 
 @router.get("/{strategy_id}", response_model=StrategyResponse)
@@ -23,11 +46,11 @@ def get_strategy(strategy_id: int, db: Session = Depends(get_db)):
     return strategy
 
 
-@router.post("", response_model=StrategyResponse)
+@router.post("", response_model=StrategyResponse, status_code=201)
 def create_strategy(data: StrategyCreate, db: Session = Depends(get_db)):
     strategy = Strategy(
         name=data.name,
-        type=data.type,
+        type=data.type.value,
         parameters=data.parameters,
         market=data.market,
         exchange=data.exchange,
@@ -44,8 +67,8 @@ def update_strategy(strategy_id: int, data: StrategyUpdate, db: Session = Depend
     if not strategy:
         raise HTTPException(status_code=404, detail="Strategy not found")
     for field, value in data.model_dump(exclude_unset=True).items():
-        setattr(strategy, field, value)
-    strategy.updated_at = datetime.utcnow()
+        setattr(strategy, field, value.value if hasattr(value, 'value') else value)
+    strategy.updated_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(strategy)
     return strategy

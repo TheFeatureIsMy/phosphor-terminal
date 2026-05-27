@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Bell, X, Check, CheckCheck, AlertTriangle, ArrowLeftRight, Settings } from 'lucide-react'
+import { Bell, Check, CheckCheck, AlertTriangle, ArrowLeftRight, Settings } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface Notification {
@@ -31,18 +31,18 @@ export function NotificationCenter() {
   const [unread, setUnread] = useState(0)
   const menuRef = useRef<HTMLDivElement>(null)
 
-  const fetchNotifications = async () => {
-    try {
-      const res = await fetch(`${API_BASE}/notifications`)
-      if (res.ok) {
-        const data = await res.json()
-        setNotifications(data.notifications || [])
-        setUnread(data.unread || 0)
-      }
-    } catch {}
-  }
-
   useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/notifications`)
+        if (res.ok) {
+          const data = await res.json()
+          setNotifications(data.notifications || [])
+          setUnread(data.unread || 0)
+        }
+      } catch { /* fetch failed */ }
+    }
+
     fetchNotifications()
     const timer = setInterval(fetchNotifications, 30000)
     return () => clearInterval(timer)
@@ -65,7 +65,7 @@ export function NotificationCenter() {
         prev.map((n) => (n.id === id ? { ...n, read: true } : n))
       )
       setUnread((prev) => Math.max(0, prev - 1))
-    } catch {}
+    } catch { /* mark read failed */ }
   }
 
   const markAllRead = async () => {
@@ -73,7 +73,7 @@ export function NotificationCenter() {
       await fetch(`${API_BASE}/notifications/read-all`, { method: 'PUT' })
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
       setUnread(0)
-    } catch {}
+    } catch { /* mark all read failed */ }
   }
 
   return (

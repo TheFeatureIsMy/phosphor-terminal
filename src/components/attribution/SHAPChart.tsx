@@ -36,7 +36,7 @@ export function SHAPChart({ strategyId }: Props) {
           setDecisionPath(data.decision_path?.path || [])
           setDecision(data.decision_path?.decision || 'hold')
         }
-      } catch {} finally {
+      } catch { /* fetch failed */ } finally {
         setLoading(false)
       }
     }

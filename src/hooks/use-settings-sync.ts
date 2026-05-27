@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import { useAuthStore } from '@/stores/auth-store'
 import { getSettings, updateSettings } from '@/api/auth'
 

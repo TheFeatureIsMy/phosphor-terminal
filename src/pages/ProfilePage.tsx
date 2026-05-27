@@ -1,6 +1,8 @@
 import { useState } from 'react'
-import { Save, Camera, Eye, EyeOff, Shield, User, Key } from 'lucide-react'
+import { Save, Camera, Shield, User, Key } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { Field, PasswordField, Toggle } from '@/components/ui/FormControls'
+import { useToast } from '@/components/ui/Toast'
 import { cn } from '@/lib/utils'
 
 export function ProfilePage() {
@@ -80,6 +82,7 @@ export function ProfilePage() {
 }
 
 function ProfileTab() {
+  const { toast } = useToast()
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -114,8 +117,8 @@ function ProfileTab() {
         </div>
       </div>
 
-      <div className="flex justify-end pt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-        <button className="btn-primary flex items-center gap-1.5 px-5 py-2.5 text-[13px]">
+      <div className="flex justify-end pt-2 border-b-divider">
+        <button onClick={() => toast('success', '个人信息已保存')} className="btn-primary flex items-center gap-1.5 px-5 py-2.5 text-[13px]">
           <Save className="w-4 h-4" /> 保存修改
         </button>
       </div>
@@ -124,6 +127,7 @@ function ProfileTab() {
 }
 
 function SecurityTab() {
+  const { toast } = useToast()
   return (
     <div className="space-y-8">
       {/* Password */}
@@ -135,7 +139,7 @@ function SecurityTab() {
           <PasswordField label="确认新密码" placeholder="再次输入新密码" />
         </div>
         <div className="mt-4">
-          <button className="btn-primary flex items-center gap-1.5 px-5 py-2.5 text-[13px]">
+          <button onClick={() => toast('success', '密码已更新')} className="btn-primary flex items-center gap-1.5 px-5 py-2.5 text-[13px]">
             <Key className="w-4 h-4" /> 更新密码
           </button>
         </div>
@@ -174,41 +178,3 @@ function SecurityTab() {
   )
 }
 
-function Field({ label, type = 'text', defaultValue, placeholder }: {
-  label: string; type?: string; defaultValue?: string; placeholder?: string
-}) {
-  return (
-    <div>
-      <label className="text-[12px] text-text-muted block mb-2">{label}</label>
-      <input type={type} defaultValue={defaultValue} placeholder={placeholder} className="w-full px-4 py-2.5 text-[14px]" />
-    </div>
-  )
-}
-
-function PasswordField({ label, placeholder }: { label: string; placeholder?: string }) {
-  const [show, setShow] = useState(false)
-  return (
-    <div>
-      <label className="text-[12px] text-text-muted block mb-2">{label}</label>
-      <div className="relative">
-        <input type={show ? 'text' : 'password'} placeholder={placeholder} className="w-full px-4 py-2.5 pr-10 text-[14px]" />
-        <button type="button" onClick={() => setShow(!show)} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary transition-colors">
-          {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-        </button>
-      </div>
-    </div>
-  )
-}
-
-function Toggle({ label, defaultChecked }: { label: string; defaultChecked?: boolean }) {
-  const [active, setActive] = useState(!!defaultChecked)
-  return (
-    <button type="button" onClick={() => setActive(!active)}
-      className="w-full flex items-center justify-between p-3 hover:bg-white/[0.02] transition-colors text-left"
-      style={{ borderRadius: '2px' }}
-    >
-      <span className="text-[13px] font-mono">{label}</span>
-      <div className={cn('toggle shrink-0', active && 'active')} />
-    </button>
-  )
-}

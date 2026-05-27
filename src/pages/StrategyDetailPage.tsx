@@ -18,7 +18,7 @@ import { SHAPChart } from '@/components/attribution/SHAPChart'
 import { useStrategy, useUpdateStrategy } from '@/hooks/use-strategies'
 import { useQuery } from '@tanstack/react-query'
 import { runBacktest } from '@/api/dashboard'
-import { cn, formatPercent } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import type { StrategyStatus, StrategyType } from '@/types'
 
 type Tab = 'overview' | 'canvas' | 'backtest' | 'trades' | 'attribution'

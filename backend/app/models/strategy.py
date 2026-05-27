@@ -1,7 +1,11 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import Column, Integer, String, Float, JSON, DateTime
 from app.database import Base
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 class Strategy(Base):
@@ -19,8 +23,8 @@ class Strategy(Base):
     sharpe_ratio = Column(Float, nullable=True)
     max_drawdown = Column(Float, nullable=True)
     freqtrade_strategy_id = Column(String, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
 
 class RiskEvent(Base):
@@ -33,7 +37,7 @@ class RiskEvent(Base):
     severity = Column(String, nullable=False)
     description = Column(String, nullable=True)
     action_taken = Column(String, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
 
 
 class CorrelationSnapshot(Base):
@@ -46,4 +50,4 @@ class CorrelationSnapshot(Base):
     correlation = Column(Float, nullable=False)
     window_days = Column(Integer, default=30)
     alert_level = Column(String, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
