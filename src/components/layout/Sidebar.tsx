@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import {
   LayoutDashboard, GitBranch, Settings, Activity,
   ChevronLeft, ChevronRight, Search,
-  BarChart3, ArrowLeftRight, User
+  BarChart3, ArrowLeftRight, User, Sparkles
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/stores/app-store'
@@ -15,8 +15,9 @@ const navSections = [
     items: [
       { to: '/dashboard', icon: LayoutDashboard, label: '总览' },
       { to: '/strategies', icon: GitBranch, label: '策略管理' },
-      { to: '/strategies/1', icon: ArrowLeftRight, label: '交易记录' },
-      { to: '/strategies/1', icon: BarChart3, label: '回测分析' },
+      { to: '/trades', icon: ArrowLeftRight, label: '交易记录' },
+      { to: '/backtest', icon: BarChart3, label: '回测分析' },
+      { to: '/lab', icon: Sparkles, label: '策略实验室' },
     ],
   },
   {

@@ -15,6 +15,7 @@ import { BacktestPage } from '@/pages/BacktestPage'
 import { TradesPage } from '@/pages/TradesPage'
 import { SettingsPage } from '@/pages/SettingsPage'
 import { ProfilePage } from '@/pages/ProfilePage'
+import { StrategyLabPage } from '@/pages/StrategyLabPage'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -48,6 +49,7 @@ function App() {
                 <Route path="/trades" element={<TradesPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/lab" element={<StrategyLabPage />} />
               </Route>
             </Routes>
           </BrowserRouter>
