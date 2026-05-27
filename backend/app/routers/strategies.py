@@ -1,34 +1,28 @@
 import math
 from datetime import datetime, timezone
-
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-
 from app.database import get_db
 from app.models.strategy import Strategy
 from app.schemas.api import (
     StrategyCreate, StrategyUpdate, StrategyResponse,
     StrategyStatus, PaginatedResponse,
 )
-
 router = APIRouter(prefix="/api/strategies", tags=["strategies"])
-
-
 @router.get("", response_model=PaginatedResponse)
 def list_strategies(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
-    status: StrategyStatus | None = None,
+    status: Optional[StrategyStatus] = None,
     db: Session = Depends(get_db),
 ):
     query = db.query(Strategy)
     if status:
         query = query.filter(Strategy.status == status.value)
-
     total = query.count()
     items = query.order_by(Strategy.updated_at.desc()).offset((page - 1) * page_size).limit(page_size).all()
-
     return PaginatedResponse(
         items=[StrategyResponse.model_validate(s) for s in items],
         total=total,
@@ -36,16 +30,12 @@ def list_strategies(
         page_size=page_size,
         pages=math.ceil(total / page_size) if total > 0 else 0,
     )
-
-
 @router.get("/{strategy_id}", response_model=StrategyResponse)
 def get_strategy(strategy_id: int, db: Session = Depends(get_db)):
     strategy = db.query(Strategy).filter(Strategy.id == strategy_id).first()
     if not strategy:
         raise HTTPException(status_code=404, detail="Strategy not found")
     return strategy
-
-
 @router.post("", response_model=StrategyResponse, status_code=201)
 def create_strategy(data: StrategyCreate, db: Session = Depends(get_db)):
     strategy = Strategy(
@@ -59,8 +49,6 @@ def create_strategy(data: StrategyCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(strategy)
     return strategy
-
-
 @router.put("/{strategy_id}", response_model=StrategyResponse)
 def update_strategy(strategy_id: int, data: StrategyUpdate, db: Session = Depends(get_db)):
     strategy = db.query(Strategy).filter(Strategy.id == strategy_id).first()
@@ -72,8 +60,6 @@ def update_strategy(strategy_id: int, data: StrategyUpdate, db: Session = Depend
     db.commit()
     db.refresh(strategy)
     return strategy
-
-
 @router.delete("/{strategy_id}", status_code=204)
 def delete_strategy(strategy_id: int, db: Session = Depends(get_db)):
     strategy = db.query(Strategy).filter(Strategy.id == strategy_id).first()

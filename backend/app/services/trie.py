@@ -92,9 +92,11 @@ class Trie:
     @property
     def size(self) -> int:
         """Get number of words"""
-        count = 0
-        self._count_words(self._root, lambda: nonlocal(count))
-        return count
+        count = [0]
+        def increment():
+            count[0] += 1
+        self._count_words(self._root, increment)
+        return count[0]
 
     def _count_words(self, node: TrieNode, increment) -> None:
         """Count words"""

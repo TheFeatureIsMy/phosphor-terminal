@@ -1,3 +1,4 @@
+from __future__ import annotations
 from fastapi import APIRouter, Query
 from pydantic import BaseModel
 from app.services.sentiment_service import (

@@ -1,10 +1,7 @@
 from datetime import datetime
 from enum import Enum
-from typing import Any
-
+from typing import List,  Dict,  Optional,  Any
 from pydantic import BaseModel, Field
-
-
 # --- Enums ---
 class StrategyType(str, Enum):
     ma_cross = "ma_cross"
@@ -12,67 +9,52 @@ class StrategyType(str, Enum):
     grid = "grid"
     mean_reversion = "mean_reversion"
     rag_generated = "rag_generated"
-
-
 class StrategyStatus(str, Enum):
     draft = "draft"
     backtested = "backtested"
     active = "active"
     paused = "paused"
     retired = "retired"
-
-
 class StrategySource(str, Enum):
     manual = "manual"
     rag_generated = "rag_generated"
     optimized = "optimized"
-
-
 # --- Strategy ---
 class StrategyCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=200)
     type: StrategyType = StrategyType.ma_cross
-    parameters: dict[str, Any] = {}
+    parameters: Dict[str, Any] = {}
     market: str = "crypto"
     exchange: str = "binance"
-
-
 class StrategyUpdate(BaseModel):
-    name: str | None = Field(None, min_length=1, max_length=200)
-    type: StrategyType | None = None
-    parameters: dict[str, Any] | None = None
-    status: StrategyStatus | None = None
-    market: str | None = None
-    exchange: str | None = None
-
-
+    name: Optional[str] = Field(None, min_length=1, max_length=200)
+    type: Optional[StrategyType] = None
+    parameters: Optional[Dict[str, Any]] = None
+    status: Optional[StrategyStatus] = None
+    market: Optional[str] = None
+    exchange: Optional[str] = None
 class StrategyResponse(BaseModel):
     id: int
     user_id: int = 1
     name: str
     type: StrategyType
-    parameters: dict[str, Any]
+    parameters: Dict[str, Any]
     source: StrategySource
     market: str
     exchange: str
     version: int
     status: StrategyStatus
-    sharpe_ratio: float | None
-    max_drawdown: float | None
+    sharpe_ratio: Optional[float]
+    max_drawdown: Optional[float]
     created_at: datetime
     updated_at: datetime
-
     model_config = {"from_attributes": True}
-
-
 class PaginatedResponse(BaseModel):
     items: list[Any]
     total: int
     page: int
     page_size: int
     pages: int
-
-
 # --- Order ---
 class OrderResponse(BaseModel):
     id: int
@@ -81,33 +63,29 @@ class OrderResponse(BaseModel):
     side: str
     order_type: str
     quantity: float
-    price: float | None
-    filled_price: float | None
+    price: Optional[float]
+    filled_price: Optional[float]
     fee: float
     slippage: float
     timestamp: datetime
     status: str
-    profit: float | None
-    pnl_pct: float | None
-
-
+    profit: Optional[float]
+    pnl_pct: Optional[float]
 # --- Position ---
 class PositionResponse(BaseModel):
     id: int
     user_id: int
-    strategy_id: int | None
+    strategy_id: Optional[int]
     symbol: str
     side: str
     quantity: float
     avg_price: float
     unrealized_pnl: float
-    stop_loss_price: float | None
-    take_profit_price: float | None
+    stop_loss_price: Optional[float]
+    take_profit_price: Optional[float]
     status: str
     opened_at: datetime
-    closed_at: datetime | None
-
-
+    closed_at: Optional[datetime]
 # --- Dashboard ---
 class DashboardKPIsResponse(BaseModel):
     total_pnl: float
@@ -118,23 +96,17 @@ class DashboardKPIsResponse(BaseModel):
     active_strategies: int
     todays_trades: int
     open_positions: int
-
-
 class EquityPointResponse(BaseModel):
     date: str
     value: float
     drawdown: float
-
-
 # --- Backtest ---
 class BacktestRequest(BaseModel):
     strategy_id: int
     start_date: str = "2025-01-01"
     end_date: str = "2025-12-31"
     initial_capital: float = 10000
-    symbols: list[str] = ["BTC/USDT"]
-
-
+    symbols: List[str] = ["BTC/USDT"]
 class BacktestMetricsResponse(BaseModel):
     total_return: float
     sharpe_ratio: float
@@ -145,18 +117,14 @@ class BacktestMetricsResponse(BaseModel):
     avg_trade_duration: str
     best_trade: float
     worst_trade: float
-
-
 class BacktestResultResponse(BaseModel):
-    equity_curve: list[dict[str, Any]]
-    trades: list[dict[str, Any]]
+    equity_curve: list[Dict[str, Any]]
+    trades: list[Dict[str, Any]]
     metrics: BacktestMetricsResponse
-
-
 class BacktestResponse(BaseModel):
     id: int
     strategy_id: int
-    config: dict[str, Any]
+    config: Dict[str, Any]
     result: BacktestResultResponse
     sharpe_ratio: float
     max_drawdown: float
@@ -164,8 +132,6 @@ class BacktestResponse(BaseModel):
     total_return: float
     passed: bool
     created_at: datetime
-
-
 # --- System ---
 class SystemStatusResponse(BaseModel):
     uptime: str
@@ -174,24 +140,20 @@ class SystemStatusResponse(BaseModel):
     pending_orders: int
     last_data_update: datetime
     api_status: str
-
-
 # --- Risk ---
 class RiskEventResponse(BaseModel):
     id: int
     event_type: str
-    strategy_id: int | None
+    strategy_id: Optional[int]
     severity: str
-    description: str | None
-    action_taken: str | None
+    description: Optional[str]
+    action_taken: Optional[str]
     created_at: datetime
-
-
 class CorrelationResponse(BaseModel):
     id: int
     symbol_a: str
     symbol_b: str
     correlation: float
     window_days: int
-    alert_level: str | None
+    alert_level: Optional[str]
     created_at: datetime
