@@ -2,31 +2,33 @@ import { useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   Info, GitBranch, FlaskConical, ArrowLeftRight,
-  Play, Pause, TrendingUp, BarChart3, Target, Clock, Award, AlertTriangle,
-  Filter, Download, Plus, Database, Zap, ArrowLeft
+  Play, Pause, BarChart3, AlertTriangle,
+  Plus, Database, ArrowLeft, Activity
 } from 'lucide-react'
 import {
   ReactFlow, Background, Controls, MiniMap,
   addEdge, useNodesState, useEdgesState,
-  type Node, type Edge, type OnConnect, type NodeTypes,
-  Handle, Position
+  type Node, type Edge, type OnConnect,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import { canvasNodeTypes, defaultCanvasNodes, defaultCanvasEdges, getDefaultNodeData } from '@/components/canvas/CanvasNodes'
+import { BacktestResults } from '@/components/shared/BacktestResults'
+import { TradesTable } from '@/components/shared/TradesTable'
+import { SHAPChart } from '@/components/attribution/SHAPChart'
 import { useStrategy, useUpdateStrategy } from '@/hooks/use-strategies'
-import { useOrders } from '@/hooks/use-dashboard'
 import { useQuery } from '@tanstack/react-query'
 import { runBacktest } from '@/api/dashboard'
-import { cn, formatCurrency, formatPercent, getPnlColor } from '@/lib/utils'
+import { cn, formatPercent } from '@/lib/utils'
 import type { StrategyStatus, StrategyType } from '@/types'
 
-type Tab = 'overview' | 'canvas' | 'backtest' | 'trades'
+type Tab = 'overview' | 'canvas' | 'backtest' | 'trades' | 'attribution'
 
 const tabs: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: 'overview', label: '概览', icon: Info },
   { id: 'canvas', label: '画布', icon: GitBranch },
   { id: 'backtest', label: '回测', icon: FlaskConical },
   { id: 'trades', label: '交易记录', icon: ArrowLeftRight },
+  { id: 'attribution', label: '归因分析', icon: Activity },
 ]
 
 const statusConfig: Record<StrategyStatus, { label: string; cls: string }> = {
@@ -68,7 +70,7 @@ export function StrategyDetailPage() {
     <div className="space-y-5">
       {/* Back + Title */}
       <div className="flex items-center gap-3">
-        <button onClick={() => navigate('/strategies')} className="btn-ghost p-2" style={{ borderRadius: '10px' }}>
+        <button onClick={() => navigate('/strategies')} className="btn-ghost p-2">
           <ArrowLeft className="w-4 h-4" />
         </button>
         <div className="flex-1 min-w-0">
@@ -140,7 +142,7 @@ export function StrategyDetailPage() {
             <div className="card p-5 space-y-3">
               <span className="text-[11px] font-semibold tracking-wider uppercase text-text-muted block">策略参数</span>
               {Object.entries(strategy.parameters).map(([key, val]) => (
-                <div key={key} className="flex items-center justify-between py-1.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                <div key={key} className="flex items-center justify-between py-1.5 border-b-divider">
                   <span className="text-[12px] text-text-muted">{key}</span>
                   <span className="text-[13px] font-medium font-tabular">{String(val)}</span>
                 </div>
@@ -175,6 +177,7 @@ export function StrategyDetailPage() {
           {activeTab === 'canvas' && <CanvasTab />}
           {activeTab === 'backtest' && <BacktestTab strategyId={strategyId} />}
           {activeTab === 'trades' && <TradesTab strategyId={strategyId} />}
+          {activeTab === 'attribution' && <SHAPChart strategyId={strategyId} />}
         </div>
       </div>
     </div>
@@ -219,7 +222,7 @@ function OverviewTab({ strategy }: { strategy: { name: string; type: StrategyTyp
           <span className="text-[11px] font-semibold tracking-wider uppercase text-text-muted block mb-5">策略参数</span>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {Object.entries(strategy.parameters).map(([key, val]) => (
-              <div key={key} className="p-3.5" style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.04)' }}>
+              <div key={key} className="p-3.5 surface-subtle">
                 <span className="text-[11px] text-text-muted block mb-1 uppercase tracking-wider">{key}</span>
                 <span className="text-[14px] font-medium">{String(val)}</span>
               </div>
@@ -251,32 +254,9 @@ function MetricItem({ label, value, color }: { label: string; value: string; col
 
 // ==================== Canvas Tab ====================
 
-const canvasNodeTypes: NodeTypes = {
-  dataSource: DataSourceNode,
-  indicator: IndicatorNode,
-  logicGate: LogicGateNode,
-  executor: ExecutorNode,
-}
-
-const initialNodes: Node[] = [
-  { id: '1', type: 'dataSource', position: { x: 50, y: 100 }, data: { label: 'Binance K线', source: 'BTC/USDT 1h' } },
-  { id: '2', type: 'indicator', position: { x: 300, y: 50 }, data: { label: 'RSI', params: 'period=14' } },
-  { id: '3', type: 'indicator', position: { x: 300, y: 180 }, data: { label: 'SMA', params: 'period=50' } },
-  { id: '4', type: 'logicGate', position: { x: 550, y: 100 }, data: { label: '买入条件', condition: 'RSI < 30 AND close > SMA' } },
-  { id: '5', type: 'executor', position: { x: 800, y: 100 }, data: { label: '市价买入', action: 'BUY BTC/USDT' } },
-]
-
-const initialEdges: Edge[] = [
-  { id: 'e1-2', source: '1', target: '2', animated: true, style: { stroke: '#00ff9d' } },
-  { id: 'e1-3', source: '1', target: '3', animated: true, style: { stroke: '#00ff9d' } },
-  { id: 'e2-4', source: '2', target: '4', style: { stroke: '#00c2ff' } },
-  { id: 'e3-4', source: '3', target: '4', style: { stroke: '#00c2ff' } },
-  { id: 'e4-5', source: '4', target: '5', animated: true, style: { stroke: '#00ff9d' } },
-]
-
 function CanvasTab() {
-  const [nodes, , onNodesChange] = useNodesState(initialNodes)
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
+  const [nodes, , onNodesChange] = useNodesState(defaultCanvasNodes as Node[])
+  const [edges, setEdges, onEdgesChange] = useEdgesState(defaultCanvasEdges as Edge[])
 
   const onConnect: OnConnect = useCallback(
     (params) => setEdges(eds => addEdge({ ...params, animated: true }, eds)),
@@ -299,7 +279,7 @@ function CanvasTab() {
             onClick={() => {
               const newId = `node-${Date.now()}`
               const y = Math.random() * 200 + 50
-              onNodesChange([{ type: 'add', item: { id: newId, type, position: { x: 500, y }, data: { label: `新${label}`, ...getDefaultData(type) } } }])
+              onNodesChange([{ type: 'add', item: { id: newId, type, position: { x: 500, y }, data: { label: `新${label}`, ...getDefaultNodeData(type) } } }])
             }}
           >
             <Plus className="w-3 h-3 inline mr-0.5" /> {label}
@@ -337,74 +317,6 @@ function CanvasTab() {
       </div>
 
       <p className="text-[12px] text-text-muted">拖拽节点移动位置，按 Delete 键删除选中节点，从右侧 Handle 拖向左侧 Handle 创建连线</p>
-    </div>
-  )
-}
-
-function getDefaultData(type: string) {
-  switch (type) {
-    case 'dataSource': return { source: '数据源' }
-    case 'indicator': return { params: 'period=14' }
-    case 'logicGate': return { condition: '条件表达式' }
-    case 'executor': return { action: '执行动作' }
-    default: return {}
-  }
-}
-
-function DataSourceNode({ data }: { data: { label: string; source: string } }) {
-  return (
-    <div style={{ background: '#111', border: '1px solid rgba(0,194,255,0.3)', borderRadius: '2px', padding: '12px', minWidth: '160px' }}>
-      <div className="flex items-center gap-1.5 mb-1">
-        <Database className="w-3.5 h-3.5 text-info" />
-        <span className="text-[10px] font-semibold text-info tracking-wider uppercase">数据源</span>
-      </div>
-      <div className="text-[13px] font-medium">{data.label}</div>
-      <div className="text-[11px] text-text-muted mt-0.5">{data.source}</div>
-      <Handle type="source" position={Position.Right} className="!bg-info !w-2 !h-2" />
-    </div>
-  )
-}
-
-function IndicatorNode({ data }: { data: { label: string; params: string } }) {
-  return (
-    <div style={{ background: '#111', border: '1px solid rgba(0,255,157,0.3)', borderRadius: '2px', padding: '12px', minWidth: '160px' }}>
-      <Handle type="target" position={Position.Left} className="!bg-primary !w-2 !h-2" />
-      <div className="flex items-center gap-1.5 mb-1">
-        <BarChart3 className="w-3.5 h-3.5 text-primary" />
-        <span className="text-[10px] font-semibold text-primary tracking-wider uppercase">指标</span>
-      </div>
-      <div className="text-[13px] font-medium">{data.label}</div>
-      <div className="text-[11px] text-text-muted mt-0.5">{data.params}</div>
-      <Handle type="source" position={Position.Right} className="!bg-primary !w-2 !h-2" />
-    </div>
-  )
-}
-
-function LogicGateNode({ data }: { data: { label: string; condition: string } }) {
-  return (
-    <div style={{ background: '#111', border: '1px solid rgba(255,184,0,0.3)', borderRadius: '2px', padding: '12px', minWidth: '160px' }}>
-      <Handle type="target" position={Position.Left} className="!bg-accent !w-2 !h-2" />
-      <div className="flex items-center gap-1.5 mb-1">
-        <GitBranch className="w-3.5 h-3.5 text-accent" />
-        <span className="text-[10px] font-semibold text-accent tracking-wider uppercase">逻辑门</span>
-      </div>
-      <div className="text-[13px] font-medium">{data.label}</div>
-      <div className="text-[11px] text-text-muted mt-0.5">{data.condition}</div>
-      <Handle type="source" position={Position.Right} className="!bg-accent !w-2 !h-2" />
-    </div>
-  )
-}
-
-function ExecutorNode({ data }: { data: { label: string; action: string } }) {
-  return (
-    <div style={{ background: '#111', border: '1px solid rgba(0,255,157,0.3)', borderRadius: '2px', padding: '12px', minWidth: '160px' }}>
-      <Handle type="target" position={Position.Left} className="!bg-success !w-2 !h-2" />
-      <div className="flex items-center gap-1.5 mb-1">
-        <Zap className="w-3.5 h-3.5 text-success" />
-        <span className="text-[10px] font-semibold text-success tracking-wider uppercase">执行器</span>
-      </div>
-      <div className="text-[13px] font-medium">{data.label}</div>
-      <div className="text-[11px] text-text-muted mt-0.5">{data.action}</div>
     </div>
   )
 }
@@ -480,101 +392,7 @@ function BacktestTab({ strategyId }: { strategyId: number }) {
         </div>
       </div>
 
-      {backtest && (
-        <>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <BacktestMetric icon={TrendingUp} label="总收益" value={formatPercent(backtest.total_return)} color="text-profit" />
-            <BacktestMetric icon={BarChart3} label="夏普比率" value={backtest.sharpe_ratio.toFixed(2)} color="text-primary" />
-            <BacktestMetric icon={AlertTriangle} label="最大回撤" value={formatPercent(-backtest.max_drawdown)} color="text-warning" />
-            <BacktestMetric icon={Target} label="胜率" value={formatPercent(backtest.win_rate)} color="text-success" />
-          </div>
-
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <BacktestMetric icon={Award} label="盈亏比" value={backtest.result.metrics.profit_factor.toFixed(2)} />
-            <BacktestMetric icon={BarChart3} label="总交易数" value={String(backtest.result.metrics.total_trades)} />
-            <BacktestMetric icon={Clock} label="平均持仓" value={backtest.result.metrics.avg_trade_duration} />
-            <BacktestMetric icon={TrendingUp} label="最佳单笔" value={formatCurrency(backtest.result.metrics.best_trade)} color="text-profit" />
-          </div>
-
-          <div className="card p-6">
-            <div className="flex items-center justify-between mb-5">
-              <span className="text-[11px] font-semibold tracking-wider uppercase text-text-muted">收益曲线</span>
-              <span className={cn('badge', backtest.passed ? 'bg-success-dim text-success' : 'bg-danger-dim text-danger')}>
-                {backtest.passed ? '沙盒通过' : '未通过'}
-              </span>
-            </div>
-            <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={backtest.result.equity_curve}>
-                <defs>
-                  <linearGradient id="btGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={backtest.total_return >= 0 ? '#10b981' : '#ef4444'} stopOpacity={0.15} />
-                    <stop offset="95%" stopColor={backtest.total_return >= 0 ? '#10b981' : '#ef4444'} stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-                <XAxis dataKey="date" tick={{ fill: '#64748b', fontSize: 11 }} tickFormatter={v => v.slice(5)} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: '#64748b', fontSize: 11 }} tickFormatter={v => `$${(v/1000).toFixed(0)}k`} axisLine={false} tickLine={false} />
-                <Tooltip
-                  contentStyle={{ background: '#111', border: '1px solid rgba(0,255,157,0.15)', borderRadius: 2, color: '#e0e0e0', fontSize: 12, fontFamily: 'IBM Plex Mono' }}
-                  formatter={(value) => [`$${Number(value).toLocaleString()}`, '资产']}
-                />
-                <Area type="monotone" dataKey="value" stroke={backtest.total_return >= 0 ? '#10b981' : '#ef4444'} fill="url(#btGrad)" strokeWidth={2} dot={false} />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-
-          <div className="card overflow-hidden">
-            <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-              <span className="text-[11px] font-semibold tracking-wider uppercase text-text-muted">回测交易明细</span>
-              <span className="text-[12px] text-text-muted">{backtest.result.trades.length} 笔交易</span>
-            </div>
-            <div className="overflow-x-auto max-h-64 overflow-y-auto">
-              <table className="w-full">
-                <thead>
-                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                    {['时间', '币种', '方向', '数量', '盈亏'].map(h => (
-                      <th key={h} className="px-4 py-3 text-[11px] text-text-muted font-semibold tracking-wider uppercase text-left sticky top-0 bg-surface">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {backtest.result.trades.slice(0, 20).map(order => (
-                    <tr key={order.id} className="table-row" style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                      <td className="px-4 py-3 text-[13px] text-text-secondary">
-                        {new Date(order.timestamp).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                      </td>
-                      <td className="px-4 py-3 text-[13px]">{order.symbol}</td>
-                      <td className="px-4 py-3">
-                        <span className={cn('badge', order.side === 'BUY' ? 'bg-success-dim text-success' : 'bg-danger-dim text-danger')}>
-                          {order.side}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-[13px] text-right font-tabular">{order.quantity}</td>
-                      <td className={cn('px-4 py-3 text-[13px] text-right font-tabular font-medium', getPnlColor(order.profit || 0))}>
-                        {order.profit ? formatCurrency(order.profit) : '--'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </>
-      )}
-    </div>
-  )
-}
-
-function BacktestMetric({ icon: Icon, label, value, color }: {
-  icon: React.ElementType; label: string; value: string; color?: string
-}) {
-  return (
-    <div className="card p-4">
-      <div className="flex items-center gap-1.5 mb-2">
-        <Icon className={cn('w-4 h-4', color || 'text-text-muted')} />
-        <span className="text-[11px] text-text-muted tracking-wider uppercase">{label}</span>
-      </div>
-      <div className={cn('text-xl font-semibold font-tabular', color)}>{value}</div>
+      {backtest && <BacktestResults backtest={backtest} />}
     </div>
   )
 }
@@ -582,108 +400,5 @@ function BacktestMetric({ icon: Icon, label, value, color }: {
 // ==================== Trades Tab ====================
 
 function TradesTab({ strategyId }: { strategyId: number }) {
-  const { data: allOrders, isLoading } = useOrders(100)
-  const [filterSide, setFilterSide] = useState<'all' | 'BUY' | 'SELL'>('all')
-
-  const orders = allOrders?.filter(o => o.strategy_id === strategyId) || []
-  const filtered = orders.filter(o => filterSide === 'all' || o.side === filterSide)
-
-  const totalPnl = filtered.reduce((sum, o) => sum + (o.profit || 0), 0)
-  const winRate = filtered.length > 0 ? (filtered.filter(o => (o.profit || 0) > 0).length / filtered.length * 100) : 0
-
-  if (isLoading) return (
-    <div className="flex items-center justify-center h-32">
-      <div className="text-text-muted text-sm animate-pulse">加载中...</div>
-    </div>
-  )
-
-  return (
-    <div className="space-y-5">
-      <div className="grid grid-cols-3 gap-4">
-        <div className="card p-5">
-          <span className="text-[11px] font-semibold tracking-wider uppercase text-text-muted block mb-2">总交易数</span>
-          <div className="text-2xl font-bold font-tabular">{filtered.length}</div>
-        </div>
-        <div className="card p-5">
-          <span className="text-[11px] font-semibold tracking-wider uppercase text-text-muted block mb-2">总盈亏</span>
-          <div className={cn('text-2xl font-bold font-tabular', getPnlColor(totalPnl))}>{formatCurrency(totalPnl)}</div>
-        </div>
-        <div className="card p-5">
-          <span className="text-[11px] font-semibold tracking-wider uppercase text-text-muted block mb-2">胜率</span>
-          <div className="text-2xl font-bold font-tabular text-success">{winRate.toFixed(1)}%</div>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-2">
-        <Filter className="w-4 h-4 text-text-muted" />
-        <div className="flex gap-1 p-1" style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)' }}>
-          {(['all', 'BUY', 'SELL'] as const).map(side => (
-            <button
-              key={side}
-              onClick={() => setFilterSide(side)}
-              className={cn(
-                'px-3.5 py-1.5 text-[12px] transition-colors',
-                filterSide === side ? 'bg-white/[0.08] text-text-primary' : 'text-text-muted hover:text-text-secondary'
-              )}
-              style={{ borderRadius: '8px' }}
-            >
-              {side === 'all' ? '全部' : side === 'BUY' ? '买入' : '卖出'}
-            </button>
-          ))}
-        </div>
-        <button className="btn-ghost flex items-center gap-1.5 px-3.5 py-1.5 text-[12px] ml-auto">
-          <Download className="w-3 h-3" /> 导出CSV
-        </button>
-      </div>
-
-      <div className="card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                {['时间', '币种', '方向', '数量', '价格', '成交价', '手续费', '盈亏', '状态'].map(h => (
-                  <th key={h} className="px-4 py-3 text-[11px] text-text-muted font-semibold tracking-wider uppercase text-left">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map(order => (
-                <tr key={order.id} className="table-row" style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                  <td className="px-4 py-3 text-[13px] text-text-secondary">
-                    {new Date(order.timestamp).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                  </td>
-                  <td className="px-4 py-3 text-[13px]">{order.symbol}</td>
-                  <td className="px-4 py-3">
-                    <span className={cn('badge', order.side === 'BUY' ? 'bg-success-dim text-success' : 'bg-danger-dim text-danger')}>
-                      {order.side}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-[13px] text-right font-tabular">{order.quantity}</td>
-                  <td className="px-4 py-3 text-[13px] text-right text-text-secondary">${order.price?.toLocaleString()}</td>
-                  <td className="px-4 py-3 text-[13px] text-right">${order.filled_price?.toLocaleString()}</td>
-                  <td className="px-4 py-3 text-[13px] text-right text-text-muted">${order.fee.toFixed(2)}</td>
-                  <td className={cn('px-4 py-3 text-[13px] text-right font-tabular font-medium', getPnlColor(order.profit || 0))}>
-                    {order.profit ? formatCurrency(order.profit) : '--'}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={cn('badge',
-                      order.status === 'filled' ? 'bg-success-dim text-success' :
-                      order.status === 'failed' ? 'bg-danger-dim text-danger' : 'bg-surface-active text-text-muted'
-                    )}>
-                      {order.status === 'filled' ? '已成交' : order.status === 'failed' ? '失败' : order.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-              {filtered.length === 0 && (
-                <tr>
-                  <td colSpan={9} className="px-4 py-8 text-center text-[14px] text-text-muted">暂无交易记录</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  )
+  return <TradesTable strategyId={strategyId} showStats />
 }
