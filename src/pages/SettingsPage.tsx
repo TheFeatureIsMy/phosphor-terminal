@@ -46,11 +46,11 @@ export function SettingsPage() {
                 )}
                 style={activeSection === id ? {
                   background: 'rgba(0, 255, 157, 0.06)',
-                  borderLeft: '2px solid #00ff9d',
+                  borderLeft: '2px solid #8cffb8',
                 } : { borderLeft: '2px solid transparent' }}
               >
                 <div className="flex items-center gap-2.5">
-                  <Icon className="w-3.5 h-3.5 shrink-0" style={{ color: activeSection === id ? '#00ff9d' : '#555' }} />
+                  <Icon className="w-3.5 h-3.5 shrink-0" style={{ color: activeSection === id ? '#8cffb8' : '#5e6a63' }} />
                   <span className="text-[12px] font-mono font-medium">{label}</span>
                 </div>
                 <div className="text-[10px] font-mono mt-0.5 ml-[26px]" style={{ color: '#444' }}>{desc}</div>
@@ -68,11 +68,11 @@ export function SettingsPage() {
                 onClick={() => setActiveSection(id)}
                 className={cn(
                   'flex-1 flex items-center justify-center gap-1.5 px-2 py-2.5 text-[11px] font-mono font-medium transition-all duration-150 relative',
-                  activeSection === id ? 'text-[#e0e0e0]' : 'text-[#555]'
+                  activeSection === id ? 'text-[#e7f0ea]' : 'text-[#5e6a63]'
                 )}
               >
                 {activeSection === id && (
-                  <div className="absolute bottom-0 left-0 right-0 h-[2px]" style={{ background: '#00ff9d' }} />
+                  <div className="absolute bottom-0 left-0 right-0 h-[2px]" style={{ background: '#8cffb8' }} />
                 )}
                 <Icon className="w-3.5 h-3.5" /> <span className="truncate">{label}</span>
               </button>
@@ -247,7 +247,7 @@ function SectionHeader({ title, desc }: { title: string; desc?: string }) {
   return (
     <div>
       <span className="terminal-label block">{title}</span>
-      {desc && <p className="text-[12px] font-mono mt-1" style={{ color: '#555' }}>{desc}</p>}
+      {desc && <p className="text-[12px] font-mono mt-1" style={{ color: '#5e6a63' }}>{desc}</p>}
     </div>
   )
 }

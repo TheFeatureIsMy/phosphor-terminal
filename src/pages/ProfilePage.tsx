@@ -17,7 +17,7 @@ export function ProfilePage() {
         <div className="flex items-center gap-6">
           <div className="relative group shrink-0">
             <div className="w-20 h-20 flex items-center justify-center text-2xl font-bold font-mono"
-              style={{ background: 'rgba(0,255,157,0.08)', border: '2px solid rgba(0,255,157,0.2)', color: '#00ff9d', borderRadius: '2px' }}>
+              style={{ background: 'rgba(140,255,184,0.08)', border: '2px solid rgba(140,255,184,0.2)', color: '#8cffb8', borderRadius: '2px' }}>
               Q
             </div>
             <button className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity" style={{ borderRadius: '2px' }}>
@@ -27,10 +27,10 @@ export function ProfilePage() {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3 mb-1">
               <h2 className="text-xl font-bold">QuantTrader</h2>
-              <span className="badge font-mono" style={{ background: 'rgba(0,255,157,0.06)', color: 'rgba(0,255,157,0.6)', border: '1px solid rgba(0,255,157,0.12)' }}>Admin</span>
+              <span className="badge font-mono" style={{ background: 'rgba(140,255,184,0.06)', color: 'rgba(140,255,184,0.6)', border: '1px solid rgba(140,255,184,0.12)' }}>Admin</span>
               <span className="badge bg-success-dim text-success">在线</span>
             </div>
-            <p className="text-[14px] text-text-muted">trader@cyberquant.io</p>
+            <p className="text-[14px] text-text-muted">trader@pulsedesk.local</p>
             <p className="text-[13px] text-text-secondary mt-1">加密货币量化交易员，专注趋势跟踪和均值回归策略</p>
           </div>
           <div className="hidden lg:flex items-center gap-6 shrink-0">
@@ -61,11 +61,11 @@ export function ProfilePage() {
             onClick={() => setActiveTab(id)}
             className={cn(
               'flex items-center gap-2 px-5 py-2.5 text-[12px] font-mono font-medium transition-all duration-150 relative',
-              activeTab === id ? 'text-[#e0e0e0]' : 'text-[#555] hover:text-[#888]'
+              activeTab === id ? 'text-[#e7f0ea]' : 'text-[#5e6a63] hover:text-[#9aa8a0]'
             )}
           >
             {activeTab === id && (
-              <div className="absolute bottom-0 left-0 right-0 h-[2px]" style={{ background: '#00ff9d', boxShadow: '0 0 8px rgba(0,255,157,0.3)' }} />
+              <div className="absolute bottom-0 left-0 right-0 h-[2px]" style={{ background: '#8cffb8', boxShadow: '0 0 8px rgba(140,255,184,0.3)' }} />
             )}
             <Icon className="w-3.5 h-3.5" /> {label}
           </button>
@@ -91,7 +91,7 @@ function ProfileTab() {
           <span className="terminal-label block mb-4">基本信息</span>
           <div className="space-y-4">
             <Field label="用户名" defaultValue="QuantTrader" />
-            <Field label="邮箱" type="email" defaultValue="trader@cyberquant.io" />
+            <Field label="邮箱" type="email" defaultValue="trader@pulsedesk.local" />
             <Field label="Telegram ID" placeholder="输入 Telegram ID" />
             <Field label="手机号" placeholder="输入手机号" />
           </div>
@@ -152,7 +152,7 @@ function SecurityTab() {
         <span className="terminal-label block mb-4">两步验证</span>
         <div className="flex items-center justify-between p-4" style={{ background: 'rgba(255,255,255,0.02)', borderRadius: '2px', border: '1px solid rgba(255,255,255,0.06)' }}>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 flex items-center justify-center" style={{ background: 'rgba(0,255,157,0.06)', border: '1px solid rgba(0,255,157,0.12)', borderRadius: '2px' }}>
+            <div className="w-10 h-10 flex items-center justify-center" style={{ background: 'rgba(140,255,184,0.06)', border: '1px solid rgba(140,255,184,0.12)', borderRadius: '2px' }}>
               <Shield className="w-5 h-5 text-success" />
             </div>
             <div>
@@ -168,7 +168,7 @@ function SecurityTab() {
 
       {/* Danger Zone */}
       <div>
-        <span className="terminal-label block mb-4" style={{ color: '#ff3b3b' }}>危险操作</span>
+        <span className="terminal-label block mb-4" style={{ color: '#ff6b6b' }}>危险操作</span>
         <div className="flex gap-3">
           <button className="btn-ghost px-5 py-2.5 text-[13px]">导出数据</button>
           <button className="px-5 py-2.5 text-[12px] font-mono bg-danger-dim text-danger transition-opacity hover:opacity-90" style={{ borderRadius: '2px' }}>注销账号</button>

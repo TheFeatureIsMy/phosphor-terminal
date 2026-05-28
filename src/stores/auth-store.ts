@@ -49,7 +49,7 @@ export const useAuthStore = create<AuthState>()(
       getAccessToken: () => get().accessToken,
     }),
     {
-      name: 'cyberquant-auth',
+      name: 'pulsedesk-auth',
       partialize: (state) => ({
         accessToken: state.accessToken,
         refreshToken: state.refreshToken,

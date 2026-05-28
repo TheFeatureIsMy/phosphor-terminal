@@ -17,7 +17,7 @@ export function LoadingSpinner({ size = 'md', className, label }: Props) {
     <div className={cn('flex flex-col items-center gap-2', className)}>
       <div
         className={cn(
-          'border-2 border-white/10 border-t-[#00ff9d] rounded-full animate-spin',
+          'border-2 border-white/10 border-t-[#8cffb8] rounded-full animate-spin',
           sizes[size]
         )}
       />
@@ -39,7 +39,7 @@ export function PageLoader() {
 export function InlineLoader({ className }: { className?: string }) {
   return (
     <div className={cn('flex items-center gap-2', className)}>
-      <div className="w-3 h-3 border border-white/10 border-t-[#00ff9d] rounded-full animate-spin" />
+      <div className="w-3 h-3 border border-white/10 border-t-[#8cffb8] rounded-full animate-spin" />
       <span className="text-[11px] font-mono text-text-muted">加载中...</span>
     </div>
   )

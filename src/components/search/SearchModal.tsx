@@ -89,29 +89,29 @@ export function SearchModal({ open, onClose }: Props) {
         }}
       >
         <div className="flex items-center gap-3 px-4 py-3 border-b border-white/6">
-          <Search className="w-4 h-4 shrink-0" style={{ color: '#555' }} />
+          <Search className="w-4 h-4 shrink-0" style={{ color: '#5e6a63' }} />
           <input
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="搜索策略、交易、设置..."
             className="flex-1 bg-transparent text-[14px] font-mono outline-none"
-            style={{ color: '#e0e0e0' }}
+            style={{ color: '#e7f0ea' }}
           />
           <button onClick={onClose} className="p-1 hover:bg-white/5 rounded">
-            <X className="w-4 h-4" style={{ color: '#555' }} />
+            <X className="w-4 h-4" style={{ color: '#5e6a63' }} />
           </button>
         </div>
 
         <div className="max-h-80 overflow-y-auto py-2">
           {loading && (
-            <div className="px-4 py-6 text-center text-[12px] font-mono" style={{ color: '#555' }}>
+            <div className="px-4 py-6 text-center text-[12px] font-mono" style={{ color: '#5e6a63' }}>
               搜索中...
             </div>
           )}
 
           {!loading && query && results.length === 0 && (
-            <div className="px-4 py-6 text-center text-[12px] font-mono" style={{ color: '#555' }}>
+            <div className="px-4 py-6 text-center text-[12px] font-mono" style={{ color: '#5e6a63' }}>
               未找到结果
             </div>
           )}
@@ -123,8 +123,8 @@ export function SearchModal({ open, onClose }: Props) {
               className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-white/5 transition-colors"
             >
               <div className="w-7 h-7 flex items-center justify-center shrink-0"
-                style={{ background: 'rgba(0,255,157,0.08)', borderRadius: '2px' }}>
-                <GitBranch className="w-3.5 h-3.5" style={{ color: '#00ff9d' }} />
+                style={{ background: 'rgba(140,255,184,0.08)', borderRadius: '2px' }}>
+                <GitBranch className="w-3.5 h-3.5" style={{ color: '#8cffb8' }} />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-[13px] font-mono text-text-primary truncate">{r.title}</div>
@@ -143,11 +143,11 @@ export function SearchModal({ open, onClose }: Props) {
 
         <div className="flex items-center justify-between px-4 py-2 border-t border-white/6">
           <span className="text-[10px] font-mono" style={{ color: '#333' }}>
-            <kbd className="px-1.5 py-0.5 rounded text-[10px]" style={{ background: 'rgba(255,255,255,0.06)', color: '#555' }}>↑↓</kbd> 导航
-            <kbd className="px-1.5 py-0.5 rounded text-[10px] ml-2" style={{ background: 'rgba(255,255,255,0.06)', color: '#555' }}>↵</kbd> 选择
+            <kbd className="px-1.5 py-0.5 rounded text-[10px]" style={{ background: 'rgba(255,255,255,0.06)', color: '#5e6a63' }}>↑↓</kbd> 导航
+            <kbd className="px-1.5 py-0.5 rounded text-[10px] ml-2" style={{ background: 'rgba(255,255,255,0.06)', color: '#5e6a63' }}>↵</kbd> 选择
           </span>
           <span className="text-[10px] font-mono" style={{ color: '#333' }}>
-            <kbd className="px-1.5 py-0.5 rounded text-[10px]" style={{ background: 'rgba(255,255,255,0.06)', color: '#555' }}>esc</kbd> 关闭
+            <kbd className="px-1.5 py-0.5 rounded text-[10px]" style={{ background: 'rgba(255,255,255,0.06)', color: '#5e6a63' }}>esc</kbd> 关闭
           </span>
         </div>
       </div>

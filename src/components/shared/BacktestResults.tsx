@@ -35,18 +35,18 @@ export function BacktestResults({ backtest }: BacktestResultsProps) {
           <AreaChart data={backtest.result.equity_curve}>
             <defs>
               <linearGradient id="btGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={backtest.total_return >= 0 ? '#10b981' : '#ef4444'} stopOpacity={0.15} />
-                <stop offset="95%" stopColor={backtest.total_return >= 0 ? '#10b981' : '#ef4444'} stopOpacity={0} />
+                <stop offset="5%" stopColor={backtest.total_return >= 0 ? '#10b981' : '#ff6b6b'} stopOpacity={0.15} />
+                <stop offset="95%" stopColor={backtest.total_return >= 0 ? '#10b981' : '#ff6b6b'} stopOpacity={0} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
             <XAxis dataKey="date" tick={{ fill: '#64748b', fontSize: 11 }} tickFormatter={v => v.slice(5)} axisLine={false} tickLine={false} />
             <YAxis tick={{ fill: '#64748b', fontSize: 11 }} tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} axisLine={false} tickLine={false} />
             <Tooltip
-              contentStyle={{ background: '#111', border: '1px solid rgba(0,255,157,0.15)', borderRadius: 2, color: '#e0e0e0', fontSize: 12, fontFamily: 'IBM Plex Mono' }}
+              contentStyle={{ background: '#111', border: '1px solid rgba(140,255,184,0.15)', borderRadius: 2, color: '#e7f0ea', fontSize: 12, fontFamily: 'IBM Plex Mono' }}
               formatter={(value) => [`$${Number(value).toLocaleString()}`, '资产']}
             />
-            <Area type="monotone" dataKey="value" stroke={backtest.total_return >= 0 ? '#10b981' : '#ef4444'} fill="url(#btGrad)" strokeWidth={2} dot={false} />
+            <Area type="monotone" dataKey="value" stroke={backtest.total_return >= 0 ? '#10b981' : '#ff6b6b'} fill="url(#btGrad)" strokeWidth={2} dot={false} />
           </AreaChart>
         </ResponsiveContainer>
       </div>

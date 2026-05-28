@@ -45,14 +45,14 @@ class StorageManager {
   }
 }
 
-export const localStorage = new StorageManager('local')
-export const sessionStorage = new StorageManager('session')
+export const localStore = new StorageManager('local')
+export const sessionStore = new StorageManager('session')
 
 /**
  * Create a Zustand persist storage adapter
  */
 export function createPersistStorage(type: StorageType = 'local') {
-  const manager = type === 'local' ? localStorage : sessionStorage
+  const manager = type === 'local' ? localStore : sessionStore
 
   return {
     getItem: (name: string) => {

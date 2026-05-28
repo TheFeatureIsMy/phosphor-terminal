@@ -104,10 +104,10 @@ export function StrategyDetailPage() {
       {/* Key Metrics Strip */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: '夏普比率', value: strategy.sharpe_ratio?.toFixed(2) || '--', icon: BarChart3, color: '#00ff9d' },
-          { label: '最大回撤', value: strategy.max_drawdown ? `-${strategy.max_drawdown.toFixed(1)}%` : '--', icon: AlertTriangle, color: '#ffb800' },
-          { label: '交易所', value: strategy.exchange, icon: Database, color: '#00c2ff' },
-          { label: '来源', value: strategy.source === 'manual' ? '手动创建' : strategy.source === 'rag_generated' ? 'RAG生成' : '优化生成', icon: GitBranch, color: '#00ff9d' },
+          { label: '夏普比率', value: strategy.sharpe_ratio?.toFixed(2) || '--', icon: BarChart3, color: '#8cffb8' },
+          { label: '最大回撤', value: strategy.max_drawdown ? `-${strategy.max_drawdown.toFixed(1)}%` : '--', icon: AlertTriangle, color: '#e8b86d' },
+          { label: '交易所', value: strategy.exchange, icon: Database, color: '#7db7ff' },
+          { label: '来源', value: strategy.source === 'manual' ? '手动创建' : strategy.source === 'rag_generated' ? 'RAG生成' : '优化生成', icon: GitBranch, color: '#8cffb8' },
         ].map(item => (
           <div key={item.label} className="card px-4 py-3 flex items-center gap-3">
             <div className="w-8 h-8 flex items-center justify-center shrink-0"
@@ -161,13 +161,13 @@ export function StrategyDetailPage() {
                 onClick={() => setActiveTab(id)}
                 className={cn(
                   'flex items-center gap-2 px-4 py-2.5 text-[12px] font-mono font-medium transition-all duration-150 relative',
-                  activeTab === id ? 'text-[#e0e0e0]' : 'text-[#555] hover:text-[#888]'
+                  activeTab === id ? 'text-[#e7f0ea]' : 'text-[#5e6a63] hover:text-[#9aa8a0]'
                 )}
               >
                 {activeTab === id && (
-                  <div className="absolute bottom-0 left-0 right-0 h-[2px]" style={{ background: '#00ff9d', boxShadow: '0 0 8px rgba(0,255,157,0.3)' }} />
+                  <div className="absolute bottom-0 left-0 right-0 h-[2px]" style={{ background: '#8cffb8', boxShadow: '0 0 8px rgba(140,255,184,0.3)' }} />
                 )}
-                <Icon className="w-3.5 h-3.5" style={{ color: activeTab === id ? '#00ff9d' : undefined }} /> {label}
+                <Icon className="w-3.5 h-3.5" style={{ color: activeTab === id ? '#8cffb8' : undefined }} /> {label}
               </button>
             ))}
           </div>
@@ -304,10 +304,10 @@ function CanvasTab() {
           <MiniMap
             nodeColor={(node) => {
               switch (node.type) {
-                case 'dataSource': return '#00c2ff'
-                case 'indicator': return '#00ff9d'
-                case 'logicGate': return '#ffb800'
-                case 'executor': return '#00ff9d'
+                case 'dataSource': return '#7db7ff'
+                case 'indicator': return '#8cffb8'
+                case 'logicGate': return '#e8b86d'
+                case 'executor': return '#8cffb8'
                 default: return '#334155'
               }
             }}

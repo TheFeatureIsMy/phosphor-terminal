@@ -3,10 +3,12 @@
  */
 
 class TreeNode<T> {
-  constructor(
-    public value: T,
-    public children: TreeNode<T>[] = []
-  ) {}
+  value: T
+  children: TreeNode<T>[]
+  constructor(value: T, children: TreeNode<T>[] = []) {
+    this.value = value
+    this.children = children
+  }
 }
 
 export class Tree<T> {

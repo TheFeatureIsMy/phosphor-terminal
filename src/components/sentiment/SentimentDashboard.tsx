@@ -25,9 +25,9 @@ interface SentimentData {
 }
 
 const sentimentColors: Record<string, string> = {
-  positive: '#00ff9d',
-  negative: '#ff3b3b',
-  neutral: '#ff9500',
+  positive: '#8cffb8',
+  negative: '#ff6b6b',
+  neutral: '#e8b86d',
 }
 
 const sentimentIcons: Record<string, React.ElementType> = {
@@ -81,7 +81,7 @@ export function SentimentDashboard() {
     )
   }
 
-  const fearGreedColor = (data?.fear_greed_index ?? 50) > 60 ? '#00ff9d' : (data?.fear_greed_index ?? 50) < 40 ? '#ff3b3b' : '#ff9500'
+  const fearGreedColor = (data?.fear_greed_index ?? 50) > 60 ? '#8cffb8' : (data?.fear_greed_index ?? 50) < 40 ? '#ff6b6b' : '#e8b86d'
 
   return (
     <div className="space-y-5">
@@ -89,7 +89,7 @@ export function SentimentDashboard() {
       <div className="card p-5">
         <div className="flex items-center justify-between mb-4">
           <span className="terminal-label">恐惧贪婪指数</span>
-          <span className="text-[12px] font-mono" style={{ color: '#555' }}>
+          <span className="text-[12px] font-mono" style={{ color: '#5e6a63' }}>
             {data?.fear_greed_label}
           </span>
         </div>
@@ -122,7 +122,7 @@ export function SentimentDashboard() {
                     <span className="text-[12px] font-mono" style={{ color: sentimentColors[item.sentiment] }}>
                       {(item.score * 100).toFixed(0)}%
                     </span>
-                    <span className="text-[10px] font-mono" style={{ color: item.change_24h >= 0 ? '#00ff9d' : '#ff3b3b' }}>
+                    <span className="text-[10px] font-mono" style={{ color: item.change_24h >= 0 ? '#8cffb8' : '#ff6b6b' }}>
                       {item.change_24h >= 0 ? '+' : ''}{(item.change_24h * 100).toFixed(1)}%
                     </span>
                   </div>
@@ -153,16 +153,16 @@ export function SentimentDashboard() {
           <AreaChart data={trendData}>
             <defs>
               <linearGradient id="sentGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#00ff9d" stopOpacity={0.3} />
-                <stop offset="100%" stopColor="#00ff9d" stopOpacity={0} />
+                <stop offset="0%" stopColor="#8cffb8" stopOpacity={0.3} />
+                <stop offset="100%" stopColor="#8cffb8" stopOpacity={0} />
               </linearGradient>
             </defs>
             <XAxis
               dataKey="date"
-              tick={{ fontSize: 10, fill: '#555' }}
+              tick={{ fontSize: 10, fill: '#5e6a63' }}
               tickFormatter={(v) => v.slice(5)}
             />
-            <YAxis domain={[0, 1]} tick={{ fontSize: 10, fill: '#555' }} />
+            <YAxis domain={[0, 1]} tick={{ fontSize: 10, fill: '#5e6a63' }} />
             <Tooltip
               contentStyle={{
                 background: '#1a1a1a',
@@ -171,13 +171,13 @@ export function SentimentDashboard() {
                 fontSize: '12px',
                 fontFamily: 'monospace',
               }}
-              formatter={(v: number) => [`${(v * 100).toFixed(1)}%`, '情绪分数']}
+              formatter={(v) => [`${(Number(v) * 100).toFixed(1)}%`, '情绪分数']}
               labelFormatter={(v) => `日期: ${v}`}
             />
             <Area
               type="monotone"
               dataKey="score"
-              stroke="#00ff9d"
+              stroke="#8cffb8"
               strokeWidth={2}
               fill="url(#sentGrad)"
             />

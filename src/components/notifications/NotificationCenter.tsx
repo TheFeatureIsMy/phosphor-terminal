@@ -20,9 +20,9 @@ const typeIcons: Record<string, React.ElementType> = {
 }
 
 const typeColors: Record<string, string> = {
-  trade: '#00ff9d',
-  risk: '#ff9500',
-  system: '#555',
+  trade: '#8cffb8',
+  risk: '#e8b86d',
+  system: '#5e6a63',
 }
 
 export function NotificationCenter() {
@@ -81,14 +81,14 @@ export function NotificationCenter() {
       <button
         onClick={() => setOpen(!open)}
         className="relative p-1.5 cursor-pointer transition-colors duration-150"
-        style={{ color: '#555', borderRadius: '2px' }}
+        style={{ color: '#5e6a63', borderRadius: '2px' }}
         aria-label="通知"
       >
         <Bell className="w-3.5 h-3.5" />
         {unread > 0 && (
           <span
             className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full"
-            style={{ background: '#ff3b3b' }}
+            style={{ background: '#ff6b6b' }}
           />
         )}
       </button>
@@ -117,13 +117,13 @@ export function NotificationCenter() {
 
           <div className="max-h-80 overflow-y-auto">
             {notifications.length === 0 ? (
-              <div className="px-4 py-8 text-center text-[12px] font-mono" style={{ color: '#555' }}>
+              <div className="px-4 py-8 text-center text-[12px] font-mono" style={{ color: '#5e6a63' }}>
                 暂无通知
               </div>
             ) : (
               notifications.map((n) => {
                 const Icon = typeIcons[n.type] || Bell
-                const color = typeColors[n.type] || '#555'
+                const color = typeColors[n.type] || '#5e6a63'
                 return (
                   <div
                     key={n.id}
@@ -144,7 +144,7 @@ export function NotificationCenter() {
                           {n.title}
                         </span>
                         {!n.read && (
-                          <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#00ff9d' }} />
+                          <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#8cffb8' }} />
                         )}
                       </div>
                       <p className="text-[11px] font-mono text-text-muted mt-0.5 line-clamp-2">{n.message}</p>
@@ -155,7 +155,7 @@ export function NotificationCenter() {
                         className="p-1 hover:bg-white/5 rounded shrink-0"
                         title="标记已读"
                       >
-                        <Check className="w-3 h-3" style={{ color: '#555' }} />
+                        <Check className="w-3 h-3" style={{ color: '#5e6a63' }} />
                       </button>
                     )}
                   </div>

@@ -88,7 +88,7 @@ export const useSettingsStore = create<SettingsState>()(
         })),
     }),
     {
-      name: 'cyberquant-settings',
+      name: 'pulsedesk-settings',
     }
   )
 )

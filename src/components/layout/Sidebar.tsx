@@ -1,24 +1,28 @@
+import { useRef, useCallback } from 'react'
 import { NavLink } from 'react-router-dom'
-import { motion } from 'framer-motion'
 import {
-  LayoutDashboard, GitBranch, Settings, Activity,
-  ChevronLeft, ChevronRight, Search,
-  BarChart3, ArrowLeftRight, User, Sparkles
+  BarChart3, FlaskConical, GitBranch, LayoutDashboard,
+  Settings, User, ArrowLeftRight, Pin
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useAppStore } from '@/stores/app-store'
 import { useSystemStatus } from '@/hooks/use-dashboard'
-import { prefetchRoute } from '@/lib/prefetch'
+import { useAppStore } from '@/stores/app-store'
+import { PulseDeskLogo } from '@/components/brand/PulseDeskLogo'
 
 const navSections = [
   {
     label: '交易',
     items: [
-      { to: '/dashboard', icon: LayoutDashboard, label: '总览' },
+      { to: '/dashboard', icon: LayoutDashboard, label: '总览', badge: 'LIVE' },
+    ],
+  },
+  {
+    label: '策略',
+    items: [
       { to: '/strategies', icon: GitBranch, label: '策略管理' },
+      { to: '/backtest', icon: BarChart3, label: '回测中心' },
       { to: '/trades', icon: ArrowLeftRight, label: '交易记录' },
-      { to: '/backtest', icon: BarChart3, label: '回测分析' },
-      { to: '/lab', icon: Sparkles, label: '策略实验室' },
+      { to: '/lab', icon: FlaskConical, label: 'RAG 实验室', badge: 'AI' },
     ],
   },
   {
@@ -30,150 +34,147 @@ const navSections = [
   },
 ]
 
+const W = { collapsed: 64, expanded: 248 }
+
 export function Sidebar() {
-  const { sidebarCollapsed, toggleSidebar } = useAppStore()
   const { data: status } = useSystemStatus()
+  const online = status?.api_status === 'connected'
+  const isLoading = !status
+  const { sidebarCollapsed, sidebarPinned, setSidebarCollapsed, toggleSidebarPinned } = useAppStore()
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
+
+  const expanded = !sidebarCollapsed || sidebarPinned
+  const width = expanded ? W.expanded : W.collapsed
+
+  const onEnter = useCallback(() => {
+    if (sidebarPinned) return
+    clearTimeout(timer.current)
+    timer.current = setTimeout(() => setSidebarCollapsed(false), 180)
+  }, [sidebarPinned, setSidebarCollapsed])
+
+  const onLeave = useCallback(() => {
+    if (sidebarPinned) return
+    clearTimeout(timer.current)
+    timer.current = setTimeout(() => setSidebarCollapsed(true), 280)
+  }, [sidebarPinned, setSidebarCollapsed])
 
   return (
-    <motion.aside
+    <aside
       aria-label="主导航"
-      animate={{ width: sidebarCollapsed ? 72 : 240 }}
-      transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-      className="fixed left-0 top-0 h-dvh flex flex-col z-50"
+      onMouseEnter={onEnter}
+      onMouseLeave={onLeave}
+      className={cn(
+        'fixed left-0 top-0 bottom-0 z-50 flex flex-col',
+        expanded ? 'sidebar-expanded' : 'sidebar-collapsed',
+      )}
       style={{
-        background: 'rgba(255, 255, 255, 0.03)',
-        backdropFilter: 'blur(40px)',
-        WebkitBackdropFilter: 'blur(40px)',
-        borderRight: '1px solid rgba(255, 255, 255, 0.06)',
+        width,
+        background: 'linear-gradient(180deg, rgba(13,18,16,0.88) 0%, rgba(7,9,8,0.96) 100%)',
+        borderRight: '1px solid rgba(189,255,215,0.08)',
+        backdropFilter: 'blur(30px) saturate(125%)',
+        WebkitBackdropFilter: 'blur(30px) saturate(125%)',
+        transition: 'width 0.22s cubic-bezier(0.22, 1, 0.36, 1)',
       }}
     >
-      {/* Logo */}
-      <div className="h-14 flex items-center px-4 shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <NavLink to="/dashboard" className="flex items-center gap-2.5 cursor-pointer" aria-label="首页">
-          <div className="w-8 h-8 flex items-center justify-center shrink-0"
-            style={{
-              background: 'linear-gradient(135deg, rgba(139,92,246,0.25), rgba(6,182,212,0.25))',
-              borderRadius: '10px',
-            }}>
-            <Activity className="w-4 h-4 text-primary" />
-          </div>
-          {!sidebarCollapsed && (
-            <span className="font-bold text-[14px] tracking-tight" style={{ fontFamily: 'Sora, sans-serif' }}>
-              CyberQuant
-            </span>
+      {/* macOS traffic light spacer */}
+      <div className="titlebar-space" data-tauri-drag-region />
+
+      {/* Brand */}
+      <div
+        className="flex items-center shrink-0"
+        style={{
+          padding: expanded ? '8px 16px 12px' : '8px 0 12px',
+          justifyContent: expanded ? 'flex-start' : 'center',
+          borderBottom: '1px solid rgba(189,255,215,0.07)',
+        }}
+      >
+        <NavLink to="/dashboard" aria-label="总览" className="flex items-center gap-3 no-drag">
+          <PulseDeskLogo size={36} className="shrink-0" />
+          {expanded && (
+            <div className="sidebar-brand-text">
+              <div className="font-mono text-[14px] font-bold tracking-[0.03em]" style={{ color: '#e7f0ea' }}>PulseDesk</div>
+              <div className="text-[9px] tracking-[0.06em]" style={{ color: '#5e6a63' }}>AI Trading Workbench</div>
+            </div>
           )}
         </NavLink>
       </div>
 
-      {/* Search */}
-      {!sidebarCollapsed && (
-        <div className="px-3 pt-3 pb-1 shrink-0">
-          <button
-            className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] text-text-muted hover:text-text-secondary transition-colors cursor-pointer"
-            style={{
-              background: 'rgba(255,255,255,0.04)',
-              borderRadius: '10px',
-              border: '1px solid rgba(255,255,255,0.06)',
-            }}
-          >
-            <Search className="w-3.5 h-3.5 shrink-0" />
-            <span className="flex-1 text-left">搜索...</span>
-            <kbd className="text-[10px] px-1.5 py-0.5 rounded bg-white/[0.06] text-text-muted">⌘K</kbd>
-          </button>
-        </div>
-      )}
-
-      {/* Navigation Sections */}
-      <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-4" role="navigation">
-        {navSections.map((section) => (
-          <div key={section.label}>
-            {!sidebarCollapsed && (
-              <div className="px-3 mb-1.5">
-                <span className="text-[10px] font-semibold tracking-wider uppercase text-text-muted">
+      {/* Navigation */}
+      <nav className="flex-1 px-2 py-3 overflow-y-auto overflow-x-hidden no-drag" role="navigation">
+        {navSections.map(section => (
+          <div key={section.label} className="mb-1">
+            <div className="nav-section-label px-3 pb-1.5 pt-4 first:pt-1">
+              {expanded && (
+                <span className="text-[9px] font-medium uppercase tracking-[0.14em]" style={{ color: '#344038' }}>
                   {section.label}
                 </span>
-              </div>
-            )}
-            <div className="space-y-0.5">
-              {section.items.map(({ to, icon: Icon, label }) => (
-                <NavLink
-                  key={to + label}
-                  to={to}
-                  end={to === '/dashboard'}
-                  onMouseEnter={() => prefetchRoute(to)}
-                  className={({ isActive }) => cn(
-                    'flex items-center gap-2.5 transition-all duration-150 cursor-pointer',
-                    sidebarCollapsed ? 'justify-center px-0 py-2' : 'px-3 py-2',
-                    isActive
-                      ? 'text-white font-medium'
-                      : 'text-text-muted hover:text-text-secondary hover:bg-white/[0.04]'
-                  )}
-                  style={({ isActive }) => isActive ? {
-                    background: 'rgba(139, 92, 246, 0.12)',
-                    borderRadius: '10px',
-                    boxShadow: 'inset 0 0 0 1px rgba(139, 92, 246, 0.2)',
-                  } : {
-                    borderRadius: '10px',
-                  }}
-                >
-                  <Icon className="w-[18px] h-[18px] shrink-0" aria-hidden="true" />
-                  {!sidebarCollapsed && <span className="text-[13px]">{label}</span>}
-                </NavLink>
-              ))}
+              )}
             </div>
+            {section.items.map(({ to, icon: Icon, label, badge }) => (
+              <NavLink
+                key={to}
+                to={to}
+                end={to === '/dashboard'}
+                className={({ isActive }) => cn('sidebar-nav-item', isActive && 'active')}
+              >
+                <Icon className="h-[16px] w-[16px] shrink-0" />
+                {expanded && (
+                  <>
+                    <span className="nav-item-label flex-1">{label}</span>
+                    {badge && (
+                      <span
+                        className="nav-item-label text-[9px] px-1.5 py-0.5 rounded"
+                        style={{
+                          background: 'rgba(140,255,184,0.09)',
+                          color: '#8cffb8',
+                          border: '1px solid rgba(140,255,184,0.18)',
+                        }}
+                      >
+                        {badge}
+                      </span>
+                    )}
+                  </>
+                )}
+              </NavLink>
+            ))}
           </div>
         ))}
       </nav>
 
-      {/* Bottom: Status + User */}
-      <div className="shrink-0 px-3 pb-3 space-y-2" style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '12px' }}>
-        {/* System Status */}
-        {!sidebarCollapsed && (
-          <div className="flex items-center gap-2.5 px-3 py-2" style={{
-            background: status?.api_status === 'connected' ? 'rgba(16,185,129,0.06)' : 'rgba(239,68,68,0.06)',
-            borderRadius: '10px',
-            border: `1px solid ${status?.api_status === 'connected' ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)'}`,
-          }}>
-            <div className={cn('w-2 h-2 rounded-full shrink-0', status?.api_status === 'connected' ? 'bg-success' : 'bg-danger')}
-              style={{ boxShadow: status?.api_status === 'connected' ? '0 0 6px rgba(16,185,129,0.5)' : '0 0 6px rgba(239,68,68,0.5)' }}
-            />
-            <div className="min-w-0">
-              <div className="text-[12px] font-medium text-success leading-tight">
-                {status?.api_status === 'connected' ? '系统正常' : '连接断开'}
-              </div>
-              <div className="text-[10px] text-text-muted truncate">{status?.uptime || '--'}</div>
-            </div>
-          </div>
+      {/* Status footer */}
+      <div
+        className="shrink-0 flex items-center gap-2 px-3 py-3 no-drag"
+        style={{
+          borderTop: '1px solid rgba(189,255,215,0.07)',
+          justifyContent: expanded ? 'space-between' : 'center',
+        }}
+      >
+        <span
+          className="w-2 h-2 rounded-full shrink-0"
+          style={{
+            background: isLoading ? '#7db7ff' : online ? '#8cffb8' : '#ff6b6b',
+            boxShadow: isLoading
+              ? '0 0 10px rgba(125,183,255,0.42)'
+              : online
+                ? '0 0 10px rgba(140,255,184,0.36)'
+                : '0 0 10px rgba(255,107,107,0.42)',
+          }}
+        />
+        {expanded && (
+          <>
+            <span className="text-[10px] font-mono" style={{ color: '#5e6a63' }}>
+              {isLoading ? '同步中...' : online ? '系统在线' : '已离线'}
+            </span>
+            <button
+              onClick={toggleSidebarPinned}
+              className={cn('sidebar-pin-btn ml-auto', sidebarPinned && 'pinned')}
+              aria-label={sidebarPinned ? '取消固定' : '固定侧边栏'}
+            >
+              <Pin className="w-3 h-3" />
+            </button>
+          </>
         )}
-
-        {/* User */}
-        {!sidebarCollapsed && (
-          <NavLink
-            to="/profile"
-            className="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-white/[0.04] transition-colors"
-            style={{ borderRadius: '10px' }}
-          >
-            <div className="w-7 h-7 flex items-center justify-center text-[11px] font-bold shrink-0"
-              style={{ background: 'linear-gradient(135deg, #8b5cf6, #06b6d4)', color: 'white', borderRadius: '8px' }}>
-              Q
-            </div>
-            <div className="min-w-0">
-              <div className="text-[13px] font-medium text-text-primary truncate">QuantTrader</div>
-              <div className="text-[10px] text-text-muted truncate">trader@cyberquant.io</div>
-            </div>
-          </NavLink>
-        )}
-
-        {/* Collapse Toggle */}
-        <button
-          onClick={toggleSidebar}
-          aria-label={sidebarCollapsed ? '展开侧边栏' : '收起侧边栏'}
-          className="w-full flex items-center justify-center py-1.5 cursor-pointer text-text-muted hover:text-text-secondary transition-colors"
-          style={{ borderRadius: '8px' }}
-        >
-          {sidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-        </button>
       </div>
-    </motion.aside>
+    </aside>
   )
 }

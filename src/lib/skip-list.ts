@@ -3,10 +3,12 @@
  */
 
 class SkipListNode<T> {
-  constructor(
-    public value: T,
-    public forward: (SkipListNode<T> | null)[] = []
-  ) {}
+  value: T
+  forward: (SkipListNode<T> | null)[]
+  constructor(value: T, forward: (SkipListNode<T> | null)[] = []) {
+    this.value = value
+    this.forward = forward
+  }
 }
 
 export class SkipList<T> {

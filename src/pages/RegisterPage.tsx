@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Activity, Eye, EyeOff, ArrowRight, Check } from 'lucide-react'
+import { Eye, EyeOff, ArrowRight, Check } from 'lucide-react'
 import { register } from '@/api/auth'
+import { PulseDeskLogo } from '@/components/brand/PulseDeskLogo'
 
 export function RegisterPage() {
   const navigate = useNavigate()
@@ -39,18 +40,17 @@ export function RegisterPage() {
 
   if (step === 'success') {
     return (
-      <div className="min-h-dvh flex items-center justify-center px-6" style={{ background: '#0a0a0a' }}>
-        <div className="fixed inset-0 pointer-events-none" style={{
-          background: 'radial-gradient(ellipse 60% 50% at 30% 20%, rgba(0,255,157,0.04) 0%, transparent 50%)',
-        }} />
+      <div className="min-h-dvh flex items-center justify-center px-6" style={{ background: '#070908' }}>
+        <div className="terminal-backdrop" aria-hidden="true" />
+        <div className="noise-overlay" aria-hidden="true" />
         <div className="w-full max-w-sm relative z-10 text-center">
           <div className="w-14 h-14 flex items-center justify-center mx-auto mb-6"
-            style={{ background: 'rgba(0,255,157,0.08)', borderRadius: '2px', border: '1px solid rgba(0,255,157,0.2)' }}>
-            <Check className="w-7 h-7" style={{ color: '#00ff9d' }} />
+            style={{ background: 'rgba(140,255,184,0.08)', borderRadius: 8, border: '1px solid rgba(140,255,184,0.2)' }}>
+            <Check className="w-7 h-7" style={{ color: '#8cffb8' }} />
           </div>
-          <h1 className="text-xl font-bold font-mono mb-3" style={{ color: '#e0e0e0' }}>注册成功</h1>
-          <p className="text-[13px] font-mono mb-8" style={{ color: '#555' }}>
-            账号 <span style={{ color: '#888' }}>{form.username}</span> 已创建成功
+          <h1 className="text-xl font-bold font-mono mb-3" style={{ color: '#e7f0ea' }}>注册成功</h1>
+          <p className="text-[13px] font-mono mb-8" style={{ color: '#5e6a63' }}>
+            账号 <span style={{ color: '#9aa8a0' }}>{form.username}</span> 已创建成功
           </p>
           <button onClick={() => navigate('/login')} className="btn-primary px-8 py-3 text-[14px] flex items-center gap-2 mx-auto">
             去登录 <ArrowRight className="w-4 h-4" />
@@ -61,34 +61,26 @@ export function RegisterPage() {
   }
 
   return (
-    <div className="min-h-dvh flex items-center justify-center px-6 py-12" style={{ background: '#0a0a0a' }}>
-      <div className="fixed inset-0 pointer-events-none" style={{
-        background: `
-          radial-gradient(ellipse 60% 50% at 30% 20%, rgba(0,255,157,0.04) 0%, transparent 50%),
-          radial-gradient(ellipse 40% 40% at 70% 70%, rgba(255,184,0,0.03) 0%, transparent 50%)
-        `,
-      }} />
-      <div className="grid-overlay" aria-hidden="true" />
+    <div className="min-h-dvh flex items-center justify-center px-6 py-12" style={{ background: '#070908' }}>
+      <div className="terminal-backdrop" aria-hidden="true" />
+      <div className="noise-overlay" aria-hidden="true" />
 
-      <div className="w-full max-w-sm relative z-10">
+      <div className="w-full max-w-sm relative z-10 px-1 sm:px-0">
         <div className="text-center mb-8">
-          <div className="w-10 h-10 flex items-center justify-center mx-auto mb-4"
-            style={{ background: 'rgba(0,255,157,0.08)', border: '1px solid rgba(0,255,157,0.15)', borderRadius: '2px' }}>
-            <Activity className="w-5 h-5" style={{ color: '#00ff9d' }} />
-          </div>
-          <h1 className="text-xl font-bold tracking-wider font-mono" style={{ color: '#e0e0e0' }}>创建账号</h1>
-          <p className="text-[12px] mt-2 font-mono" style={{ color: '#555' }}>注册 CyberQuant 量化交易账号</p>
+          <PulseDeskLogo size={42} className="mx-auto mb-4" />
+          <h1 className="text-xl font-bold tracking-wider font-mono" style={{ color: '#e7f0ea' }}>创建账号</h1>
+          <p className="text-[12px] mt-2 font-mono" style={{ color: '#5e6a63' }}>创建 PulseDesk 工作区账号</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="card p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="card p-5 sm:p-6 space-y-4">
           {error && (
-            <div className="p-3 text-[13px] font-mono rounded" style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)' }}>
+            <div className="p-3 text-[13px] font-mono rounded" style={{ background: 'rgba(255,107,107,0.1)', color: '#ff6b6b', border: '1px solid rgba(255,107,107,0.22)' }}>
               {error}
             </div>
           )}
 
           <div>
-            <label className="text-[11px] font-mono font-medium block mb-2" style={{ color: '#888' }}>用户名</label>
+            <label className="text-[11px] font-mono font-medium block mb-2" style={{ color: '#9aa8a0' }}>用户名</label>
             <input
               type="text"
               value={form.username}
@@ -100,19 +92,19 @@ export function RegisterPage() {
           </div>
 
           <div>
-            <label className="text-[11px] font-mono font-medium block mb-2" style={{ color: '#888' }}>邮箱</label>
+            <label className="text-[11px] font-mono font-medium block mb-2" style={{ color: '#9aa8a0' }}>邮箱</label>
             <input
               type="email"
               value={form.email}
               onChange={e => update('email', e.target.value)}
-              placeholder="trader@cyberquant.io"
+              placeholder="trader@pulsedesk.local"
               className="w-full px-4 py-3 text-[14px]"
               required
             />
           </div>
 
           <div>
-            <label className="text-[11px] font-mono font-medium block mb-2" style={{ color: '#888' }}>密码</label>
+            <label className="text-[11px] font-mono font-medium block mb-2" style={{ color: '#9aa8a0' }}>密码</label>
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
@@ -135,7 +127,7 @@ export function RegisterPage() {
                       style={{ background: rule.valid ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.04)' }}>
                       {rule.valid && <Check className="w-2.5 h-2.5 text-success" />}
                     </div>
-                    <span className="text-[12px]" style={{ color: rule.valid ? '#22c55e' : '#52525b' }}>{rule.label}</span>
+                    <span className="text-[12px]" style={{ color: rule.valid ? '#22c55e' : '#5e6a63' }}>{rule.label}</span>
                   </div>
                 ))}
               </div>
@@ -143,7 +135,7 @@ export function RegisterPage() {
           </div>
 
           <div>
-            <label className="text-[11px] font-mono font-medium block mb-2" style={{ color: '#888' }}>确认密码</label>
+            <label className="text-[11px] font-mono font-medium block mb-2" style={{ color: '#9aa8a0' }}>确认密码</label>
             <input
               type="password"
               value={form.confirm}
@@ -170,7 +162,7 @@ export function RegisterPage() {
           </button>
         </form>
 
-        <p className="text-center text-[12px] font-mono mt-6" style={{ color: '#444' }}>
+        <p className="text-center text-[12px] font-mono mt-6" style={{ color: '#5e6a63' }}>
           已有账号？ <button onClick={() => navigate('/login')} className="text-primary hover:text-primary-hover transition-colors">去登录</button>
         </p>
       </div>

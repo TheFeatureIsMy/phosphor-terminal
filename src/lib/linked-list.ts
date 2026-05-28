@@ -3,10 +3,12 @@
  */
 
 class ListNode<T> {
-  constructor(
-    public value: T,
-    public next: ListNode<T> | null = null
-  ) {}
+  value: T
+  next: ListNode<T> | null
+  constructor(value: T, next: ListNode<T> | null = null) {
+    this.value = value
+    this.next = next
+  }
 }
 
 export class LinkedList<T> {

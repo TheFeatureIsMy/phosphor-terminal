@@ -61,7 +61,7 @@ export function SHAPChart({ strategyId }: Props) {
       }))
     : []
 
-  const decisionColor = decision === 'buy' ? '#00ff9d' : decision === 'sell' ? '#ff3b3b' : '#ff9500'
+  const decisionColor = decision === 'buy' ? '#8cffb8' : decision === 'sell' ? '#ff6b6b' : '#e8b86d'
 
   return (
     <div className="space-y-5">
@@ -87,8 +87,8 @@ export function SHAPChart({ strategyId }: Props) {
 
         <ResponsiveContainer width="100%" height={240}>
           <BarChart data={chartData} layout="vertical" margin={{ left: 80 }}>
-            <XAxis type="number" tick={{ fontSize: 10, fill: '#555' }} />
-            <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: '#888', fontFamily: 'monospace' }} width={75} />
+            <XAxis type="number" tick={{ fontSize: 10, fill: '#5e6a63' }} />
+            <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: '#9aa8a0', fontFamily: 'monospace' }} width={75} />
             <Tooltip
               contentStyle={{
                 background: '#1a1a1a',
@@ -97,11 +97,11 @@ export function SHAPChart({ strategyId }: Props) {
                 fontSize: '12px',
                 fontFamily: 'monospace',
               }}
-              formatter={(v: number) => [`${(v * 100).toFixed(1)}%`, '重要性']}
+              formatter={(v) => [`${(Number(v) * 100).toFixed(1)}%`, '重要性']}
             />
             <Bar dataKey="value" radius={[0, 2, 2, 0]}>
               {chartData.map((_, i) => (
-                <Cell key={i} fill={i < 3 ? '#00ff9d' : i < 5 ? '#00ff9d80' : '#00ff9d40'} />
+                <Cell key={i} fill={i < 3 ? '#8cffb8' : i < 5 ? '#8cffb880' : '#8cffb840'} />
               ))}
             </Bar>
           </BarChart>
@@ -116,8 +116,8 @@ export function SHAPChart({ strategyId }: Props) {
             <div key={item.feature} className="flex items-center gap-3">
               <div className="w-6 h-6 flex items-center justify-center text-[10px] font-mono font-bold shrink-0"
                 style={{
-                  background: item.passed ? 'rgba(0,255,157,0.1)' : 'rgba(255,59,59,0.1)',
-                  color: item.passed ? '#00ff9d' : '#ff3b3b',
+                  background: item.passed ? 'rgba(140,255,184,0.1)' : 'rgba(255,107,107,0.1)',
+                  color: item.passed ? '#8cffb8' : '#ff6b6b',
                   borderRadius: '2px',
                 }}>
                 {i + 1}
@@ -125,7 +125,7 @@ export function SHAPChart({ strategyId }: Props) {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
                   <span className="text-[12px] font-mono text-text-primary">{item.feature}</span>
-                  <span className="text-[11px] font-mono" style={{ color: item.contribution > 0 ? '#00ff9d' : '#ff3b3b' }}>
+                  <span className="text-[11px] font-mono" style={{ color: item.contribution > 0 ? '#8cffb8' : '#ff6b6b' }}>
                     {item.contribution > 0 ? '+' : ''}{(item.contribution * 100).toFixed(1)}%
                   </span>
                 </div>
@@ -134,7 +134,7 @@ export function SHAPChart({ strategyId }: Props) {
                     className="h-full rounded-full transition-all"
                     style={{
                       width: `${Math.min(100, Math.abs(item.contribution) * 500)}%`,
-                      background: item.contribution > 0 ? '#00ff9d' : '#ff3b3b',
+                      background: item.contribution > 0 ? '#8cffb8' : '#ff6b6b',
                     }}
                   />
                 </div>

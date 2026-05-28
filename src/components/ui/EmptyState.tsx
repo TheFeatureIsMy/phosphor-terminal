@@ -23,7 +23,7 @@ export function EmptyState({ icon: Icon, title, description, action, className }
           borderRadius: '8px',
         }}
       >
-        <Icon className="w-6 h-6" style={{ color: '#555' }} />
+        <Icon className="w-6 h-6" style={{ color: '#5e6a63' }} />
       </div>
       <h3 className="text-[14px] font-medium text-text-primary mb-1">{title}</h3>
       {description && (

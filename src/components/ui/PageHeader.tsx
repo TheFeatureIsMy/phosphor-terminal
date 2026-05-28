@@ -35,8 +35,8 @@ export function PageHeader({ title, breadcrumbs, actions, className }: PageHeade
           </nav>
         )}
         <div className="flex items-center gap-3">
-          <span className="text-[11px] font-mono tracking-wider" style={{ color: 'rgba(0,255,157,0.4)' }}>//</span>
-          <h1 className="text-xl font-bold tracking-tight" style={{ fontFamily: 'Instrument Sans, sans-serif', color: '#e0e0e0' }}>
+          <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'rgba(140,255,184,0.58)', boxShadow: '0 0 8px rgba(140,255,184,0.18)' }} />
+          <h1 className="text-xl font-bold tracking-tight" style={{ fontFamily: 'Instrument Sans, sans-serif', color: '#e7f0ea' }}>
             {title}
           </h1>
         </div>

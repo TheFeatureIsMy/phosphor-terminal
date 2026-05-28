@@ -6,8 +6,8 @@ import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import { ToastProvider } from '@/components/ui/Toast'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { useGlobalShortcuts } from '@/hooks/use-keyboard-shortcuts'
+import ClickSpark from '@/components/ui/click-spark'
 
-// Lazy load pages for code splitting
 const LandingPage = lazy(() => import('@/pages/LandingPage').then(m => ({ default: m.LandingPage })))
 const LoginPage = lazy(() => import('@/pages/LoginPage').then(m => ({ default: m.LoginPage })))
 const RegisterPage = lazy(() => import('@/pages/RegisterPage').then(m => ({ default: m.RegisterPage })))
@@ -38,7 +38,7 @@ function PageLoader() {
   return (
     <div className="flex items-center justify-center h-[60vh]">
       <div className="flex flex-col items-center gap-3">
-        <div className="w-8 h-8 border-2 border-white/10 border-t-[#00ff9d] rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-white/10 border-t-[#8cffb8] rounded-full animate-spin" />
         <span className="text-[12px] font-mono text-text-muted">加载中...</span>
       </div>
     </div>
@@ -55,27 +55,29 @@ function App() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <ToastProvider>
-          <BrowserRouter>
-            <GlobalShortcuts />
-            <Suspense fallback={<PageLoader />}>
-              <Routes>
-                <Route path="/" element={<LandingPage />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
-                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-                <Route element={<ProtectedRoute><AppShell /></ProtectedRoute>}>
-                  <Route path="/dashboard" element={<DashboardPage />} />
-                  <Route path="/strategies" element={<StrategiesPage />} />
-                  <Route path="/strategies/:id" element={<StrategyDetailPage />} />
-                  <Route path="/backtest" element={<BacktestPage />} />
-                  <Route path="/trades" element={<TradesPage />} />
-                  <Route path="/settings" element={<SettingsPage />} />
-                  <Route path="/profile" element={<ProfilePage />} />
-                  <Route path="/lab" element={<StrategyLabPage />} />
-                </Route>
-              </Routes>
-            </Suspense>
-          </BrowserRouter>
+          <ClickSpark sparkColor="#8cffb8" sparkCount={5} sparkRadius={12} duration={320}>
+            <BrowserRouter>
+              <GlobalShortcuts />
+              <Suspense fallback={<PageLoader />}>
+                <Routes>
+                  <Route path="/" element={<LandingPage />} />
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/register" element={<RegisterPage />} />
+                  <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                  <Route element={<ProtectedRoute><AppShell /></ProtectedRoute>}>
+                    <Route path="/dashboard" element={<DashboardPage />} />
+                    <Route path="/strategies" element={<StrategiesPage />} />
+                    <Route path="/strategies/:id" element={<StrategyDetailPage />} />
+                    <Route path="/backtest" element={<BacktestPage />} />
+                    <Route path="/trades" element={<TradesPage />} />
+                    <Route path="/settings" element={<SettingsPage />} />
+                    <Route path="/profile" element={<ProfilePage />} />
+                    <Route path="/lab" element={<StrategyLabPage />} />
+                  </Route>
+                </Routes>
+              </Suspense>
+            </BrowserRouter>
+          </ClickSpark>
         </ToastProvider>
       </QueryClientProvider>
     </ErrorBoundary>

@@ -28,10 +28,10 @@ export const TIMEFRAMES = ['1m', '5m', '15m', '1h', '4h', '1d'] as const
 
 // Colors
 export const COLORS = {
-  profit: '#00ff9d',
-  loss: '#ff3b3b',
-  warning: '#ff9500',
-  info: '#00c2ff',
+  profit: '#8cffb8',
+  loss: '#ff6b6b',
+  warning: '#e8b86d',
+  info: '#7db7ff',
   primary: '#8b5cf6',
   secondary: '#06b6d4',
 } as const

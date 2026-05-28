@@ -10,6 +10,13 @@ export interface User {
   updated_at: string
 }
 
+export interface DataSourceStatus {
+  source: 'freqtrade' | 'freqtrade_db' | 'simulated' | 'unavailable' | string
+  simulated: boolean
+  available: boolean
+  detail?: string | null
+}
+
 export type StrategyType = 'ma_cross' | 'breakout' | 'grid' | 'mean_reversion' | 'rag_generated'
 export type StrategySource = 'manual' | 'rag_generated' | 'optimized'
 export type StrategyStatus = 'draft' | 'backtested' | 'active' | 'paused' | 'retired'
@@ -27,6 +34,7 @@ export interface Strategy {
   status: StrategyStatus
   sharpe_ratio?: number
   max_drawdown?: number
+  freqtrade_strategy_id?: string
   created_at: string
   updated_at: string
 }
@@ -60,6 +68,7 @@ export interface Order {
   status: OrderStatus
   profit?: number
   pnl_pct?: number
+  data_source?: DataSourceStatus
 }
 
 export interface Position {
@@ -76,6 +85,7 @@ export interface Position {
   status: 'open' | 'closed'
   opened_at: string
   closed_at?: string
+  data_source?: DataSourceStatus
 }
 
 export interface AttributionReport {
@@ -145,6 +155,7 @@ export interface Backtest {
   total_return: number
   passed: boolean
   created_at: string
+  data_source?: DataSourceStatus
 }
 
 export interface BacktestMetrics {
@@ -163,6 +174,7 @@ export interface EquityPoint {
   date: string
   value: number
   drawdown: number
+  data_source?: DataSourceStatus
 }
 
 export interface SentimentData {
@@ -192,6 +204,7 @@ export interface SystemStatus {
   pending_orders: number
   last_data_update: string
   api_status: 'connected' | 'disconnected' | 'error'
+  data_source?: DataSourceStatus
 }
 
 // Dashboard KPI types
@@ -204,6 +217,7 @@ export interface DashboardKPIs {
   active_strategies: number
   todays_trades: number
   open_positions: number
+  data_source?: DataSourceStatus
 }
 
 // Constants
@@ -218,3 +232,12 @@ export type Market = typeof MARKETS[number]
 
 export const TIMEFRAMES = ['1m', '5m', '15m', '1h', '4h', '1d'] as const
 export type Timeframe = typeof TIMEFRAMES[number]
+
+export interface SystemMetrics {
+  cpu_percent: number
+  memory_percent: number
+  network_latency_ms: number
+  uptime: string
+  active_strategies: number
+  open_positions: number
+}

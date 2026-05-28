@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Activity, Eye, EyeOff, ArrowRight } from 'lucide-react'
+import { Eye, EyeOff, ArrowRight } from 'lucide-react'
 import { login, getMe } from '@/api/auth'
 import { useAuthStore } from '@/stores/auth-store'
+import { PulseDeskLogo } from '@/components/brand/PulseDeskLogo'
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -31,38 +32,26 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-dvh flex items-center justify-center px-6" style={{ background: '#0a0a0a' }}>
-      <div className="fixed inset-0 pointer-events-none" style={{
-        background: `
-          radial-gradient(ellipse 60% 50% at 30% 20%, rgba(0,255,157,0.04) 0%, transparent 50%),
-          radial-gradient(ellipse 40% 40% at 70% 70%, rgba(255,184,0,0.03) 0%, transparent 50%)
-        `,
-      }} />
-      <div className="grid-overlay" aria-hidden="true" />
+    <div className="min-h-dvh flex items-center justify-center px-6" style={{ background: '#070908' }}>
+      <div className="terminal-backdrop" aria-hidden="true" />
+      <div className="noise-overlay" aria-hidden="true" />
 
-      <div className="w-full max-w-sm relative z-10">
+      <div className="w-full max-w-sm relative z-10 px-1 sm:px-0">
         <div className="text-center mb-10">
-          <div className="w-10 h-10 flex items-center justify-center mx-auto mb-4"
-            style={{
-              background: 'rgba(0,255,157,0.08)',
-              border: '1px solid rgba(0,255,157,0.15)',
-              borderRadius: '2px',
-            }}>
-            <Activity className="w-5 h-5" style={{ color: '#00ff9d' }} />
-          </div>
-          <h1 className="text-xl font-bold tracking-wider font-mono" style={{ color: '#e0e0e0' }}>CYBERQUANT</h1>
-          <p className="text-[12px] mt-2 font-mono" style={{ color: '#555' }}>登录到量化交易控制台</p>
+          <PulseDeskLogo size={42} className="mx-auto mb-4" />
+          <h1 className="text-xl font-bold tracking-wider font-mono" style={{ color: '#e7f0ea' }}>PulseDesk</h1>
+          <p className="text-[12px] mt-2 font-mono" style={{ color: '#5e6a63' }}>登录到 AI Trading Workbench</p>
         </div>
 
-        <form onSubmit={handleLogin} className="card p-6 space-y-5">
+        <form onSubmit={handleLogin} className="card p-5 sm:p-6 space-y-5">
           {error && (
-            <div className="p-3 text-[13px] font-mono rounded" style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)' }}>
+            <div className="p-3 text-[13px] font-mono rounded" style={{ background: 'rgba(255,107,107,0.1)', color: '#ff6b6b', border: '1px solid rgba(255,107,107,0.22)' }}>
               {error}
             </div>
           )}
 
           <div>
-            <label className="text-[11px] font-mono font-medium block mb-2" style={{ color: '#888' }}>用户名</label>
+            <label className="text-[11px] font-mono font-medium block mb-2" style={{ color: '#9aa8a0' }}>用户名</label>
             <input
               type="text"
               value={username}
@@ -74,7 +63,7 @@ export function LoginPage() {
           </div>
 
           <div>
-            <label className="text-[11px] font-mono font-medium block mb-2" style={{ color: '#888' }}>密码</label>
+            <label className="text-[11px] font-mono font-medium block mb-2" style={{ color: '#9aa8a0' }}>密码</label>
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
@@ -97,7 +86,7 @@ export function LoginPage() {
           <div className="flex items-center justify-between">
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" className="w-4 h-4" />
-              <span className="text-[12px] font-mono" style={{ color: '#888' }}>记住登录</span>
+              <span className="text-[12px] font-mono" style={{ color: '#9aa8a0' }}>记住登录</span>
             </label>
             <button type="button" onClick={() => navigate('/forgot-password')} className="text-[13px] text-primary hover:text-primary-hover transition-colors">
               忘记密码？
@@ -117,7 +106,7 @@ export function LoginPage() {
           </button>
         </form>
 
-        <p className="text-center text-[12px] font-mono mt-6" style={{ color: '#444' }}>
+        <p className="text-center text-[12px] font-mono mt-6" style={{ color: '#5e6a63' }}>
           还没有账号？ <button onClick={() => navigate('/register')} className="text-primary hover:text-primary-hover transition-colors">申请注册</button>
         </p>
       </div>

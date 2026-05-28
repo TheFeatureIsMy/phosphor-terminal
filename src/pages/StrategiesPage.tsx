@@ -5,15 +5,16 @@ import { useStrategies, useCreateStrategy, useDeleteStrategy, useUpdateStrategy 
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useToast } from '@/components/ui/Toast'
 import { CardSkeleton } from '@/components/ui/Skeleton'
+import { DepthCard } from '@/components/ui/DepthCard'
 import { cn } from '@/lib/utils'
 import type { Strategy, StrategyStatus, StrategyType } from '@/types'
 
 const statusConfig: Record<StrategyStatus, { label: string; cls: string; dot: string; bg: string }> = {
-  draft: { label: '草稿', cls: 'text-text-muted', dot: '#555', bg: 'rgba(255,255,255,0.04)' },
-  backtested: { label: '已回测', cls: 'text-info', dot: '#00c2ff', bg: 'rgba(0,194,255,0.08)' },
-  active: { label: '运行中', cls: 'text-success', dot: '#00ff9d', bg: 'rgba(0,255,157,0.08)' },
-  paused: { label: '已暂停', cls: 'text-warning', dot: '#ffb800', bg: 'rgba(255,184,0,0.08)' },
-  retired: { label: '已退役', cls: 'text-text-muted', dot: '#555', bg: 'rgba(255,255,255,0.04)' },
+  draft: { label: '草稿', cls: 'text-text-muted', dot: '#5e6a63', bg: 'rgba(255,255,255,0.04)' },
+  backtested: { label: '已回测', cls: 'text-info', dot: '#7db7ff', bg: 'rgba(125,183,255,0.08)' },
+  active: { label: '运行中', cls: 'text-success', dot: '#8cffb8', bg: 'rgba(140,255,184,0.08)' },
+  paused: { label: '已暂停', cls: 'text-warning', dot: '#e8b86d', bg: 'rgba(232,184,109,0.08)' },
+  retired: { label: '已退役', cls: 'text-text-muted', dot: '#5e6a63', bg: 'rgba(255,255,255,0.04)' },
 }
 
 const typeLabels: Record<StrategyType, string> = {
@@ -22,8 +23,8 @@ const typeLabels: Record<StrategyType, string> = {
 }
 
 const typeColors: Record<StrategyType, string> = {
-  ma_cross: '#00ff9d', breakout: '#00c2ff', grid: '#ffb800',
-  mean_reversion: '#ff3b3b', rag_generated: '#00ff9d',
+  ma_cross: '#8cffb8', breakout: '#7db7ff', grid: '#e8b86d',
+  mean_reversion: '#ff6b6b', rag_generated: '#8cffb8',
 }
 
 export function StrategiesPage() {
@@ -80,28 +81,28 @@ export function StrategiesPage() {
       />
 
       {/* Stats modules */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="card p-5 flex items-center gap-4">
-          <div className="w-10 h-10 flex items-center justify-center" style={{ background: 'rgba(0,255,157,0.06)', border: '1px solid rgba(0,255,157,0.12)', borderRadius: '2px' }}>
-            <GitBranch className="w-4 h-4" style={{ color: '#00ff9d' }} />
+      <div className="grid grid-cols-3 gap-4 stagger">
+        <DepthCard className="animate-in p-5 flex items-center gap-4">
+          <div className="w-10 h-10 flex items-center justify-center" style={{ background: 'rgba(140,255,184,0.06)', border: '1px solid rgba(140,255,184,0.12)', borderRadius: '2px' }}>
+            <GitBranch className="w-4 h-4" style={{ color: '#8cffb8' }} />
           </div>
           <div>
             <div className="terminal-label">总策略</div>
             <div className="text-2xl font-bold font-tabular">{totalCount}</div>
           </div>
-        </div>
-        <div className="card p-5 flex items-center gap-4">
-          <div className="w-10 h-10 flex items-center justify-center" style={{ background: 'rgba(0,255,157,0.06)', border: '1px solid rgba(0,255,157,0.12)', borderRadius: '2px' }}>
-            <Play className="w-4 h-4" style={{ color: '#00ff9d' }} />
+        </DepthCard>
+        <DepthCard className="animate-in p-5 flex items-center gap-4">
+          <div className="w-10 h-10 flex items-center justify-center" style={{ background: 'rgba(140,255,184,0.06)', border: '1px solid rgba(140,255,184,0.12)', borderRadius: '2px' }}>
+            <Play className="w-4 h-4" style={{ color: '#8cffb8' }} />
           </div>
           <div>
             <div className="terminal-label">运行中</div>
-            <div className="text-2xl font-bold font-tabular" style={{ color: '#00ff9d' }}>{activeCount}</div>
+            <div className="text-2xl font-bold font-tabular" style={{ color: '#8cffb8' }}>{activeCount}</div>
           </div>
-        </div>
-        <div className="card p-5 flex items-center gap-4">
-          <div className="w-10 h-10 flex items-center justify-center" style={{ background: 'rgba(255,184,0,0.06)', border: '1px solid rgba(255,184,0,0.12)', borderRadius: '2px' }}>
-            <TrendingUp className="w-4 h-4" style={{ color: '#ffb800' }} />
+        </DepthCard>
+        <DepthCard className="animate-in p-5 flex items-center gap-4">
+          <div className="w-10 h-10 flex items-center justify-center" style={{ background: 'rgba(232,184,109,0.06)', border: '1px solid rgba(232,184,109,0.12)', borderRadius: '2px' }}>
+            <TrendingUp className="w-4 h-4" style={{ color: '#e8b86d' }} />
           </div>
           <div>
             <div className="terminal-label">平均夏普</div>
@@ -111,12 +112,12 @@ export function StrategiesPage() {
                 : '--'}
             </div>
           </div>
-        </div>
+        </DepthCard>
       </div>
 
       {/* Create form */}
       {showCreate && (
-        <div className="card p-5" style={{ border: '1px solid rgba(0,255,157,0.2)' }}>
+        <div className="card p-5" style={{ border: '1px solid rgba(140,255,184,0.2)' }}>
           <div className="flex gap-3">
             <input
               value={newName}
@@ -132,14 +133,14 @@ export function StrategiesPage() {
       )}
 
       {/* Strategy card grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 stagger">
         {strategies?.map(strategy => {
           const sc = statusConfig[strategy.status]
-          const tc = typeColors[strategy.type] || '#00ff9d'
+          const tc = typeColors[strategy.type] || '#8cffb8'
           return (
-            <div
+            <DepthCard
               key={strategy.id}
-              className="card p-5 cursor-pointer group transition-all duration-150"
+              className="animate-in p-5 cursor-pointer"
               onClick={() => navigate(`/strategies/${strategy.id}`)}
             >
               {/* Header: Type badge + Status */}
@@ -159,8 +160,8 @@ export function StrategiesPage() {
               </div>
 
               {/* Name */}
-              <h3 className="text-[15px] font-semibold font-mono mb-1 truncate" style={{ color: '#e0e0e0' }}>{strategy.name}</h3>
-              <div className="flex items-center gap-2 text-[11px] font-mono mb-5" style={{ color: '#555' }}>
+              <h3 className="text-[15px] font-semibold font-mono mb-1 truncate" style={{ color: '#e7f0ea' }}>{strategy.name}</h3>
+              <div className="flex items-center gap-2 text-[11px] font-mono mb-5" style={{ color: '#5e6a63' }}>
                 <span>{strategy.exchange}</span>
                 <span>·</span>
                 <span>v{strategy.version}</span>
@@ -172,17 +173,17 @@ export function StrategiesPage() {
               <div className="grid grid-cols-2 gap-3 mb-4">
                 <div className="p-3" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)', borderRadius: '2px' }}>
                   <div className="flex items-center gap-1.5 mb-1">
-                    <BarChart3 className="w-3 h-3" style={{ color: '#00ff9d' }} />
+                    <BarChart3 className="w-3 h-3" style={{ color: '#8cffb8' }} />
                     <span className="terminal-label" style={{ fontSize: '9px' }}>夏普</span>
                   </div>
                   <div className="text-lg font-bold font-tabular">{strategy.sharpe_ratio?.toFixed(2) || '--'}</div>
                 </div>
                 <div className="p-3" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)', borderRadius: '2px' }}>
                   <div className="flex items-center gap-1.5 mb-1">
-                    <AlertTriangle className="w-3 h-3" style={{ color: '#ffb800' }} />
+                    <AlertTriangle className="w-3 h-3" style={{ color: '#e8b86d' }} />
                     <span className="terminal-label" style={{ fontSize: '9px' }}>回撤</span>
                   </div>
-                  <div className="text-lg font-bold font-tabular" style={{ color: '#ffb800' }}>
+                  <div className="text-lg font-bold font-tabular" style={{ color: '#e8b86d' }}>
                     {strategy.max_drawdown ? `-${strategy.max_drawdown.toFixed(1)}%` : '--'}
                   </div>
                 </div>
@@ -219,7 +220,7 @@ export function StrategiesPage() {
                 </div>
                 <ArrowRight className="w-4 h-4 text-text-muted group-hover:text-primary transition-colors" />
               </div>
-            </div>
+            </DepthCard>
           )
         })}
       </div>

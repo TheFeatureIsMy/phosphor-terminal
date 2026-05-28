@@ -102,7 +102,7 @@ export function Toggle({ label, defaultChecked, description }: ToggleProps) {
     >
       <div className="min-w-0">
         <div className="text-[13px] font-mono font-medium">{label}</div>
-        {description && <div className="text-[11px] font-mono mt-0.5" style={{ color: '#555' }}>{description}</div>}
+        {description && <div className="text-[11px] font-mono mt-0.5" style={{ color: '#5e6a63' }}>{description}</div>}
       </div>
       <div className={cn('toggle shrink-0 ml-3', active && 'active')} />
     </button>

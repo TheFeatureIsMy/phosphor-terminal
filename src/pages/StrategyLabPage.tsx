@@ -103,13 +103,13 @@ export function StrategyLabPage() {
             onClick={() => { setActiveTab(id); if (id === 'knowledge') loadDocuments() }}
             className={cn(
               'flex items-center gap-2 px-4 py-2.5 text-[12px] font-mono font-medium transition-all duration-150 relative',
-              activeTab === id ? 'text-[#e0e0e0]' : 'text-[#555] hover:text-[#888]'
+              activeTab === id ? 'text-[#e7f0ea]' : 'text-[#5e6a63] hover:text-[#9aa8a0]'
             )}
           >
             {activeTab === id && (
-              <div className="absolute bottom-0 left-0 right-0 h-[2px]" style={{ background: '#00ff9d' }} />
+              <div className="absolute bottom-0 left-0 right-0 h-[2px]" style={{ background: '#8cffb8' }} />
             )}
-            <Icon className="w-3.5 h-3.5" style={{ color: activeTab === id ? '#00ff9d' : undefined }} /> {label}
+            <Icon className="w-3.5 h-3.5" style={{ color: activeTab === id ? '#8cffb8' : undefined }} /> {label}
           </button>
         ))}
       </div>
@@ -166,7 +166,7 @@ export function StrategyLabPage() {
                 {result.context_used.map((ctx, i) => (
                   <div key={i} className="p-3 text-[12px] font-mono" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}>
                     <div className="text-text-muted line-clamp-2">{ctx.content}</div>
-                    <div className="text-[10px] mt-1" style={{ color: '#00ff9d' }}>相关度: {(ctx.relevance * 100).toFixed(0)}%</div>
+                    <div className="text-[10px] mt-1" style={{ color: '#8cffb8' }}>相关度: {(ctx.relevance * 100).toFixed(0)}%</div>
                   </div>
                 ))}
               </div>
@@ -191,7 +191,7 @@ export function StrategyLabPage() {
                     <button
                       onClick={copyCode}
                       className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-mono transition-colors"
-                      style={{ color: copied ? '#00ff9d' : '#555', background: 'rgba(255,255,255,0.04)', borderRadius: '2px' }}
+                      style={{ color: copied ? '#8cffb8' : '#5e6a63', background: 'rgba(255,255,255,0.04)', borderRadius: '2px' }}
                     >
                       {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                       {copied ? '已复制' : '复制'}
@@ -204,8 +204,8 @@ export function StrategyLabPage() {
               </>
             ) : (
               <div className="card p-12 flex flex-col items-center justify-center text-center">
-                <div className="w-12 h-12 flex items-center justify-center mb-4" style={{ background: 'rgba(0,255,157,0.06)', borderRadius: '4px' }}>
-                  <Code className="w-6 h-6" style={{ color: '#00ff9d40' }} />
+                <div className="w-12 h-12 flex items-center justify-center mb-4" style={{ background: 'rgba(140,255,184,0.06)', borderRadius: '4px' }}>
+                  <Code className="w-6 h-6" style={{ color: '#8cffb840' }} />
                 </div>
                 <p className="text-[13px] font-mono text-text-muted">描述你想要的策略，AI 将为你生成代码</p>
                 <p className="text-[11px] font-mono mt-1" style={{ color: '#444' }}>支持中文和英文描述</p>
@@ -242,7 +242,7 @@ export function StrategyLabPage() {
                 {documents.map((doc) => (
                   <div key={doc.id} className="flex items-center justify-between p-3 surface-subtle">
                     <div className="flex items-center gap-3">
-                      <FileText className="w-4 h-4" style={{ color: '#555' }} />
+                      <FileText className="w-4 h-4" style={{ color: '#5e6a63' }} />
                       <div>
                         <div className="text-[13px] font-mono text-text-primary">{doc.filename}</div>
                         <div className="text-[10px] font-mono text-text-muted">
