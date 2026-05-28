@@ -1,10 +1,10 @@
-# CyberQuant OS (Phosphor Terminal) — 项目知识档案
+# PulseDesk (PulseDesk) — 项目知识档案
 
 ## §1 身份卡
 
 | 字段 | 值 |
 |------|-----|
-| 产品名 | CyberQuant OS / Phosphor Terminal |
+| 产品名 | PulseDesk / PulseDesk |
 | 一句话描述 | AI驱动的加密货币量化交易仪表盘 |
 | 版本 | v0.3.0 |
 | 技术栈 | React 19 + Vite 8 + Tailwind CSS v4 + TypeScript 6 (前端) \| FastAPI + SQLAlchemy + SQLite (后端) \| Freqtrade (交易引擎) |

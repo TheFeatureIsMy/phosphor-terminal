@@ -62,4 +62,4 @@ Set in `.env` (Vite auto-loads):
 
 ## PRD Reference
 
-The full product requirements are in `../CyberQuant OS 量化交易系统工程PRD v2.0.md`. Key differentiating features: RAG strategy lab (PDF→code), SHAP XAI attribution, microstructure audit (wash trading/spoofing detection), FinBERT sentiment, FreqAI incremental learning. Python backend (Freqtrade + CCXT) is planned but not yet built.
+The full product requirements are in the PulseDesk quantitative trading system PRD. Key differentiating features: RAG strategy lab (PDF→code), SHAP XAI attribution, microstructure audit (wash trading/spoofing detection), FinBERT sentiment, FreqAI incremental learning. Python backend (Freqtrade + CCXT) is planned but not yet built.

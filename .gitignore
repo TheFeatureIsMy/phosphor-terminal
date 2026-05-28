@@ -43,3 +43,6 @@ data/
 # Freqtrade user data (keep config, ignore generated)
 freqtrade/user_data/logs/
 freqtrade/user_data/*.sqlite
+
+# Tauri
+src-tauri/target/
