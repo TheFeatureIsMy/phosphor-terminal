@@ -1,4 +1,3 @@
-import random
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter
 
@@ -11,19 +10,26 @@ from app.schemas.api import (
 router = APIRouter(prefix="/api/backtest", tags=["backtest"])
 
 
-def _generate_mock_backtest(request: BacktestRequest) -> dict:
-    """Generate mock backtest result when Freqtrade is unavailable."""
+def _generate_simulated_backtest(request: BacktestRequest) -> dict:
+    """Generate deterministic simulated backtest result when Freqtrade is unavailable."""
     start = datetime.strptime(request.start_date, "%Y-%m-%d")
     end = datetime.strptime(request.end_date, "%Y-%m-%d")
-    days = (end - start).days
+    days = max((end - start).days, 1)
+    data_source = {
+        "source": "simulated",
+        "simulated": True,
+        "available": False,
+        "detail": "Freqtrade backtest API is unavailable; deterministic simulated result is shown.",
+    }
 
-    # Generate equity curve
     equity_curve = []
     value = request.initial_capital
     peak = value
     current = start
+    day_index = 0
     while current <= end:
-        change = value * random.uniform(-0.02, 0.03)
+        cycle = ((day_index % 11) - 4) / 1000
+        change = value * (0.0015 + cycle)
         value += change
         peak = max(peak, value)
         drawdown = ((value - peak) / peak * 100) if peak > 0 else 0
@@ -31,32 +37,35 @@ def _generate_mock_backtest(request: BacktestRequest) -> dict:
             "date": current.strftime("%Y-%m-%d"),
             "value": round(value, 2),
             "drawdown": round(drawdown, 2),
+            "data_source": data_source,
         })
         current += timedelta(days=1)
+        day_index += 1
 
-    # Generate mock trades
     trades = []
     symbols = request.symbols or ["BTC/USDT"]
-    for i in range(random.randint(20, 60)):
-        side = random.choice(["BUY", "SELL"])
-        price = random.uniform(20000, 70000)
-        qty = random.uniform(0.001, 0.1)
-        profit = random.uniform(-500, 800)
+    trade_count = min(max(days * 2, 12), 60)
+    for i in range(trade_count):
+        side = "BUY" if i % 2 == 0 else "SELL"
+        price = 25000 + ((i * 719) % 43000)
+        qty = 0.01 + (i % 8) * 0.006
+        profit = ((i % 5) - 1.7) * 42
         trades.append({
             "id": i + 1,
             "strategy_id": request.strategy_id,
-            "symbol": random.choice(symbols),
+            "symbol": symbols[i % len(symbols)],
             "side": side,
             "order_type": "market",
             "quantity": round(qty, 6),
             "price": round(price, 2),
-            "filled_price": round(price * random.uniform(0.998, 1.002), 2),
+            "filled_price": round(price * (1.0004 if side == "BUY" else 0.9996), 2),
             "fee": round(abs(price * qty * 0.001), 2),
-            "slippage": round(random.uniform(-0.5, 0.5), 4),
-            "timestamp": (start + timedelta(days=random.randint(0, days))).isoformat(),
+            "slippage": round(price * 0.0004, 4),
+            "timestamp": (start + timedelta(days=i % days)).isoformat(),
             "status": "filled",
             "profit": round(profit, 2),
             "pnl_pct": round(profit / (price * qty) * 100, 2),
+            "data_source": data_source,
         })
 
     total_trades = len(trades)
@@ -67,12 +76,12 @@ def _generate_mock_backtest(request: BacktestRequest) -> dict:
 
     metrics = BacktestMetricsResponse(
         total_return=round(total_return, 2),
-        sharpe_ratio=round(random.uniform(0.5, 2.5), 2),
-        max_drawdown=round(random.uniform(5, 25), 2),
+        sharpe_ratio=1.12,
+        max_drawdown=round(abs(min(point["drawdown"] for point in equity_curve)), 2),
         win_rate=round(win_rate, 1),
-        profit_factor=round(random.uniform(1.0, 3.0), 2),
+        profit_factor=1.36,
         total_trades=total_trades,
-        avg_trade_duration=f"{random.randint(1, 48)}h {random.randint(0, 59)}m",
+        avg_trade_duration="8h 00m",
         best_trade=round(max(t.get("profit") or 0 for t in trades), 2),
         worst_trade=round(min(t.get("profit") or 0 for t in trades), 2),
     )
@@ -85,6 +94,7 @@ def _generate_mock_backtest(request: BacktestRequest) -> dict:
         "max_drawdown": metrics.max_drawdown,
         "win_rate": metrics.win_rate,
         "total_return": metrics.total_return,
+        "data_source": data_source,
     }
 
 
@@ -123,44 +133,51 @@ async def run_backtest(request: BacktestRequest):
             total_return=ft_result.get("total_return", 0),
             passed=ft_result.get("sharpe_ratio", 0) > 1.0,
             created_at=datetime.now(timezone.utc),
+            data_source={
+                "source": "freqtrade",
+                "simulated": False,
+                "available": True,
+                "detail": None,
+            },
         )
 
-    # Fallback to mock data
-    mock = _generate_mock_backtest(request)
+    simulated = _generate_simulated_backtest(request)
     return BacktestResponse(
         id=1,
         strategy_id=request.strategy_id,
         config=request.model_dump(),
         result=BacktestResultResponse(
-            equity_curve=mock["equity_curve"],
-            trades=mock["trades"],
-            metrics=mock["metrics"],
+            equity_curve=simulated["equity_curve"],
+            trades=simulated["trades"],
+            metrics=simulated["metrics"],
         ),
-        sharpe_ratio=mock["sharpe_ratio"],
-        max_drawdown=mock["max_drawdown"],
-        win_rate=mock["win_rate"],
-        total_return=mock["total_return"],
-        passed=mock["sharpe_ratio"] > 1.0,
+        sharpe_ratio=simulated["sharpe_ratio"],
+        max_drawdown=simulated["max_drawdown"],
+        win_rate=simulated["win_rate"],
+        total_return=simulated["total_return"],
+        passed=simulated["sharpe_ratio"] > 1.0,
         created_at=datetime.now(timezone.utc),
+        data_source=simulated["data_source"],
     )
 
 
 @router.get("/{backtest_id}", response_model=BacktestResponse)
 async def get_backtest(backtest_id: int):
-    mock = _generate_mock_backtest(BacktestRequest(strategy_id=1))
+    simulated = _generate_simulated_backtest(BacktestRequest(strategy_id=1))
     return BacktestResponse(
         id=backtest_id,
         strategy_id=1,
         config={"start_date": "2025-01-01", "end_date": "2025-12-31", "initial_capital": 10000},
         result=BacktestResultResponse(
-            equity_curve=mock["equity_curve"],
-            trades=mock["trades"],
-            metrics=mock["metrics"],
+            equity_curve=simulated["equity_curve"],
+            trades=simulated["trades"],
+            metrics=simulated["metrics"],
         ),
-        sharpe_ratio=mock["sharpe_ratio"],
-        max_drawdown=mock["max_drawdown"],
-        win_rate=mock["win_rate"],
-        total_return=mock["total_return"],
-        passed=mock["sharpe_ratio"] > 1.0,
+        sharpe_ratio=simulated["sharpe_ratio"],
+        max_drawdown=simulated["max_drawdown"],
+        win_rate=simulated["win_rate"],
+        total_return=simulated["total_return"],
+        passed=simulated["sharpe_ratio"] > 1.0,
         created_at=datetime.now(timezone.utc),
+        data_source=simulated["data_source"],
     )

@@ -19,8 +19,43 @@ class FreqtradeDB:
             else:
                 return None
         return self._engine
-    def _query(self, sql: str, params: Optional[dict] = None) -> List[dict]:
+
+    def is_available(self) -> bool:
         if self.engine is None:
+            return False
+        try:
+            with self.engine.connect() as conn:
+                row = conn.execute(
+                    text("SELECT name FROM sqlite_master WHERE type='table' AND name='trades'")
+                ).fetchone()
+                return row is not None
+        except Exception:
+            return False
+
+    def source_status(self, simulated: bool = False, detail: Optional[str] = None) -> dict:
+        if simulated:
+            return {
+                "source": "simulated",
+                "simulated": True,
+                "available": False,
+                "detail": detail or "Freqtrade trade database is unavailable; deterministic simulated data is shown.",
+            }
+        if self.is_available():
+            return {
+                "source": "freqtrade_db",
+                "simulated": False,
+                "available": True,
+                "detail": None,
+            }
+        return {
+            "source": "unavailable",
+            "simulated": False,
+            "available": False,
+            "detail": detail or "Freqtrade trade database is unavailable or has no trades table.",
+        }
+
+    def _query(self, sql: str, params: Optional[dict] = None) -> List[dict]:
+        if not self.is_available():
             return []
         with self.engine.connect() as conn:
             result = conn.execute(text(sql), params or {})

@@ -12,17 +12,25 @@ router = APIRouter(prefix="/api/system", tags=["system"])
 async def get_system_status():
     try:
         ft_status = await freqtrade_client.get_status()
-        api_ok = isinstance(ft_status, list) or (isinstance(ft_status, dict) and "error" not in ft_status)
+        api_ok = freqtrade_client.is_success(ft_status)
         open_pos = len(ft_status) if isinstance(ft_status, list) else 0
-    except Exception:
+        detail = None if api_ok else str(ft_status.get("error") if isinstance(ft_status, dict) else "Unknown Freqtrade error")
+    except Exception as exc:
         api_ok = False
         open_pos = 0
+        detail = str(exc)
 
     return SystemStatusResponse(
-        uptime="3d 14h 22m",
-        active_strategies=2 if api_ok else 1,
-        open_positions=open_pos or 3,
+        uptime="unknown" if not api_ok else "connected",
+        active_strategies=2 if api_ok else 0,
+        open_positions=open_pos,
         pending_orders=0,
         last_data_update=datetime.now(timezone.utc),
-        api_status="connected" if api_ok else "connected",
+        api_status="connected" if api_ok else "disconnected",
+        data_source={
+            "source": "freqtrade" if api_ok else "unavailable",
+            "simulated": False,
+            "available": api_ok,
+            "detail": detail,
+        },
     )

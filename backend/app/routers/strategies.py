@@ -10,6 +10,8 @@ from app.schemas.api import (
     StrategyCreate, StrategyUpdate, StrategyResponse,
     StrategyStatus, PaginatedResponse,
 )
+from app.services.strategy_registry import register_strategy_file
+from app.services.market_registry import market_registry
 router = APIRouter(prefix="/api/strategies", tags=["strategies"])
 @router.get("", response_model=PaginatedResponse)
 def list_strategies(
@@ -38,6 +40,10 @@ def get_strategy(strategy_id: int, db: Session = Depends(get_db)):
     return strategy
 @router.post("", response_model=StrategyResponse, status_code=201)
 def create_strategy(data: StrategyCreate, db: Session = Depends(get_db)):
+    try:
+        market_registry.validate(data.market, require_enabled=False)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     strategy = Strategy(
         name=data.name,
         type=data.type.value,
@@ -48,15 +54,35 @@ def create_strategy(data: StrategyCreate, db: Session = Depends(get_db)):
     db.add(strategy)
     db.commit()
     db.refresh(strategy)
+    strategy.freqtrade_strategy_id = register_strategy_file(
+        strategy.id,
+        strategy.name,
+        strategy.type,
+        strategy.parameters or {},
+    )
+    db.commit()
+    db.refresh(strategy)
     return strategy
 @router.put("/{strategy_id}", response_model=StrategyResponse)
 def update_strategy(strategy_id: int, data: StrategyUpdate, db: Session = Depends(get_db)):
     strategy = db.query(Strategy).filter(Strategy.id == strategy_id).first()
     if not strategy:
         raise HTTPException(status_code=404, detail="Strategy not found")
-    for field, value in data.model_dump(exclude_unset=True).items():
+    updates = data.model_dump(exclude_unset=True)
+    if "market" in updates:
+        try:
+            market_registry.validate(updates["market"], require_enabled=False)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+    for field, value in updates.items():
         setattr(strategy, field, value.value if hasattr(value, 'value') else value)
     strategy.updated_at = datetime.now(timezone.utc)
+    strategy.freqtrade_strategy_id = register_strategy_file(
+        strategy.id,
+        strategy.name,
+        strategy.type,
+        strategy.parameters or {},
+    )
     db.commit()
     db.refresh(strategy)
     return strategy

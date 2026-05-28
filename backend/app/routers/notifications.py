@@ -1,10 +1,13 @@
 from __future__ import annotations
 from datetime import datetime, timezone
+from typing import Optional
+
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.services.telegram_notifier import send_telegram_notification
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
 
@@ -16,6 +19,14 @@ class Notification(BaseModel):
     message: str
     read: bool
     created_at: datetime
+
+
+class TelegramDryRunRequest(BaseModel):
+    event_type: str = "risk_event"
+    severity: str = "medium"
+    description: str
+    action_taken: str = "review_required"
+    chat_id: Optional[str] = None
 
 
 # In-memory notifications for now (would be DB-backed in production)
@@ -66,3 +77,8 @@ def mark_all_read():
     for n in _notifications:
         n["read"] = True
     return {"ok": True}
+
+
+@router.post("/telegram/dry-run")
+def telegram_dry_run(body: TelegramDryRunRequest):
+    return send_telegram_notification(body.model_dump(), dry_run=True, chat_id=body.chat_id)
