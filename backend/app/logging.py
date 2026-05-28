@@ -1,5 +1,5 @@
 """
-Logging configuration for CyberQuant OS
+Logging configuration for PulseDesk
 """
 import logging
 import sys

@@ -11,7 +11,7 @@ services:
       - ./data:/app/data
       - ./backend:/app
     environment:
-      - DATABASE_URL=sqlite:///./data/cyberquant.db
+      - DATABASE_URL=sqlite:///./data/pulsedesk.db
       - FREQTRADE_URL=http://freqtrade:8080
       - FREQTRADE_DB_PATH=../freqtrade/user_data/tradesv3.sqlite
       - CORS_ORIGINS=["http://localhost:5173"]

@@ -2,6 +2,11 @@ from datetime import datetime
 from enum import Enum
 from typing import List,  Dict,  Optional,  Any
 from pydantic import BaseModel, Field
+class DataSourceStatus(BaseModel):
+    source: str
+    simulated: bool = False
+    available: bool = True
+    detail: Optional[str] = None
 # --- Enums ---
 class StrategyType(str, Enum):
     ma_cross = "ma_cross"
@@ -46,6 +51,7 @@ class StrategyResponse(BaseModel):
     status: StrategyStatus
     sharpe_ratio: Optional[float]
     max_drawdown: Optional[float]
+    freqtrade_strategy_id: Optional[str] = None
     created_at: datetime
     updated_at: datetime
     model_config = {"from_attributes": True}
@@ -71,6 +77,7 @@ class OrderResponse(BaseModel):
     status: str
     profit: Optional[float]
     pnl_pct: Optional[float]
+    data_source: Optional[DataSourceStatus] = None
 # --- Position ---
 class PositionResponse(BaseModel):
     id: int
@@ -86,6 +93,7 @@ class PositionResponse(BaseModel):
     status: str
     opened_at: datetime
     closed_at: Optional[datetime]
+    data_source: Optional[DataSourceStatus] = None
 # --- Dashboard ---
 class DashboardKPIsResponse(BaseModel):
     total_pnl: float
@@ -96,10 +104,12 @@ class DashboardKPIsResponse(BaseModel):
     active_strategies: int
     todays_trades: int
     open_positions: int
+    data_source: Optional[DataSourceStatus] = None
 class EquityPointResponse(BaseModel):
     date: str
     value: float
     drawdown: float
+    data_source: Optional[DataSourceStatus] = None
 # --- Backtest ---
 class BacktestRequest(BaseModel):
     strategy_id: int
@@ -132,6 +142,7 @@ class BacktestResponse(BaseModel):
     total_return: float
     passed: bool
     created_at: datetime
+    data_source: DataSourceStatus
 # --- System ---
 class SystemStatusResponse(BaseModel):
     uptime: str
@@ -140,6 +151,7 @@ class SystemStatusResponse(BaseModel):
     pending_orders: int
     last_data_update: datetime
     api_status: str
+    data_source: DataSourceStatus
 # --- Risk ---
 class RiskEventResponse(BaseModel):
     id: int
@@ -149,6 +161,27 @@ class RiskEventResponse(BaseModel):
     description: Optional[str]
     action_taken: Optional[str]
     created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class RiskRuleEvaluationRequest(BaseModel):
+    strategy_id: Optional[int] = None
+    market: str = "crypto"
+    symbol: Optional[str] = None
+    position_pnl_pct: Optional[float] = None
+    take_profit_pct: Optional[float] = None
+    drawdown_pct: Optional[float] = None
+    max_drawdown_pct: float = 10
+    correlation_pairs: List[Dict[str, Any]] = []
+    api_error: Optional[str] = None
+    dry_run: bool = False
+
+
+class RiskRuleEvaluationResponse(BaseModel):
+    status: str
+    created_events: List[RiskEventResponse]
+    dry_run: bool = False
 class CorrelationResponse(BaseModel):
     id: int
     symbol_a: str
@@ -157,3 +190,74 @@ class CorrelationResponse(BaseModel):
     window_days: int
     alert_level: Optional[str]
     created_at: datetime
+
+
+class AttributionReportCreate(BaseModel):
+    trade_id: int
+    strategy_id: Optional[int] = None
+    feature_contributions: Dict[str, float] = {}
+    top_loss_factors: List[str] = []
+    market_context: Dict[str, Any] = {}
+    summary: Optional[str] = None
+
+
+class AttributionReportResponse(AttributionReportCreate):
+    id: int
+    created_at: datetime
+    model_config = {"from_attributes": True}
+
+
+class SlippageAttributionCreate(BaseModel):
+    trade_id: int
+    signal_price: float
+    filled_price: float
+    spread_cost: float = 0
+    market_impact: float = 0
+    latency_cost: float = 0
+
+
+class SlippageAttributionResponse(BaseModel):
+    id: int
+    trade_id: int
+    signal_price: float
+    filled_price: float
+    execution_slippage: float
+    spread_cost: float
+    market_impact: float
+    latency_cost: float
+    slippage_pct: float
+    diagnosis: Optional[str]
+    created_at: datetime
+    model_config = {"from_attributes": True}
+
+
+class SentimentDataCreate(BaseModel):
+    symbol: str
+    market: str = "crypto"
+    source: str
+    score: float
+    raw_text: Optional[str] = None
+    model: str = "finbert"
+
+
+class SentimentDataResponse(SentimentDataCreate):
+    id: int
+    timestamp: datetime
+    model_config = {"from_attributes": True}
+
+
+class PortfolioStressTestCreate(BaseModel):
+    user_id: int = 1
+    market: str = "crypto"
+    scenario: str
+    portfolio_var_95: float
+    portfolio_cvar: float
+    max_potential_drawdown: float
+    concentration_risk: Dict[str, Any] = {}
+    recommendations: Optional[str] = None
+
+
+class PortfolioStressTestResponse(PortfolioStressTestCreate):
+    id: int
+    created_at: datetime
+    model_config = {"from_attributes": True}

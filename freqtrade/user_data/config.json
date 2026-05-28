@@ -54,12 +54,12 @@
         "listen_port": 8080,
         "verbosity": "error",
         "enable_openapi": false,
-        "jwt_secret_key": "cyberquant-secret-key-change-me",
+        "jwt_secret_key": "pulsedesk-secret-key-change-me",
         "CORS_origins": ["http://localhost:5173", "http://localhost:8000"],
         "username": "freqtrade",
         "password": "freqtrade"
     },
-    "bot_name": "CyberQuant",
+    "bot_name": "PulseDesk",
     "initial_state": "running",
     "force_entry_enable": false,
     "internals": {

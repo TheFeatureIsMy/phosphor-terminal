@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.database import init_db
 from app.middleware import ErrorHandlerMiddleware, RateLimitMiddleware, RequestLoggerMiddleware
-from app.routers import strategies, orders, dashboard, backtest, risk, system, auth, search, notifications, attribution, sentiment, rag
+from app.routers import strategies, orders, dashboard, backtest, risk, system, auth, search, notifications, attribution, sentiment, rag, ai_phase3, markets
 
 
 @asynccontextmanager
@@ -16,7 +16,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="CyberQuant OS",
+    title="PulseDesk",
     description="AI驱动的加密货币量化交易API",
     version="0.3.0",
     lifespan=lifespan,
@@ -47,6 +47,8 @@ app.include_router(notifications.router)
 app.include_router(attribution.router)
 app.include_router(sentiment.router)
 app.include_router(rag.router)
+app.include_router(ai_phase3.router)
+app.include_router(markets.router)
 
 
 @app.get("/health")

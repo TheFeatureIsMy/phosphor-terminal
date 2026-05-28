@@ -1,5 +1,5 @@
 """
-Custom exceptions for CyberQuant OS
+Custom exceptions for PulseDesk
 """
 from fastapi import HTTPException, status
 
