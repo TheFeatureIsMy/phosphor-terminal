@@ -9,7 +9,7 @@ struct AppNotification: Codable, Identifiable, Hashable {
     let title: String
     let message: String
     let severity: NotificationSeverity
-    let isRead: Bool
+    var isRead: Bool
     let actionRoute: String?
     let actionPayload: String?
     let createdAt: Date

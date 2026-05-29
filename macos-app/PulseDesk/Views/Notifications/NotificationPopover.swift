@@ -153,7 +153,7 @@ struct NotificationPopover: View {
 // MARK: - 预览
 #Preview {
     NotificationPopover(
-        viewModel: NotificationViewModel(),
+        viewModel: NotificationViewModel(client: MockNetworkClient()),
         onViewAll: {}
     )
     .padding()

@@ -13,7 +13,7 @@ final class NotificationViewModel {
 
     private let api: APINotifications
 
-    init(client: NetworkClientProtocol = MockNetworkClient()) {
+    init(client: NetworkClientProtocol) {
         self.api = APINotifications(client: client)
     }
 
@@ -36,18 +36,7 @@ final class NotificationViewModel {
             try await api.markAsRead(id: id)
             // 乐观更新本地状态
             if let index = notifications.firstIndex(where: { $0.id == id }) {
-                let old = notifications[index]
-                notifications[index] = AppNotification(
-                    id: old.id,
-                    type: old.type,
-                    title: old.title,
-                    message: old.message,
-                    severity: old.severity,
-                    isRead: true,
-                    actionRoute: old.actionRoute,
-                    actionPayload: old.actionPayload,
-                    createdAt: old.createdAt
-                )
+                notifications[index].isRead = true
                 updateUnreadCount()
             }
         } catch {
@@ -60,18 +49,8 @@ final class NotificationViewModel {
         do {
             try await api.markAllAsRead()
             // 乐观更新本地状态
-            notifications = notifications.map { notification in
-                AppNotification(
-                    id: notification.id,
-                    type: notification.type,
-                    title: notification.title,
-                    message: notification.message,
-                    severity: notification.severity,
-                    isRead: true,
-                    actionRoute: notification.actionRoute,
-                    actionPayload: notification.actionPayload,
-                    createdAt: notification.createdAt
-                )
+            for i in notifications.indices {
+                notifications[i].isRead = true
             }
             unreadCount = 0
         } catch {

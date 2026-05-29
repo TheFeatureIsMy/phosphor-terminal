@@ -7,9 +7,14 @@ struct ToolbarView: View {
     @Environment(AppState.self) private var appState
     @State private var currentTime = Date()
     @State private var showNotifications = false
-    @State private var notificationViewModel = NotificationViewModel()
+    @State private var notificationViewModel = NotificationViewModel(client: MockNetworkClient())
 
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+    private let timeFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "HH:mm:ss"
+        return f
+    }()
 
     var body: some View {
         HStack(spacing: PulseSpacing.md) {
@@ -51,7 +56,7 @@ struct ToolbarView: View {
                         .foregroundStyle(PulseColors.textSecondary)
 
                     if notificationViewModel.unreadCount > 0 {
-                        Text(min(notificationViewModel.unreadCount, 99) > 9 ? "9+" : "\(notificationViewModel.unreadCount)")
+                        Text(notificationViewModel.unreadCount > 99 ? "99+" : "\(notificationViewModel.unreadCount)")
                             .font(.system(size: 8, weight: .bold))
                             .foregroundStyle(.white)
                             .padding(.horizontal, 4)
@@ -125,9 +130,7 @@ struct ToolbarView: View {
 
     // MARK: - 时间字符串
     private var timeString: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm:ss"
-        return formatter.string(from: currentTime)
+        timeFormatter.string(from: currentTime)
     }
 
     // MARK: - 用户菜单
