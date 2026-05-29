@@ -167,7 +167,7 @@ enum NodeCategory: String, CaseIterable, Codable {
 }
 
 // MARK: - Port definition
-struct PortDefinition: Identifiable {
+struct PortDefinition: Identifiable, @unchecked Sendable {
     let id = UUID()
     let name: String
     let dataType: PortDataType
@@ -183,7 +183,7 @@ struct PortDefinition: Identifiable {
 }
 
 // MARK: - Config field for right-panel editing
-struct ConfigField: Identifiable {
+struct ConfigField: Identifiable, @unchecked Sendable {
     let id = UUID()
     let key: String
     let label: String
@@ -211,7 +211,7 @@ enum ConfigFieldType {
 }
 
 // MARK: - Widget definition for inline node controls
-struct WidgetDefinition: Identifiable {
+struct WidgetDefinition: Identifiable, @unchecked Sendable {
     let id = UUID()
     let key: String
     let label: String
@@ -237,7 +237,7 @@ enum WidgetType {
 }
 
 // MARK: - Node definition (registry entry)
-struct NodeDefinition: Identifiable {
+struct NodeDefinition: Identifiable, @unchecked Sendable {
     let id: String  // same as type, e.g. "data.kline"
     let type: String
     let category: NodeCategory
