@@ -83,6 +83,16 @@ final class CanvasViewModel {
         record(.moveNode(id: id, from: oldPosition, to: position))
     }
 
+    func updateNodeWidget(nodeId: UUID, key: String, value: AnyCodable) {
+        if let index = graph.nodes.firstIndex(where: { $0.id == nodeId }) {
+            let old = graph.nodes[index].widgetValues[key]
+            graph.nodes[index].widgetValues[key] = value
+            if let old {
+                record(.updateConfig(nodeId: nodeId, key: key, old: old, new: value))
+            }
+        }
+    }
+
     // MARK: - Edge operations
 
     func addEdge(_ edge: CanvasEdge) {
