@@ -1,5 +1,5 @@
 // NodeRegistry.swift — Central registry of all available node types
-// 78 node definitions: 25 data, 22 signal, 13 decision, 13 AI, 5 output
+// 76 node definitions: 23 data, 22 signal, 13 decision, 13 AI, 5 output
 
 import SwiftUI
 
