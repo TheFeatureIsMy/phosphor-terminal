@@ -748,3 +748,385 @@ class CryptoFactorBackend:
                 market="crypto",
                 metrics={"error": str(exc)},
             )
+
+
+# ---------------------------------------------------------------------------
+# Advanced Factor Testing
+# ---------------------------------------------------------------------------
+
+
+def fama_macbeth_regression(
+    factor_values: dict[str, dict[str, pd.Series]],
+    returns: dict[str, pd.Series],
+) -> dict:
+    """Fama-MacBeth two-pass cross-sectional regression.
+
+    Pass 1: For each date, regress returns on all factor values (cross-sectional).
+    Pass 2: Time-series average of each coefficient, t-stat = mean / (std / sqrt(T)).
+
+    Parameters
+    ----------
+    factor_values : {factor_name: {symbol: factor_series}}
+    returns : {symbol: return_series}
+
+    Returns
+    -------
+    dict with keys: factor_premiums, t_statistics, r_squared_mean, observation_days,
+                    significant_factors
+    """
+    factor_names = list(factor_values.keys())
+    if not factor_names:
+        return {"factor_premiums": {}, "t_statistics": {}, "r_squared_mean": 0.0,
+                "observation_days": 0, "significant_factors": []}
+
+    # Build DataFrames: rows = dates, cols = symbols
+    ret_df = pd.DataFrame(returns)
+    factor_dfs: dict[str, pd.DataFrame] = {
+        fn: pd.DataFrame(fv) for fn, fv in factor_values.items()
+    }
+
+    common_dates = ret_df.index
+    for fdf in factor_dfs.values():
+        common_dates = common_dates.intersection(fdf.index)
+    common_dates = common_dates.sort_values()
+
+    if len(common_dates) == 0:
+        return {"factor_premiums": {}, "t_statistics": {}, "r_squared_mean": 0.0,
+                "observation_days": 0, "significant_factors": []}
+
+    ret_df = ret_df.loc[common_dates]
+    for fn in factor_names:
+        factor_dfs[fn] = factor_dfs[fn].loc[common_dates]
+
+    # Pass 1: cross-sectional regression per date
+    betas_list: list[np.ndarray] = []
+    r_squared_list: list[float] = []
+
+    for date in common_dates:
+        ret_row = ret_df.loc[date].dropna()
+        syms = ret_row.index
+
+        # Build factor matrix X
+        X_parts = []
+        valid = True
+        for fn in factor_names:
+            frow = factor_dfs[fn].loc[date].reindex(syms).dropna()
+            common_syms = syms.intersection(frow.index)
+            if len(common_syms) < len(factor_names) + 2:
+                valid = False
+                break
+            syms = common_syms
+            X_parts.append(frow.reindex(syms).values)
+
+        if not valid or len(syms) < len(factor_names) + 2:
+            continue
+
+        y = ret_row.reindex(syms).values.astype(float)
+        X = np.column_stack(X_parts).astype(float)
+
+        # Add intercept
+        X_with_intercept = np.column_stack([np.ones(len(syms)), X])
+
+        try:
+            betas, residuals, _, _ = np.linalg.lstsq(X_with_intercept, y, rcond=None)
+            # betas[0] = intercept, betas[1:] = factor coefficients
+            betas_list.append(betas[1:])
+
+            # R-squared
+            y_pred = X_with_intercept @ betas
+            ss_res = np.sum((y - y_pred) ** 2)
+            ss_tot = np.sum((y - np.mean(y)) ** 2)
+            r2 = 1.0 - ss_res / ss_tot if ss_tot > 0 else 0.0
+            r_squared_list.append(r2)
+        except np.linalg.LinAlgError:
+            continue
+
+    if not betas_list:
+        return {"factor_premiums": {}, "t_statistics": {}, "r_squared_mean": 0.0,
+                "observation_days": 0, "significant_factors": []}
+
+    # Pass 2: time-series average of betas
+    betas_arr = np.array(betas_list)  # (T, n_factors)
+    T = betas_arr.shape[0]
+
+    factor_premiums: dict[str, float] = {}
+    t_statistics: dict[str, float] = {}
+    significant_factors: list[str] = []
+
+    for j, fn in enumerate(factor_names):
+        beta_ts = betas_arr[:, j]
+        mean_beta = float(np.mean(beta_ts))
+        std_beta = float(np.std(beta_ts, ddof=1)) if T > 1 else 0.0
+        t_stat = mean_beta / (std_beta / math.sqrt(T)) if std_beta > 0 else 0.0
+
+        factor_premiums[fn] = round(mean_beta, 6)
+        t_statistics[fn] = round(t_stat, 4)
+        if abs(t_stat) > 2.0:
+            significant_factors.append(fn)
+
+    return {
+        "factor_premiums": factor_premiums,
+        "t_statistics": t_statistics,
+        "r_squared_mean": round(float(np.mean(r_squared_list)), 4),
+        "observation_days": T,
+        "significant_factors": significant_factors,
+    }
+
+
+def orthogonalize_factors(
+    factor_values: dict[str, dict[str, pd.Series]],
+    method: str = "gram_schmidt",
+) -> dict[str, dict[str, pd.Series]]:
+    """Orthogonalize factors using Gram-Schmidt sequential orthogonalization.
+
+    Factor 1 stays as-is. Factor 2 is made orthogonal to factor 1.
+    Factor 3 is made orthogonal to factors 1 and 2, etc.
+
+    Parameters
+    ----------
+    factor_values : {factor_name: {symbol: factor_series}}
+    method : only "gram_schmidt" supported
+
+    Returns
+    -------
+    Orthogonalized factors in same structure.
+    """
+    if method != "gram_schmidt":
+        raise ValueError(f"Unknown method: {method}")
+
+    factor_names = list(factor_values.keys())
+    if len(factor_names) <= 1:
+        return {fn: {sym: s.copy() for sym, s in fv.items()}
+                for fn, fv in factor_values.items()}
+
+    # Build DataFrames per factor (rows=dates, cols=symbols)
+    factor_dfs: dict[str, pd.DataFrame] = {
+        fn: pd.DataFrame(fv) for fn, fv in factor_values.items()
+    }
+
+    # Find common dates and symbols
+    common_dates = factor_dfs[factor_names[0]].index
+    for fdf in factor_dfs.values():
+        common_dates = common_dates.intersection(fdf.index)
+    common_dates = common_dates.sort_values()
+
+    common_symbols = set(factor_dfs[factor_names[0]].columns)
+    for fdf in factor_dfs.values():
+        common_symbols &= set(fdf.columns)
+    common_symbols = sorted(common_symbols)
+
+    if len(common_dates) == 0 or len(common_symbols) == 0:
+        return {fn: {sym: s.copy() for sym, s in fv.items()}
+                for fn, fv in factor_values.items()}
+
+    # Align all DataFrames
+    for fn in factor_names:
+        factor_dfs[fn] = factor_dfs[fn].loc[common_dates, common_symbols].astype(float)
+
+    # Gram-Schmidt: orthogonalize per date cross-sectionally
+    result_dfs: dict[str, pd.DataFrame] = {}
+    result_dfs[factor_names[0]] = factor_dfs[factor_names[0]].copy()
+
+    for i in range(1, len(factor_names)):
+        fn = factor_names[i]
+        current = factor_dfs[fn].copy()
+
+        for j in range(i):
+            prev_fn = factor_names[j]
+            prev = result_dfs[prev_fn]
+
+            # Per-date: subtract projection of current onto previous
+            for date in common_dates:
+                v = current.loc[date].values.astype(float)
+                u = prev.loc[date].values.astype(float)
+                u_var = np.dot(u, u)
+                if u_var > 0:
+                    proj_coeff = np.dot(v, u) / u_var
+                    current.loc[date] = v - proj_coeff * u
+
+        result_dfs[fn] = current
+
+    # Convert back to {factor: {symbol: series}}
+    result: dict[str, dict[str, pd.Series]] = {}
+    for fn in factor_names:
+        df = result_dfs[fn]
+        result[fn] = {col: df[col] for col in df.columns}
+
+    return result
+
+
+def out_of_sample_test(
+    factor_values: dict[str, pd.Series],
+    returns: dict[str, pd.Series],
+    train_ratio: float = 0.7,
+) -> dict:
+    """Out-of-sample factor testing.
+
+    Splits dates into train/test, computes IC on each set.
+
+    Parameters
+    ----------
+    factor_values : {symbol: factor_series}
+    returns : {symbol: return_series}
+    train_ratio : fraction of dates used for training
+
+    Returns
+    -------
+    dict with train_ic_mean, test_ic_mean, ic_decay, is_robust
+    """
+    # Get common dates
+    all_dates = None
+    for sym in factor_values:
+        if all_dates is None:
+            all_dates = set(factor_values[sym].index)
+        else:
+            all_dates &= set(factor_values[sym].index)
+    for sym in returns:
+        all_dates &= set(returns[sym].index)
+
+    if not all_dates or len(all_dates) < 20:
+        return {"train_ic_mean": 0.0, "test_ic_mean": 0.0,
+                "ic_decay": 0.0, "is_robust": False}
+
+    sorted_dates = sorted(all_dates)
+    split_idx = int(len(sorted_dates) * train_ratio)
+    if split_idx < 10 or split_idx >= len(sorted_dates):
+        return {"train_ic_mean": 0.0, "test_ic_mean": 0.0,
+                "ic_decay": 0.0, "is_robust": False}
+
+    train_dates = set(sorted_dates[:split_idx])
+    test_dates = set(sorted_dates[split_idx:])
+
+    # Subset series to train/test dates
+    def _subset(data: dict[str, pd.Series], dates: set) -> dict[str, pd.Series]:
+        result = {}
+        for sym, s in data.items():
+            sub = s.loc[s.index.isin(dates)]
+            if len(sub) > 0:
+                result[sym] = sub
+        return result
+
+    fv_train = _subset(factor_values, train_dates)
+    ret_train = _subset(returns, train_dates)
+    fv_test = _subset(factor_values, test_dates)
+    ret_test = _subset(returns, test_dates)
+
+    ic_train = cross_sectional_ic(fv_train, ret_train)
+    ic_test = cross_sectional_ic(fv_test, ret_test)
+
+    train_ic_mean = float(ic_train.mean()) if len(ic_train) > 0 else 0.0
+    test_ic_mean = float(ic_test.mean()) if len(ic_test) > 0 else 0.0
+
+    # Decay: relative drop from train to test
+    ic_decay = 0.0
+    if abs(train_ic_mean) > 1e-6:
+        ic_decay = 1.0 - abs(test_ic_mean) / abs(train_ic_mean)
+    ic_decay = max(0.0, min(ic_decay, 1.0))  # clamp to [0, 1]
+
+    is_robust = abs(test_ic_mean) > 0.02 and ic_decay < 0.5
+
+    return {
+        "train_ic_mean": round(train_ic_mean, 6),
+        "test_ic_mean": round(test_ic_mean, 6),
+        "ic_decay": round(ic_decay, 4),
+        "is_robust": is_robust,
+    }
+
+
+def factor_decay_analysis(
+    factor_values: dict[str, pd.Series],
+    returns: dict[str, pd.Series],
+    max_horizon: int = 30,
+) -> dict:
+    """Analyze how factor IC decays over different return horizons.
+
+    Tests IC at horizons [1, 2, 3, 5, 10, 20, 30] days (capped by max_horizon).
+
+    Parameters
+    ----------
+    factor_values : {symbol: factor_series}
+    returns : {symbol: return_series} (used as base for computing forward returns)
+    max_horizon : maximum horizon in days
+
+    Returns
+    -------
+    dict mapping horizon -> {ic_mean, ic_std, significant}
+    """
+    # We need price data to compute multi-day returns.
+    # Since we receive forward returns, we'll use the returns dict to infer
+    # the underlying prices, or we'll treat factor_values + returns as the
+    # base case and compute IC at the given horizon by re-indexing.
+    #
+    # Simpler approach: assume returns dict contains price series, and we
+    # compute forward returns at each horizon. But the signature says returns.
+    #
+    # Practical approach: for each horizon h, shift the return series backward
+    # by h-1 days to approximate h-day forward returns from daily returns.
+    # Actually, since we don't have prices, we'll accumulate daily returns.
+
+    horizons = [h for h in [1, 2, 3, 5, 10, 20, 30] if h <= max_horizon]
+    if not horizons:
+        return {}
+
+    # Build return DataFrame
+    ret_df = pd.DataFrame(returns)
+
+    # For multi-day returns, we need the cumulative return.
+    # The input `returns` are 1-day forward returns. For h-day, we need
+    # cumulative of h consecutive daily returns.
+    # Since we can't easily reconstruct prices from returns, we'll compute
+    # h-day returns by summing consecutive 1-day returns (approximation).
+
+    results: dict[int, dict] = {}
+
+    for h in horizons:
+        if h == 1:
+            # Use returns as-is
+            ic = cross_sectional_ic(factor_values, returns)
+        else:
+            # Create h-day cumulative returns by rolling sum
+            multi_day_rets: dict[str, pd.Series] = {}
+            for sym, ret_series in returns.items():
+                # Rolling sum of h consecutive daily returns ≈ h-day return
+                cum_ret = ret_series.rolling(h).sum()
+                cum_ret = cum_ret.dropna()
+                if len(cum_ret) > 0:
+                    multi_day_rets[sym] = cum_ret
+            ic = cross_sectional_ic(factor_values, multi_day_rets)
+
+        if len(ic) > 0:
+            ic_mean = float(ic.mean())
+            ic_std = float(ic.std()) if len(ic) > 1 else 0.0
+            # Significant if |t| > 2.0 (t = mean / (std / sqrt(n)))
+            t_stat = abs(ic_mean) / (ic_std / math.sqrt(len(ic))) if ic_std > 0 else 0.0
+            results[h] = {
+                "ic_mean": round(ic_mean, 6),
+                "ic_std": round(ic_std, 6),
+                "significant": t_stat > 2.0,
+            }
+        else:
+            results[h] = {"ic_mean": 0.0, "ic_std": 0.0, "significant": False}
+
+    return results
+
+
+def bonferroni_correction(p_values: list[float], alpha: float = 0.05) -> list[bool]:
+    """Bonferroni correction for multiple testing.
+
+    Adjusted alpha = alpha / n_tests. Each p-value is compared to the
+    adjusted threshold.
+
+    Parameters
+    ----------
+    p_values : list of raw p-values
+    alpha : family-wise error rate (default 0.05)
+
+    Returns
+    -------
+    list of booleans indicating which tests pass correction.
+    """
+    if not p_values:
+        return []
+    n = len(p_values)
+    adjusted_alpha = alpha / n
+    return [p <= adjusted_alpha for p in p_values]

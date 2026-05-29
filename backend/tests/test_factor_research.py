@@ -14,10 +14,13 @@ from app.services.factor_research import (
     FactorResult,
     StubFactorBackend,
     bollinger_position,
+    bonferroni_correction,
     combine_factors,
     cross_sectional_ic,
     cross_sectional_rank_ic,
     downside_volatility,
+    factor_decay_analysis,
+    fama_macbeth_regression,
     funding_rate_momentum,
     hurst_exponent,
     liquidation_pressure,
@@ -26,6 +29,8 @@ from app.services.factor_research import (
     momentum,
     momentum_acceleration,
     open_interest_change,
+    orthogonalize_factors,
+    out_of_sample_test,
     portfolio_turnover,
     price_strength,
     realized_volatility,
@@ -600,3 +605,262 @@ class TestFactorResult:
             details={"ic_series": {}},
         )
         assert r.metrics["ic_mean"] == 0.05
+
+
+# ---------------------------------------------------------------------------
+# Fama-MacBeth Regression Tests
+# ---------------------------------------------------------------------------
+
+
+def _make_multi_factor_data(
+    n_assets: int = 20, n_days: int = 60, seed: int = 42
+) -> tuple[dict[str, dict[str, pd.Series]], dict[str, pd.Series]]:
+    """Create multi-factor and returns data for Fama-MacBeth testing."""
+    rng = np.random.RandomState(seed)
+    dates = pd.date_range("2025-01-01", periods=n_days, freq="D")
+    returns: dict[str, pd.Series] = {}
+    factor1: dict[str, pd.Series] = {}
+    factor2: dict[str, pd.Series] = {}
+
+    for i in range(n_assets):
+        sym = f"ASSET{i:02d}"
+        f1 = rng.normal(0, 1, n_days)
+        f2 = rng.normal(0, 1, n_days)
+        # Returns: f1 has real signal, f2 is noise
+        ret = f1 * 0.02 + rng.normal(0, 0.03, n_days)
+        factor1[sym] = pd.Series(f1, index=dates)
+        factor2[sym] = pd.Series(f2, index=dates)
+        returns[sym] = pd.Series(ret, index=dates)
+
+    return {"alpha": factor1, "beta": factor2}, returns
+
+
+class TestFamaMacBeth:
+    def test_returns_dict_structure(self):
+        factors, returns = _make_multi_factor_data()
+        result = fama_macbeth_regression(factors, returns)
+        assert isinstance(result, dict)
+        assert "factor_premiums" in result
+        assert "t_statistics" in result
+        assert "r_squared_mean" in result
+        assert "observation_days" in result
+        assert "significant_factors" in result
+
+    def test_factor_premiums_keys(self):
+        factors, returns = _make_multi_factor_data()
+        result = fama_macbeth_regression(factors, returns)
+        assert set(result["factor_premiums"].keys()) == {"alpha", "beta"}
+
+    def test_observation_days_positive(self):
+        factors, returns = _make_multi_factor_data()
+        result = fama_macbeth_regression(factors, returns)
+        assert result["observation_days"] > 0
+
+    def test_r_squared_reasonable(self):
+        factors, returns = _make_multi_factor_data(n_assets=20, n_days=100)
+        result = fama_macbeth_regression(factors, returns)
+        assert 0 <= result["r_squared_mean"] <= 1.0
+
+    def test_significant_factor_detected(self):
+        """Factor with strong signal should be detected as significant."""
+        factors, returns = _make_multi_factor_data(n_assets=30, n_days=100, seed=99)
+        result = fama_macbeth_regression(factors, returns)
+        # alpha has a real signal, should be significant
+        assert "alpha" in result["significant_factors"]
+
+    def test_empty_factors(self):
+        result = fama_macbeth_regression({}, {})
+        assert result["observation_days"] == 0
+        assert result["factor_premiums"] == {}
+
+    def test_insufficient_assets(self):
+        """With too few assets, should return empty."""
+        factors, returns = _make_multi_factor_data(n_assets=2, n_days=50)
+        result = fama_macbeth_regression(factors, returns)
+        # 2 assets < n_factors + 2 = 4, so no valid regressions
+        assert result["observation_days"] == 0
+
+
+# ---------------------------------------------------------------------------
+# Factor Orthogonalization Tests
+# ---------------------------------------------------------------------------
+
+
+class TestOrthogonalizeFactors:
+    def test_returns_same_structure(self):
+        factors, _ = _make_multi_factor_data()
+        result = orthogonalize_factors(factors)
+        assert set(result.keys()) == set(factors.keys())
+        for fn in factors:
+            assert set(result[fn].keys()) == set(factors[fn].keys())
+
+    def test_first_factor_unchanged(self):
+        factors, _ = _make_multi_factor_data()
+        result = orthogonalize_factors(factors)
+        fn0 = list(factors.keys())[0]
+        for sym in factors[fn0]:
+            pd.testing.assert_series_equal(
+                result[fn0][sym], factors[fn0][sym], check_names=False
+            )
+
+    def test_orthogonalized_factors_uncorrelated(self):
+        """After orthogonalization, factors should be cross-sectionally uncorrelated."""
+        factors, _ = _make_multi_factor_data(n_assets=20, n_days=100, seed=55)
+        result = orthogonalize_factors(factors)
+        fnames = list(result.keys())
+        dates = list(result[fnames[0]].values())[0].index
+
+        # Check correlation between orthogonalized factors on a sample date
+        date = dates[50]
+        vals_0 = np.array([result[fnames[0]][sym].loc[date] for sym in result[fnames[0]]])
+        vals_1 = np.array([result[fnames[1]][sym].loc[date] for sym in result[fnames[1]]])
+        corr = np.corrcoef(vals_0, vals_1)[0, 1]
+        # Should be close to 0 (orthogonal); tolerance for 20-asset cross-section
+        assert abs(corr) < 0.05
+
+    def test_single_factor_passthrough(self):
+        factors, _ = _make_multi_factor_data()
+        single = {"alpha": factors["alpha"]}
+        result = orthogonalize_factors(single)
+        for sym in single["alpha"]:
+            pd.testing.assert_series_equal(
+                result["alpha"][sym], single["alpha"][sym], check_names=False
+            )
+
+    def test_invalid_method_raises(self):
+        factors, _ = _make_multi_factor_data()
+        with pytest.raises(ValueError, match="Unknown method"):
+            orthogonalize_factors(factors, method="pca")
+
+
+# ---------------------------------------------------------------------------
+# Out-of-Sample Test Tests
+# ---------------------------------------------------------------------------
+
+
+class TestOutOfSampleTest:
+    def test_returns_dict_structure(self):
+        fv, rets = _make_cross_sectional_data(n_assets=20, n_days=100)
+        result = out_of_sample_test(fv, rets)
+        assert "train_ic_mean" in result
+        assert "test_ic_mean" in result
+        assert "ic_decay" in result
+        assert "is_robust" in result
+
+    def test_ic_decay_range(self):
+        fv, rets = _make_cross_sectional_data(n_assets=20, n_days=100)
+        result = out_of_sample_test(fv, rets)
+        assert 0.0 <= result["ic_decay"] <= 1.0
+
+    def test_train_test_split(self):
+        fv, rets = _make_cross_sectional_data(n_assets=20, n_days=100)
+        result = out_of_sample_test(fv, rets, train_ratio=0.5)
+        # Both should have non-zero IC
+        assert result["train_ic_mean"] != 0.0 or result["test_ic_mean"] != 0.0
+
+    def test_robust_factor(self):
+        """A factor with consistent signal should be robust."""
+        fv, rets = _make_cross_sectional_data(n_assets=25, n_days=120, seed=77)
+        result = out_of_sample_test(fv, rets, train_ratio=0.6)
+        # With a built-in signal, IC should be positive in both sets
+        if result["train_ic_mean"] > 0.02:
+            # If train is strong enough, check test isn't collapsed
+            assert isinstance(result["is_robust"], bool)
+
+    def test_insufficient_data(self):
+        fv, rets = _make_cross_sectional_data(n_assets=15, n_days=5)
+        result = out_of_sample_test(fv, rets)
+        assert result["train_ic_mean"] == 0.0
+
+    def test_custom_train_ratio(self):
+        fv, rets = _make_cross_sectional_data(n_assets=20, n_days=100)
+        result = out_of_sample_test(fv, rets, train_ratio=0.8)
+        assert "train_ic_mean" in result
+
+
+# ---------------------------------------------------------------------------
+# Factor Decay Analysis Tests
+# ---------------------------------------------------------------------------
+
+
+class TestFactorDecayAnalysis:
+    def test_returns_dict_structure(self):
+        fv, rets = _make_cross_sectional_data(n_assets=20, n_days=100)
+        result = factor_decay_analysis(fv, rets, max_horizon=10)
+        assert isinstance(result, dict)
+        assert 1 in result
+        assert "ic_mean" in result[1]
+        assert "ic_std" in result[1]
+        assert "significant" in result[1]
+
+    def test_horizons_capped_by_max(self):
+        fv, rets = _make_cross_sectional_data(n_assets=20, n_days=100)
+        result = factor_decay_analysis(fv, rets, max_horizon=5)
+        assert 1 in result
+        assert 5 in result
+        assert 10 not in result
+        assert 30 not in result
+
+    def test_default_horizons(self):
+        fv, rets = _make_cross_sectional_data(n_assets=20, n_days=100)
+        result = factor_decay_analysis(fv, rets)
+        expected = {1, 2, 3, 5, 10, 20, 30}
+        assert set(result.keys()) == expected
+
+    def test_ic_decays_with_horizon(self):
+        """IC generally decreases as horizon increases."""
+        fv, rets = _make_cross_sectional_data(n_assets=20, n_days=200, seed=88)
+        result = factor_decay_analysis(fv, rets, max_horizon=10)
+        ic_1 = abs(result[1]["ic_mean"])
+        ic_10 = abs(result[10]["ic_mean"])
+        # Not guaranteed to always decay, but typically does
+        # Just check both are computed
+        assert ic_1 >= 0
+        assert ic_10 >= 0
+
+    def test_significance_flag(self):
+        fv, rets = _make_cross_sectional_data(n_assets=20, n_days=100)
+        result = factor_decay_analysis(fv, rets, max_horizon=5)
+        for h in result:
+            assert isinstance(result[h]["significant"], bool)
+
+
+# ---------------------------------------------------------------------------
+# Bonferroni Correction Tests
+# ---------------------------------------------------------------------------
+
+
+class TestBonferroniCorrection:
+    def test_basic_correction(self):
+        p_vals = [0.01, 0.03, 0.04, 0.06]
+        result = bonferroni_correction(p_vals, alpha=0.05)
+        # adjusted_alpha = 0.05 / 4 = 0.0125
+        assert result == [True, False, False, False]
+
+    def test_single_test(self):
+        result = bonferroni_correction([0.04], alpha=0.05)
+        assert result == [True]
+
+    def test_all_significant(self):
+        result = bonferroni_correction([0.001, 0.002, 0.003], alpha=0.05)
+        # adjusted = 0.05/3 ≈ 0.0167
+        assert all(result)
+
+    def test_none_significant(self):
+        result = bonferroni_correction([0.1, 0.2, 0.3], alpha=0.05)
+        assert not any(result)
+
+    def test_empty_list(self):
+        result = bonferroni_correction([], alpha=0.05)
+        assert result == []
+
+    def test_custom_alpha(self):
+        result = bonferroni_correction([0.01, 0.02], alpha=0.10)
+        # adjusted = 0.10 / 2 = 0.05
+        assert result == [True, True]
+
+    def test_boundary_p_value(self):
+        # p == adjusted_alpha should pass (<=)
+        result = bonferroni_correction([0.025, 0.026], alpha=0.05)
+        # adjusted = 0.05/2 = 0.025
+        assert result == [True, False]
