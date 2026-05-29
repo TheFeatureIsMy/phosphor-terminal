@@ -11,9 +11,10 @@ struct CanvasEdges: View {
 
     var body: some View {
         Canvas { context, size in
+            let nodeMap = Dictionary(uniqueKeysWithValues: nodes.map { ($0.id, $0) })
             for edge in edges {
-                guard let sourceNode = nodes.first(where: { $0.id == edge.sourceNodeId }),
-                      let targetNode = nodes.first(where: { $0.id == edge.targetNodeId }) else { continue }
+                guard let sourceNode = nodeMap[edge.sourceNodeId],
+                      let targetNode = nodeMap[edge.targetNodeId] else { continue }
 
                 // Calculate port positions (right side of source, left side of target)
                 let from = CGPoint(

@@ -24,12 +24,16 @@ final class CanvasViewModel {
     var selectedNodeIds: Set<UUID> = []
     var selectedEdgeIds: Set<UUID> = []
 
-    // Viewport
-    var viewport = ViewportState()
+    // Viewport — single source of truth lives in graph
+    var viewport: ViewportState {
+        get { graph.viewport }
+        set { graph.viewport = newValue }
+    }
 
     // Drag state
     var draggingNodeId: UUID?
     var dragOffset: CGSize = .zero
+    var dragStartPosition: CGPoint?
 
     // Wire drag state (connecting ports)
     var wireDragSource: (nodeId: UUID, port: String)?
@@ -187,6 +191,7 @@ final class CanvasViewModel {
 
     func startDrag(nodeId: UUID, at point: CGPoint) {
         draggingNodeId = nodeId
+        dragStartPosition = graph.nodes.first(where: { $0.id == nodeId })?.position
         guard let node = graph.nodes.first(where: { $0.id == nodeId }) else { return }
         dragOffset = CGSize(
             width: point.x - node.position.x,
@@ -206,8 +211,14 @@ final class CanvasViewModel {
     }
 
     func endDrag() {
+        if let nodeId = draggingNodeId, let startPos = dragStartPosition {
+            if let node = graph.nodes.first(where: { $0.id == nodeId }), node.position != startPos {
+                record(.moveNode(id: nodeId, from: startPos, to: node.position))
+            }
+        }
         draggingNodeId = nil
         dragOffset = .zero
+        dragStartPosition = nil
     }
 
     // MARK: - Wire drag (connecting ports)

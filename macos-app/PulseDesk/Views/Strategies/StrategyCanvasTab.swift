@@ -5,6 +5,8 @@ import SwiftUI
 
 struct StrategyCanvasTab: View {
     @State private var viewModel = CanvasViewModel()
+    @State private var lastPanTranslation: CGSize = .zero
+    @State private var lastMagnification: CGFloat = 1.0
 
     var body: some View {
         ZStack {
@@ -55,17 +57,27 @@ struct StrategyCanvasTab: View {
     private var panGesture: some Gesture {
         DragGesture()
             .onChanged { value in
-                viewModel.pan(by: CGPoint(
-                    x: value.translation.width,
-                    y: value.translation.height
-                ))
+                let delta = CGSize(
+                    width: value.translation.width - lastPanTranslation.width,
+                    height: value.translation.height - lastPanTranslation.height
+                )
+                lastPanTranslation = value.translation
+                viewModel.pan(by: CGPoint(x: delta.width, y: delta.height))
+            }
+            .onEnded { _ in
+                lastPanTranslation = .zero
             }
     }
 
     private var zoomGesture: some Gesture {
         MagnifyGesture()
             .onChanged { value in
-                viewModel.zoom(by: value.magnification, center: .zero)
+                let factor = value.magnification / lastMagnification
+                lastMagnification = value.magnification
+                viewModel.zoom(by: factor, center: .zero)
+            }
+            .onEnded { _ in
+                lastMagnification = 1.0
             }
     }
 }
