@@ -240,10 +240,39 @@ class SHAPService:
             except Exception:
                 contributions = [0.0] * n
         else:
-            # Heuristic contributions
-            import numpy as np
-            np.random.seed(123)
-            contributions = list(np.random.randn(n) * 0.1)
+            # Deterministic heuristic contributions based on feature name patterns
+            for i, f in enumerate(features):
+                fl = f.lower()
+                val = values[i] if i < len(values) else 0.0
+                thr = thresholds[i] if i < len(thresholds) else 0.5
+                above = val > thr
+
+                # Base contribution magnitude by feature type
+                if "rsi" in fl:
+                    base = 0.15
+                elif "macd" in fl:
+                    base = 0.13
+                elif "volume" in fl:
+                    base = 0.11
+                elif "momentum" in fl:
+                    base = 0.12
+                elif "volatility" in fl:
+                    base = 0.10
+                elif "bb" in fl or "bollinger" in fl:
+                    base = 0.09
+                elif "support" in fl or "resistance" in fl:
+                    base = 0.08
+                elif "trend" in fl:
+                    base = 0.07
+                else:
+                    base = 0.05
+
+                # Signed: bullish features contribute positively when above threshold,
+                # bearish features (resistance, volatility) contribute negatively
+                if "resistance" in fl or "volatility" in fl:
+                    contributions.append(-base if above else base)
+                else:
+                    contributions.append(base if above else -base)
 
         path = []
         cumulative = 0.0
