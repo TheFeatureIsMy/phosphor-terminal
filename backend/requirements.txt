@@ -18,3 +18,5 @@ transformers==4.50.3
 torch==2.6.0
 qlib==1.6.0
 ccxt>=4.0.0
+shap>=0.45.0
+lightgbm>=4.0.0
