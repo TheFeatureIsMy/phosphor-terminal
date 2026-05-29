@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import random
 from datetime import datetime, timedelta, timezone
 
 from app.services.forecast_adapters import TimesFMAdapter, ChronosAdapter
@@ -16,7 +15,7 @@ async def generate_forecast(symbol: str, model: str, horizon: str) -> dict:
     if not adapter.available:
         return _deterministic_fallback(symbol, model, days)
 
-    history = _fetch_recent_prices(symbol)
+    history = await _fetch_recent_prices(symbol, limit=100)
     if not history or len(history) < 4:
         return {
             "status": "error",
@@ -29,27 +28,32 @@ async def generate_forecast(symbol: str, model: str, horizon: str) -> dict:
     return result
 
 
-def _fetch_recent_prices(symbol: str) -> list[float]:
-    """Fetch recent price history for the symbol.
+async def _fetch_recent_prices(symbol: str, limit: int = 100) -> list[float]:
+    """Fetch recent close prices. Try MarketDataService first, then FreqtradeDB, then empty."""
+    from app.services.market_data import market_data_service
 
-    Tries Freqtrade DB first; falls back to simulated history.
-    """
+    # Try real market data first (CCXT Binance)
+    if market_data_service.available:
+        prices = await market_data_service.get_recent_prices(symbol, limit)
+        if prices and len(prices) >= 10:
+            return prices
+
+    # Try FreqtradeDB as fallback
     try:
         from app.services.freqtrade_db import freqtrade_db
 
-        db = freqtrade_db
-        if db.is_available():
-            engine = db.engine
+        if freqtrade_db.is_available():
+            engine = freqtrade_db.engine
             if engine:
-                rows = engine.execute("SELECT close FROM trades ORDER BY timestamp DESC LIMIT 30").fetchall()
+                rows = engine.execute(
+                    "SELECT close FROM trades ORDER BY timestamp DESC LIMIT ?", (limit,)
+                ).fetchall()
                 if rows:
                     return [float(r[0]) for r in reversed(rows)]
     except Exception:
         pass
 
-    base = 50000 + (sum(ord(ch) for ch in symbol) % 10000)
-    now = datetime.now(timezone.utc)
-    return [base + random.gauss(0, 500) for _ in range(30)]
+    return []
 
 
 def _deterministic_fallback(symbol: str, model: str, days: int) -> dict:
