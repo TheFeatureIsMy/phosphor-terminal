@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
-
 from app.services.forecast_adapters import TimesFMAdapter, ChronosAdapter
 
 _timesfm = TimesFMAdapter()
@@ -13,7 +11,12 @@ async def generate_forecast(symbol: str, model: str, horizon: str) -> dict:
     adapter = _timesfm if model.lower() == "timesfm" else _chronos
 
     if not adapter.available:
-        return _deterministic_fallback(symbol, model, days)
+        return {
+            "status": "unavailable",
+            "detail": f"{model} not installed",
+            "points": [],
+            "confidence": 0.0,
+        }
 
     history = await _fetch_recent_prices(symbol, limit=100)
     if not history or len(history) < 4:
@@ -54,21 +57,3 @@ async def _fetch_recent_prices(symbol: str, limit: int = 100) -> list[float]:
         pass
 
     return []
-
-
-def _deterministic_fallback(symbol: str, model: str, days: int) -> dict:
-    base = 100 + (sum(ord(ch) for ch in symbol) % 50)
-    model_bias = 1.2 if model.lower() == "timesfm" else 0.8
-    now = datetime.now(timezone.utc)
-    return {
-        "status": "ok",
-        "points": [
-            {
-                "date": (now + timedelta(days=i + 1)).strftime("%Y-%m-%d"),
-                "value": round(base + i * model_bias + ((i % 3) - 1) * 0.7, 4),
-            }
-            for i in range(days)
-        ],
-        "confidence": 0.62 if model.lower() == "timesfm" else 0.58,
-        "model": f"{model.lower()}_deterministic",
-    }
