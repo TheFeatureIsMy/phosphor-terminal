@@ -1,4 +1,5 @@
 import pytest
+from unittest.mock import patch, AsyncMock
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -52,3 +53,47 @@ def test_system_status_reports_connected_when_freqtrade_returns_list(monkeypatch
     assert body["api_status"] == "connected"
     assert body["open_positions"] == 1
     assert body["data_source"]["source"] == "freqtrade"
+
+
+# ── Forecasting: no deterministic fallback ────────────────────────────────────
+
+
+def test_generate_forecast_unavailable_when_adapter_not_installed():
+    """generate_forecast must return 'unavailable' with empty points when
+    the ML adapter is not installed — no deterministic/random fallback data."""
+    from app.services.forecasting import generate_forecast
+
+    # Both adapters report unavailable
+    with patch("app.services.forecasting._timesfm") as mock_tf, \
+         patch("app.services.forecasting._chronos") as mock_ch:
+        mock_tf.available = False
+        mock_ch.available = False
+
+        import asyncio
+        result = asyncio.get_event_loop().run_until_complete(
+            generate_forecast("BTC/USDT", "timesfm", "7d")
+        )
+
+    assert result["status"] == "unavailable"
+    assert result["points"] == []
+    assert result["confidence"] == 0.0
+    # Must NOT contain any deterministic fallback data
+    assert "data" not in result
+    assert len(result["points"]) == 0
+
+
+def test_generate_forecast_chronos_unavailable():
+    """Chronos adapter unavailable should also return 'unavailable'."""
+    from app.services.forecasting import generate_forecast
+
+    with patch("app.services.forecasting._chronos") as mock_ch:
+        mock_ch.available = False
+
+        import asyncio
+        result = asyncio.get_event_loop().run_until_complete(
+            generate_forecast("ETH/USDT", "chronos", "7d")
+        )
+
+    assert result["status"] == "unavailable"
+    assert result["points"] == []
+    assert result["confidence"] == 0.0
