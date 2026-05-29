@@ -241,7 +241,7 @@ struct CodeGenerator {
             let op = stringParam(node, key: "operator", default: ">")
             let pyOp = pythonOperator(op)
             let inputCol = resolveInputColumn(node, graph: graph, port: "value", fallback: "rsi")
-            return indent + "dataframe['threshold_signal'] = (dataframe['\(inputCol)'] \(pyOp) \(threshold)).astype(int)\n"
+            return indent + "dataframe['\(nodeColumnId(node.nodeType))_signal'] = (dataframe['\(inputCol)'] \(pyOp) \(threshold)).astype(int)\n"
 
         case "transform.smooth":
             let method = stringParam(node, key: "method", default: "MA")
@@ -273,7 +273,7 @@ struct CodeGenerator {
         let upstreamEdges = graph.edges.filter { $0.targetNodeId == node.id }
         let conditions = upstreamEdges.compactMap { edge -> String? in
             let sourceNode = graph.nodes.first { $0.id == edge.sourceNodeId }
-            return sourceNode.map { "dataframe['\($0.nodeType.replacingOccurrences(of: ".", with: "_"))_signal'] == 1" }
+            return sourceNode.map { "dataframe['\(nodeColumnId($0.nodeType))_signal'] == 1" }
         }
 
         let conditionStr = conditions.isEmpty ? "True" : conditions.joined(separator: " & ")
@@ -333,6 +333,10 @@ struct CodeGenerator {
         }
         let sourceDef = NodeRegistry.definition(for: sourceNode.nodeType)
         return sourceDef?.outputPorts.first?.name ?? fallback
+    }
+
+    private func nodeColumnId(_ nodeType: String) -> String {
+        nodeType.replacingOccurrences(of: ".", with: "_")
     }
 
     private func pythonOperator(_ op: String) -> String {

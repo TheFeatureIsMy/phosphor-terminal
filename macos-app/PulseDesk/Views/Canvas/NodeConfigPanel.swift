@@ -64,6 +64,17 @@ struct NodeConfigPanel: View {
             }
         }
         .frame(width: 320)
+        .task {
+            nameText = node.config["name"]?.value as? String
+                ?? definition?.name ?? ""
+            notesText = node.config["notes"]?.value as? String ?? ""
+        }
+        .onChange(of: nameText) {
+            onConfigChange?("name", AnyCodable(nameText))
+        }
+        .onChange(of: notesText) {
+            onConfigChange?("notes", AnyCodable(notesText))
+        }
         .background(PulseColors.surfaceElevated)
         .overlay(
             Rectangle()
