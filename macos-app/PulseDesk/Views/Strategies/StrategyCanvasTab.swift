@@ -4,10 +4,17 @@
 import SwiftUI
 
 struct StrategyCanvasTab: View {
+    @Environment(PulseColors.self) private var colors
+    let strategy: Strategy
+    let client: NetworkClientProtocol
     @State private var viewModel = CanvasViewModel()
     @State private var lastPanTranslation: CGSize = .zero
     @State private var lastMagnification: CGFloat = 1.0
     @State private var zoomCenter: CGPoint = .zero
+    @State private var showCodePreview = false
+    @State private var generatedCode = ""
+    @State private var isDeploying = false
+    @State private var deployResult: String?
 
     var body: some View {
         ZStack {
@@ -49,7 +56,7 @@ struct StrategyCanvasTab: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(PulseColors.background)
+        .background(colors.background)
         .gesture(panGesture)
         .gesture(zoomGesture)
         .onKeyPress(keys: [.init("z")], phases: .down) { press in
@@ -64,6 +71,28 @@ struct StrategyCanvasTab: View {
         }
         .onTapGesture(count: 1) {
             viewModel.deselectAll()
+        }
+        .overlay(alignment: .topTrailing) {
+            // Deploy button
+            ProofAlphaButton(title: "生成并部署") {
+                generatedCode = try! CodeGenerator().generate(from: viewModel.graph, strategyName: strategy.name)
+                showCodePreview = true
+            }
+            .disabled(viewModel.graph.nodes.isEmpty)
+            .opacity(viewModel.graph.nodes.isEmpty ? 0.5 : 1.0)
+            .padding(PulseSpacing.md)
+        }
+        .sheet(isPresented: $showCodePreview) {
+            CodePreviewSheet(
+                code: generatedCode,
+                onDeploy: {
+                    Task { await deployStrategy() }
+                },
+                onCancel: {}
+            )
+        }
+        .onAppear {
+            viewModel.configure(client: client, strategyId: strategy.id)
         }
     }
 
@@ -125,7 +154,7 @@ struct StrategyCanvasTab: View {
             CanvasDragPreview(
                 sourcePoint: sourceWorld,
                 currentPoint: target,
-                color: PortDataType.signal.color,
+                color: PortDataType.signal.color(colors),
                 scale: viewModel.viewport.scale,
                 offset: viewModel.viewport.offset
             )
@@ -139,13 +168,13 @@ struct StrategyCanvasTab: View {
         VStack(spacing: PulseSpacing.md) {
             Image(systemName: "rectangle.connected.to.line.below")
                 .font(.system(size: 48))
-                .foregroundStyle(PulseColors.textMuted)
+                .foregroundStyle(colors.textMuted)
             Text("拖拽节点到画布开始构建策略")
                 .font(PulseFonts.body)
-                .foregroundStyle(PulseColors.textSecondary)
+                .foregroundStyle(colors.textSecondary)
             Text("从左侧面板选择节点类型")
                 .font(PulseFonts.caption)
-                .foregroundStyle(PulseColors.textMuted)
+                .foregroundStyle(colors.textMuted)
         }
     }
 
@@ -283,5 +312,22 @@ struct StrategyCanvasTab: View {
         )
         viewModel.addEdge(edge)
         viewModel.endWireDrag()
+    }
+
+    /// Deploy the strategy via API
+    private func deployStrategy() async {
+        isDeploying = true
+        defer { isDeploying = false }
+        do {
+            // Save canvas first
+            await viewModel.saveToBackend()
+            // Deploy the strategy
+            let strategies = APIStrategies(client: client)
+            let _ = try await strategies.deploy(id: strategy.id)
+            deployResult = "部署成功"
+        } catch {
+            deployResult = "部署失败: \(error.localizedDescription)"
+        }
+        showCodePreview = false
     }
 }
