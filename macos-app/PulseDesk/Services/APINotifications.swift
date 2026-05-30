@@ -7,11 +7,59 @@ struct AckResponse: Decodable {
     let ok: Bool
 }
 
+/// 后端 GET /notifications 返回的包装结构
+struct NotificationsResponse: Decodable {
+    let notifications: [BackendNotification]
+    let unread: Int
+}
+
+/// 后端通知的原始 JSON 结构（与 AppNotification 字段不完全匹配）
+struct BackendNotification: Decodable {
+    let id: Int
+    let type: String?
+    let title: String
+    let message: String
+    let read: Bool
+    let createdAt: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, type, title, message, read
+        case createdAt = "created_at"
+    }
+
+    /// 转换为 AppNotification
+    func toAppNotification() -> AppNotification {
+        let uuid = UUID(uuidString: "00000000-0000-0000-0000-\(String(format: "%012x", id))") ?? UUID()
+        let notifType = type.flatMap { NotificationType(rawValue: $0) } ?? .systemAlert
+        let dateFormatter = ISO8601DateFormatter()
+        dateFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let date = createdAt.flatMap { dateFormatter.date(from: $0) }
+            ?? ISO8601DateFormatter().date(from: createdAt ?? "")
+            ?? Date()
+
+        return AppNotification(
+            id: uuid,
+            type: notifType,
+            title: title,
+            message: message,
+            severity: .info,
+            isRead: read,
+            actionRoute: nil,
+            actionPayload: nil,
+            createdAt: date
+        )
+    }
+}
+
 struct APINotifications {
     let client: NetworkClientProtocol
 
     func fetchNotifications(limit: Int = 20) async throws -> [AppNotification] {
-        try await client.get("/api/notifications?limit=\(limit)", mock: MockData.mockNotifications)
+        let response: NotificationsResponse = try await client.get(
+            "/api/notifications?limit=\(limit)",
+            mock: { NotificationsResponse(notifications: [], unread: MockData.mockNotifications().filter { !$0.isRead }.count) }
+        )
+        return response.notifications.map { $0.toAppNotification() }
     }
 
     @discardableResult
@@ -25,8 +73,10 @@ struct APINotifications {
     }
 
     func getUnreadCount() async throws -> Int {
-        try await client.get("/api/notifications/unread-count", mock: {
-            MockData.mockNotifications().filter { !$0.isRead }.count
-        })
+        let response: NotificationsResponse = try await client.get(
+            "/api/notifications?limit=1",
+            mock: { NotificationsResponse(notifications: [], unread: MockData.mockNotifications().filter { !$0.isRead }.count) }
+        )
+        return response.unread
     }
 }
