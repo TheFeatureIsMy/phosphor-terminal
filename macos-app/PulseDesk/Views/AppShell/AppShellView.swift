@@ -90,9 +90,7 @@ struct AppShellView: View {
         case .aiStudio:
             AIStudioView()
         case .sentiment:
-            Text("市场情绪 — 即将推出")
-                .font(PulseFonts.displayHeading)
-                .foregroundStyle(colors.textMuted)
+            SentimentView()
         case .attribution:
             Text("归因分析 — 即将推出")
                 .font(PulseFonts.displayHeading)
