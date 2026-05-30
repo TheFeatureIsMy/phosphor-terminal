@@ -11,6 +11,7 @@ struct PulseDeskApp: App {
     @State private var authState = AuthState()
     @State private var settingsState = SettingsState()
     @State private var errorHandler = ErrorHandler()
+    @State private var wsManager = WebSocketManager()
     private let themeManager: ThemeManager
     private let pulseColors: PulseColors
 
@@ -39,6 +40,7 @@ struct PulseDeskApp: App {
                 .environment(pulseColors)
                 .environment(\.networkClient, networkClient)
                 .environment(errorHandler)
+                .environment(wsManager)
                 .preferredColorScheme(themeManager.isDark ? .dark : .light)
                 .contentTransition(.opacity)
                 .animation(.easeInOut(duration: 0.35), value: themeManager.current)
