@@ -9,6 +9,7 @@ struct AppShellView: View {
     @Environment(\.networkClient) private var networkClient
     @Environment(PulseColors.self) private var colors
     @Environment(ToastManager.self) private var toastManager
+    @Environment(ErrorHandler.self) private var errorHandler
 
     @State private var dashboardVM: DashboardViewModel?
     @State private var strategiesVM: StrategiesViewModel?
@@ -53,12 +54,15 @@ struct AppShellView: View {
             if dashboardVM == nil {
                 dashboardVM = DashboardViewModel(client: networkClient)
             }
+            dashboardVM?.errorHandler = errorHandler
             if strategiesVM == nil {
                 strategiesVM = StrategiesViewModel(client: networkClient)
             }
+            strategiesVM?.errorHandler = errorHandler
             if backtestVM == nil {
                 backtestVM = BacktestViewModel(client: networkClient)
             }
+            backtestVM?.errorHandler = errorHandler
         }
     }
 

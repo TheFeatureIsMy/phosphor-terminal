@@ -15,6 +15,7 @@ final class DashboardViewModel {
     var correlationSnapshots: [CorrelationSnapshot] = []
     var isLoading = true
     var error: String?
+    var errorHandler: ErrorHandler?
 
     private let dashboardAPI: APIDashboard
     private let ordersAPI: APIOrders
@@ -44,6 +45,7 @@ final class DashboardViewModel {
             systemStatus = try? await dashboardAPI.getSystemStatus()
             correlationSnapshots = (try? await dashboardAPI.getCorrelation()) ?? []
         } catch {
+            errorHandler?.handle(error, context: "加载仪表盘数据")
             self.error = error.localizedDescription
         }
         isLoading = false

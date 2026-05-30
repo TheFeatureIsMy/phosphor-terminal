@@ -9,6 +9,7 @@ final class StrategiesViewModel {
     var strategies: [Strategy] = []
     var isLoading = true
     var error: String?
+    var errorHandler: ErrorHandler?
     var showCreateSheet = false
 
     private let api: APIStrategies
@@ -23,6 +24,7 @@ final class StrategiesViewModel {
         do {
             strategies = try await api.list()
         } catch {
+            errorHandler?.handle(error, context: "加载策略列表")
             self.error = error.localizedDescription
         }
         isLoading = false
@@ -33,6 +35,7 @@ final class StrategiesViewModel {
             let strategy = try await api.create(name: name, type: type, market: market, exchange: exchange)
             strategies.insert(strategy, at: 0)
         } catch {
+            errorHandler?.handle(error, context: "创建策略")
             self.error = error.localizedDescription
         }
     }
@@ -42,6 +45,7 @@ final class StrategiesViewModel {
             try await api.delete(id: id)
             strategies.removeAll { $0.id == id }
         } catch {
+            errorHandler?.handle(error, context: "删除策略")
             self.error = error.localizedDescription
         }
     }
@@ -53,6 +57,7 @@ final class StrategiesViewModel {
                 strategies[index] = updated
             }
         } catch {
+            errorHandler?.handle(error, context: "部署策略")
             self.error = error.localizedDescription
         }
     }
@@ -64,6 +69,7 @@ final class StrategiesViewModel {
                 strategies[index] = updated
             }
         } catch {
+            errorHandler?.handle(error, context: "停止策略")
             self.error = error.localizedDescription
         }
     }
@@ -75,6 +81,7 @@ final class StrategiesViewModel {
                 strategies[index] = updated
             }
         } catch {
+            errorHandler?.handle(error, context: "更新策略")
             self.error = error.localizedDescription
         }
     }

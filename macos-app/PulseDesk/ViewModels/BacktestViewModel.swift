@@ -17,6 +17,7 @@ final class BacktestViewModel {
     var history: [Backtest] = []
     var isRunning = false
     var error: String?
+    var errorHandler: ErrorHandler?
 
     private let api: APIBacktest
 
@@ -38,6 +39,7 @@ final class BacktestViewModel {
                 capital: initialCapital, symbols: Array(selectedSymbols)
             )
         } catch {
+            errorHandler?.handle(error, context: "运行回测")
             self.error = error.localizedDescription
         }
         isRunning = false
