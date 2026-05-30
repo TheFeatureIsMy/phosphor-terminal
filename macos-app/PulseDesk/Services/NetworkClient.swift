@@ -135,10 +135,23 @@ final class LiveNetworkClient: NetworkClientProtocol, @unchecked Sendable {
         request.httpMethod = "DELETE"
         request.timeoutInterval = timeout
         request.setValue("Bearer \(KeychainService.accessToken ?? "")", forHTTPHeaderField: "Authorization")
-        let (_, response) = try await URLSession.shared.data(for: request)
-        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode < 400 else {
-            let code = (response as? HTTPURLResponse)?.statusCode ?? 0
-            throw APIError.httpError(statusCode: code, message: "Delete failed")
+
+        // First attempt
+        var (data, response) = try await URLSession.shared.data(for: request)
+        var httpResponse = response as? HTTPURLResponse
+
+        // If 401, try refreshing token once
+        if httpResponse?.statusCode == 401, KeychainService.refreshToken != nil {
+            try await refreshTokenIfNeeded()
+            request.setValue("Bearer \(KeychainService.accessToken ?? "")", forHTTPHeaderField: "Authorization")
+            (data, response) = try await URLSession.shared.data(for: request)
+            httpResponse = response as? HTTPURLResponse
+        }
+
+        guard let code = httpResponse?.statusCode, code < 400 else {
+            let code = httpResponse?.statusCode ?? 0
+            let message = String(data: data, encoding: .utf8) ?? "Delete failed"
+            throw APIError.httpError(statusCode: code, message: message)
         }
     }
 
