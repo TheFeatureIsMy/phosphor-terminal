@@ -60,6 +60,8 @@ struct PulseDeskApp: App {
                     if !isLive && !authState.isAuthenticated {
                         authState.mockLogin()
                     }
+                    // 初始化设置同步
+                    settingsState.configure(client: networkClient)
                 }
                 .task {
                     await dependencyState.load()
