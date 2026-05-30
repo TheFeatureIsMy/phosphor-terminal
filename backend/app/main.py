@@ -8,7 +8,7 @@ from app.config import settings
 from app.database import init_db, engine as db_engine
 from app.middleware import ErrorHandlerMiddleware, RateLimitMiddleware, RequestLoggerMiddleware
 from app.models.strategy import RiskEvent
-from app.routers import strategies, orders, dashboard, backtest, risk, system, auth, search, notifications, attribution, sentiment, rag, ai_phase3, markets, ai_research, agent_signals, ai_providers, factor_research
+from app.routers import strategies, orders, dashboard, backtest, risk, system, auth, search, notifications, attribution, sentiment, rag, ai_phase3, markets, ai_research, agent_signals, ai_providers, factor_research, websocket
 
 
 async def _periodic_risk_evaluation():
@@ -94,6 +94,7 @@ app.include_router(ai_research.router)
 app.include_router(agent_signals.router)
 app.include_router(ai_providers.router)
 app.include_router(factor_research.router)
+app.include_router(websocket.router)
 
 
 @app.get("/health")
