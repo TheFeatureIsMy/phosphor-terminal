@@ -46,6 +46,12 @@ final class CanvasViewModel {
     private var undoStack: [CanvasAction] = []
     private var redoStack: [CanvasAction] = []
 
+    // Auto-save
+    private var canvasAPI: APICanvas?
+    private var strategyId: Int?
+    private var saveTask: Task<Void, Never>?
+    private var graphSerializer = GraphSerializer()
+
     // MARK: - Computed
 
     var selectedNode: CanvasNode? {
@@ -56,11 +62,54 @@ final class CanvasViewModel {
     var canUndo: Bool { !undoStack.isEmpty }
     var canRedo: Bool { !redoStack.isEmpty }
 
+    // MARK: - Auto-save configuration
+
+    func configure(client: any NetworkClientProtocol, strategyId: Int) {
+        self.canvasAPI = APICanvas(client: client)
+        self.strategyId = strategyId
+        Task { await loadFromBackend() }
+    }
+
+    func loadFromBackend() async {
+        guard let api = canvasAPI, let sid = strategyId else { return }
+        do {
+            let response = try await api.load(strategyId: sid)
+            if let data = response.graphJson.data(using: .utf8) {
+                let loaded = try graphSerializer.deserialize(data)
+                graph = loaded
+            }
+        } catch {
+            // No saved canvas yet, keep empty graph
+        }
+    }
+
+    func scheduleSave() {
+        saveTask?.cancel()
+        saveTask = Task {
+            try? await Task.sleep(for: .seconds(3))
+            guard !Task.isCancelled else { return }
+            await saveToBackend()
+        }
+    }
+
+    func saveToBackend() async {
+        guard let api = canvasAPI, let sid = strategyId else { return }
+        do {
+            let data = try graphSerializer.serialize(graph)
+            let json = String(data: data, encoding: .utf8) ?? "{}"
+            let code = try CodeGenerator().generate(from: graph, strategyName: "Strategy_\(sid)")
+            _ = try await api.save(strategyId: sid, graphJson: json, codeSnapshot: code)
+        } catch {
+            // Silent fail — will retry on next change
+        }
+    }
+
     // MARK: - Node operations
 
     func addNode(_ node: CanvasNode) {
         graph.nodes.append(node)
         record(.addNode(node))
+        scheduleSave()
     }
 
     func removeNode(id: UUID) {
@@ -74,6 +123,7 @@ final class CanvasViewModel {
         }
         selectedNodeIds.remove(id)
         record(.removeNode(node))
+        scheduleSave()
     }
 
     func moveNode(id: UUID, to position: CGPoint) {
@@ -81,6 +131,7 @@ final class CanvasViewModel {
         let oldPosition = graph.nodes[index].position
         graph.nodes[index].position = position
         record(.moveNode(id: id, from: oldPosition, to: position))
+        scheduleSave()
     }
 
     func updateNodeWidget(nodeId: UUID, key: String, value: AnyCodable) {
@@ -90,6 +141,7 @@ final class CanvasViewModel {
             if let old {
                 record(.updateConfig(nodeId: nodeId, key: key, old: old, new: value))
             }
+            scheduleSave()
         }
     }
 
@@ -105,6 +157,7 @@ final class CanvasViewModel {
         }) else { return }
         graph.edges.append(edge)
         record(.addEdge(edge))
+        scheduleSave()
     }
 
     func removeEdge(id: UUID) {
@@ -113,6 +166,7 @@ final class CanvasViewModel {
         graph.edges.remove(at: index)
         selectedEdgeIds.remove(id)
         record(.removeEdge(edge))
+        scheduleSave()
     }
 
     // MARK: - Selection
