@@ -1,24 +1,29 @@
-// ToastManager.swift — Toast 通知管理器
+// ToastManager.swift — 全局 Toast 通知管理器（支持多条同时显示）
 
 import SwiftUI
 
 @Observable
 @MainActor
 final class ToastManager {
-    var currentToast: ToastData?
+    var toasts: [Toast] = []
 
-    func show(_ type: ToastType, message: String, duration: TimeInterval = 3) {
-        currentToast = ToastData(type: type, message: message)
+    func show(_ message: String, type: ToastType = .info, duration: TimeInterval = 3) {
+        let toast = Toast(message: message, type: type)
+        toasts.append(toast)
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(duration))
-            if currentToast?.message == message {
-                withAnimation { currentToast = nil }
-            }
+            toasts.removeAll { $0.id == toast.id }
         }
     }
+
+    func success(_ message: String) { show(message, type: .success) }
+    func error(_ message: String) { show(message, type: .error, duration: 5) }
+    func warning(_ message: String) { show(message, type: .warning, duration: 4) }
+    func info(_ message: String) { show(message, type: .info) }
 }
 
-struct ToastData: Equatable {
-    let type: ToastType
+struct Toast: Identifiable {
+    let id = UUID()
     let message: String
+    let type: ToastType
 }

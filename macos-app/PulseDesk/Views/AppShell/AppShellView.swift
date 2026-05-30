@@ -8,6 +8,7 @@ struct AppShellView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.networkClient) private var networkClient
     @Environment(PulseColors.self) private var colors
+    @Environment(ToastManager.self) private var toastManager
 
     @State private var dashboardVM: DashboardViewModel?
     @State private var strategiesVM: StrategiesViewModel?
@@ -44,6 +45,9 @@ struct AppShellView: View {
             if appState.showCommandPalette {
                 CommandPaletteView()
             }
+        }
+        .overlay {
+            ToastOverlayView(toastManager: toastManager)
         }
         .onAppear {
             if dashboardVM == nil {
