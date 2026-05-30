@@ -12,6 +12,7 @@ final class DashboardViewModel {
     var orders: [Order] = []
     var riskEvents: [RiskEvent] = []
     var systemStatus: SystemStatus?
+    var correlationSnapshots: [CorrelationSnapshot] = []
     var isLoading = true
     var error: String?
 
@@ -41,6 +42,7 @@ final class DashboardViewModel {
             orders = try await ordersTask
             riskEvents = try await eventsTask
             systemStatus = try? await dashboardAPI.getSystemStatus()
+            correlationSnapshots = (try? await dashboardAPI.getCorrelation()) ?? []
         } catch {
             self.error = error.localizedDescription
         }
