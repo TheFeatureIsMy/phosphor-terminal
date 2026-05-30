@@ -50,9 +50,9 @@ enum StrategyStatus: String, Codable, CaseIterable {
         }
     }
 
-    var color: Color {
+    func color(_ colors: PulseColors) -> Color {
         switch self {
-        case .draft: return PulseColors.statusDraft
+        case .draft: return colors.statusDraft
         case .backtested: return PulseColors.info
         case .active: return PulseColors.statusActive
         case .paused: return PulseColors.statusPaused
@@ -72,7 +72,7 @@ enum OrderSide: String, Codable {
     case sell = "SELL"
 
     var label: String { self == .buy ? "买入" : "卖出" }
-    var color: Color { self == .buy ? PulseColors.profit : PulseColors.loss }
+    func color(_ colors: PulseColors) -> Color { self == .buy ? colors.profit : PulseColors.loss }
 }
 
 // 订单类型
@@ -95,11 +95,11 @@ enum OrderStatus: String, Codable {
         }
     }
 
-    var color: Color {
+    func color(_ colors: PulseColors) -> Color {
         switch self {
         case .pending: return PulseColors.warning
         case .filled: return PulseColors.success
-        case .cancelled: return PulseColors.textMuted
+        case .cancelled: return colors.textMuted
         case .failed: return PulseColors.danger
         }
     }
@@ -110,7 +110,7 @@ enum PositionSide: String, Codable {
     case long, short
 
     var label: String { self == .long ? "多" : "空" }
-    var color: Color { self == .long ? PulseColors.profit : PulseColors.loss }
+    func color(_ colors: PulseColors) -> Color { self == .long ? colors.profit : PulseColors.loss }
 }
 
 // 持仓状态
@@ -238,6 +238,7 @@ enum AlertLevel: String, Codable {
 enum AppRoute: String, CaseIterable, Identifiable {
     case dashboard, strategies, backtest, trades
     case aiStudio
+    case sentiment, attribution, aiProviders, risk
     case settings
 
     var id: String { rawValue }
@@ -249,6 +250,10 @@ enum AppRoute: String, CaseIterable, Identifiable {
         case .backtest: return "clock.arrow.circlepath"
         case .trades: return "list.bullet.rectangle"
         case .aiStudio: return "brain.head.profile"
+        case .sentiment: return "waveform.path.ecg"
+        case .attribution: return "chart.bar.doc.horizontal"
+        case .aiProviders: return "server.rack"
+        case .risk: return "shield.checkered"
         case .settings: return "gearshape"
         }
     }
@@ -260,15 +265,19 @@ enum AppRoute: String, CaseIterable, Identifiable {
         case .backtest: return "回测中心"
         case .trades: return "交易记录"
         case .aiStudio: return "AI 工作室"
+        case .sentiment: return "市场情绪"
+        case .attribution: return "归因分析"
+        case .aiProviders: return "AI 服务"
+        case .risk: return "风险管理"
         case .settings: return "系统设置"
         }
     }
 
     var section: SidebarSection {
         switch self {
-        case .dashboard, .trades: return .trading
+        case .dashboard, .trades, .risk: return .trading
         case .strategies, .backtest: return .strategy
-        case .aiStudio: return .ai
+        case .aiStudio, .sentiment, .attribution, .aiProviders: return .ai
         case .settings: return .system
         }
     }
@@ -288,7 +297,7 @@ enum SidebarSection: String, CaseIterable {
 }
 
 // MARK: - 通知类型
-enum NotificationType: String, Codable {
+enum NotificationType: String, Codable, CaseIterable {
     case riskAlert = "risk_alert"
     case tradeExecuted = "trade_executed"
     case strategyUpdate = "strategy_update"
