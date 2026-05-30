@@ -34,3 +34,10 @@ async def get_system_status():
             "detail": detail,
         },
     )
+
+
+@router.get("/dependencies")
+async def get_dependencies():
+    from app.services.dependency_checker import check_all_dependencies
+
+    return check_all_dependencies()
