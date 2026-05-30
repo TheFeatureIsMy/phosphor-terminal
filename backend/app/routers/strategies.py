@@ -1,3 +1,4 @@
+import asyncio
 import math
 from datetime import datetime, timezone
 from typing import Optional
@@ -7,6 +8,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from app.database import get_db
 from app.models.strategy import Strategy
+from app.routers.websocket import manager as ws_manager
 from app.schemas.api import (
     StrategyCreate, StrategyUpdate, StrategyResponse,
     StrategyStatus, PaginatedResponse,
@@ -123,6 +125,15 @@ async def deploy_strategy(strategy_id: int, db: Session = Depends(get_db)):
     strategy.updated_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(strategy)
+    if strategy.status == "active":
+        try:
+            asyncio.create_task(ws_manager.broadcast("dashboard", {
+                "type": "strategy_deployed",
+                "strategy_id": strategy_id,
+                "status": "active",
+            }))
+        except Exception:
+            pass
     return strategy
 
 

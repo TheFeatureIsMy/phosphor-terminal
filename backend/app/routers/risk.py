@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends
@@ -5,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.strategy import RiskEvent, CorrelationSnapshot, PortfolioStressTest
+from app.routers.websocket import manager as ws_manager
 from app.schemas.api import (
     CorrelationResponse,
     PortfolioStressTestCreate,
@@ -50,15 +52,58 @@ def evaluate_risk(body: RiskRuleEvaluationRequest, db: Session = Depends(get_db)
         created = [RiskEvent(id=idx + 1, created_at=now, **candidate) for idx, candidate in enumerate(candidates)]
 
     status = "triggered" if created else "clear"
+    if created and not body.dry_run:
+        try:
+            asyncio.create_task(ws_manager.broadcast("risk", {
+                "type": "risk_event",
+                "event_type": candidates[0].get("event_type", "unknown") if candidates else "unknown",
+                "severity": candidates[0].get("severity", "medium") if candidates else "medium",
+            }))
+        except Exception:
+            pass
     return RiskRuleEvaluationResponse(status=status, created_events=created, dry_run=body.dry_run)
 
 
 @router.get("/portfolio/correlation", response_model=list[CorrelationResponse])
 def list_correlations(db: Session = Depends(get_db)):
+    from app.services.freqtrade_db import freqtrade_db
     corrs = db.query(CorrelationSnapshot).all()
-    if not corrs:
-        return [CorrelationResponse(**c) for c in _mock_correlations()]
-    return corrs
+    if corrs:
+        source = freqtrade_db.source_status(simulated=False)
+        return [
+            CorrelationResponse(
+                id=c.id, symbol_a=c.symbol_a, symbol_b=c.symbol_b,
+                correlation=c.correlation, window_days=c.window_days,
+                alert_level=c.alert_level, created_at=c.created_at,
+                data_source=source,
+            )
+            for c in corrs
+        ]
+    computed = freqtrade_db.compute_correlations(days=30)
+    if computed:
+        source = freqtrade_db.source_status(simulated=False)
+        saved = []
+        for c in computed:
+            row = CorrelationSnapshot(**c)
+            db.add(row)
+            saved.append(row)
+        db.commit()
+        for row in saved:
+            db.refresh(row)
+        return [
+            CorrelationResponse(
+                id=r.id, symbol_a=r.symbol_a, symbol_b=r.symbol_b,
+                correlation=r.correlation, window_days=r.window_days,
+                alert_level=r.alert_level, created_at=r.created_at,
+                data_source=source,
+            )
+            for r in saved
+        ]
+    mock = _mock_correlations()
+    source = freqtrade_db.source_status(simulated=True)
+    for c in mock:
+        c["data_source"] = source
+    return [CorrelationResponse(**c) for c in mock]
 
 
 @router.post("/portfolio/stress-tests", response_model=PortfolioStressTestResponse)
