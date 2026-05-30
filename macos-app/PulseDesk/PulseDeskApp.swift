@@ -14,21 +14,28 @@ struct PulseDeskApp: App {
     @State private var wsManager = WebSocketManager()
     private let themeManager: ThemeManager
     private let pulseColors: PulseColors
+    private let dependencyState: DependencyState
 
-    init() {
-        let tm = ThemeManager()
-        self.themeManager = tm
-        self.pulseColors = PulseColors(themeManager: tm)
-    }
     // NetworkClient 切换: 默认 Mock 模式，传入 --live 参数或设置 PULSEDESK_LIVE=1 环境变量切换到真实后端
-    @State private var networkClient: any NetworkClientProtocol = {
+    private static func makeNetworkClient() -> any NetworkClientProtocol {
         let args = ProcessInfo.processInfo.arguments
         let env = ProcessInfo.processInfo.environment
         if args.contains("--live") || env["PULSEDESK_LIVE"] == "1" {
             return LiveNetworkClient()
         }
         return MockNetworkClient()
-    }()
+    }
+
+    @State private var networkClient: any NetworkClientProtocol = MockNetworkClient()
+
+    init() {
+        let tm = ThemeManager()
+        self.themeManager = tm
+        self.pulseColors = PulseColors(themeManager: tm)
+        let client = Self.makeNetworkClient()
+        self._networkClient = State(initialValue: client)
+        self.dependencyState = DependencyState(client: client)
+    }
 
     var body: some Scene {
         WindowGroup {
@@ -41,6 +48,7 @@ struct PulseDeskApp: App {
                 .environment(\.networkClient, networkClient)
                 .environment(errorHandler)
                 .environment(wsManager)
+                .environment(dependencyState as DependencyState?)
                 .preferredColorScheme(themeManager.isDark ? .dark : .light)
                 .contentTransition(.opacity)
                 .animation(.easeInOut(duration: 0.35), value: themeManager.current)
@@ -52,6 +60,10 @@ struct PulseDeskApp: App {
                     if !isLive && !authState.isAuthenticated {
                         authState.mockLogin()
                     }
+                }
+                .task {
+                    await dependencyState.load()
+                    dependencyState.startPeriodicRefresh()
                 }
         }
         .windowStyle(.hiddenTitleBar)
