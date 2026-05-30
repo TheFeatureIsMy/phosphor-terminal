@@ -95,14 +95,28 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 struct ContentView: View {
     @Environment(AppState.self) private var appState
     @Environment(AuthState.self) private var authState
+    @Environment(\.dependencyState) private var depState
+
+    private var showSetupSheet: Bool {
+        !UserDefaults.standard.bool(forKey: "setupCompleted")
+            && (depState?.showSetupWizard ?? false)
+    }
 
     var body: some View {
-        if !appState.hasLaunched {
-            LandingView()
-        } else if authState.isAuthenticated {
-            AppShellView()
-        } else {
-            LoginPlaceholderView()
+        Group {
+            if !appState.hasLaunched {
+                LandingView()
+            } else if authState.isAuthenticated {
+                AppShellView()
+            } else {
+                LoginPlaceholderView()
+            }
+        }
+        .sheet(isPresented: Binding(
+            get: { showSetupSheet },
+            set: { _ in }
+        )) {
+            SetupWizardView()
         }
     }
 }
