@@ -35,7 +35,34 @@ struct BacktestView: View {
                     .cardStyle()
                 } else if let result = viewModel.result {
                     BacktestResultsView(backtest: result)
-                } else {
+                }
+
+                if !viewModel.history.isEmpty {
+                    VStack(alignment: .leading, spacing: PulseSpacing.sm) {
+                        Text("回测历史")
+                            .font(PulseFonts.bodyMedium)
+                            .foregroundStyle(colors.textPrimary)
+
+                        ForEach(viewModel.history) { backtest in
+                            HStack {
+                                Text("策略 #\(backtest.strategyId)")
+                                    .font(PulseFonts.caption)
+                                Spacer()
+                                Text(String(format: "夏普 %.2f", backtest.sharpeRatio ?? 0))
+                                    .font(PulseFonts.monoLabel)
+                                Text(String(format: "胜率 %.1f%%", (backtest.winRate ?? 0) * 100))
+                                    .font(PulseFonts.monoLabel)
+                                    .foregroundStyle(PulseColors.accent)
+                            }
+                            .padding(PulseSpacing.sm)
+                            .background(colors.cardBackground)
+                            .cornerRadius(PulseRadii.sm)
+                        }
+                    }
+                    .cardStyle()
+                }
+
+                if viewModel.result == nil && !viewModel.isRunning {
                     EmptyStateView(
                         icon: "clock.arrow.circlepath",
                         title: "配置并运行回测",
@@ -52,6 +79,7 @@ struct BacktestView: View {
             do {
                 strategies = try await APIStrategies(client: networkClient).list()
             } catch {}
+            await viewModel.loadHistory()
         }
     }
 }
