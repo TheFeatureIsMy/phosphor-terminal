@@ -94,13 +94,9 @@ struct AppShellView: View {
         case .attribution:
             AttributionView()
         case .aiProviders:
-            Text("AI 服务管理 — 即将推出")
-                .font(PulseFonts.displayHeading)
-                .foregroundStyle(colors.textMuted)
+            AIProvidersView()
         case .risk:
-            Text("风险管理 — 即将推出")
-                .font(PulseFonts.displayHeading)
-                .foregroundStyle(colors.textMuted)
+            RiskView()
         case .settings:
             SettingsView()
         }
