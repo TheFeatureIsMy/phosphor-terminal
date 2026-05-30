@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, Integer, String, Float, JSON, DateTime
+from sqlalchemy import Column, Integer, String, Float, JSON, DateTime, Text, ForeignKey
+from sqlalchemy.orm import relationship
 from app.database import Base
 
 
@@ -108,3 +109,46 @@ class PortfolioStressTest(Base):
     concentration_risk = Column(JSON, default=dict)
     recommendations = Column(String, nullable=True)
     created_at = Column(DateTime, default=_utcnow)
+
+
+class BacktestRun(Base):
+    __tablename__ = "backtest_runs"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    strategy_id = Column(Integer, nullable=False, index=True)
+    start_date = Column(String, nullable=False)
+    end_date = Column(String, nullable=False)
+    initial_capital = Column(Float, nullable=False)
+    symbols = Column(JSON, default=list)
+    config = Column(JSON, default=dict)
+    result = Column(JSON, default=dict)
+    sharpe_ratio = Column(Float, default=0)
+    max_drawdown = Column(Float, default=0)
+    win_rate = Column(Float, default=0)
+    total_return = Column(Float, default=0)
+    data_source = Column(JSON, default=dict)
+    created_at = Column(DateTime, default=_utcnow)
+
+
+class NotificationRecord(Base):
+    __tablename__ = "notifications"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    type = Column(String, nullable=False, default="system")
+    title = Column(String, nullable=False)
+    message = Column(String, nullable=False)
+    is_read = Column(Integer, default=0)
+    created_at = Column(DateTime, default=_utcnow)
+
+
+class CanvasWorkflow(Base):
+    __tablename__ = "canvas_workflows"
+
+    id = Column(String, primary_key=True, default=lambda: str(__import__('uuid').uuid4()))
+    strategy_id = Column(Integer, ForeignKey("strategies.id"), nullable=False, index=True)
+    graph_json = Column(Text, nullable=False)
+    code_snapshot = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
+
+    strategy = relationship("Strategy", backref="canvas_workflows")
