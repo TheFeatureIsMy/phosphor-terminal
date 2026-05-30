@@ -21,7 +21,7 @@ struct AppShellView: View {
 
                 // 右侧：工具栏 + 内容区
                 VStack(spacing: 0) {
-                    ConsoleToolbar()
+                    ConsoleToolbar(systemStatus: dashboardVM?.systemStatus)
                     detailContent
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
@@ -115,8 +115,12 @@ struct AppShellView: View {
 struct ConsoleToolbar: View {
     @Environment(AppState.self) private var appState
     @Environment(PulseColors.self) private var colors
+    @Environment(\.networkClient) private var networkClient
     @State private var currentTime = Date()
     @State private var showNotifications = false
+    @State private var notificationViewModel: NotificationViewModel?
+
+    var systemStatus: SystemStatus?
 
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     private let timeFormatter: DateFormatter = {
@@ -141,11 +145,11 @@ struct ConsoleToolbar: View {
 
             Spacer()
 
-            // 系统指标
+            // 系统指标 — 从 SystemStatus 读取
             HStack(spacing: PulseSpacing.lg) {
-                metricBadge(icon: "cpu", value: "23%")
-                metricBadge(icon: "memorychip", value: "512MB")
-                metricBadge(icon: "network", value: "12ms")
+                metricBadge(icon: "clock", value: systemStatus?.uptime ?? "—")
+                metricBadge(icon: "cpu", value: "\(systemStatus?.activeStrategies ?? 0) 策略")
+                metricBadge(icon: "point.3.connected.trianglepath.connected", value: "\(systemStatus?.openPositions ?? 0) 持仓")
             }
 
             // 分隔点
@@ -160,7 +164,7 @@ struct ConsoleToolbar: View {
                 .onReceive(timer) { time in currentTime = time }
 
             // 连接状态
-            StatusDot(status: .online)
+            StatusDot(status: systemStatus?.apiStatus == .connected ? .online : .offline)
 
             // 搜索
             Button {
@@ -177,11 +181,28 @@ struct ConsoleToolbar: View {
             Button {
                 showNotifications.toggle()
             } label: {
-                Image(systemName: "bell")
-                    .font(.system(size: 13))
-                    .foregroundStyle(colors.textMuted)
+                ZStack(alignment: .topTrailing) {
+                    Image(systemName: "bell")
+                        .font(.system(size: 13))
+                        .foregroundStyle(colors.textMuted)
+
+                    if let vm = notificationViewModel, vm.unreadCount > 0 {
+                        Text(vm.unreadCount > 99 ? "99+" : "\(vm.unreadCount)")
+                            .font(.system(size: 7, weight: .bold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 3)
+                            .padding(.vertical, 1)
+                            .background(Capsule().fill(PulseColors.danger))
+                            .offset(x: 5, y: -5)
+                    }
+                }
             }
             .buttonStyle(.plain)
+            .popover(isPresented: $showNotifications) {
+                if let vm = notificationViewModel {
+                    NotificationPopover(viewModel: vm)
+                }
+            }
 
             // 用户
             Circle()
@@ -195,12 +216,15 @@ struct ConsoleToolbar: View {
         }
         .padding(.horizontal, PulseSpacing.lg)
         .frame(height: 40)
-        // 无独立背景 — 工具栏是统一玻璃面板的一部分
         .overlay(alignment: .bottom) {
-            // 底部细线 — ProofAlpha: border-white/[0.05]
             Rectangle()
                 .fill(Color.white.opacity(0.05))
                 .frame(height: 0.5)
+        }
+        .onAppear {
+            if notificationViewModel == nil {
+                notificationViewModel = NotificationViewModel(client: networkClient)
+            }
         }
     }
 
