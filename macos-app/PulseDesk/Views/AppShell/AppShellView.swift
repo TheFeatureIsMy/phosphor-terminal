@@ -200,7 +200,10 @@ struct ConsoleToolbar: View {
             .buttonStyle(.plain)
             .popover(isPresented: $showNotifications) {
                 if let vm = notificationViewModel {
-                    NotificationPopover(viewModel: vm)
+                    NotificationPopover(viewModel: vm) {
+                        showNotifications = false
+                        appState.selectedRoute = .settings
+                    }
                 }
             }
 
