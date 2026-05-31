@@ -17,12 +17,7 @@ struct StrategiesListView: View {
                 header
 
                 if showCreatePanel {
-                    Text("创建面板（即将在后续任务中接入）")
-                        .font(PulseFonts.caption)
-                        .foregroundStyle(colors.textMuted)
-                        .padding()
-                        .background(colors.surface)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                    StrategyCreatePanel(onCancel: { withAnimation(.easeInOut(duration: 0.2)) { showCreatePanel = false } })
                         .transition(.move(edge: .top).combined(with: .opacity))
                 }
 
