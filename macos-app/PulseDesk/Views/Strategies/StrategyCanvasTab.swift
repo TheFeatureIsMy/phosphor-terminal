@@ -1,5 +1,5 @@
 // StrategyCanvasTab.swift — 策略画布标签
-// 主画布布局：背景网格 → 连线 → 节点 → 交互手势
+// 浮动面板 + MiniMap + 配置侧边栏
 
 import SwiftUI
 
@@ -15,119 +15,253 @@ struct StrategyCanvasTab: View {
     @State private var generatedCode = ""
     @State private var isDeploying = false
     @State private var deployResult: String?
-    @State private var showPalette = true
+    @State private var showPalette = false
+    @State private var showConfigPanel = false
+    @State private var canvasSize: CGSize = .zero
 
     var body: some View {
-        HStack(spacing: 0) {
-            if showPalette {
-                NodePalette(
-                    isPresented: $showPalette,
-                    onNodeSelected: { definition in
-                        let centerX = (-viewModel.viewport.offset.x + 200) / viewModel.viewport.scale
-                        let centerY = (-viewModel.viewport.offset.y + 200) / viewModel.viewport.scale
-                        let newNode = CanvasNode(
-                            nodeType: definition.type,
-                            position: CGPoint(x: centerX, y: centerY),
-                            size: CGSize(width: 200, height: 120)
-                        )
-                        viewModel.addNode(newNode)
+        ZStack {
+            // === Canvas Area ===
+            VStack(spacing: 0) {
+                // Mini toolbar
+                canvasToolbar
+
+                ZStack {
+                    // Background grid
+                    CanvasBackground(
+                        scale: viewModel.viewport.scale,
+                        offset: viewModel.viewport.offset
+                    )
+
+                    // Edges
+                    CanvasEdges(
+                        edges: viewModel.graph.edges,
+                        nodes: viewModel.graph.nodes,
+                        scale: viewModel.viewport.scale,
+                        offset: viewModel.viewport.offset
+                    )
+
+                    // Nodes
+                    if viewModel.graph.nodes.isEmpty {
+                        emptyCanvas
+                    } else {
+                        nodeLayer
                     }
+
+                    // Wire drag preview
+                    wireDragPreviewLayer
+
+                    // Selection rectangle
+                    if let selRect = viewModel.selectionRect {
+                        CanvasSelectionRect(rect: selRect).allowsHitTesting(false)
+                    }
+
+                    // Wire drag overlay
+                    if viewModel.wireDragSource != nil {
+                        Color.clear.contentShape(Rectangle()).gesture(wireDragGesture)
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(colors.background)
+                .gesture(panGesture)
+                .gesture(zoomGesture)
+                .onKeyPress(keys: [.init("z")], phases: .down) { press in
+                    if press.modifiers.contains(.command) && press.modifiers.contains(.shift) {
+                        viewModel.redo()
+                        return .handled
+                    } else if press.modifiers.contains(.command) {
+                        viewModel.undo()
+                        return .handled
+                    }
+                    return .ignored
+                }
+                .onTapGesture(count: 1) { viewModel.deselectAll() }
+                .onChange(of: viewModel.selectedNodeIds) { _, newIds in
+                    withAnimation(PulseAnimation.easeOutFast) {
+                        showConfigPanel = !newIds.isEmpty
+                    }
+                }
+                .onAppear { viewModel.configure(client: client, strategyId: strategy.id) }
+
+                // Bottom status bar
+                canvasStatusBar
+            }
+
+            // === Floating Palette (left overlay) ===
+            if showPalette {
+                HStack {
+                    NodePalette(
+                        isPresented: $showPalette,
+                        onNodeSelected: { def in
+                            addNodeFromPalette(def)
+                            showPalette = false
+                        }
+                    )
+                    .frame(width: 240)
+                    .transition(.move(edge: .leading))
+
+                    Spacer()
+                }
+                .zIndex(10)
+            }
+
+            // === MiniMap (bottom-right) ===
+            if !viewModel.graph.nodes.isEmpty {
+                MiniMapView(
+                    nodes: viewModel.graph.nodes,
+                    viewport: viewModel.viewport,
+                    canvasSize: canvasSize,
+                    onPan: { viewModel.viewport.offset = $0 }
                 )
-                .transition(.move(edge: .leading))
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+                .padding(PulseSpacing.md)
             }
 
-            ZStack {
-            // Layer 1: Grid background
-            CanvasBackground(
-                scale: viewModel.viewport.scale,
-                offset: viewModel.viewport.offset
-            )
-
-            // Layer 2: Edges
-            CanvasEdges(
-                edges: viewModel.graph.edges,
-                nodes: viewModel.graph.nodes,
-                scale: viewModel.viewport.scale,
-                offset: viewModel.viewport.offset
-            )
-
-            // Layer 3: Nodes
-            if viewModel.graph.nodes.isEmpty {
-                emptyState
-            } else {
-                nodeLayer
-            }
-
-            // Layer 4: Wire drag preview
-            wireDragPreviewLayer
-
-            // Layer 5: Selection rectangle
-            if let selRect = viewModel.selectionRect {
-                CanvasSelectionRect(rect: selRect)
-                    .allowsHitTesting(false)
-            }
-
-            // Layer 6: Wire drag interaction overlay
-            if viewModel.wireDragSource != nil {
-                Color.clear
-                    .contentShape(Rectangle())
-                    .gesture(wireDragGesture)
+            // === NodeConfigPanel (right slide-in) ===
+            if showConfigPanel, let node = viewModel.selectedNode {
+                HStack {
+                    Spacer()
+                    NodeConfigPanel(
+                        node: node,
+                        definition: NodeRegistry.definition(for: node.nodeType),
+                        onDelete: {
+                            viewModel.removeNode(id: node.id)
+                            showConfigPanel = false
+                        },
+                        onConfigChange: { key, value in
+                            if let idx = viewModel.graph.nodes.firstIndex(where: { $0.id == node.id }) {
+                                viewModel.graph.nodes[idx].config[key] = value
+                            }
+                        },
+                        onWidgetChange: { key, value in
+                            viewModel.updateNodeWidget(nodeId: node.id, key: key, value: value)
+                        }
+                    )
+                    .frame(width: 260)
+                    .transition(.move(edge: .trailing))
+                }
+                .zIndex(10)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(colors.background)
-        .gesture(panGesture)
-        .gesture(zoomGesture)
-        .onKeyPress(keys: [.init("z")], phases: .down) { press in
-            if press.modifiers.contains(.command) && press.modifiers.contains(.shift) {
-                viewModel.redo()
-                return .handled
-            } else if press.modifiers.contains(.command) {
-                viewModel.undo()
-                return .handled
-            }
-            return .ignored
-        }
-        .onTapGesture(count: 1) {
-            viewModel.deselectAll()
-        }
-        .overlay(alignment: .topTrailing) {
-            // Deploy button
-            ProofAlphaButton(title: "生成并部署") {
-                generatedCode = try! CodeGenerator().generate(from: viewModel.graph, strategyName: strategy.name)
-                showCodePreview = true
-            }
-            .disabled(viewModel.graph.nodes.isEmpty)
-            .opacity(viewModel.graph.nodes.isEmpty ? 0.5 : 1.0)
-            .padding(PulseSpacing.md)
-        }
-        .overlay(alignment: .topLeading) {
-            Button {
-                withAnimation(PulseAnimation.springDefault) { showPalette.toggle() }
-            } label: {
-                Image(systemName: "sidebar.left")
-                    .font(.system(size: 12))
-                    .foregroundStyle(colors.textSecondary)
-                    .padding(PulseSpacing.xs)
-                    .background(RoundedRectangle(cornerRadius: 4).fill(colors.surfaceElevated))
-            }
-            .buttonStyle(.plain)
-            .padding(PulseSpacing.md)
-        }
         .sheet(isPresented: $showCodePreview) {
             CodePreviewSheet(
                 code: generatedCode,
-                onDeploy: {
-                    Task { await deployStrategy() }
-                },
+                onDeploy: { Task { await deployStrategy() } },
                 onCancel: {}
             )
         }
-        .onAppear {
-            viewModel.configure(client: client, strategyId: strategy.id)
+    }
+
+    // MARK: - Canvas Toolbar
+
+    private var canvasToolbar: some View {
+        HStack(spacing: PulseSpacing.sm) {
+            // Palette toggle
+            Button {
+                withAnimation(PulseAnimation.springDefault) { showPalette.toggle() }
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "square.grid.2x2").font(.system(size: 11))
+                    Text("\u{8282}\u{70B9}").font(PulseFonts.monoLabel)
+                }
+                .foregroundStyle(showPalette ? PulseColors.accent : colors.textSecondary)
+                .padding(.horizontal, PulseSpacing.xs).padding(.vertical, 5)
+                .background(showPalette ? PulseColors.accent.opacity(0.1) : colors.surface)
+                .clipShape(RoundedRectangle(cornerRadius: 4))
+            }
+            .buttonStyle(.plain)
+
+            Spacer()
+
+            // Undo/Redo
+            Button { viewModel.undo() } label: {
+                Image(systemName: "arrow.uturn.backward").font(.system(size: 12))
+            }
+            .buttonStyle(.plain).disabled(viewModel.graph.nodes.isEmpty)
+            Button { viewModel.redo() } label: {
+                Image(systemName: "arrow.uturn.forward").font(.system(size: 12))
+            }
+            .buttonStyle(.plain).disabled(viewModel.graph.nodes.isEmpty)
+
+            // Fit to content
+            Button { viewModel.fitToContent() } label: {
+                Image(systemName: "arrow.up.left.and.down.right.and.arrow.up.right.and.down.left")
+                    .font(.system(size: 10))
+            }
+            .buttonStyle(.plain).disabled(viewModel.graph.nodes.isEmpty)
+
+            Divider().frame(height: 16).foregroundStyle(colors.border)
+
+            // Deploy
+            ProofAlphaButton(title: "\u{90E8}\u{7F72}") {
+                generatedCode = try! CodeGenerator().generate(from: viewModel.graph, strategyName: strategy.name)
+                showCodePreview = true
+            }
+        }
+        .padding(.horizontal, PulseSpacing.sm)
+        .padding(.vertical, 4)
+        .background(colors.surfaceElevated)
+        .overlay(alignment: .bottom) {
+            Rectangle().fill(colors.border).frame(height: 0.5)
         }
     }
-}
+
+    // MARK: - Canvas Status Bar
+
+    private var canvasStatusBar: some View {
+        HStack(spacing: PulseSpacing.md) {
+            Text("\u{7F29}\u{653E}: \(String(format: "%.0f%%", viewModel.viewport.scale * 100))")
+                .font(PulseFonts.micro).foregroundStyle(colors.textMuted)
+            Text("\u{8282}\u{70B9}: \(viewModel.graph.nodes.count)")
+                .font(PulseFonts.micro).foregroundStyle(colors.textMuted)
+            Text("\u{8FDE}\u{7EBF}: \(viewModel.graph.edges.count)")
+                .font(PulseFonts.micro).foregroundStyle(colors.textMuted)
+            Spacer()
+            if let node = viewModel.selectedNode {
+                Text(node.nodeType)
+                    .font(PulseFonts.micro).foregroundStyle(PulseColors.accent)
+            }
+        }
+        .padding(.horizontal, PulseSpacing.sm)
+        .padding(.vertical, 3)
+        .background(colors.surfaceElevated)
+        .overlay(alignment: .top) {
+            Rectangle().fill(colors.border).frame(height: 0.5)
+        }
+    }
+
+    // MARK: - Empty Canvas (actionable)
+
+    private var emptyCanvas: some View {
+        VStack(spacing: PulseSpacing.md) {
+            Image(systemName: "square.grid.2x2")
+                .font(.system(size: 40))
+                .foregroundStyle(colors.textMuted.opacity(0.5))
+            Text("\u{7A7A}\u{767D}\u{753B}\u{5E03}")
+                .font(PulseFonts.displaySubheading)
+                .foregroundStyle(colors.textSecondary)
+            Text("\u{70B9}\u{51FB}\u{5DE6}\u{4E0A}\u{89D2}\u{300C}\u{8282}\u{70B9}\u{300D}\u{6309}\u{94AE}\u{6253}\u{5F00}\u{9762}\u{677F}\u{FF0C}\u{9009}\u{62E9}\u{8282}\u{70B9}\u{5F00}\u{59CB}\u{6784}\u{5EFA}\u{7B56}\u{7565}")
+                .font(PulseFonts.caption)
+                .foregroundStyle(colors.textMuted)
+                .multilineTextAlignment(.center)
+            Button {
+                withAnimation(PulseAnimation.springDefault) { showPalette = true }
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "plus.circle").font(.system(size: 11))
+                    Text("\u{6DFB}\u{52A0}\u{7B2C}\u{4E00}\u{4E2A}\u{8282}\u{70B9}").font(PulseFonts.captionMedium)
+                }
+                .padding(.horizontal, PulseSpacing.md).padding(.vertical, PulseSpacing.xs)
+                .background(PulseColors.accent.opacity(0.1))
+                .clipShape(RoundedRectangle(cornerRadius: PulseRadii.button))
+                .overlay(RoundedRectangle(cornerRadius: PulseRadii.button).stroke(PulseColors.accent.opacity(0.3), lineWidth: 1))
+            }
+            .buttonStyle(.plain)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
 
     // MARK: - Node layer
 
@@ -192,22 +326,6 @@ struct StrategyCanvasTab: View {
                 offset: viewModel.viewport.offset
             )
             .allowsHitTesting(false)
-        }
-    }
-
-    // MARK: - Empty state
-
-    private var emptyState: some View {
-        VStack(spacing: PulseSpacing.md) {
-            Image(systemName: "rectangle.connected.to.line.below")
-                .font(.system(size: 48))
-                .foregroundStyle(colors.textMuted)
-            Text("拖拽节点到画布开始构建策略")
-                .font(PulseFonts.body)
-                .foregroundStyle(colors.textSecondary)
-            Text("从左侧面板选择节点类型")
-                .font(PulseFonts.caption)
-                .foregroundStyle(colors.textMuted)
         }
     }
 
@@ -347,6 +465,18 @@ struct StrategyCanvasTab: View {
         viewModel.endWireDrag()
     }
 
+    /// Add a node from the palette at a reasonable insert position
+    private func addNodeFromPalette(_ def: NodeDefinition) {
+        let centerX = (-viewModel.viewport.offset.x + 200) / viewModel.viewport.scale
+        let centerY = (-viewModel.viewport.offset.y + 200) / viewModel.viewport.scale
+        let newNode = CanvasNode(
+            nodeType: def.type,
+            position: CGPoint(x: centerX + CGFloat.random(in: -40...40), y: centerY + CGFloat.random(in: -40...40)),
+            size: CGSize(width: 200, height: 120)
+        )
+        viewModel.addNode(newNode)
+    }
+
     /// Deploy the strategy via API
     private func deployStrategy() async {
         isDeploying = true
@@ -357,9 +487,9 @@ struct StrategyCanvasTab: View {
             // Deploy the strategy
             let strategies = APIStrategies(client: client)
             let _ = try await strategies.deploy(id: strategy.id)
-            deployResult = "部署成功"
+            deployResult = "\u{90E8}\u{7F72}\u{6210}\u{529F}"
         } catch {
-            deployResult = "部署失败: \(error.localizedDescription)"
+            deployResult = "\u{90E8}\u{7F72}\u{5931}\u{8D25}: \(error.localizedDescription)"
         }
         showCodePreview = false
     }

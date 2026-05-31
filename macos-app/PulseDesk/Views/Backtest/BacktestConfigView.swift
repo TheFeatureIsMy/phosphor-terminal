@@ -8,6 +8,9 @@ struct BacktestConfigView: View {
     @Bindable var viewModel: BacktestViewModel
     let strategies: [Strategy]
 
+    @State private var showStrategyPicker = false
+    @State private var strategySearchText = ""
+
     private var selectedStrategy: Strategy? {
         strategies.first { $0.id == viewModel.selectedStrategyId }
     }
@@ -16,29 +19,23 @@ struct BacktestConfigView: View {
         selectedStrategy?.name ?? "选择策略..."
     }
 
+    private var filteredStrategyList: [Strategy] {
+        if strategySearchText.isEmpty { return strategies }
+        return strategies.filter { $0.name.localizedCaseInsensitiveContains(strategySearchText) }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: PulseSpacing.md) {
             Text("回测配置")
                 .font(PulseFonts.bodyMedium)
                 .foregroundStyle(colors.textPrimary)
 
-            // 策略选择 — 自定义下拉
+            // 策略选择 — 自定义 Popover 下拉
             VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
                 TerminalLabel(text: "选择策略")
 
-                Menu {
-                    ForEach(strategies) { strategy in
-                        Button {
-                            viewModel.selectedStrategyId = strategy.id
-                        } label: {
-                            HStack {
-                                Text(strategy.name)
-                                if viewModel.selectedStrategyId == strategy.id {
-                                    Image(systemName: "checkmark")
-                                }
-                            }
-                        }
-                    }
+                Button {
+                    showStrategyPicker.toggle()
                 } label: {
                     HStack {
                         Image(systemName: "cpu")
@@ -48,16 +45,70 @@ struct BacktestConfigView: View {
                             .font(PulseFonts.body)
                             .foregroundStyle(selectedStrategy != nil ? colors.textPrimary : colors.textMuted)
                         Spacer()
-                        Image(systemName: "chevron.up.chevron.down")
+                        Image(systemName: "chevron.down")
                             .font(.system(size: 10))
                             .foregroundStyle(colors.textMuted)
                     }
                     .padding(.horizontal, PulseSpacing.sm)
                     .padding(.vertical, PulseSpacing.xs)
                     .background(RoundedRectangle(cornerRadius: PulseRadii.sm).fill(colors.surface))
-                    .overlay(RoundedRectangle(cornerRadius: PulseRadii.sm).stroke(colors.border, lineWidth: 1))
+                    .overlay(RoundedRectangle(cornerRadius: PulseRadii.sm).stroke(
+                        showStrategyPicker ? PulseColors.accent.opacity(0.3) : colors.border, lineWidth: 1))
                 }
-                .menuStyle(.borderlessButton)
+                .buttonStyle(.plain)
+                .popover(isPresented: $showStrategyPicker, arrowEdge: .bottom) {
+                    VStack(spacing: 0) {
+                        // Search field
+                        HStack(spacing: PulseSpacing.xxs) {
+                            Image(systemName: "magnifyingglass").font(.system(size: 10)).foregroundStyle(colors.textMuted)
+                            TextField("搜索策略...", text: $strategySearchText)
+                                .textFieldStyle(.plain).font(PulseFonts.caption)
+                        }
+                        .padding(PulseSpacing.xs)
+                        .background(colors.surfaceElevated)
+
+                        Divider().foregroundStyle(colors.border)
+
+                        // Strategy list
+                        ScrollView {
+                            VStack(spacing: 1) {
+                                ForEach(filteredStrategyList) { strategy in
+                                    Button {
+                                        viewModel.selectedStrategyId = strategy.id
+                                        showStrategyPicker = false
+                                    } label: {
+                                        HStack(spacing: PulseSpacing.sm) {
+                                            Image(systemName: strategy.type == .ragGenerated ? "brain.head.profile" : "chart.line.uptrend.xyaxis")
+                                                .font(.system(size: 12))
+                                                .foregroundStyle(strategy.type.color)
+                                                .frame(width: 18)
+                                            VStack(alignment: .leading, spacing: 1) {
+                                                Text(strategy.name).font(PulseFonts.caption).foregroundStyle(colors.textPrimary)
+                                                HStack(spacing: PulseSpacing.xxs) {
+                                                    Text(strategy.type.label).font(PulseFonts.micro).foregroundStyle(colors.textMuted)
+                                                    Text("\u{00B7}").foregroundStyle(colors.textMuted)
+                                                    Text(strategy.status.label).font(PulseFonts.micro).foregroundStyle(strategy.status.color(colors))
+                                                }
+                                            }
+                                            Spacer()
+                                            if viewModel.selectedStrategyId == strategy.id {
+                                                Image(systemName: "checkmark.circle.fill")
+                                                    .font(.system(size: 13)).foregroundStyle(PulseColors.accent)
+                                            }
+                                        }
+                                        .padding(.horizontal, PulseSpacing.sm).padding(.vertical, PulseSpacing.xs)
+                                        .background(viewModel.selectedStrategyId == strategy.id ? PulseColors.accent.opacity(0.06) : Color.clear)
+                                        .contentShape(Rectangle())
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
+                        .frame(height: 200)
+                    }
+                    .frame(width: 300)
+                    .background(colors.cardBackground)
+                }
             }
 
             // 日期 + 资金
