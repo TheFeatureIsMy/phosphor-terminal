@@ -37,6 +37,11 @@ struct StrategyCreateSheet: View {
                 // 交易市场 — 自定义卡片选择器
                 marketSelector
 
+                Text(selectedMarket.constraintNote)
+                    .font(PulseFonts.micro)
+                    .foregroundStyle(colors.textMuted)
+                    .padding(.top, PulseSpacing.xxs)
+
                 // 交易所 — 自定义下拉按钮组
                 exchangeSelector
             }
@@ -182,7 +187,7 @@ struct StrategyCreateSheet: View {
             TerminalLabel(text: "交易所")
 
             HStack(spacing: PulseSpacing.xxs) {
-                ForEach(Exchange.allCases) { exchange in
+                ForEach(availableExchanges) { exchange in
                     exchangePill(exchange)
                 }
             }
@@ -206,6 +211,15 @@ struct StrategyCreateSheet: View {
         }
         .buttonStyle(.plain)
         .pressEffect(scale: 0.96)
+    }
+
+    // MARK: - Available exchanges by market
+    private var availableExchanges: [Exchange] {
+        switch selectedMarket {
+        case .crypto: return [.binance, .okx, .bybit, .gate]
+        case .usStock: return [.alpaca, .ibkr]
+        case .aShare: return [.joinquant, .eastmoney]
+        }
     }
 
     // MARK: - Helpers

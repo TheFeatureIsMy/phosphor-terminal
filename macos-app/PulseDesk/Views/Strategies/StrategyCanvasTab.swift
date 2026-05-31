@@ -15,9 +15,28 @@ struct StrategyCanvasTab: View {
     @State private var generatedCode = ""
     @State private var isDeploying = false
     @State private var deployResult: String?
+    @State private var showPalette = true
 
     var body: some View {
-        ZStack {
+        HStack(spacing: 0) {
+            if showPalette {
+                NodePalette(
+                    isPresented: $showPalette,
+                    onNodeSelected: { definition in
+                        let centerX = (-viewModel.viewport.offset.x + 200) / viewModel.viewport.scale
+                        let centerY = (-viewModel.viewport.offset.y + 200) / viewModel.viewport.scale
+                        let newNode = CanvasNode(
+                            nodeType: definition.type,
+                            position: CGPoint(x: centerX, y: centerY),
+                            size: CGSize(width: 200, height: 120)
+                        )
+                        viewModel.addNode(newNode)
+                    }
+                )
+                .transition(.move(edge: .leading))
+            }
+
+            ZStack {
             // Layer 1: Grid background
             CanvasBackground(
                 scale: viewModel.viewport.scale,
@@ -82,6 +101,19 @@ struct StrategyCanvasTab: View {
             .opacity(viewModel.graph.nodes.isEmpty ? 0.5 : 1.0)
             .padding(PulseSpacing.md)
         }
+        .overlay(alignment: .topLeading) {
+            Button {
+                withAnimation(PulseAnimation.springDefault) { showPalette.toggle() }
+            } label: {
+                Image(systemName: "sidebar.left")
+                    .font(.system(size: 12))
+                    .foregroundStyle(colors.textSecondary)
+                    .padding(PulseSpacing.xs)
+                    .background(RoundedRectangle(cornerRadius: 4).fill(colors.surfaceElevated))
+            }
+            .buttonStyle(.plain)
+            .padding(PulseSpacing.md)
+        }
         .sheet(isPresented: $showCodePreview) {
             CodePreviewSheet(
                 code: generatedCode,
@@ -95,6 +127,7 @@ struct StrategyCanvasTab: View {
             viewModel.configure(client: client, strategyId: strategy.id)
         }
     }
+}
 
     // MARK: - Node layer
 

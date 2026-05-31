@@ -176,9 +176,23 @@ enum APIStatus: String, Codable {
 // 交易所
 enum Exchange: String, Codable, CaseIterable, Identifiable {
     case binance, okx, bybit, gate
+    case alpaca, ibkr         // US stocks
+    case joinquant, eastmoney // A-shares
 
     var id: String { rawValue }
-    var label: String { rawValue.capitalized }
+
+    var label: String {
+        switch self {
+        case .binance: return "Binance"
+        case .okx: return "OKX"
+        case .bybit: return "Bybit"
+        case .gate: return "Gate"
+        case .alpaca: return "Alpaca"
+        case .ibkr: return "Interactive Brokers"
+        case .joinquant: return "JoinQuant"
+        case .eastmoney: return "东方财富"
+        }
+    }
 }
 
 // 交易市场

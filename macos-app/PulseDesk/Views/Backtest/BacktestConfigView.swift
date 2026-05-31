@@ -8,59 +8,80 @@ struct BacktestConfigView: View {
     @Bindable var viewModel: BacktestViewModel
     let strategies: [Strategy]
 
+    private var selectedStrategy: Strategy? {
+        strategies.first { $0.id == viewModel.selectedStrategyId }
+    }
+
+    private var selectedStrategyName: String {
+        selectedStrategy?.name ?? "选择策略..."
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: PulseSpacing.md) {
             Text("回测配置")
                 .font(PulseFonts.bodyMedium)
                 .foregroundStyle(colors.textPrimary)
 
-            // 策略选择
+            // 策略选择 — 自定义下拉
             VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
-                HStack(spacing: PulseSpacing.xs) {
-                    Text("策略")
-                        .font(PulseFonts.captionMedium)
-                        .foregroundStyle(colors.textSecondary)
-                    if let selectedId = viewModel.selectedStrategyId,
-                       let selected = strategies.first(where: { $0.id == selectedId }) {
-                        Text(selected.name)
-                            .font(PulseFonts.micro)
-                            .foregroundStyle(PulseColors.accent)
-                    }
-                }
-                Picker("", selection: $viewModel.selectedStrategyId) {
-                    Text("选择策略").tag(nil as Int?)
+                TerminalLabel(text: "选择策略")
+
+                Menu {
                     ForEach(strategies) { strategy in
-                        Text(strategy.name).tag(strategy.id as Int?)
+                        Button {
+                            viewModel.selectedStrategyId = strategy.id
+                        } label: {
+                            HStack {
+                                Text(strategy.name)
+                                if viewModel.selectedStrategyId == strategy.id {
+                                    Image(systemName: "checkmark")
+                                }
+                            }
+                        }
                     }
+                } label: {
+                    HStack {
+                        Image(systemName: "cpu")
+                            .font(.system(size: 12))
+                            .foregroundStyle(PulseColors.accent)
+                        Text(selectedStrategyName)
+                            .font(PulseFonts.body)
+                            .foregroundStyle(selectedStrategy != nil ? colors.textPrimary : colors.textMuted)
+                        Spacer()
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.system(size: 10))
+                            .foregroundStyle(colors.textMuted)
+                    }
+                    .padding(.horizontal, PulseSpacing.sm)
+                    .padding(.vertical, PulseSpacing.xs)
+                    .background(RoundedRectangle(cornerRadius: PulseRadii.sm).fill(colors.surface))
+                    .overlay(RoundedRectangle(cornerRadius: PulseRadii.sm).stroke(colors.border, lineWidth: 1))
                 }
-                .pickerStyle(.menu)
-                .darkPicker()
+                .menuStyle(.borderlessButton)
             }
 
             // 日期 + 资金
             HStack(spacing: PulseSpacing.md) {
-                VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
-                    Text("开始日期")
-                        .font(PulseFonts.captionMedium)
-                        .foregroundStyle(colors.textSecondary)
-                    TextField("2025-01-01", text: $viewModel.startDate)
-                        .darkTextField()
-                }
+                dateField("开始日期", icon: "calendar", text: $viewModel.startDate)
+                dateField("结束日期", icon: "calendar.badge.plus", text: $viewModel.endDate)
 
                 VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
-                    Text("结束日期")
-                        .font(PulseFonts.captionMedium)
-                        .foregroundStyle(colors.textSecondary)
-                    TextField("2025-12-31", text: $viewModel.endDate)
-                        .darkTextField()
-                }
-
-                VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
-                    Text("初始资金 ($)")
-                        .font(PulseFonts.captionMedium)
-                        .foregroundStyle(colors.textSecondary)
-                    TextField("10000", value: $viewModel.initialCapital, format: .number)
-                        .darkTextField()
+                    Text("初始资金")
+                        .font(PulseFonts.micro)
+                        .foregroundStyle(colors.textMuted)
+                    HStack(spacing: PulseSpacing.xs) {
+                        Image(systemName: "dollarsign")
+                            .font(.system(size: 11))
+                            .foregroundStyle(colors.textMuted)
+                        TextField("10000", value: $viewModel.initialCapital, format: .number)
+                            .textFieldStyle(.plain)
+                            .font(PulseFonts.caption)
+                            .foregroundStyle(colors.textPrimary)
+                    }
+                    .padding(.horizontal, PulseSpacing.xs)
+                    .padding(.vertical, 6)
+                    .background(RoundedRectangle(cornerRadius: PulseRadii.sm).fill(colors.surface))
+                    .overlay(RoundedRectangle(cornerRadius: PulseRadii.sm).stroke(colors.border, lineWidth: 1))
                 }
             }
 
@@ -106,5 +127,28 @@ struct BacktestConfigView: View {
             }
         }
         .cardStyle()
+    }
+
+    // MARK: - Styled date field
+
+    private func dateField(_ label: String, icon: String, text: Binding<String>) -> some View {
+        VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
+            Text(label)
+                .font(PulseFonts.micro)
+                .foregroundStyle(colors.textMuted)
+            HStack(spacing: PulseSpacing.xs) {
+                Image(systemName: icon)
+                    .font(.system(size: 11))
+                    .foregroundStyle(colors.textMuted)
+                TextField("", text: text)
+                    .textFieldStyle(.plain)
+                    .font(PulseFonts.caption)
+                    .foregroundStyle(colors.textPrimary)
+            }
+            .padding(.horizontal, PulseSpacing.xs)
+            .padding(.vertical, 6)
+            .background(RoundedRectangle(cornerRadius: PulseRadii.sm).fill(colors.surface))
+            .overlay(RoundedRectangle(cornerRadius: PulseRadii.sm).stroke(colors.border, lineWidth: 1))
+        }
     }
 }
