@@ -36,15 +36,27 @@ struct StrategyCanvasTab: View {
                             selectedEdgeIds: [],
                             scale: viewModel.viewport.scale, offset: viewModel.viewport.offset)
 
-                if viewModel.graph.nodes.isEmpty { emptyState }
-                else {
-                    ForEach(viewModel.graph.nodes) { node in
-                        NodeDragWrapper(viewModel: viewModel, node: node,
-                            onWireStart: { nid, port in startWire(nid, port) },
-                            onWireEnd: { tid, port in endWire(tid, port) }
-                        )
+                GeometryReader { geo in
+                    let culler = ViewportCuller()
+                    let visible = culler.visibleNodes(
+                        viewModel.graph.nodes,
+                        selectedIds: viewModel.selectedNodeIds,
+                        viewport: viewModel.viewport,
+                        canvasSize: geo.size
+                    )
+
+                    if viewModel.graph.nodes.isEmpty {
+                        emptyState
+                    } else {
+                        ForEach(visible) { node in
+                            NodeDragWrapper(viewModel: viewModel, node: node,
+                                onWireStart: { nid, port in startWire(nid, port) },
+                                onWireEnd: { tid, port in endWire(tid, port) }
+                            )
+                        }
                     }
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                 if let src = viewModel.wireDragSource, let tgt = viewModel.wireDragTarget,
                    let sn = viewModel.graph.nodes.first(where: { $0.id == src.nodeId }),
