@@ -22,14 +22,14 @@ final class APIStrategies: @unchecked Sendable {
         })
     }
 
-    func create(name: String, type: StrategyType, market: String, exchange: String) async throws -> Strategy {
-        try await client.post("/api/strategies", body: ["name": name, "type": type.rawValue, "market": market, "exchange": exchange], mock: { [self] in
+    func create(name: String, market: String, exchange: String, tags: [String] = []) async throws -> Strategy {
+        try await client.post("/api/strategies", body: ["name": name, "type": "ma_cross", "market": market, "exchange": exchange], mock: { [self] in
             let newId = (mockStrategies.map(\.id).max() ?? 0) + 1
             let strategy = Strategy(
-                id: newId, userId: 1, name: name, type: type,
+                id: newId, userId: 1, name: name,
                 parameters: [:], source: .manual, market: market, exchange: exchange,
                 version: 1, status: .draft, sharpeRatio: nil, maxDrawdown: nil,
-                freqtradeStrategyId: nil, tags: [],
+                freqtradeStrategyId: nil, tags: tags,
                 createdAt: ISO8601DateFormatter().string(from: Date()),
                 updatedAt: ISO8601DateFormatter().string(from: Date())
             )
@@ -62,13 +62,12 @@ final class APIStrategies: @unchecked Sendable {
         })
     }
 
-    func update(id: Int, name: String? = nil, type: StrategyType? = nil, market: String? = nil) async throws -> Strategy {
+    func update(id: Int, name: String? = nil, market: String? = nil) async throws -> Strategy {
         struct UpdateBody: Encodable {
             let name: String?
-            let type: String?
             let market: String?
         }
-        let body = UpdateBody(name: name, type: type?.rawValue, market: market)
+        let body = UpdateBody(name: name, market: market)
         return try await client.put("/api/strategies/\(id)", body: body, mock: { MockData.mockStrategies().first! })
     }
 }

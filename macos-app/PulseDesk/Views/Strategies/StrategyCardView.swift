@@ -15,12 +15,8 @@ struct StrategyCardView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-            // 顶部：类型 + 状态
+            // 顶部：状态
             HStack {
-                BadgeView(text: strategy.type.label, color: strategy.type.color, size: .small)
-
-                Spacer()
-
                 HStack(spacing: PulseSpacing.xxs) {
                     Circle()
                         .fill(strategy.status.color(colors))
@@ -29,6 +25,8 @@ struct StrategyCardView: View {
                         .font(PulseFonts.caption)
                         .foregroundStyle(strategy.status.color(colors))
                 }
+
+                Spacer()
             }
 
             // 策略名称

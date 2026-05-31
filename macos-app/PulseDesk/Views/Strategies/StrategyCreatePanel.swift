@@ -140,7 +140,7 @@ struct StrategyCreatePanel: View {
     private func doCreate() async {
         isCreating = true
         let api = APIStrategies(client: networkClient)
-        if let strategy = try? await api.create(name: name, type: .maCross, market: selectedMarket.rawValue, exchange: selectedExchange.rawValue) {
+        if let strategy = try? await api.create(name: name, market: selectedMarket.rawValue, exchange: selectedExchange.rawValue) {
             appState.selectedStrategyId = strategy.id
             appState.selectedRoute = .strategyDetail
         }

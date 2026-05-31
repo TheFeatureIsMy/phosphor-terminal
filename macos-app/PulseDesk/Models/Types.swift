@@ -58,7 +58,7 @@ struct Strategy: Codable, Identifiable, Hashable {
     let id: Int
     let userId: Int
     let name: String
-    let type: StrategyType
+    // let type: StrategyType deprecated, use tags instead
     let parameters: [String: AnyCodable]
     let source: StrategySource
     let market: String
@@ -73,7 +73,7 @@ struct Strategy: Codable, Identifiable, Hashable {
     let updatedAt: String
 
     enum CodingKeys: String, CodingKey {
-        case id, name, type, parameters, source, market, exchange, version, status
+        case id, name, parameters, source, market, exchange, version, status
         case userId = "user_id"
         case sharpeRatio = "sharpe_ratio"
         case maxDrawdown = "max_drawdown"

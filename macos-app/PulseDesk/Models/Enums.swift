@@ -4,6 +4,7 @@ import Foundation
 import SwiftUI
 
 // 策略类型
+@available(*, deprecated, message: "Use tags instead")
 enum StrategyType: String, Codable, CaseIterable, Identifiable {
     case maCross = "ma_cross"
     case breakout

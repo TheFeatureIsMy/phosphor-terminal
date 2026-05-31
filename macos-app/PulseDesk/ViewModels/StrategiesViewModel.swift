@@ -30,9 +30,9 @@ final class StrategiesViewModel {
         isLoading = false
     }
 
-    func create(name: String, type: StrategyType, market: String, exchange: String) async {
+    func create(name: String, market: String, exchange: String, tags: [String] = []) async {
         do {
-            let strategy = try await api.create(name: name, type: type, market: market, exchange: exchange)
+            let strategy = try await api.create(name: name, market: market, exchange: exchange, tags: tags)
             strategies.insert(strategy, at: 0)
         } catch {
             errorHandler?.handle(error, context: "创建策略")
@@ -74,9 +74,9 @@ final class StrategiesViewModel {
         }
     }
 
-    func update(id: Int, name: String? = nil, type: StrategyType? = nil, market: String? = nil) async {
+    func update(id: Int, name: String? = nil, market: String? = nil) async {
         do {
-            let updated = try await api.update(id: id, name: name, type: type, market: market)
+            let updated = try await api.update(id: id, name: name, market: market)
             if let index = strategies.firstIndex(where: { $0.id == id }) {
                 strategies[index] = updated
             }
