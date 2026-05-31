@@ -130,44 +130,28 @@ struct CanvasWebView: NSViewRepresentable {
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.setValue(false, forKey: "drawsBackground")
         webView.navigationDelegate = context.coordinator
+        context.coordinator.webView = webView
 
-        // Load HTML from resources
+        // Find the HTML file URL and load it with proper baseURL for local scripts
         let htmlURL: URL? = {
-            // Try SPM Bundle.module first
             #if swift(>=5.9)
             if let url = Bundle.module.url(forResource: "canvas-editor", withExtension: "html") {
                 return url
             }
             #endif
-            // Fallback: search in the executable's directory (works for both SPM and Xcode)
-            let searchPaths = [
-                Bundle.main.resourceURL?.appendingPathComponent("canvas-editor.html"),
-                Bundle.main.bundleURL.deletingLastPathComponent().appendingPathComponent("PulseDesk_Resources")
-                    .appendingPathComponent("canvas-editor.html"),
-            ]
-            for path in searchPaths {
-                if let p = path, FileManager.default.fileExists(atPath: p.path) {
-                    return p
-                }
+            for dir in [Bundle.main.resourcePath ?? "", FileManager.default.currentDirectoryPath] {
+                let url = URL(fileURLWithPath: dir).appendingPathComponent("canvas-editor.html")
+                if FileManager.default.fileExists(atPath: url.path) { return url }
             }
             return nil
         }()
 
-        // Load HTML content
-        let htmlContent: String = {
-            if let url = htmlURL, let content = try? String(contentsOfFile: url.path, encoding: .utf8) {
-                return content
-            }
-            for dir in [Bundle.main.resourcePath ?? "", FileManager.default.currentDirectoryPath] {
-                if let c = try? String(contentsOfFile: dir + "/canvas-editor.html", encoding: .utf8) {
-                    return c
-                }
-            }
-            return "<html><body style='background:#0A0A0B;color:#E0E0E0;display:flex;align-items:center;justify-content:center;font-family:monospace;'><p>Canvas editor failed to load</p></body></html>"
-        }()
-        webView.loadHTMLString(htmlContent, baseURL: nil)
+        if let url = htmlURL {
+            webView.loadFileURL(url, allowingReadAccessTo: url.deletingLastPathComponent())
+        } else {
+            webView.loadHTMLString("<html><body style='background:#0A0A0B;color:white;display:flex;align-items:center;justify-content:center'><p>Canvas not found</p></body></html>", baseURL: nil)
+        }
 
-        context.coordinator.webView = webView
         return webView
     }
 
