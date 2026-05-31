@@ -24,6 +24,11 @@ final class CanvasViewModel {
     var selectedNodeIds: Set<UUID> = []
     var selectedEdgeIds: Set<UUID> = []
 
+    // Save/load state
+    var saveStatus: SaveStatus = .saved
+    var isLoading = false
+    let errorNotifier = CanvasErrorNotifier()
+
     // Viewport — single source of truth lives in graph
     var viewport: ViewportState {
         get { graph.viewport }
@@ -81,6 +86,8 @@ final class CanvasViewModel {
 
     func loadFromBackend() async {
         guard let api = canvasAPI, let sid = strategyId else { return }
+        isLoading = true
+        defer { isLoading = false }
         do {
             let response = try await api.load(strategyId: sid)
             if let data = response.graphJson.data(using: .utf8) {
@@ -88,7 +95,7 @@ final class CanvasViewModel {
                 graph = loaded
             }
         } catch {
-            // No saved canvas yet, keep empty graph
+            errorNotifier.showToast("无法加载画布数据")
         }
     }
 
@@ -103,13 +110,17 @@ final class CanvasViewModel {
 
     func saveToBackend() async {
         guard let api = canvasAPI, let sid = strategyId else { return }
+        saveStatus = .saving
         do {
             let data = try graphSerializer.serialize(graph)
             let json = String(data: data, encoding: .utf8) ?? "{}"
             let code = try CodeGenerator().generate(from: graph, strategyName: "Strategy_\(sid)")
             _ = try await api.save(strategyId: sid, graphJson: json, codeSnapshot: code)
+            saveStatus = .saved
+            errorNotifier.reportSaveSuccess()
         } catch {
-            // Silent fail — will retry on next change
+            saveStatus = .error(error.localizedDescription)
+            errorNotifier.reportSaveError()
         }
     }
 

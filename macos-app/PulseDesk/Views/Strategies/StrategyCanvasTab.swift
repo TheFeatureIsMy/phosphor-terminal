@@ -90,6 +90,21 @@ struct StrategyCanvasTab: View {
                 if viewModel.wireDragSource != nil {
                     Color.clear.contentShape(Rectangle()).gesture(wireDragGesture)
                 }
+
+                if viewModel.isLoading {
+                    CanvasLoadingSkeleton()
+                        .transition(.opacity)
+                }
+
+                if let toast = viewModel.errorNotifier.currentToast {
+                    Text(toast)
+                        .font(PulseFonts.caption)
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 12).padding(.vertical, 8)
+                        .background(RoundedRectangle(cornerRadius: 6).fill(PulseColors.danger.opacity(0.9)))
+                        .padding(.top, 40)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(colors.background)
@@ -217,6 +232,16 @@ struct StrategyCanvasTab: View {
                 .padding(.top, 12)
                 .transition(.move(edge: .top).combined(with: .opacity))
             }
+        }
+        .overlay(alignment: .bottom) {
+            HStack {
+                saveStatusIndicator
+                Spacer()
+                Text("\(Int(viewModel.viewport.scale * 100))%")
+                    .font(PulseFonts.micro).foregroundStyle(colors.textMuted).monospacedDigit()
+            }
+            .padding(.horizontal, 8).padding(.vertical, 4)
+            .background(colors.background.opacity(0.8))
         }
         .sheet(isPresented: $showCodePreview) {
             CodePreviewSheet(code: generatedCode,
@@ -358,6 +383,52 @@ struct StrategyCanvasTab: View {
         await viewModel.saveToBackend()
         _ = try? await APIStrategies(client: client).deploy(id: strategy.id)
         showCodePreview = false
+    }
+
+    // MARK: - Save status indicator
+    private var saveStatusIndicator: some View {
+        HStack(spacing: 4) {
+            Circle()
+                .fill(saveStatusColor).frame(width: 6, height: 6)
+            Text(saveStatusText).font(PulseFonts.micro).foregroundStyle(colors.textSecondary)
+        }
+    }
+
+    private var saveStatusColor: Color {
+        switch viewModel.saveStatus {
+        case .saved: return PulseColors.accent
+        case .saving: return PulseColors.amber
+        case .error: return PulseColors.danger
+        case .dirty: return PulseColors.amber
+        }
+    }
+
+    private var saveStatusText: String {
+        switch viewModel.saveStatus {
+        case .saved: return "已保存"
+        case .saving: return "保存中..."
+        case .error: return "保存失败"
+        case .dirty: return "未保存"
+        }
+    }
+}
+
+// MARK: - CanvasLoadingSkeleton
+private struct CanvasLoadingSkeleton: View {
+    @Environment(PulseColors.self) private var colors
+
+    var body: some View {
+        VStack(spacing: 20) {
+            ForEach(0..<4, id: \.self) { i in
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(colors.surfaceElevated)
+                    .frame(width: 200, height: 100)
+                    .shimmer()
+                    .offset(x: CGFloat(i * 60 - 90), y: CGFloat(i * 70 - 100))
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(colors.background)
     }
 }
 
