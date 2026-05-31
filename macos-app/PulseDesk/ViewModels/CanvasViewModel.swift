@@ -36,6 +36,10 @@ final class CanvasViewModel {
     var dragStartPosition: CGPoint?
     private var multiDragStartPositions: [UUID: CGPoint]?
 
+    // Config undo coalescing
+    private var configDebounceTasks: [String: Task<Void, Never>] = [:]
+    private var configOldValues: [String: AnyCodable] = [:]
+
     // Wire drag state (connecting ports)
     var wireDragSource: (nodeId: UUID, port: String)?
     var wireDragTarget: CGPoint?
@@ -141,12 +145,34 @@ final class CanvasViewModel {
 
     func updateNodeWidget(nodeId: UUID, key: String, value: AnyCodable) {
         if let index = graph.nodes.firstIndex(where: { $0.id == nodeId }) {
+            let coalesceKey = "\(nodeId.uuidString).\(key)"
             let old = graph.nodes[index].widgetValues[key]
-            graph.nodes[index].widgetValues[key] = value
-            if let old {
-                record(.updateConfig(nodeId: nodeId, key: key, old: old, new: value))
+
+            if old == nil {
+                graph.nodes[index].widgetValues[key] = value
+                record(.updateConfig(nodeId: nodeId, key: key, old: AnyCodable(""), new: value))
+                scheduleSave()
+                return
             }
-            scheduleSave()
+
+            if configOldValues[coalesceKey] == nil {
+                configOldValues[coalesceKey] = old
+            }
+
+            graph.nodes[index].widgetValues[key] = value
+
+            configDebounceTasks[coalesceKey]?.cancel()
+            configDebounceTasks[coalesceKey] = Task {
+                try? await Task.sleep(for: .milliseconds(500))
+                guard !Task.isCancelled else { return }
+                if let savedOld = configOldValues[coalesceKey] {
+                    await MainActor.run {
+                        record(.updateConfig(nodeId: nodeId, key: key, old: savedOld, new: value))
+                        configOldValues.removeValue(forKey: coalesceKey)
+                    }
+                }
+                scheduleSave()
+            }
         }
     }
 
@@ -361,6 +387,9 @@ final class CanvasViewModel {
 
     private func record(_ action: CanvasAction) {
         undoStack.append(action)
+        if undoStack.count > 100 {
+            undoStack.removeFirst(undoStack.count - 100)
+        }
         redoStack.removeAll() // new action clears redo stack
     }
 
