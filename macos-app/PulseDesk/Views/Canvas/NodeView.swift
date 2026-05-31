@@ -114,9 +114,9 @@ struct NodeView: View {
                         .opacity(isWiringSource ? 1 : 0)
                 )
                 .overlay(
-                    // Red X badge when incompatible target being hovered
+                    // Red X badge when incompatible target during active wiring
                     Group {
-                        if !isCompatible && isHovered && wiringSourcePortKey != nil && !isWiringSource {
+                        if isHovered && !isCompatible && !isWiringSource && wiringSourcePortKey != nil {
                             Image(systemName: "xmark")
                                 .font(.system(size: 8, weight: .bold))
                                 .foregroundStyle(PulseColors.danger)
@@ -147,6 +147,9 @@ struct NodeView: View {
         }
         .gesture(
             DragGesture(minimumDistance: 3)
+                .onChanged { _ in
+                    onPortDragStart?(node.id, port.key, CGPoint(x: xPosition, y: yPosition))
+                }
                 .onEnded { _ in onPortDragEnd?() }
         )
         .simultaneousGesture(
@@ -158,9 +161,10 @@ struct NodeView: View {
     }
 
     private func portDotColor(isConnected: Bool, isHovered: Bool, isWiringSource: Bool, isCompatible: Bool) -> Color {
+        let wiringActive = wiringSourcePortKey != nil
         if isWiringSource { return PulseColors.accent }
-        if isHovered && isCompatible { return PulseColors.accent }
-        if !isCompatible && isHovered && !isWiringSource { return PulseColors.danger }
+        if wiringActive && isHovered && isCompatible { return PulseColors.accent }
+        if wiringActive && isHovered && !isCompatible { return PulseColors.danger }
         if isHovered { return PulseColors.accent.opacity(0.7) }
         if isConnected { return PulseColors.accent.opacity(0.7) }
         return colors.border.opacity(0.5)
