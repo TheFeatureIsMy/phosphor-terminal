@@ -68,6 +68,7 @@ struct Strategy: Codable, Identifiable, Hashable {
     let sharpeRatio: Double?
     let maxDrawdown: Double?
     let freqtradeStrategyId: String?
+    var tags: [String]
     let createdAt: String
     let updatedAt: String
 
@@ -77,6 +78,7 @@ struct Strategy: Codable, Identifiable, Hashable {
         case sharpeRatio = "sharpe_ratio"
         case maxDrawdown = "max_drawdown"
         case freqtradeStrategyId = "freqtrade_strategy_id"
+        case tags
         case createdAt = "created_at"
         case updatedAt = "updated_at"
     }

@@ -64,6 +64,24 @@ struct StrategyCardView: View {
                 }
             }
 
+            // 标签
+            if !strategy.tags.isEmpty {
+                HStack(spacing: 4) {
+                    ForEach(strategy.tags.prefix(3), id: \.self) { tag in
+                        Text(tag)
+                            .font(.system(size: 9))
+                            .foregroundStyle(PulseColors.accent)
+                            .padding(.horizontal, 6).padding(.vertical, 2)
+                            .background(PulseColors.accent.opacity(0.08))
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                    }
+                    if strategy.tags.count > 3 {
+                        Text("+\(strategy.tags.count - 3)")
+                            .font(.system(size: 9)).foregroundStyle(colors.textMuted)
+                    }
+                }
+            }
+
             // 操作行
             HStack(spacing: PulseSpacing.xs) {
                 if strategy.status == .active {

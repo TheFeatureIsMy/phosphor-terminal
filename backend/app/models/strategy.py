@@ -24,6 +24,7 @@ class Strategy(Base):
     sharpe_ratio = Column(Float, nullable=True)
     max_drawdown = Column(Float, nullable=True)
     freqtrade_strategy_id = Column(String, nullable=True)
+    tags = Column(JSON, default=[])
     created_at = Column(DateTime, default=_utcnow)
     updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
