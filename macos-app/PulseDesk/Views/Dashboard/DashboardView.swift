@@ -27,7 +27,9 @@ struct DashboardView: View {
 
     private var mainContent: some View {
         VStack(spacing: PulseSpacing.md) {
-            if let kpis = viewModel.kpis {
+            if viewModel.kpis == nil && !viewModel.isLoading {
+                EmptyStateView(icon: "chart.bar.xaxis", title: "无法加载数据", description: "请检查后端连接后重试")
+            } else if let kpis = viewModel.kpis {
                 // Row 1: KPI 指标 — 一行四列均分
                 kpiRow(kpis)
 
@@ -39,6 +41,9 @@ struct DashboardView: View {
                 HStack {
                     DataSourceBadge(status: kpis.dataSource)
                     Spacer()
+                    Circle()
+                        .fill(PulseColors.statusActive)
+                        .frame(width: 6, height: 6)
                 }
 
                 // 相关性热力图
