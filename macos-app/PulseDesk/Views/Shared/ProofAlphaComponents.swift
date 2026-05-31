@@ -93,7 +93,7 @@ struct ProofAlphaCard<Content: View>: View {
             .stroke(
                 emphasis == .bold
                     ? PulseGlass.accentBorder
-                    : Color.white.opacity(0.05),
+                    : PulseGlass.subtleBorder(colors),
                 lineWidth: 1
             )
     }
