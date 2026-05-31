@@ -8,6 +8,9 @@ struct NodeConfigPanel: View {
     var onDelete: (() -> Void)?
     var onConfigChange: ((String, AnyCodable) -> Void)?
     var onWidgetChange: ((String, AnyCodable) -> Void)?
+    var onClose: (() -> Void)?
+    var connectedInputPorts: [String: (connected: Bool, peerName: String?, peerNodeId: UUID?)] = [:]
+    var connectedOutputPorts: [String: (connected: Bool, peerName: String?, peerNodeId: UUID?)] = [:]
 
     @State private var showAdvanced = false
     @State private var showDeleteConfirm = false
@@ -24,16 +27,9 @@ struct NodeConfigPanel: View {
 
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: PulseSpacing.md) {
-                    sectionLabel("名称")
-                    configTextField(text: $nameText, placeholder: definition?.name ?? "")
-
-                    sectionLabel("备注")
-                    configTextField(text: $notesText, placeholder: "添加备注...")
-
-                    Divider().foregroundStyle(colors.border)
-
+                    // Layer 1: Core parameters
                     if let definition, !definition.configSchema.isEmpty {
-                        sectionLabel("参数")
+                        sectionLabel("核心参数")
                         ForEach(definition.configSchema) { field in
                             VStack(alignment: .leading, spacing: 2) {
                                 configFieldView(field)
@@ -42,12 +38,25 @@ struct NodeConfigPanel: View {
                                 }
                             }
                         }
+
+                        Divider().foregroundStyle(colors.border)
                     }
 
-                    Divider().foregroundStyle(colors.border)
+                    // Layer 2: Port connection status
+                    if hasPorts {
+                        sectionLabel("端口连线")
+                        portConnectionSection
 
+                        Divider().foregroundStyle(colors.border)
+                    }
+
+                    // Layer 3: Advanced options (collapsed by default)
                     DisclosureGroup(isExpanded: $showAdvanced) {
                         VStack(alignment: .leading, spacing: PulseSpacing.xs) {
+                            sectionLabel("名称")
+                            configTextField(text: $nameText, placeholder: definition?.name ?? "")
+                            sectionLabel("备注")
+                            configTextField(text: $notesText, placeholder: "添加备注...")
                             sectionLabel("输出变量名")
                             configTextField(text: .constant(""), placeholder: "自动生成")
                             sectionLabel("执行条件")
@@ -60,7 +69,7 @@ struct NodeConfigPanel: View {
                 .padding(PulseSpacing.md)
             }
         }
-        .frame(width: 320)
+        .frame(width: 280)
         .task { reloadNodeData() }
         .onChange(of: node.id) { _, _ in reloadNodeData() }
         .onChange(of: nameText) { _, new in onConfigChange?("name", AnyCodable(new)) }
@@ -75,7 +84,13 @@ struct NodeConfigPanel: View {
         }
     }
 
+    private var hasPorts: Bool {
+        guard let def = definition else { return false }
+        return !def.inputPorts.isEmpty || !def.outputPorts.isEmpty
+    }
+
     // MARK: - Header
+
     private var header: some View {
         HStack(spacing: PulseSpacing.xs) {
             Image(systemName: definition?.icon ?? "circle")
@@ -83,6 +98,10 @@ struct NodeConfigPanel: View {
             Text(definition?.name ?? node.nodeType)
                 .font(PulseFonts.bodyMedium).foregroundStyle(colors.textPrimary).lineLimit(1)
             Spacer()
+            Button { onClose?() } label: {
+                Image(systemName: "xmark").font(.system(size: 10)).foregroundStyle(colors.textSecondary)
+            }
+            .buttonStyle(.plain).help("关闭面板")
             Button { showDeleteConfirm = true } label: {
                 Image(systemName: "trash").font(.system(size: 12)).foregroundStyle(PulseColors.danger)
             }
@@ -95,7 +114,85 @@ struct NodeConfigPanel: View {
         .padding(PulseSpacing.sm)
     }
 
+    // MARK: - Port connection status
+
+    @ViewBuilder
+    private var portConnectionSection: some View {
+        if let def = definition {
+            if !def.inputPorts.isEmpty {
+                VStack(alignment: .leading, spacing: 4) {
+                    sectionLabel("输入")
+                    ForEach(def.inputPorts) { port in
+                        let conn = connectedInputPorts[port.key]
+                        inputPortRow(
+                            port: port,
+                            isConnected: conn?.connected ?? false,
+                            peerName: conn?.peerName
+                        )
+                    }
+                }
+            }
+            if !def.outputPorts.isEmpty {
+                VStack(alignment: .leading, spacing: 4) {
+                    sectionLabel("输出")
+                    ForEach(def.outputPorts) { port in
+                        let conn = connectedOutputPorts[port.key]
+                        outputPortRow(
+                            port: port,
+                            isConnected: conn?.connected ?? false,
+                            peerName: conn?.peerName
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    private func inputPortRow(port: PortDefinition, isConnected: Bool, peerName: String?) -> some View {
+        HStack(spacing: 6) {
+            Circle()
+                .fill(isConnected ? PulseColors.accent : colors.textMuted)
+                .frame(width: 6, height: 6)
+            Text(port.name)
+                .font(PulseFonts.caption).foregroundStyle(colors.textPrimary)
+            if port.isRequired {
+                Text("*")
+                    .font(PulseFonts.caption).foregroundStyle(PulseColors.danger)
+            }
+            Spacer()
+            if isConnected, let name = peerName {
+                Text("→ \(name)")
+                    .font(PulseFonts.caption).foregroundStyle(PulseColors.accent)
+            } else {
+                Text("→ 可选")
+                    .font(PulseFonts.caption).foregroundStyle(colors.textMuted)
+            }
+        }
+    }
+
+    private func outputPortRow(port: PortDefinition, isConnected: Bool, peerName: String?) -> some View {
+        HStack(spacing: 6) {
+            Text(port.name)
+                .font(PulseFonts.caption).foregroundStyle(colors.textPrimary)
+            Spacer()
+            Circle()
+                .fill(isConnected ? PulseColors.accent : colors.textMuted)
+                .frame(width: 6, height: 6)
+            Image(systemName: "arrowtriangle.right.fill")
+                .font(.system(size: 6))
+                .foregroundStyle(isConnected ? PulseColors.accent : colors.textMuted)
+            if isConnected, let name = peerName {
+                Text("→ \(name)")
+                    .font(PulseFonts.caption).foregroundStyle(PulseColors.accent)
+            } else {
+                Text("未连接")
+                    .font(PulseFonts.caption).foregroundStyle(colors.textMuted)
+            }
+        }
+    }
+
     // MARK: - Config fields
+
     @ViewBuilder
     private func configFieldView(_ field: ConfigField) -> some View {
         HStack(alignment: .center, spacing: 4) {
