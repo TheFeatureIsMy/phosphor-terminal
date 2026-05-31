@@ -34,6 +34,7 @@ final class CanvasViewModel {
     var draggingNodeId: UUID?
     var dragOffset: CGSize = .zero
     var dragStartPosition: CGPoint?
+    private var multiDragStartPositions: [UUID: CGPoint]?
 
     // Wire drag state (connecting ports)
     var wireDragSource: (nodeId: UUID, port: String)?
@@ -41,6 +42,9 @@ final class CanvasViewModel {
 
     // Selection rectangle
     var selectionRect: CGRect?
+
+    // Snap guides
+    var activeSnapGuides: [SnapGuide] = []
 
     // Undo/Redo
     private var undoStack: [CanvasAction] = []
@@ -277,6 +281,14 @@ final class CanvasViewModel {
 
     func startDrag(nodeId: UUID, at point: CGPoint) {
         draggingNodeId = nodeId
+        if selectedNodeIds.contains(nodeId) && selectedNodeIds.count > 1 {
+            multiDragStartPositions = [:]
+            for id in selectedNodeIds {
+                if let node = graph.nodes.first(where: { $0.id == id }) {
+                    multiDragStartPositions![id] = node.position
+                }
+            }
+        }
         dragStartPosition = graph.nodes.first(where: { $0.id == nodeId })?.position
         guard let node = graph.nodes.first(where: { $0.id == nodeId }) else { return }
         dragOffset = CGSize(
@@ -287,12 +299,22 @@ final class CanvasViewModel {
 
     func updateDrag(to point: CGPoint) {
         guard let nodeId = draggingNodeId else { return }
-        let newPos = CGPoint(
-            x: point.x - dragOffset.width,
-            y: point.y - dragOffset.height
-        )
-        if let index = graph.nodes.firstIndex(where: { $0.id == nodeId }) {
-            graph.nodes[index].position = newPos
+        if let multiPositions = multiDragStartPositions, !multiPositions.isEmpty {
+            let delta = CGPoint(
+                x: point.x - dragOffset.width - (multiPositions[nodeId]?.x ?? 0),
+                y: point.y - dragOffset.height - (multiPositions[nodeId]?.y ?? 0)
+            )
+            for id in selectedNodeIds {
+                if let startPos = multiPositions[id],
+                   let index = graph.nodes.firstIndex(where: { $0.id == id }) {
+                    graph.nodes[index].position = CGPoint(x: startPos.x + delta.x, y: startPos.y + delta.y)
+                }
+            }
+        } else {
+            let newPos = CGPoint(x: point.x - dragOffset.width, y: point.y - dragOffset.height)
+            if let index = graph.nodes.firstIndex(where: { $0.id == nodeId }) {
+                graph.nodes[index].position = newPos
+            }
         }
     }
 
@@ -305,6 +327,7 @@ final class CanvasViewModel {
         draggingNodeId = nil
         dragOffset = .zero
         dragStartPosition = nil
+        multiDragStartPositions = nil
     }
 
     // MARK: - Wire drag (connecting ports)

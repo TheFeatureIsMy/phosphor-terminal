@@ -80,6 +80,13 @@ struct StrategyCanvasTab: View {
                     CanvasSelectionRect(rect: selRect).allowsHitTesting(false)
                 }
 
+                if !viewModel.activeSnapGuides.isEmpty {
+                    SnapGuidesView(guides: viewModel.activeSnapGuides,
+                                   scale: viewModel.viewport.scale,
+                                   offset: viewModel.viewport.offset)
+                        .allowsHitTesting(false)
+                }
+
                 if viewModel.wireDragSource != nil {
                     Color.clear.contentShape(Rectangle()).gesture(wireDragGesture)
                 }
@@ -105,6 +112,41 @@ struct StrategyCanvasTab: View {
                 guard press.modifiers.contains(.command) && showSearch else { return .ignored }
                 navigateSearch(next: !press.modifiers.contains(.shift))
                 return .handled
+            }
+            .onKeyPress(keys: [.init("c")], phases: .down) { press in
+                guard press.modifiers.contains(.command) else { return .ignored }
+                viewModel.copySelected(); return .handled
+            }
+            .onKeyPress(keys: [.init("v")], phases: .down) { press in
+                guard press.modifiers.contains(.command) else { return .ignored }
+                viewModel.paste(); return .handled
+            }
+            .onKeyPress(keys: [.init("d")], phases: .down) { press in
+                guard press.modifiers.contains(.command) && !press.modifiers.contains(.shift) else { return .ignored }
+                viewModel.duplicateSelected(); return .handled
+            }
+            .onKeyPress(keys: [.init("a")], phases: .down) { press in
+                guard press.modifiers.contains(.command) else { return .ignored }
+                viewModel.selectAll(); return .handled
+            }
+            .onKeyPress(keys: [.init("0")], phases: .down) { press in
+                viewModel.fitToContent(); return .handled
+            }
+            .onKeyPress(.leftArrow) {
+                let shift = NSEvent.modifierFlags.contains(.shift)
+                nudgeSelection(dx: shift ? -10 : -1, dy: 0); return .handled
+            }
+            .onKeyPress(.rightArrow) {
+                let shift = NSEvent.modifierFlags.contains(.shift)
+                nudgeSelection(dx: shift ? 10 : 1, dy: 0); return .handled
+            }
+            .onKeyPress(.upArrow) {
+                let shift = NSEvent.modifierFlags.contains(.shift)
+                nudgeSelection(dx: 0, dy: shift ? -10 : -1); return .handled
+            }
+            .onKeyPress(.downArrow) {
+                let shift = NSEvent.modifierFlags.contains(.shift)
+                nudgeSelection(dx: 0, dy: shift ? 10 : 1); return .handled
             }
             .onChange(of: viewModel.selectedNodeIds) { _, ids in
                 withAnimation(.easeInOut(duration: 0.15)) { showConfig = !ids.isEmpty }
@@ -293,6 +335,15 @@ struct StrategyCanvasTab: View {
         return nil
     }
 
+    private func nudgeSelection(dx: CGFloat, dy: CGFloat) {
+        for id in viewModel.selectedNodeIds {
+            if let i = viewModel.graph.nodes.firstIndex(where: { $0.id == id }) {
+                viewModel.graph.nodes[i].position.x += dx
+                viewModel.graph.nodes[i].position.y += dy
+            }
+        }
+    }
+
     // MARK: - Views
     private var emptyState: some View {
         VStack(spacing: PulseSpacing.md) {
@@ -362,13 +413,23 @@ private struct NodeDragWrapper: View {
                 .onEnded { v in
                     isDragging = false
                     dragOffset = .zero
-                    // Commit final position to model once
+                    // Commit final position to model once with snap
                     let s = viewModel.viewport.scale
-                    let newX = node.position.x + v.translation.width / s
-                    let newY = node.position.y + v.translation.height / s
+                    let rawX = node.position.x + v.translation.width / s
+                    let rawY = node.position.y + v.translation.height / s
+                    let useGrid = NSEvent.modifierFlags.contains(.shift)
+                    let snapEngine = SnapEngine()
+                    let result = snapEngine.snap(
+                        position: CGPoint(x: rawX, y: rawY),
+                        size: node.size,
+                        otherNodes: viewModel.graph.nodes,
+                        excludeId: node.id,
+                        useGrid: useGrid
+                    )
                     viewModel.startDrag(nodeId: node.id, at: node.position)
-                    viewModel.updateDrag(to: CGPoint(x: newX, y: newY))
+                    viewModel.updateDrag(to: result.snappedPosition)
                     viewModel.endDrag()
+                    viewModel.activeSnapGuides = result.guides
                 }
         )
         .onTapGesture {
