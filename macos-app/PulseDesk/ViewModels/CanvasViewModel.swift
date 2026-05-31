@@ -49,6 +49,48 @@ final class CanvasViewModel {
     var wireDragSource: (nodeId: UUID, port: String)?
     var wireDragTarget: CGPoint?
 
+    // Click-to-connect state (simplified port system)
+    var connectionSource: (nodeId: UUID, side: PortSide)?
+
+    /// Toggle a port as connection source or complete a connection
+    func toggleConnection(nodeId: UUID, side: PortSide) {
+        if let src = connectionSource {
+            // Same port on same node = cancel
+            if src.nodeId == nodeId && src.side == side {
+                connectionSource = nil
+                return
+            }
+            // Same node, different port = cancel
+            if src.nodeId == nodeId {
+                connectionSource = nil
+                return
+            }
+            // Different node = create edge
+            addEdge(CanvasEdge(
+                sourceNodeId: src.nodeId, sourcePort: src.side.rawValue,
+                targetNodeId: nodeId, targetPort: side.rawValue,
+                dataType: .signal
+            ))
+            connectionSource = nil
+        } else {
+            connectionSource = (nodeId: nodeId, side: side)
+        }
+    }
+
+    /// Get the set of sides that have edges connected
+    func connectedSides(for nodeId: UUID) -> Set<PortSide> {
+        var sides = Set<PortSide>()
+        for edge in graph.edges {
+            if edge.sourceNodeId == nodeId, let side = PortSide(rawValue: edge.sourcePort) {
+                sides.insert(side)
+            }
+            if edge.targetNodeId == nodeId, let side = PortSide(rawValue: edge.targetPort) {
+                sides.insert(side)
+            }
+        }
+        return sides
+    }
+
     // Selection rectangle
     var selectionRect: CGRect?
 

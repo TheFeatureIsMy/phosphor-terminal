@@ -78,6 +78,11 @@ struct ViewportState: Codable {
     var offset: CGPoint = .zero
 }
 
+// MARK: - Port side — simplified 4 fixed ports per node (midpoint of each edge)
+enum PortSide: String, Codable, CaseIterable {
+    case left, right, top, bottom
+}
+
 // MARK: - PortDataType — determines wire color and connection compatibility
 enum PortDataType: String, Codable, CaseIterable {
     case ticker, kline, orderbook, indicator, signal, position

@@ -22,8 +22,6 @@ struct StrategyCanvasTab: View {
     @State private var searchMatches: [UUID] = []
     @State private var currentSearchIndex = 0
 
-    private let edgeValidator = EdgeValidator()
-
     private var selectedNode: CanvasNode? {
         guard let id = viewModel.selectedNodeIds.first else { return nil }
         return viewModel.graph.nodes.first { $0.id == id }
@@ -39,7 +37,7 @@ struct StrategyCanvasTab: View {
             ZStack {
                 CanvasBackground(scale: viewModel.viewport.scale, offset: viewModel.viewport.offset)
                 CanvasEdges(edges: viewModel.graph.edges, nodes: viewModel.graph.nodes,
-                            selectedEdgeIds: [],
+                            selectedEdgeIds: viewModel.selectedEdgeIds,
                             scale: viewModel.viewport.scale, offset: viewModel.viewport.offset)
 
                 GeometryReader { geo in
@@ -55,33 +53,11 @@ struct StrategyCanvasTab: View {
                         emptyState
                     } else {
                         ForEach(visible) { node in
-                            NodeDragWrapper(viewModel: viewModel, node: node,
-                                onWireStart: { nid, port in startWire(nid, port) },
-                                onWireEnd: { tid, port in endWire(tid, port) },
-                                onWireComplete: { pos, srcType in
-                                    if let t = nearestPort(to: pos, sourceType: srcType) {
-                                        endWire(t.nid, t.port)
-                                    } else {
-                                        viewModel.endWireDrag()
-                                    }
-                                }
-                            )
+                            NodeDragWrapper(viewModel: viewModel, node: node)
                         }
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                if let src = viewModel.wireDragSource, let tgt = viewModel.wireDragTarget,
-                   let sn = viewModel.graph.nodes.first(where: { $0.id == src.nodeId }),
-                   let d = NodeRegistry.definition(for: sn.nodeType) {
-                    let pi = d.outputPorts.firstIndex(where: { $0.name == src.port }) ?? 0
-                    let py = sn.position.y + 30 + CGFloat(d.inputPorts.count) * 18 + 12 + CGFloat(pi) * 18 + 9
-                    CanvasDragPreview(
-                        sourcePoint: CGPoint(x: sn.position.x + sn.size.width, y: py), currentPoint: tgt,
-                        color: PortDataType.signal.color(colors),
-                        scale: viewModel.viewport.scale, offset: viewModel.viewport.offset
-                    ).allowsHitTesting(false)
-                }
 
                 if let selRect = viewModel.selectionRect {
                     CanvasSelectionRect(rect: selRect).allowsHitTesting(false)
@@ -92,10 +68,6 @@ struct StrategyCanvasTab: View {
                                    scale: viewModel.viewport.scale,
                                    offset: viewModel.viewport.offset)
                         .allowsHitTesting(false)
-                }
-
-                if viewModel.wireDragSource != nil {
-                    Color.clear.contentShape(Rectangle()).gesture(wireDragGesture)
                 }
 
                 if viewModel.isLoading {
@@ -303,32 +275,6 @@ struct StrategyCanvasTab: View {
         }
     }
 
-    private func startWire(_ nid: UUID, _ port: String) {
-        viewModel.startWireDrag(nodeId: nid, port: port)
-        if let sn = viewModel.graph.nodes.first(where: { $0.id == nid }),
-           let d = NodeRegistry.definition(for: sn.nodeType) {
-            let pi = d.outputPorts.firstIndex(where: { $0.name == port }) ?? 0
-            let py = sn.position.y + 30 + CGFloat(d.inputPorts.count) * 18 + 12 + CGFloat(pi) * 18 + 9
-            viewModel.updateWireDrag(to: CGPoint(x: sn.position.x + sn.size.width, y: py))
-        }
-    }
-
-    private func endWire(_ tid: UUID, _ port: String) {
-        guard let src = viewModel.wireDragSource else { return }
-
-        // Check for cycle
-        if edgeValidator.wouldCreateCycle(source: src.nodeId, target: tid, edges: viewModel.graph.edges) {
-            viewModel.endWireDrag()
-            return
-        }
-
-        let dt = NodeRegistry.definition(for: viewModel.graph.nodes.first(where: { $0.id == src.nodeId })?.nodeType ?? "")?
-            .outputPorts.first(where: { $0.name == src.port })?.dataType ?? .signal
-        viewModel.addEdge(CanvasEdge(sourceNodeId: src.nodeId, sourcePort: src.port,
-                                     targetNodeId: tid, targetPort: port, dataType: dt))
-        viewModel.endWireDrag()
-    }
-
     // MARK: - Gestures
     private var panGesture: some Gesture {
         DragGesture(minimumDistance: 3)
@@ -350,40 +296,6 @@ struct StrategyCanvasTab: View {
                 viewModel.zoom(by: f, center: zoomCenter)
             }
             .onEnded { _ in lastMagnification = 1.0 }
-    }
-
-    private var wireDragGesture: some Gesture {
-        DragGesture(minimumDistance: 0)
-            .onChanged { v in viewModel.updateWireDrag(to: worldPos(v.location)) }
-            .onEnded { v in
-                let wp = worldPos(v.location)
-                let srcType = viewModel.wireDragSource.flatMap { src in
-                    NodeRegistry.definition(for: viewModel.graph.nodes.first(where: { $0.id == src.nodeId })?.nodeType ?? "")?
-                        .outputPorts.first(where: { $0.name == src.port })?.dataType
-                }
-                if let t = nearestPort(to: wp, sourceType: srcType) {
-                    endWire(t.nid, t.port)
-                } else { viewModel.endWireDrag() }
-            }
-    }
-
-    private func worldPos(_ p: CGPoint) -> CGPoint {
-        CGPoint(x: (p.x - viewModel.viewport.offset.x) / viewModel.viewport.scale,
-                y: (p.y - viewModel.viewport.offset.y) / viewModel.viewport.scale)
-    }
-
-    private func nearestPort(to point: CGPoint, sourceType: PortDataType? = nil) -> (nid: UUID, port: String)? {
-        for node in viewModel.graph.nodes {
-            guard let def = NodeRegistry.definition(for: node.nodeType) else { continue }
-            for (i, port) in def.inputPorts.enumerated() {
-                if let srcType = sourceType, !edgeValidator.isTypeCompatible(source: srcType, target: port.dataType) {
-                    continue
-                }
-                let pp = CGPoint(x: node.position.x + 16, y: node.position.y + 30 + CGFloat(i) * 18 + 9)
-                if hypot(point.x - pp.x, point.y - pp.y) < 30 { return (node.id, port.name) }
-            }
-        }
-        return nil
     }
 
     private func nudgeSelection(dx: CGFloat, dy: CGFloat) {
@@ -458,14 +370,10 @@ private struct CanvasLoadingSkeleton: View {
     }
 }
 
-// MARK: - NodeDragWrapper (local offset only during drag, commit to model on end)
+// MARK: - NodeDragWrapper — node rendering with drag and port click-to-connect
 private struct NodeDragWrapper: View {
-    @Environment(PulseColors.self) private var colors
     let viewModel: CanvasViewModel
     let node: CanvasNode
-    var onWireStart: (UUID, String) -> Void
-    var onWireEnd: (UUID, String) -> Void
-    var onWireComplete: ((CGPoint, PortDataType?) -> Void)?
 
     @State private var dragOffset: CGSize = .zero
     @State private var isDragging = false
@@ -475,39 +383,16 @@ private struct NodeDragWrapper: View {
     var body: some View {
         let def = NodeRegistry.definition(for: node.nodeType)
         let bp = screenPosFor(node)
-
+        let connected = viewModel.connectedSides(for: node.id)
         NodeView(
             node: node, definition: def,
             isSelected: selected, isDragging: isDragging,
-            onNodeDragStart: nil,   // replaced by our own gesture below
-            onNodeDragUpdate: nil,
-            onNodeDragEnd: nil,
-            onOutputPortTap: { nid, port in onWireStart(nid, port) },
-            onInputPortTap: { tid, port in onWireEnd(tid, port) },
-            onOutputPortDrag: { translation in
-                guard let def = NodeRegistry.definition(for: node.nodeType),
-                      let src = viewModel.wireDragSource else { return }
-                let pi = def.outputPorts.firstIndex(where: { $0.name == src.port }) ?? 0
-                let py = node.position.y + 30 + CGFloat(def.inputPorts.count) * 18 + 12 + CGFloat(pi) * 18 + 9
-                viewModel.updateWireDrag(to: CGPoint(
-                    x: node.position.x + node.size.width + translation.width,
-                    y: py + translation.height
-                ))
+            onPortTap: { nid, side in
+                viewModel.selectNode(id: nid)
+                viewModel.toggleConnection(nodeId: nid, side: side)
             },
-            onOutputPortDragEnd: { translation in
-                guard let def = NodeRegistry.definition(for: node.nodeType),
-                      let src = viewModel.wireDragSource else { return }
-                let pi = def.outputPorts.firstIndex(where: { $0.name == src.port }) ?? 0
-                let py = node.position.y + 30 + CGFloat(def.inputPorts.count) * 18 + 12 + CGFloat(pi) * 18 + 9
-                let worldPos = CGPoint(
-                    x: node.position.x + node.size.width + translation.width,
-                    y: py + translation.height
-                )
-                let srcType = def.outputPorts.first(where: { $0.name == src.port })?.dataType
-                onWireComplete?(worldPos, srcType)
-            },
-            viewportScale: viewModel.viewport.scale,
-            viewportOffset: viewModel.viewport.offset,
+            onPortHover: nil,
+            connectedSides: connected,
             onCollapseToggle: {
                 if let i = viewModel.graph.nodes.firstIndex(where: { $0.id == node.id }) {
                     viewModel.graph.nodes[i].isCollapsed.toggle()
@@ -520,7 +405,7 @@ private struct NodeDragWrapper: View {
         .zIndex(isDragging || selected ? 10 : 1)
         .shadow(color: (isDragging || selected) ? PulseColors.accent.opacity(0.3) : .black.opacity(0.15),
                 radius: isDragging ? 16 : 4, y: isDragging ? 4 : 2)
-        .gesture(
+        .highPriorityGesture(
             DragGesture(minimumDistance: 2)
                 .onChanged { v in
                     if !isDragging {
@@ -528,7 +413,8 @@ private struct NodeDragWrapper: View {
                         viewModel.selectNode(id: node.id)
                         viewModel.startDrag(nodeId: node.id, at: node.position)
                     }
-                    dragOffset = v.translation
+                    let s = viewModel.viewport.scale
+                    dragOffset = CGSize(width: v.translation.width / s, height: v.translation.height / s)
                 }
                 .onEnded { v in
                     isDragging = false
