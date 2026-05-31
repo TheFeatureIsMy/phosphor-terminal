@@ -313,6 +313,10 @@ struct CanvasTemplate: Identifiable {
     let icon: String
     let nodeCount: Int
     let graph: WorkflowGraph
+
+    /// Built-in templates for quick-start canvases.
+    /// Fleshed out in Task 10 — currently empty.
+    static let builtInTemplates: [CanvasTemplate] = []
 }
 
 // MARK: - Cached port position (for edge rendering)

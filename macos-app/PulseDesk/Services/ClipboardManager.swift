@@ -35,10 +35,9 @@ struct ClipboardManager {
         let newEdges = subGraph.edges.map { edge -> CanvasEdge in
             CanvasEdge(id: UUID(),
                        sourceNodeId: idMap[edge.sourceNodeId] ?? edge.sourceNodeId,
-                       sourcePort: edge.sourcePort,
+                       sourcePortKey: edge.sourcePortKey,
                        targetNodeId: idMap[edge.targetNodeId] ?? edge.targetNodeId,
-                       targetPort: edge.targetPort,
-                       dataType: edge.dataType)
+                       targetPortKey: edge.targetPortKey)
         }
         return (newNodes, newEdges)
     }

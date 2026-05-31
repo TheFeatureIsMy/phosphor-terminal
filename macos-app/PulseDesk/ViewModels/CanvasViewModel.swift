@@ -1,9 +1,39 @@
 // CanvasViewModel.swift — 画布视图模型
-// 管理图状态、视口、选择、拖拽、撤销/重做
+// 管理图状态、视口、选择、拖拽、连接线（接线状态机）、撤销/重做
 
 import SwiftUI
 
+// MARK: - WiringState — port wiring state machine
+
+enum WiringState: Equatable {
+    case idle
+    case draggingFrom(sourceNodeId: UUID, sourcePortKey: String, fromPoint: CGPoint)
+    case clickingFrom(sourceNodeId: UUID, sourcePortKey: String)
+
+    var isActive: Bool {
+        if case .idle = self { return false }
+        return true
+    }
+
+    var sourcePortKey: String? {
+        switch self {
+        case .idle: return nil
+        case .draggingFrom(_, let key, _): return key
+        case .clickingFrom(_, let key): return key
+        }
+    }
+
+    var sourceNodeId: UUID? {
+        switch self {
+        case .idle: return nil
+        case .draggingFrom(let id, _, _): return id
+        case .clickingFrom(let id, _): return id
+        }
+    }
+}
+
 // MARK: - CanvasAction — undo/redo action type
+
 enum CanvasAction {
     case addNode(CanvasNode)
     case removeNode(CanvasNode)
@@ -14,6 +44,7 @@ enum CanvasAction {
 }
 
 // MARK: - CanvasViewModel
+
 @Observable
 @MainActor
 final class CanvasViewModel {
@@ -45,51 +76,14 @@ final class CanvasViewModel {
     private var configDebounceTasks: [String: Task<Void, Never>] = [:]
     private var configOldValues: [String: AnyCodable] = [:]
 
-    // Wire drag state (connecting ports)
-    var wireDragSource: (nodeId: UUID, port: String)?
-    var wireDragTarget: CGPoint?
+    // Wiring state
+    var wiringState: WiringState = .idle
+    var wireEndpoint: CGPoint?         // cursor position for rubber-band line
+    var wireTargetPort: (nodeId: UUID, portKey: String)?  // port being hovered during drag
+    let schema = ConnectionSchema()
 
-    // Click-to-connect state (simplified port system)
-    var connectionSource: (nodeId: UUID, side: PortSide)?
-
-    /// Toggle a port as connection source or complete a connection
-    func toggleConnection(nodeId: UUID, side: PortSide) {
-        if let src = connectionSource {
-            // Same port on same node = cancel
-            if src.nodeId == nodeId && src.side == side {
-                connectionSource = nil
-                return
-            }
-            // Same node, different port = cancel
-            if src.nodeId == nodeId {
-                connectionSource = nil
-                return
-            }
-            // Different node = create edge
-            addEdge(CanvasEdge(
-                sourceNodeId: src.nodeId, sourcePort: src.side.rawValue,
-                targetNodeId: nodeId, targetPort: side.rawValue,
-                dataType: .signal
-            ))
-            connectionSource = nil
-        } else {
-            connectionSource = (nodeId: nodeId, side: side)
-        }
-    }
-
-    /// Get the set of sides that have edges connected
-    func connectedSides(for nodeId: UUID) -> Set<PortSide> {
-        var sides = Set<PortSide>()
-        for edge in graph.edges {
-            if edge.sourceNodeId == nodeId, let side = PortSide(rawValue: edge.sourcePort) {
-                sides.insert(side)
-            }
-            if edge.targetNodeId == nodeId, let side = PortSide(rawValue: edge.targetPort) {
-                sides.insert(side)
-            }
-        }
-        return sides
-    }
+    // Fullscreen
+    var isFullscreen = false
 
     // Selection rectangle
     var selectionRect: CGRect?
@@ -107,6 +101,9 @@ final class CanvasViewModel {
     private var saveTask: Task<Void, Never>?
     private var graphSerializer = GraphSerializer()
     private let clipboard = ClipboardManager()
+
+    // Templates
+    static let templates: [CanvasTemplate] = CanvasTemplate.builtInTemplates
 
     // MARK: - Computed
 
@@ -230,15 +227,191 @@ final class CanvasViewModel {
         }
     }
 
+    // MARK: - Wiring (state machine)
+
+    /// Start a wire drag from a port.
+    func startWireDrag(nodeId: UUID, portKey: String, from point: CGPoint) {
+        wiringState = .draggingFrom(sourceNodeId: nodeId, sourcePortKey: portKey, fromPoint: point)
+        wireEndpoint = point
+        wireTargetPort = nil
+    }
+
+    /// Update wire drag endpoint and optionally the port being hovered.
+    func updateWireDrag(to point: CGPoint, hoveredPort: (nodeId: UUID, portKey: String)? = nil) {
+        wireEndpoint = point
+        wireTargetPort = hoveredPort
+    }
+
+    /// End a wire drag — attempt connection if hovering a valid target port.
+    func endWireDrag() {
+        if case .draggingFrom(let sourceNodeId, let sourcePortKey, _) = wiringState {
+            if let target = wireTargetPort {
+                tryConnect(
+                    sourceNodeId: sourceNodeId,
+                    sourcePortKey: sourcePortKey,
+                    targetNodeId: target.nodeId,
+                    targetPortKey: target.portKey
+                )
+            }
+        }
+        wiringState = .idle
+        wireEndpoint = nil
+        wireTargetPort = nil
+    }
+
+    /// Cancel active wiring without creating an edge.
+    func cancelWiring() {
+        wiringState = .idle
+        wireEndpoint = nil
+        wireTargetPort = nil
+    }
+
+    /// Handle a port tap for click-to-connect flow.
+    /// - First tap on an output port enters `.clickingFrom` state.
+    /// - Second tap on an input port creates the connection.
+    /// - Tapping the same port again cancels.
+    func handlePortTap(nodeId: UUID, portKey: String, direction: PortDirection) {
+        switch wiringState {
+        case .idle:
+            // Only start click-to-connect from output ports
+            if direction == .output {
+                wiringState = .clickingFrom(sourceNodeId: nodeId, sourcePortKey: portKey)
+            }
+
+        case .clickingFrom(let sourceNodeId, let sourcePortKey):
+            // Tapping same port cancels
+            if sourceNodeId == nodeId && sourcePortKey == portKey {
+                cancelWiring()
+                return
+            }
+            // Tapping an input port on a different node attempts connection
+            if direction == .input {
+                tryConnect(
+                    sourceNodeId: sourceNodeId,
+                    sourcePortKey: sourcePortKey,
+                    targetNodeId: nodeId,
+                    targetPortKey: portKey
+                )
+            }
+            cancelWiring()
+
+        case .draggingFrom:
+            // Port tap while in drag resets
+            cancelWiring()
+        }
+    }
+
+    /// Validate and create an edge between the given ports.
+    func tryConnect(
+        sourceNodeId: UUID,
+        sourcePortKey: String,
+        targetNodeId: UUID,
+        targetPortKey: String
+    ) {
+        // Prevent duplicate
+        guard !graph.edges.contains(where: {
+            $0.sourceNodeId == sourceNodeId && $0.sourcePortKey == sourcePortKey &&
+            $0.targetNodeId == targetNodeId && $0.targetPortKey == targetPortKey
+        }) else { return }
+
+        // Prevent self-connection
+        guard sourceNodeId != targetNodeId else { return }
+
+        // Validate port direction and data type compatibility
+        let sourceDef = graph.nodes
+            .first(where: { $0.id == sourceNodeId })
+            .flatMap { NodeRegistry.definition(for: $0.nodeType) }
+        let targetDef = graph.nodes
+            .first(where: { $0.id == targetNodeId })
+            .flatMap { NodeRegistry.definition(for: $0.nodeType) }
+
+        if let sourcePort = sourceDef?.outputPorts.first(where: { $0.key == sourcePortKey }),
+           let targetPort = targetDef?.inputPorts.first(where: { $0.key == targetPortKey }) {
+            let result = schema.canConnect(
+                from: sourcePort,
+                to: targetPort,
+                sourceNodeId: sourceNodeId,
+                targetNodeId: targetNodeId,
+                existingEdges: graph.edges
+            )
+            guard result.isAllowed else { return }
+        }
+
+        let edge = CanvasEdge(
+            sourceNodeId: sourceNodeId,
+            sourcePortKey: sourcePortKey,
+            targetNodeId: targetNodeId,
+            targetPortKey: targetPortKey
+        )
+        addEdge(edge)
+        cancelWiring()
+    }
+
+    /// Check if a port is a valid target for the current wiring operation (for visual feedback).
+    func isPortCompatible(nodeId: UUID, portKey: String, direction: PortDirection) -> Bool {
+        guard wiringState.isActive else { return false }
+        guard let sourceNodeId = wiringState.sourceNodeId,
+              let sourcePortKey = wiringState.sourcePortKey else { return false }
+        guard sourceNodeId != nodeId else { return false }
+
+        // Only input ports are valid targets when dragging from an output port
+        guard direction == .input else { return false }
+
+        guard let sourceDef = graph.nodes
+            .first(where: { $0.id == sourceNodeId })
+            .flatMap({ NodeRegistry.definition(for: $0.nodeType) }),
+              let targetDef = graph.nodes
+            .first(where: { $0.id == nodeId })
+            .flatMap({ NodeRegistry.definition(for: $0.nodeType) })
+        else { return false }
+
+        guard let sourcePort = sourceDef.outputPorts.first(where: { $0.key == sourcePortKey }),
+              let targetPort = targetDef.inputPorts.first(where: { $0.key == portKey })
+        else { return false }
+
+        let result = schema.canConnect(
+            from: sourcePort,
+            to: targetPort,
+            sourceNodeId: sourceNodeId,
+            targetNodeId: nodeId,
+            existingEdges: graph.edges
+        )
+        return result.isAllowed
+    }
+
+    /// Return all edges connected to a given port.
+    func edgesForPort(nodeId: UUID, portKey: String) -> [CanvasEdge] {
+        graph.edges.filter {
+            ($0.sourceNodeId == nodeId && $0.sourcePortKey == portKey) ||
+            ($0.targetNodeId == nodeId && $0.targetPortKey == portKey)
+        }
+    }
+
+    /// Return the display name of the target node at the given edge's source port.
+    func targetNodeName(for edge: CanvasEdge, portKey: String) -> String? {
+        guard edge.sourcePortKey == portKey else { return nil }
+        guard let targetNode = graph.nodes.first(where: { $0.id == edge.targetNodeId }) else { return nil }
+        let def = NodeRegistry.definition(for: targetNode.nodeType)
+        return def?.name ?? targetNode.nodeType
+    }
+
+    /// Return the display name of the source node at the given edge's target port.
+    func sourceNodeName(for edge: CanvasEdge, portKey: String) -> String? {
+        guard edge.targetPortKey == portKey else { return nil }
+        guard let sourceNode = graph.nodes.first(where: { $0.id == edge.sourceNodeId }) else { return nil }
+        let def = NodeRegistry.definition(for: sourceNode.nodeType)
+        return def?.name ?? sourceNode.nodeType
+    }
+
     // MARK: - Edge operations
 
     func addEdge(_ edge: CanvasEdge) {
         // Prevent duplicate edges
         guard !graph.edges.contains(where: {
             $0.sourceNodeId == edge.sourceNodeId &&
-            $0.sourcePort == edge.sourcePort &&
+            $0.sourcePortKey == edge.sourcePortKey &&
             $0.targetNodeId == edge.targetNodeId &&
-            $0.targetPort == edge.targetPort
+            $0.targetPortKey == edge.targetPortKey
         }) else { return }
         graph.edges.append(edge)
         record(.addEdge(edge))
@@ -336,6 +509,18 @@ final class CanvasViewModel {
         )
     }
 
+    // MARK: - Templates
+
+    func loadTemplate(_ template: CanvasTemplate) {
+        graph = template.graph
+        undoStack.removeAll()
+        redoStack.removeAll()
+        selectedNodeIds.removeAll()
+        selectedEdgeIds.removeAll()
+        fitToContent()
+        scheduleSave()
+    }
+
     // MARK: - Clipboard (copy / paste / duplicate)
 
     func copySelected() {
@@ -408,21 +593,6 @@ final class CanvasViewModel {
         dragOffset = .zero
         dragStartPosition = nil
         multiDragStartPositions = nil
-    }
-
-    // MARK: - Wire drag (connecting ports)
-
-    func startWireDrag(nodeId: UUID, port: String) {
-        wireDragSource = (nodeId: nodeId, port: port)
-    }
-
-    func updateWireDrag(to point: CGPoint) {
-        wireDragTarget = point
-    }
-
-    func endWireDrag() {
-        wireDragSource = nil
-        wireDragTarget = nil
     }
 
     // MARK: - Undo / Redo
