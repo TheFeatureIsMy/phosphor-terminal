@@ -35,7 +35,7 @@ struct StrategyOverviewTab: View {
             GlassCard(cardPadding: PulseSpacing.xs) {
                 VStack(spacing: 1) {
                     infoRow("策略 ID", value: "\(strategy.id)")
-                    infoRow("类型", value: strategy.type.label)
+                    infoRow("标签", value: strategy.tags.isEmpty ? "—" : strategy.tags.joined(separator: ", "))
                     infoRow("状态", value: strategy.status.label)
                     infoRow("市场", value: strategy.market)
                     infoRow("交易所", value: strategy.exchange)

@@ -179,7 +179,7 @@ struct CommandPaletteView: View {
         CommandPaletteRow(
             icon: "chart.line.uptrend.xyaxis",
             title: strategy.name,
-            subtitle: strategy.type.label,
+            subtitle: strategy.tags.first ?? strategy.market,
             isSelected: index == selectedIndex,
             action: { selectStrategy(strategy) }
         )

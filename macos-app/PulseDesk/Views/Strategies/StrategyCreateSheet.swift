@@ -54,7 +54,7 @@ struct StrategyCreateSheet: View {
                 Spacer()
                 ProofAlphaButton(title: "创建策略") {
                     Task {
-                        await viewModel.create(name: name, type: selectedType, market: selectedMarket.rawValue, exchange: selectedExchange.rawValue)
+                        await viewModel.create(name: name, market: selectedMarket.rawValue, exchange: selectedExchange.rawValue)
                         dismiss()
                     }
                 }

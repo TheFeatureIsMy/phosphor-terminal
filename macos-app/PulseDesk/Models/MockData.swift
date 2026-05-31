@@ -57,7 +57,6 @@ struct MockData {
 
     // MARK: - 模拟策略列表
     static func mockStrategies() -> [Strategy] {
-        let types: [StrategyType] = [.maCross, .breakout, .grid, .meanReversion, .ragGenerated]
         let statuses: [StrategyStatus] = [.active, .active, .paused, .paused, .backtested, .backtested, .draft, .draft]
         let sources: [StrategySource] = [.manual, .manual, .manual, .manual, .manual, .manual, .optimized, .ragGenerated]
 
@@ -66,7 +65,6 @@ struct MockData {
                 id: i + 1,
                 userId: 1,
                 name: name,
-                type: types[i % 5],
                 parameters: [
                     "period": AnyCodable([14, 20, 50, 100].randomElement()!),
                     "threshold": AnyCodable(randomBetween(0.01, 0.05))

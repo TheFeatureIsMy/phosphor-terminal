@@ -78,15 +78,17 @@ struct BacktestConfigView: View {
                                         showStrategyPicker = false
                                     } label: {
                                         HStack(spacing: PulseSpacing.sm) {
-                                            Image(systemName: strategy.type == .ragGenerated ? "brain.head.profile" : "chart.line.uptrend.xyaxis")
+                                            Image(systemName: "chart.line.uptrend.xyaxis")
                                                 .font(.system(size: 12))
-                                                .foregroundStyle(strategy.type.color)
+                                                .foregroundStyle(PulseColors.accent)
                                                 .frame(width: 18)
                                             VStack(alignment: .leading, spacing: 1) {
                                                 Text(strategy.name).font(PulseFonts.caption).foregroundStyle(colors.textPrimary)
                                                 HStack(spacing: PulseSpacing.xxs) {
-                                                    Text(strategy.type.label).font(PulseFonts.micro).foregroundStyle(colors.textMuted)
-                                                    Text("\u{00B7}").foregroundStyle(colors.textMuted)
+                                                    if let firstTag = strategy.tags.first {
+                                                        Text(firstTag).font(PulseFonts.micro).foregroundStyle(colors.textMuted)
+                                                        Text("\u{00B7}").foregroundStyle(colors.textMuted)
+                                                    }
                                                     Text(strategy.status.label).font(PulseFonts.micro).foregroundStyle(strategy.status.color(colors))
                                                 }
                                             }
