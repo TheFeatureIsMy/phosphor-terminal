@@ -222,7 +222,7 @@ struct StrategyCanvasTab: View {
     }
 }
 
-// MARK: - NodeDragWrapper (no ghosting: local offset, zIndex, shadow)
+// MARK: - NodeDragWrapper (local offset only during drag, commit to model on end)
 private struct NodeDragWrapper: View {
     @Environment(PulseColors.self) private var colors
     let viewModel: CanvasViewModel
@@ -231,9 +231,8 @@ private struct NodeDragWrapper: View {
     var onWireEnd: (UUID, String) -> Void
 
     @State private var dragOffset: CGSize = .zero
-    @State private var hasStarted = false
+    @State private var isDragging = false
 
-    private var isDragging: Bool { hasStarted }
     private var selected: Bool { viewModel.selectedNodeIds.contains(node.id) }
 
     var body: some View {
@@ -243,20 +242,9 @@ private struct NodeDragWrapper: View {
         NodeView(
             node: node, definition: def,
             isSelected: selected, isDragging: isDragging,
-            onNodeDragStart: { _ in
-                hasStarted = false; dragOffset = .zero
-            },
-            onNodeDragUpdate: { worldPos in
-                if !hasStarted {
-                    hasStarted = true
-                    viewModel.startDrag(nodeId: node.id, at: node.position)
-                }
-                viewModel.updateDrag(to: worldPos)
-            },
-            onNodeDragEnd: {
-                viewModel.endDrag()
-                hasStarted = false; dragOffset = .zero
-            },
+            onNodeDragStart: nil,   // replaced by our own gesture below
+            onNodeDragUpdate: nil,
+            onNodeDragEnd: nil,
             onOutputPortTap: { nid, port in onWireStart(nid, port) },
             onInputPortTap: { tid, port in onWireEnd(tid, port) },
             viewportScale: viewModel.viewport.scale,
@@ -268,10 +256,33 @@ private struct NodeDragWrapper: View {
             },
             onWidgetChange: { k, v in viewModel.updateNodeWidget(nodeId: node.id, key: k, value: v) }
         )
-        .position(x: bp.x, y: bp.y)
+        .position(x: bp.x + dragOffset.width, y: bp.y + dragOffset.height)
         .scaleEffect(viewModel.viewport.scale, anchor: .center)
         .zIndex(isDragging || selected ? 10 : 1)
-        .shadow(color: (isDragging || selected) ? PulseColors.accent.opacity(0.3) : .black.opacity(0.15), radius: isDragging ? 16 : 4, y: isDragging ? 4 : 2)
+        .shadow(color: (isDragging || selected) ? PulseColors.accent.opacity(0.3) : .black.opacity(0.15),
+                radius: isDragging ? 16 : 4, y: isDragging ? 4 : 2)
+        .gesture(
+            DragGesture(minimumDistance: 3)
+                .onChanged { v in
+                    if !isDragging {
+                        isDragging = true
+                        viewModel.selectNode(id: node.id)
+                    }
+                    // Only track visual offset locally — NO model update during drag
+                    dragOffset = v.translation
+                }
+                .onEnded { v in
+                    isDragging = false
+                    dragOffset = .zero
+                    // Commit final position to model once
+                    let s = viewModel.viewport.scale
+                    let newX = node.position.x + v.translation.width / s
+                    let newY = node.position.y + v.translation.height / s
+                    viewModel.startDrag(nodeId: node.id, at: node.position)
+                    viewModel.updateDrag(to: CGPoint(x: newX, y: newY))
+                    viewModel.endDrag()
+                }
+        )
         .onTapGesture {
             viewModel.selectNode(id: node.id, addToSelection: NSEvent.modifierFlags.contains(.command))
         }
