@@ -380,19 +380,43 @@ private struct NodeDragWrapper: View {
 
     private var selected: Bool { viewModel.selectedNodeIds.contains(node.id) }
 
+    private var connectedInputPorts: Set<String> {
+        Set(viewModel.graph.edges.filter { $0.targetNodeId == node.id }.map(\.targetPortKey))
+    }
+
+    private var connectedOutputPorts: Set<String> {
+        Set(viewModel.graph.edges.filter { $0.sourceNodeId == node.id }.map(\.sourcePortKey))
+    }
+
     var body: some View {
         let def = NodeRegistry.definition(for: node.nodeType)
         let bp = screenPosFor(node)
-        let connected = viewModel.connectedSides(for: node.id)
         NodeView(
             node: node, definition: def,
             isSelected: selected, isDragging: isDragging,
-            onPortTap: { nid, side in
-                viewModel.selectNode(id: nid)
-                viewModel.toggleConnection(nodeId: nid, side: side)
+            onPortDragStart: { nid, portKey, point in
+                viewModel.startWireDrag(nodeId: nid, portKey: portKey, from: point)
             },
-            onPortHover: nil,
-            connectedSides: connected,
+            onPortDragEnd: {
+                viewModel.endWireDrag()
+            },
+            onPortTap: { nid, portKey, direction in
+                viewModel.selectNode(id: nid)
+                viewModel.handlePortTap(nodeId: nid, portKey: portKey, direction: direction)
+            },
+            onPortHover: { nid, portKey, hovering in
+                if hovering, let nid, let portKey {
+                    viewModel.updateWireDrag(to: .zero, hoveredPort: (nid, portKey))
+                } else {
+                    viewModel.updateWireDrag(to: viewModel.wireEndpoint ?? .zero, hoveredPort: nil)
+                }
+            },
+            portCompatibility: { nid, portKey, direction in
+                viewModel.isPortCompatible(nodeId: nid, portKey: portKey, direction: direction)
+            },
+            connectedInputPorts: connectedInputPorts,
+            connectedOutputPorts: connectedOutputPorts,
+            wiringSourcePortKey: viewModel.wiringState.sourcePortKey,
             onCollapseToggle: {
                 if let i = viewModel.graph.nodes.firstIndex(where: { $0.id == node.id }) {
                     viewModel.graph.nodes[i].isCollapsed.toggle()
