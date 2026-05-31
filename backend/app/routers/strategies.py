@@ -12,6 +12,7 @@ from app.routers.websocket import manager as ws_manager
 from app.schemas.api import (
     StrategyCreate, StrategyUpdate, StrategyResponse,
     StrategyStatus, PaginatedResponse,
+    StrategyGenerateRequest, StrategyGenerateResponse,
 )
 from app.services.strategy_registry import register_strategy_file, delete_strategy_file
 from app.services.market_registry import market_registry
@@ -216,3 +217,231 @@ def update_canvas(strategy_id: int, body: CanvasSaveRequest, db: Session = Depen
     workflow.updated_at = datetime.now(timezone.utc)
     db.commit()
     return {"id": workflow.id, "strategy_id": strategy_id, "updated_at": workflow.updated_at.isoformat()}
+
+
+# ---------------------------------------------------------------------------
+# AI Strategy Generation
+# ---------------------------------------------------------------------------
+
+
+@router.post("/generate", response_model=StrategyGenerateResponse)
+def generate_strategy(body: StrategyGenerateRequest, db: Session = Depends(get_db)):
+    """Generate a strategy from natural language prompt using AI."""
+    from app.models.strategy import CanvasWorkflow
+    from app.models.strategy import Strategy
+
+    # Parse trading intent from prompt using LLM
+    # For now, extract basic info from prompt keywords
+    prompt_lower = body.prompt.lower()
+
+    # Infer market
+    if any(k in prompt_lower for k in ["a股", "a股市场", "中国"]):
+        market = "ashare"
+    elif any(k in prompt_lower for k in ["美股", "美国", "nasdaq", "nyse", "sp500"]):
+        market = "usstock"
+    else:
+        market = "crypto"
+
+    # Infer exchange
+    exchange_map = {"binance": "binance", "okx": "okx", "bybit": "bybit", "gate": "gate",
+                    "alpaca": "alpaca", "ibkr": "ibkr", "joinquant": "joinquant", "eastmoney": "eastmoney"}
+    exchange = "binance"
+    for key, val in exchange_map.items():
+        if key in prompt_lower:
+            exchange = val
+            break
+
+    # Infer a name
+    name_parts = []
+    if "btc" in prompt_lower or "比特币" in prompt_lower:
+        name_parts.append("BTC")
+    if "eth" in prompt_lower or "以太" in prompt_lower:
+        name_parts.append("ETH")
+    if "趋势" in prompt_lower or "ema" in prompt_lower or "ma" in prompt_lower:
+        name_parts.append("趋势跟踪")
+    if "回归" in prompt_lower or "boll" in prompt_lower:
+        name_parts.append("均值回归")
+    if "突破" in prompt_lower:
+        name_parts.append("突破")
+    if "网格" in prompt_lower:
+        name_parts.append("网格")
+
+    strategy_name = " ".join(name_parts) if name_parts else "AI 生成策略"
+
+    # Build a basic graph based on prompt keywords
+    nodes = []
+    node_id_counter = 0
+
+    # Data source node
+    nodes.append({
+        "id": f"node-{node_id_counter}",
+        "nodeType": "data.kline",
+        "position": {"x": 100, "y": 200},
+        "size": {"width": 200, "height": 120},
+        "config": {},
+        "widgetValues": {},
+        "isCollapsed": False,
+        "isDisabled": False
+    })
+    kline_id = node_id_counter
+    node_id_counter += 1
+
+    edges = []
+
+    # Add indicator nodes based on prompt keywords
+    indicator_y = 100
+    prev_indicator_ids = []
+
+    if "rsi" in prompt_lower:
+        nodes.append({
+            "id": f"node-{node_id_counter}",
+            "nodeType": "indicator.rsi",
+            "position": {"x": 360, "y": indicator_y},
+            "size": {"width": 200, "height": 120},
+            "config": {"period": {"value": 14}},
+            "widgetValues": {},
+            "isCollapsed": False,
+            "isDisabled": False
+        })
+        edges.append({
+            "id": f"edge-{node_id_counter}",
+            "sourceNodeId": f"node-{kline_id}",
+            "sourcePort": "close",
+            "targetNodeId": f"node-{node_id_counter}",
+            "targetPort": "kline",
+            "dataType": "kline"
+        })
+        prev_indicator_ids.append(node_id_counter)
+        indicator_y += 140
+        node_id_counter += 1
+
+    if "macd" in prompt_lower:
+        nodes.append({
+            "id": f"node-{node_id_counter}",
+            "nodeType": "indicator.macd",
+            "position": {"x": 360, "y": indicator_y},
+            "size": {"width": 200, "height": 120},
+            "config": {},
+            "widgetValues": {},
+            "isCollapsed": False,
+            "isDisabled": False
+        })
+        edges.append({
+            "id": f"edge-{node_id_counter}",
+            "sourceNodeId": f"node-{kline_id}",
+            "sourcePort": "close",
+            "targetNodeId": f"node-{node_id_counter}",
+            "targetPort": "kline",
+            "dataType": "kline"
+        })
+        prev_indicator_ids.append(node_id_counter)
+        indicator_y += 140
+        node_id_counter += 1
+
+    if "ema" in prompt_lower or "ma" in prompt_lower or "均线" in prompt_lower:
+        nodes.append({
+            "id": f"node-{node_id_counter}",
+            "nodeType": "indicator.ema",
+            "position": {"x": 360, "y": indicator_y},
+            "size": {"width": 200, "height": 120},
+            "config": {},
+            "widgetValues": {},
+            "isCollapsed": False,
+            "isDisabled": False
+        })
+        edges.append({
+            "id": f"edge-{node_id_counter}",
+            "sourceNodeId": f"node-{kline_id}",
+            "sourcePort": "close",
+            "targetNodeId": f"node-{node_id_counter}",
+            "targetPort": "kline",
+            "dataType": "kline"
+        })
+        prev_indicator_ids.append(node_id_counter)
+        indicator_y += 140
+        node_id_counter += 1
+
+    # Decision + output nodes
+    if prev_indicator_ids:
+        # Add AND decision node
+        first_indicator = prev_indicator_ids[0]
+        nodes.append({
+            "id": f"node-{node_id_counter}",
+            "nodeType": "decision.and",
+            "position": {"x": 620, "y": 200},
+            "size": {"width": 180, "height": 100},
+            "config": {},
+            "widgetValues": {},
+            "isCollapsed": False,
+            "isDisabled": False
+        })
+        decision_id = node_id_counter
+        node_id_counter += 1
+
+        # Connect first indicator to decision
+        edges.append({
+            "id": f"edge-decision-{node_id_counter}",
+            "sourceNodeId": f"node-{first_indicator}",
+            "sourcePort": "rsiValue" if "rsi" in prompt_lower else "signal",
+            "targetNodeId": f"node-{decision_id}",
+            "targetPort": "signal",
+            "dataType": "signal"
+        })
+
+        # Add output node
+        nodes.append({
+            "id": f"node-{node_id_counter}",
+            "nodeType": "output.buy",
+            "position": {"x": 860, "y": 200},
+            "size": {"width": 180, "height": 80},
+            "config": {},
+            "widgetValues": {},
+            "isCollapsed": False,
+            "isDisabled": False
+        })
+        edges.append({
+            "id": f"edge-output-{node_id_counter}",
+            "sourceNodeId": f"node-{decision_id}",
+            "sourcePort": "result",
+            "targetNodeId": f"node-{node_id_counter}",
+            "targetPort": "signal",
+            "dataType": "boolean"
+        })
+
+    import json
+    graph_json = json.dumps({
+        "nodes": nodes,
+        "edges": edges,
+        "groups": [],
+        "viewport": {"scale": 1.0, "offset": {"x": 0, "y": 0}}
+    })
+
+    # Create strategy
+    strategy = Strategy(
+        name=strategy_name,
+        type="ma_cross",
+        market=market,
+        exchange=exchange,
+        parameters={},
+        status=StrategyStatus.draft.value,
+    )
+    db.add(strategy)
+    db.commit()
+    db.refresh(strategy)
+
+    # Save canvas
+    canvas = CanvasWorkflow(
+        strategy_id=strategy.id,
+        graph_json=graph_json,
+        code_snapshot=None,
+    )
+    db.add(canvas)
+    db.commit()
+
+    return StrategyGenerateResponse(
+        strategy_id=strategy.id,
+        name=strategy.name,
+        market=strategy.market,
+        exchange=strategy.exchange,
+        graph_json=graph_json,
+    )

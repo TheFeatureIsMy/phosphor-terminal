@@ -262,3 +262,15 @@ class PortfolioStressTestResponse(PortfolioStressTestCreate):
     id: int
     created_at: datetime
     model_config = {"from_attributes": True}
+
+
+class StrategyGenerateRequest(BaseModel):
+    prompt: str
+
+
+class StrategyGenerateResponse(BaseModel):
+    strategy_id: int
+    name: str
+    market: str
+    exchange: str
+    graph_json: str
