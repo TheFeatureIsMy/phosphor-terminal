@@ -21,6 +21,12 @@ enum CodeGenError: LocalizedError {
 
 // MARK: - CodeGenerator
 
+struct CodeTemplate {
+    let indicatorCode: ((CanvasNode, [String: String]) -> String)?
+    let entrySignalCode: ((CanvasNode, [String: String]) -> String)?
+    let exitSignalCode: ((CanvasNode, [String: String]) -> String)?
+}
+
 struct CodeGenerator {
 
     // MARK: - Public API
@@ -73,7 +79,12 @@ struct CodeGenerator {
             code += "        pass\n"
         } else {
             for node in indicatorNodes {
-                code += generateNodeCode(node, graph: graph)
+                if let template = templateRegistry[node.nodeType], let indicatorFn = template.indicatorCode {
+                    let inputVars = resolveInputVariables(node: node, graph: graph)
+                    code += indicatorFn(node, inputVars)
+                } else {
+                    code += generateNodeCode(node, graph: graph)
+                }
             }
         }
 
@@ -298,6 +309,67 @@ struct CodeGenerator {
         code += indent + "    'exit_long'] = 1\n"
 
         return code
+    }
+
+    // MARK: - Template Registry
+
+    private func resolveInputVariables(node: CanvasNode, graph: WorkflowGraph) -> [String: String] {
+        var vars: [String: String] = [:]
+        for edge in graph.edges where edge.targetNodeId == node.id {
+            if let sourceNode = graph.nodes.first(where: { $0.id == edge.sourceNodeId }),
+               let sourceDef = NodeRegistry.definition(for: sourceNode.nodeType) {
+                let varName = sourceNode.config["outputVar"]?.value as? String
+                    ?? "\(sourceNode.nodeType.replacingOccurrences(of: ".", with: "_"))_\(sourceNode.id.uuidString.prefix(8))"
+                vars[edge.targetPort] = varName
+            }
+        }
+        return vars
+    }
+
+    private var templateRegistry: [String: CodeTemplate] {
+        [
+            "indicator.rsi": CodeTemplate(
+                indicatorCode: { node, vars in
+                    let period = node.config["period"]?.value as? Double ?? 14
+                    let source = vars["kline"] ?? "close"
+                    let id = node.id.uuidString.prefix(8)
+                    return "        dataframe['rsi_\(id)'] = ta.RSI(dataframe['\(source)'], timeperiod=\(Int(period)))"
+                },
+                entrySignalCode: { node, vars in
+                    let id = node.id.uuidString.prefix(8)
+                    let threshold = node.config["oversoldThreshold"]?.value as? Double ?? 30
+                    return "                (dataframe['rsi_\(id)'] < \(Int(threshold)))"
+                },
+                exitSignalCode: { node, vars in
+                    let id = node.id.uuidString.prefix(8)
+                    let threshold = node.config["overboughtThreshold"]?.value as? Double ?? 70
+                    return "                (dataframe['rsi_\(id)'] > \(Int(threshold)))"
+                }
+            ),
+            "indicator.macd": CodeTemplate(
+                indicatorCode: { node, vars in
+                    let fast = node.config["fastPeriod"]?.value as? Double ?? 12
+                    let slow = node.config["slowPeriod"]?.value as? Double ?? 26
+                    let signal = node.config["signalPeriod"]?.value as? Double ?? 9
+                    let source = vars["kline"] ?? "close"
+                    let id = node.id.uuidString.prefix(8)
+                    return """
+                            macd_\(id) = ta.MACD(dataframe['\(source)'], fastperiod=\(Int(fast)), slowperiod=\(Int(slow)), signalperiod=\(Int(signal)))
+                            dataframe['macd_\(id)'] = macd_\(id)['macd']
+                            dataframe['macdsignal_\(id)'] = macd_\(id)['macdsignal']
+                            dataframe['macdhist_\(id)'] = macd_\(id)['macdhist']
+                    """
+                },
+                entrySignalCode: { node, vars in
+                    let id = node.id.uuidString.prefix(8)
+                    return "                (dataframe['macd_\(id)'] > dataframe['macdsignal_\(id)'])"
+                },
+                exitSignalCode: { node, vars in
+                    let id = node.id.uuidString.prefix(8)
+                    return "                (dataframe['macd_\(id)'] < dataframe['macdsignal_\(id)'])"
+                }
+            ),
+        ]
     }
 
     // MARK: - Helpers
