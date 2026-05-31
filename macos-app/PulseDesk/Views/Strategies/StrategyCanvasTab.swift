@@ -18,6 +18,8 @@ struct StrategyCanvasTab: View {
     @State private var showPalette = true
     @State private var showConfig = false
 
+    private let edgeValidator = EdgeValidator()
+
     private var selectedNode: CanvasNode? {
         guard let id = viewModel.selectedNodeIds.first else { return nil }
         return viewModel.graph.nodes.first { $0.id == id }
@@ -161,6 +163,13 @@ struct StrategyCanvasTab: View {
 
     private func endWire(_ tid: UUID, _ port: String) {
         guard let src = viewModel.wireDragSource else { return }
+
+        // Check for cycle
+        if edgeValidator.wouldCreateCycle(source: src.nodeId, target: tid, edges: viewModel.graph.edges) {
+            viewModel.endWireDrag()
+            return
+        }
+
         let dt = NodeRegistry.definition(for: viewModel.graph.nodes.first(where: { $0.id == src.nodeId })?.nodeType ?? "")?
             .outputPorts.first(where: { $0.name == src.port })?.dataType ?? .signal
         viewModel.addEdge(CanvasEdge(sourceNodeId: src.nodeId, sourcePort: src.port,
@@ -196,7 +205,11 @@ struct StrategyCanvasTab: View {
             .onChanged { v in viewModel.updateWireDrag(to: worldPos(v.location)) }
             .onEnded { v in
                 let wp = worldPos(v.location)
-                if let t = nearestPort(to: wp) {
+                let srcType = viewModel.wireDragSource.flatMap { src in
+                    NodeRegistry.definition(for: viewModel.graph.nodes.first(where: { $0.id == src.nodeId })?.nodeType ?? "")?
+                        .outputPorts.first(where: { $0.name == src.port })?.dataType
+                }
+                if let t = nearestPort(to: wp, sourceType: srcType) {
                     endWire(t.nid, t.port)
                 } else { viewModel.endWireDrag() }
             }
@@ -207,10 +220,13 @@ struct StrategyCanvasTab: View {
                 y: (p.y - viewModel.viewport.offset.y) / viewModel.viewport.scale)
     }
 
-    private func nearestPort(to point: CGPoint) -> (nid: UUID, port: String)? {
+    private func nearestPort(to point: CGPoint, sourceType: PortDataType? = nil) -> (nid: UUID, port: String)? {
         for node in viewModel.graph.nodes {
             guard let def = NodeRegistry.definition(for: node.nodeType) else { continue }
             for (i, port) in def.inputPorts.enumerated() {
+                if let srcType = sourceType, !edgeValidator.isTypeCompatible(source: srcType, target: port.dataType) {
+                    continue
+                }
                 let pp = CGPoint(x: node.position.x + 16, y: node.position.y + 30 + CGFloat(i) * 18 + 9)
                 if hypot(point.x - pp.x, point.y - pp.y) < 30 { return (node.id, port.name) }
             }
