@@ -26,30 +26,30 @@ struct TradesView: View {
             Divider()
                 .foregroundStyle(colors.border)
 
+            if selectedTab == 0 {
+                HStack(spacing: PulseSpacing.sm) {
+                    TextField("搜索币对", text: $symbolFilter)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 150)
+
+                    Picker("方向", selection: $sideFilter) {
+                        Text("全部").tag(nil as OrderSide?)
+                        Text("买入").tag(OrderSide.buy)
+                        Text("卖出").tag(OrderSide.sell)
+                    }
+                    .pickerStyle(.segmented)
+                    .frame(width: 150)
+
+                    Spacer()
+                }
+                .padding(.horizontal, PulseSpacing.lg)
+            }
+
             if isLoading {
                 Spacer()
                 ProgressView()
                 Spacer()
             } else {
-                if selectedTab == 0 {
-                    HStack(spacing: PulseSpacing.sm) {
-                        TextField("搜索币对", text: $symbolFilter)
-                            .textFieldStyle(.roundedBorder)
-                            .frame(width: 150)
-
-                        Picker("方向", selection: $sideFilter) {
-                            Text("全部").tag(nil as OrderSide?)
-                            Text("买入").tag(OrderSide.buy)
-                            Text("卖出").tag(OrderSide.sell)
-                        }
-                        .pickerStyle(.segmented)
-                        .frame(width: 150)
-
-                        Spacer()
-                    }
-                    .padding(.horizontal, PulseSpacing.lg)
-                }
-
                 ScrollView(.vertical, showsIndicators: false) {
                     if selectedTab == 0 {
                         if orders.isEmpty {
@@ -84,15 +84,18 @@ struct TradesView: View {
                 Text("\(count)")
                     .font(PulseFonts.monoLabel)
                     .foregroundStyle(selectedTab == tag ? PulseColors.accent : colors.textMuted)
+                    .animation(.easeInOut, value: count)
+                    .transition(.opacity)
             }
             .padding(.horizontal, PulseSpacing.md)
             .padding(.vertical, PulseSpacing.xs)
             .background(
-                VStack {
+                VStack(spacing: 0) {
                     Spacer()
                     Rectangle()
                         .fill(selectedTab == tag ? PulseColors.accent : .clear)
                         .frame(height: 2)
+                        .padding(.top, PulseSpacing.xxs)
                 }
             )
             .contentShape(Rectangle())

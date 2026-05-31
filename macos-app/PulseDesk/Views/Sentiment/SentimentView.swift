@@ -88,9 +88,28 @@ struct SentimentView: View {
 
                         HStack {
                             Spacer()
-                            ProofAlphaButton(title: "分析") {
+                            Button {
                                 Task { await analyzeText() }
+                            } label: {
+                                HStack(spacing: 4) {
+                                    if isAnalyzing {
+                                        ProgressView()
+                                            .scaleEffect(0.7)
+                                            .controlSize(.small)
+                                    } else {
+                                        Text("分析")
+                                    }
+                                }
+                                .font(PulseFonts.monoLabel)
+                                .textCase(.uppercase)
+                                .tracking(0.8)
+                                .foregroundStyle(colors.background)
+                                .padding(.horizontal, 20)
+                                .padding(.vertical, 10)
+                                .background(PulseColors.accent)
+                                .clipShape(RoundedRectangle(cornerRadius: PulseRadii.button))
                             }
+                            .buttonStyle(.plain)
                             .disabled(analysisText.isEmpty || isAnalyzing)
                         }
 
@@ -131,9 +150,12 @@ struct SentimentView: View {
                 .font(PulseFonts.micro)
                 .foregroundStyle(colors.textMuted)
             HStack(spacing: 4) {
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(color)
-                    .frame(width: CGFloat(value) * 100, height: 6)
+                GeometryReader { geo in
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(color)
+                        .frame(width: geo.size.width * CGFloat(value), height: 8)
+                }
+                .frame(height: 8)
                 Text(String(format: "%.0f%%", value * 100))
                     .font(PulseFonts.monoLabel)
                     .foregroundStyle(color)

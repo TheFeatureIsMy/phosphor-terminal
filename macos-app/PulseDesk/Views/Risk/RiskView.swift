@@ -26,9 +26,15 @@ struct RiskView: View {
                     // Risk summary
                     HStack(spacing: PulseSpacing.md) {
                         riskStatCard(icon: "exclamationmark.triangle", label: "风险事件", value: "\(riskEvents.count)", color: PulseColors.warning)
+                            .staggeredAppearance(index: 0, baseDelay: 0.02)
                         riskStatCard(icon: "link", label: "相关性对", value: "\(correlation.count)", color: PulseColors.info)
+                            .staggeredAppearance(index: 1, baseDelay: 0.02)
                         riskStatCard(icon: "shield.checkered", label: "状态", value: riskEvents.isEmpty ? "正常" : "警告", color: riskEvents.isEmpty ? PulseColors.success : PulseColors.danger)
+                            .staggeredAppearance(index: 2, baseDelay: 0.02)
                     }
+
+                    Divider()
+                        .foregroundStyle(colors.border)
 
                     // Risk events
                     VStack(alignment: .leading, spacing: PulseSpacing.sm) {
@@ -39,7 +45,7 @@ struct RiskView: View {
                         if riskEvents.isEmpty {
                             EmptyStateView(icon: "checkmark.shield", title: "一切正常", description: "暂无风险事件")
                         } else {
-                            ForEach(riskEvents) { event in
+                            ForEach(Array(riskEvents.enumerated()), id: \.element.id) { index, event in
                                 HStack {
                                     Image(systemName: event.eventType.icon)
                                         .foregroundStyle(event.severity.color)
@@ -55,6 +61,7 @@ struct RiskView: View {
                                         .font(PulseFonts.monoLabel)
                                         .foregroundStyle(event.severity.color)
                                 }
+                                .staggeredAppearance(index: index, baseDelay: 0.02)
                                 .padding(PulseSpacing.sm)
                                 .background(colors.surface)
                                 .cornerRadius(PulseRadii.sm)

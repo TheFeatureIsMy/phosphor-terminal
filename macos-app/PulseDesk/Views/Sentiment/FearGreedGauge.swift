@@ -60,7 +60,7 @@ struct FearGreedGauge: View {
                     .font(PulseFonts.micro)
                     .foregroundStyle(PulseColors.success)
             }
-            .frame(width: 160)
+            .frame(width: 140)
         }
     }
 }
