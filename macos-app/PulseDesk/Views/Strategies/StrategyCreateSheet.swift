@@ -114,7 +114,7 @@ struct StrategyCreateSheet: View {
                     Text(type.label)
                         .font(PulseFonts.bodyMedium)
                         .foregroundStyle(selectedType == type ? colors.textPrimary : colors.textSecondary)
-                    Text(descriptionForStrategy(type))
+                    Text(descriptionForStrategy(type.rawValue))
                         .font(PulseFonts.micro)
                         .foregroundStyle(colors.textMuted)
                 }
@@ -233,13 +233,14 @@ struct StrategyCreateSheet: View {
         }
     }
 
-    private func descriptionForStrategy(_ type: StrategyType) -> String {
+    private func descriptionForStrategy(_ type: String) -> String {
         switch type {
-        case .maCross: return "均线金叉/死叉信号"
-        case .breakout: return "价格突破关键阻力/支撑位"
-        case .grid: return "区间震荡网格买卖"
-        case .meanReversion: return "价格偏离均值后回归"
-        case .ragGenerated: return "AI 知识库生成策略"
+        case "ma_cross": return "均线金叉/死叉信号"
+        case "breakout": return "价格突破关键阻力/支撑位"
+        case "grid": return "区间震荡网格买卖"
+        case "mean_reversion": return "价格偏离均值后回归"
+        case "rag_generated": return "AI 知识库生成策略"
+        default: return ""
         }
     }
 }

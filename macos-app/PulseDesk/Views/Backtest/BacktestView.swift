@@ -48,9 +48,9 @@ struct BacktestView: View {
                                 Text("策略 #\(backtest.strategyId)")
                                     .font(PulseFonts.caption)
                                 Spacer()
-                                Text(String(format: "夏普 %.2f", backtest.sharpeRatio ?? 0))
+                                Text(String(format: "夏普 %.2f", backtest.sharpeRatio))
                                     .font(PulseFonts.monoLabel)
-                                Text(String(format: "胜率 %.1f%%", (backtest.winRate ?? 0) * 100))
+                                Text(String(format: "胜率 %.1f%%", (backtest.winRate) * 100))
                                     .font(PulseFonts.monoLabel)
                                     .foregroundStyle(PulseColors.accent)
                             }
