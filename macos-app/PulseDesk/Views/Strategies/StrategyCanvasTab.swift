@@ -17,6 +17,10 @@ struct StrategyCanvasTab: View {
     @State private var isDeploying = false
     @State private var showPalette = true
     @State private var showConfig = false
+    @State private var showSearch = false
+    @State private var searchText = ""
+    @State private var searchMatches: [UUID] = []
+    @State private var currentSearchIndex = 0
 
     private let edgeValidator = EdgeValidator()
 
@@ -92,8 +96,36 @@ struct StrategyCanvasTab: View {
                 press.modifiers.contains(.shift) ? viewModel.redo() : viewModel.undo()
                 return .handled
             }
+            .onKeyPress(keys: [.init("f")], phases: .down) { press in
+                guard press.modifiers.contains(.command) else { return .ignored }
+                withAnimation(.easeInOut(duration: 0.15)) { showSearch = true }
+                return .handled
+            }
+            .onKeyPress(keys: [.init("g")], phases: .down) { press in
+                guard press.modifiers.contains(.command) && showSearch else { return .ignored }
+                navigateSearch(next: !press.modifiers.contains(.shift))
+                return .handled
+            }
             .onChange(of: viewModel.selectedNodeIds) { _, ids in
                 withAnimation(.easeInOut(duration: 0.15)) { showConfig = !ids.isEmpty }
+            }
+            .onChange(of: searchText) { _, text in
+                if text.isEmpty {
+                    searchMatches = []
+                    currentSearchIndex = 0
+                } else {
+                    searchMatches = viewModel.graph.nodes
+                        .filter { node in
+                            let def = NodeRegistry.definition(for: node.nodeType)
+                            let searchable = "\(def?.name ?? "") \(node.nodeType)"
+                            return searchable.localizedCaseInsensitiveContains(text)
+                        }
+                        .map(\.id)
+                    currentSearchIndex = 0
+                    if let first = searchMatches.first {
+                        viewModel.selectNode(id: first)
+                    }
+                }
             }
             .onAppear { viewModel.configure(client: client, strategyId: strategy.id) }
 
@@ -131,6 +163,19 @@ struct StrategyCanvasTab: View {
             .opacity(viewModel.graph.nodes.isEmpty ? 0.5 : 1)
             .padding(8)
         }
+        .overlay(alignment: .top) {
+            if showSearch {
+                CanvasSearchOverlay(
+                    isPresented: $showSearch,
+                    searchText: $searchText,
+                    matchCount: searchMatches.count,
+                    currentMatchIndex: currentSearchIndex,
+                    onNavigate: navigateSearch
+                )
+                .padding(.top, 12)
+                .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
         .sheet(isPresented: $showCodePreview) {
             CodePreviewSheet(code: generatedCode,
                 onDeploy: { Task { await deployStrategy() } }, onCancel: {})
@@ -149,6 +194,20 @@ struct StrategyCanvasTab: View {
     private func deleteSelected() {
         for id in viewModel.selectedNodeIds { viewModel.removeNode(id: id) }
         showConfig = false
+    }
+
+    private func navigateSearch(next: Bool) {
+        guard !searchMatches.isEmpty else { return }
+        if next { currentSearchIndex = (currentSearchIndex + 1) % searchMatches.count }
+        else { currentSearchIndex = (currentSearchIndex - 1 + searchMatches.count) % searchMatches.count }
+        let targetId = searchMatches[currentSearchIndex]
+        if let node = viewModel.graph.nodes.first(where: { $0.id == targetId }) {
+            withAnimation(.easeInOut(duration: 0.3)) {
+                let cx = -(node.position.x + node.size.width / 2) * viewModel.viewport.scale + 400
+                let cy = -(node.position.y + node.size.height / 2) * viewModel.viewport.scale + 300
+                viewModel.viewport.offset = CGPoint(x: cx, y: cy)
+            }
+        }
     }
 
     private func startWire(_ nid: UUID, _ port: String) {
