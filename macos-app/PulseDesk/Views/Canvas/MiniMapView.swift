@@ -6,6 +6,7 @@ import SwiftUI
 struct MiniMapView: View {
     @Environment(PulseColors.self) private var colors
     let nodes: [CanvasNode]
+    var edges: [CanvasEdge] = []
     let viewport: ViewportState
     let canvasSize: CGSize
     var onPan: ((CGPoint) -> Void)?
@@ -13,10 +14,27 @@ struct MiniMapView: View {
     @State private var minimapSize: CGSize = CGSize(width: 200, height: 150)
     @State private var visibleOpacity: CGFloat = 0.4
     @State private var opacityTask: Task<Void, Never>?
+    @State private var miniMapOffset: CGSize = .zero
     var selectedNodeIds: Set<UUID> = []
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
+            // Drag handle bar at top
+            Capsule()
+                .fill(colors.textMuted.opacity(0.5))
+                .frame(width: 36, height: 4)
+                .padding(.top, 6)
+                .frame(maxWidth: .infinity, alignment: .top)
+                .gesture(
+                    DragGesture(minimumDistance: 1)
+                        .onChanged { v in
+                            miniMapOffset = CGSize(
+                                width: miniMapOffset.width + v.translation.width,
+                                height: miniMapOffset.height + v.translation.height
+                            )
+                        }
+                )
+
         Canvas { context, size in
             // Background
             context.fill(
@@ -60,6 +78,21 @@ struct MiniMapView: View {
                     Path(roundedRect: rect, cornerRadius: 1),
                     with: .color(color.opacity(nodeOpacity))
                 )
+            }
+
+            // Draw simplified edge lines
+            let nodeMap = Dictionary(uniqueKeysWithValues: nodes.map { ($0.id, $0) })
+            for edge in edges {
+                guard let srcNode = nodeMap[edge.sourceNodeId],
+                      let tgtNode = nodeMap[edge.targetNodeId] else { continue }
+                let sx = (srcNode.position.x + srcNode.size.width / 2 - bounds.minX) * scale
+                let sy = (srcNode.position.y + srcNode.size.height / 2 - bounds.minY) * scale
+                let tx = (tgtNode.position.x + tgtNode.size.width / 2 - bounds.minX) * scale
+                let ty = (tgtNode.position.y + tgtNode.size.height / 2 - bounds.minY) * scale
+                var edgePath = Path()
+                edgePath.move(to: CGPoint(x: sx, y: sy))
+                edgePath.addLine(to: CGPoint(x: tx, y: ty))
+                context.stroke(edgePath, with: .color(colors.border.opacity(0.4)), lineWidth: 0.5)
             }
 
             // Draw viewport rectangle
@@ -133,6 +166,7 @@ struct MiniMapView: View {
                 }
             }
         }
+        .offset(miniMapOffset)
     }
 
     private func computeBounds() -> CGRect {
