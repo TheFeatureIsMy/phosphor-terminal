@@ -19,7 +19,7 @@ struct WorkflowGraph: Codable {
 
 // MARK: - CanvasNode
 struct CanvasNode: Codable, Identifiable {
-    var id: UUID
+    let id: UUID
     let nodeType: String           // e.g. "data.kline", "indicator.rsi"
     var position: CGPoint
     var size: CGSize
