@@ -1,668 +1,323 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Strategy Canvas</title>
+<title>Strategy Canvas — PulseDesk</title>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@xyflow/react@12/dist/xyflow-react.umd.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xyflow/react@12/dist/style.css">
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body {
-    background: #0A0A0B;
-    color: #E0E0E0;
-    font-family: 'SF Mono', 'Menlo', monospace;
-    overflow: hidden;
-    height: 100vh;
-    user-select: none;
-    -webkit-user-select: none;
+:root {
+  --bg: #0A0A0B; --surface: rgba(24,24,28,0.85); --surface2: rgba(20,22,26,0.95);
+  --border: rgba(255,255,255,0.08); --border-hover: rgba(255,255,255,0.15);
+  --accent: #00FF9D; --accent-dim: rgba(0,255,157,0.08);
+  --text: #E0E0E0; --text2: #888; --text3: #555;
+  --cyan: #00C2FF; --purple: #A855F7; --amber: #FFB800; --danger: #FF3B3B; --profit: #00BF80;
+  --font: 'SF Mono','Menlo','Consolas',monospace;
 }
-#canvas {
-    position: relative;
-    width: 100%;
-    height: 100vh;
-    background-image: radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px);
-    background-size: 20px 20px;
-}
-.node {
-    position: absolute;
-    min-width: 180px;
-    background: rgba(24,24,28,0.85);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 4px;
-    cursor: move;
-    transition: border-color 0.15s, box-shadow 0.15s;
-}
-.node.selected {
-    border-color: rgba(0,255,157,0.5);
-    box-shadow: 0 0 16px rgba(0,255,157,0.12);
-}
-.node:hover { border-color: rgba(255,255,255,0.15); }
-.node-header {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 10px;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
-}
-.node-body { padding: 6px 0; }
-.port {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 3px 10px;
-    font-size: 10px;
-    cursor: pointer;
-}
-.port:hover { background: rgba(255,255,255,0.04); }
-.port-input { justify-content: flex-start; }
-.port-output { justify-content: flex-end; }
-.port-dot {
-    width: 10px; height: 10px;
-    border-radius: 50%;
-    border: 2px solid rgba(0,0,0,0.5);
-    transition: transform 0.15s;
-}
-.port-dot:hover { transform: scale(1.3); }
-.port-dot.wiring { box-shadow: 0 0 8px currentColor; }
-svg#connections {
-    position: absolute; top: 0; left: 0;
-    width: 100%; height: 100%;
-    pointer-events: none;
-    z-index: 0;
-}
-svg#connections line {
-    stroke: rgba(0,255,157,0.3);
-    stroke-width: 2;
-}
-#palette {
-    position: absolute; top: 8px; left: 8px;
-    width: 220px; max-height: calc(100vh - 16px);
-    background: rgba(20,20,24,0.95);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 6px;
-    overflow-y: auto;
-    z-index: 100;
-    transition: transform 0.2s;
-}
-#palette.hidden { transform: translateX(-240px); }
-#palette-toggle {
-    position: absolute; top: 8px; left: 236px;
-    z-index: 101;
-    background: rgba(20,20,24,0.9);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 4px;
-    color: #888; padding: 6px 8px;
-    cursor: pointer; font-size: 13px;
-}
-#palette-toggle:hover { color: #00FF9D; }
-.palette-section {
-    padding: 8px 10px 4px;
-    font-size: 9px; text-transform: uppercase;
-    letter-spacing: 1px; color: #555;
-}
-.palette-item {
-    padding: 6px 10px; font-size: 11px;
-    cursor: pointer; display: flex; align-items: center; gap: 6px;
-    transition: background 0.1s;
-}
-.palette-item:hover { background: rgba(0,255,157,0.06); color: #00FF9D; }
-.palette-item .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-#context-menu {
-    position: absolute; z-index: 200;
-    background: rgba(20,20,24,0.95);
-    backdrop-filter: blur(16px);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 4px;
-    min-width: 140px;
-    display: none;
-}
-.context-item {
-    padding: 6px 12px; font-size: 11px;
-    cursor: pointer; display: flex; align-items: center; gap: 8px;
-}
-.context-item:hover { background: rgba(255,255,255,0.06); }
-.context-item.danger { color: #FF3B3B; }
-#toolbar {
-    position: absolute; bottom: 8px; left: 50%;
-    transform: translateX(-50%);
-    display: flex; gap: 4px;
-    background: rgba(20,20,24,0.9);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 6px; padding: 4px 8px;
-    z-index: 100;
-}
-.tool-btn {
-    background: none; border: none; color: #888;
-    padding: 4px 8px; cursor: pointer; font-size: 11px;
-    border-radius: 3px;
-}
-.tool-btn:hover { color: #00FF9D; background: rgba(0,255,157,0.06); }
-#search-overlay {
-    display: none; position: absolute; inset: 0;
-    background: rgba(10,10,11,0.7);
-    z-index: 200;
-    align-items: center; justify-content: center;
-}
-#search-overlay.active { display: flex; }
-#search-box {
-    width: 380px;
-    background: rgba(20,20,24,0.95);
-    border: 1px solid rgba(0,255,157,0.2);
-    border-radius: 8px;
-    overflow: hidden;
-}
-#search-input {
-    width: 100%; padding: 12px 16px;
-    background: rgba(30,30,35,0.8);
-    border: none; color: #E0E0E0;
-    font-size: 14px; font-family: inherit;
-    outline: none;
-}
-#search-results { max-height: 300px; overflow-y: auto; }
-.search-item {
-    padding: 8px 16px; cursor: pointer;
-    display: flex; align-items: center; gap: 8px; font-size: 12px;
-}
-.search-item:hover, .search-item.active { background: rgba(0,255,157,0.06); color: #00FF9D; }
-#status-bar {
-    position: absolute; top: 8px; right: 12px;
-    font-size: 10px; color: #555; z-index: 50;
-}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:12px;overflow:hidden;height:100vh;-webkit-user-select:none}
+#root{width:100vw;height:100vh;display:flex;}
+.react-flow__node{font-family:var(--font)}
+.react-flow__background{background:var(--bg)}
+.react-flow__minimap{background:var(--surface)!important;border:1px solid var(--border)!important;border-radius:6px!important}
+.react-flow__controls{background:var(--surface)!important;border:1px solid var(--border)!important;border-radius:6px!important}
+.react-flow__controls-button{background:transparent!important;fill:var(--text2)!important;width:28px!important;height:28px!important;border-bottom:1px solid var(--border)!important}
+.react-flow__controls-button:hover{background:var(--accent-dim)!important;fill:var(--accent)!important}
+.react-flow__edge-path{stroke:rgba(255,255,255,0.2)!important;stroke-width:2!important}
+.react-flow__edge.selected .react-flow__edge-path{stroke:var(--accent)!important}
+.react-flow__handle{width:10px!important;height:10px!important;border:2px solid var(--bg)!important;transition:transform .15s}
+.react-flow__handle:hover{transform:scale(1.4)}
+.react-flow__attribution{display:none!important}
+
+.toggle-btn{position:absolute;top:10px;z-index:15;background:var(--surface2);border:1px solid var(--border);color:var(--text2);padding:5px 8px;cursor:pointer;font-size:13px;border-radius:5px;transition:all .15s}
+.toggle-btn:hover{color:var(--accent);border-color:var(--accent)}
+#palette-toggle{left:10px}#config-toggle{right:10px}
+
+.status-bar{position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:5;font-size:10px;color:var(--text3);display:flex;align-items:center;gap:10px;pointer-events:none}
+.status-dot{width:6px;height:6px;border-radius:50%;display:inline-block}
+.status-dot.saved{background:var(--profit)}.status-dot.saving{background:var(--amber)}.status-dot.unsaved{background:var(--danger)}
+
+.panel{position:absolute;top:0;bottom:0;z-index:10;background:var(--surface2);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);display:flex;flex-direction:column;transition:transform .2s cubic-bezier(.4,0,.2,1)}
+.panel-left{left:0;width:240px;border-right:1px solid var(--border)}
+.panel-right{right:0;width:260px;border-left:1px solid var(--border)}
+.panel-hidden-left{transform:translateX(-100%)}
+.panel-hidden-right{transform:translateX(100%)}
+
+.panel-hdr{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-bottom:1px solid var(--border);font-size:12px;font-weight:600;white-space:nowrap}
+.panel-hdr .close{background:none;border:none;color:var(--text2);cursor:pointer;font-size:16px;line-height:1}
+.panel-hdr .close:hover{color:var(--accent)}
+.panel-body{flex:1;overflow-y:auto;padding:4px}
+.panel-body::-webkit-scrollbar{width:4px}
+.panel-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+.srch{display:block;width:calc(100% - 12px);margin:6px;padding:6px 8px;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:3px;color:var(--text);font-family:var(--font);font-size:11px;outline:none}
+.srch::placeholder{color:var(--text3)}.srch:focus{border-color:var(--accent)}
+
+.cat{margin-top:4px}
+.cat-hdr{padding:6px 8px 2px;font-size:9px;text-transform:uppercase;letter-spacing:1px;cursor:pointer;display:flex;align-items:center;gap:4px}
+.cat-hdr .arr{font-size:8px;transition:transform .15s;display:inline-block}
+.cat.closed .cat-hdr .arr{transform:rotate(-90deg)}
+.cat.closed .cat-items{display:none}
+.pitem{padding:5px 8px 5px 16px;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:6px;border-radius:3px;transition:background .1s}
+.pitem:hover{background:var(--accent-dim);color:var(--accent)}
+.pitem .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+.cfg-field{padding:6px 8px}
+.cfg-label{font-size:10px;color:var(--text2);margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px}
+.cfg-input{width:100%;padding:5px 8px;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:3px;color:var(--text);font-family:var(--font);font-size:11px;outline:none}
+.cfg-input:focus{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent-dim)}
+
+.toolbar{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);z-index:10;display:flex;gap:4px;background:var(--surface2);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:8px;padding:4px 8px}
+.tbtn{background:none;border:none;color:var(--text2);padding:4px 10px;cursor:pointer;font-size:11px;font-family:var(--font);border-radius:4px;display:flex;align-items:center;gap:4px;white-space:nowrap}
+.tbtn:hover{color:var(--accent);background:var(--accent-dim)}
+.tbtn.primary{color:var(--accent)}.tbtn.danger{color:var(--danger)}.tbtn:disabled{opacity:.3;pointer-events:none}
+.tsep{width:1px;background:var(--border);margin:0 4px}
+
+.node-wrap{min-width:170px;background:var(--surface);backdrop-filter:blur(12px);border:1px solid var(--border);border-radius:4px;transition:all .15s;cursor:default}
+.node-wrap:hover{border-color:var(--border-hover)}
+.node-wrap.selected{border-color:var(--accent);box-shadow:0 0 16px rgba(0,255,157,.12)}
+.node-hdr{display:flex;align-items:center;gap:6px;padding:6px 10px;font-size:11px;font-weight:600;letter-spacing:.5px;border-bottom:1px solid var(--border)}
+.node-ports{padding:4px 0}
+.port{display:flex;align-items:center;gap:6px;padding:3px 10px;font-size:10px}
+.port.in{justify-content:flex-start}.port.out{justify-content:flex-end}
+.port-lbl{color:var(--text2)}.port:hover .port-lbl{color:var(--text)}
+.react-flow__handle-left{left:-5px!important}.react-flow__handle-right{right:-5px!important}
+
+.welcome{position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;background:rgba(10,10,11,.7)}
+.welcome-card{padding:32px 40px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;text-align:center;max-width:400px}
+.welcome-card h2{font-size:20px;margin-bottom:8px;font-weight:600}
+.welcome-card p{color:var(--text2);margin-bottom:20px;font-size:12px;line-height:1.6}
+.wbtn{padding:8px 20px;background:var(--accent-dim);border:1px solid var(--accent);color:var(--accent);cursor:pointer;font-family:var(--font);font-size:12px;border-radius:4px;font-weight:600}
+.wbtn:hover{background:rgba(0,255,157,.18)}
 </style>
 </head>
 <body>
-<div id="canvas">
-    <svg id="connections"></svg>
-
-    <!-- Palette -->
-    <div id="palette">
-        <div style="padding:10px 10px 6px;font-size:12px;font-weight:600;color:#00FF9D;display:flex;align-items:center;gap:6px;">
-            <span style="font-size:14px;">&#x229E;</span> 节点面板
-        </div>
-        <!-- Nodes injected by JS -->
-    </div>
-    <button id="palette-toggle" onclick="togglePalette()">&#x2630;</button>
-
-    <!-- Toolbar -->
-    <div id="toolbar">
-        <button class="tool-btn" onclick="addNode()" title="添加节点 (双击空白)">+节点</button>
-        <button class="tool-btn" onclick="deleteSelected()" title="删除选中">删除</button>
-        <button class="tool-btn" id="deploy-btn" onclick="deployWorkflow()" title="部署策略" style="color:#00FF9D">&#x25B6; 部署</button>
-    </div>
-
-    <!-- Search overlay -->
-    <div id="search-overlay" onclick="if(event.target===this) closeSearch()">
-        <div id="search-box">
-            <input id="search-input" placeholder="搜索节点类型..." oninput="updateSearch()" onkeydown="searchKeydown(event)">
-            <div id="search-results"></div>
-        </div>
-    </div>
-
-    <!-- Context menu -->
-    <div id="context-menu">
-        <div class="context-item" onclick="duplicateNode()">&#x1F4CB; 复制</div>
-        <div class="context-item" onclick="deleteSelected()">&#x1F5D1; 删除</div>
-        <div class="context-item danger" onclick="deleteSelected()">&#x2715; 删除节点</div>
-    </div>
-
-    <!-- Status -->
-    <div id="status-bar">
-        <span id="node-count">节点: 0</span> &#xB7;
-        <span id="edge-count">连线: 0</span>
-    </div>
-</div>
-
+<div id="root"></div>
 <script>
-// ====== State ======
-let nodes = [];
-let edges = [];
-let nodeIdCounter = 0;
-let selectedNodeId = null;
-let wiringFrom = null;
-let paletteVisible = true;
-let dragging = null;
-let dragOffset = {x:0, y:0};
-
-// ====== Node Definitions ======
+// ===== Node Definitions =====
 const CATEGORIES = [
-    { name: '数据源', color: '#00C2FF', icon: '⬡', nodes: [
-        {type:'data.kline', name:'K线数据', ports:{in:[], out:['ticker','kline[]']}},
-        {type:'data.orderbook', name:'订单簿', ports:{in:[], out:['orderbook']}},
-        {type:'data.funding', name:'资金费率', ports:{in:[], out:['fundingRate']}},
-        {type:'data.sentiment.social', name:'社交媒体情绪', ports:{in:[], out:['sentimentScore']}},
-        {type:'data.sentiment.fearGreed', name:'恐惧贪婪指数', ports:{in:[], out:['index']}},
-    ]},
-    { name: '信号处理', color: '#A855F7', icon: '≋', nodes: [
-        {type:'indicator.rsi', name:'RSI', ports:{in:['kline[]'], out:['rsiValue']}},
-        {type:'indicator.macd', name:'MACD', ports:{in:['kline[]'], out:['macd','signal','histogram']}},
-        {type:'indicator.bollinger', name:'布林带', ports:{in:['kline[]'], out:['upper','middle','lower']}},
-        {type:'indicator.ma', name:'移动均线', ports:{in:['kline[]'], out:['maValue']}},
-        {type:'indicator.atr', name:'ATR', ports:{in:['kline[]'], out:['atrValue']}},
-        {type:'indicator.obv', name:'OBV', ports:{in:['kline[]'], out:['obv']}},
-        {type:'indicator.stochastic', name:'随机指标', ports:{in:['kline[]'], out:['k','d']}},
-        {type:'indicator.adx', name:'ADX', ports:{in:['kline[]'], out:['adx','diPlus','diMinus']}},
-        {type:'filter.threshold', name:'阈值过滤', ports:{in:['signal'], out:['signal']}},
-        {type:'transform.normalize', name:'归一化', ports:{in:['signal'], out:['normalized[]']}},
-        {type:'logic.gate', name:'逻辑门', ports:{in:['signal','signal'], out:['signal']}},
-    ]},
-    { name: '决策', color: '#FFB800', icon: '⬡', nodes: [
-        {type:'condition.if', name:'条件分支', ports:{in:['signal'], out:['true','false']}},
-        {type:'condition.combine', name:'信号组合', ports:{in:['signal','signal'], out:['combined']}},
-        {type:'strategy.entry', name:'入场信号', ports:{in:['combined'], out:['order']}},
-        {type:'strategy.exit', name:'离场信号', ports:{in:['combined'], out:['order']}},
-        {type:'sizing.fixed', name:'固定仓位', ports:{in:[], out:['quantity']}},
-        {type:'sizing.percentage', name:'百分比仓位', ports:{in:[], out:['quantity']}},
-    ]},
-    { name: 'AI', color: '#00FF9D', icon: '◈', nodes: [
-        {type:'ai.llm', name:'LLM 分析', ports:{in:['text'], out:['text','analysis']}},
-        {type:'ai.sentiment.finbert', name:'FinBERT', ports:{in:['text'], out:['score','label']}},
-        {type:'ai.forecast', name:'AI 预测', ports:{in:['kline[]'], out:['prediction','confidence']}},
-        {type:'ai.anomaly', name:'异常检测', ports:{in:['kline[]'], out:['anomalies[]']}},
-    ]},
-    { name: '输出', color: '#FF3B3B', icon: '▶', nodes: [
-        {type:'output.order', name:'下单', ports:{in:['order'], out:[]}},
-        {type:'output.alert', name:'告警', ports:{in:['signal'], out:[]}},
-        {type:'output.dashboard', name:'仪表盘', ports:{in:['any'], out:[]}},
-    ]},
+  {n:'数据源',c:'#00C2FF',items:[
+    {t:'data.kline',l:'K线数据',in:[],out:[['ticker','#00C2FF'],['kline[]','#00C2FF']]},
+    {t:'data.orderbook',l:'订单簿',in:[],out:[['orderbook','#00C2FF']]},
+    {t:'data.funding',l:'资金费率',in:[],out:[['fundingRate','#00C2FF']]},
+    {t:'data.sentiment.fearGreed',l:'恐慌贪婪指数',in:[],out:[['index','#00FF9D']]},
+    {t:'data.macro.dxy',l:'美元指数',in:[],out:[['value','#00C2FF']]},
+    {t:'data.macro.sp500',l:'标普500',in:[],out:[['value','#00C2FF']]},
+    {t:'data.custom.api',l:'自定义API',in:[],out:[['data','#888']]}
+  ]},
+  {n:'信号处理',c:'#A855F7',items:[
+    {t:'indicator.rsi',l:'RSI',in:[['kline[]','#00C2FF']],out:[['value','#A855F7']]},
+    {t:'indicator.macd',l:'MACD',in:[['kline[]','#00C2FF']],out:[['macd','#A855F7'],['signal','#A855F7'],['hist','#A855F7']]},
+    {t:'indicator.bollinger',l:'布林带',in:[['kline[]','#00C2FF']],out:[['upper','#A855F7'],['mid','#A855F7'],['lower','#A855F7']]},
+    {t:'indicator.ma',l:'移动均线',in:[['kline[]','#00C2FF']],out:[['value','#A855F7']]},
+    {t:'indicator.atr',l:'ATR',in:[['kline[]','#00C2FF']],out:[['value','#A855F7']]},
+    {t:'indicator.obv',l:'OBV',in:[['kline[]','#00C2FF']],out:[['value','#A855F7']]},
+    {t:'indicator.stochastic',l:'随机指标',in:[['kline[]','#00C2FF']],out:[['k','#A855F7'],['d','#A855F7']]},
+    {t:'indicator.adx',l:'ADX',in:[['kline[]','#00C2FF']],out:[['adx','#A855F7'],['+DI','#A855F7'],['-DI','#A855F7']]},
+    {t:'filter.threshold',l:'阈值过滤',in:[['signal','#A855F7']],out:[['signal','#A855F7']]},
+    {t:'transform.normalize',l:'归一化',in:[['signal','#A855F7']],out:[['normalized','#A855F7']]},
+    {t:'logic.gate',l:'逻辑门',in:[['a','#A855F7'],['b','#A855F7']],out:[['out','#A855F7']]},
+    {t:'math.expression',l:'数学表达式',in:[['a','#A855F7'],['b','#A855F7']],out:[['result','#A855F7']]},
+  ]},
+  {n:'决策',c:'#FFB800',items:[
+    {t:'condition.if',l:'条件分支',in:[['signal','#A855F7'],['cond','#888']],out:[['true','#FFB800'],['false','#FFB800']]},
+    {t:'condition.combine',l:'信号组合',in:[['a','#A855F7'],['b','#A855F7']],out:[['out','#FFB800']]},
+    {t:'strategy.entry',l:'入场信号',in:[['signal','#FFB800']],out:[['order','#FF3B3B']]},
+    {t:'strategy.exit',l:'离场信号',in:[['signal','#FFB800']],out:[['order','#FF3B3B']]},
+    {t:'sizing.fixed',l:'固定仓位',in:[],out:[['qty','#FFB800']]},
+    {t:'sizing.percentage',l:'百分比仓位',in:[],out:[['qty','#FFB800']]},
+  ]},
+  {n:'AI',c:'#00FF9D',items:[
+    {t:'ai.llm',l:'LLM分析',in:[['text','#888']],out:[['text','#00FF9D'],['analysis','#00FF9D']]},
+    {t:'ai.sentiment.finbert',l:'FinBERT',in:[['text','#888']],out:[['score','#00FF9D'],['label','#00FF9D']]},
+    {t:'ai.forecast',l:'AI预测',in:[['kline[]','#00C2FF']],out:[['pred','#00FF9D'],['confidence','#00FF9D']]},
+    {t:'ai.anomaly',l:'异常检测',in:[['kline[]','#00C2FF']],out:[['anomalies','#00FF9D']]},
+  ]},
+  {n:'输出',c:'#FF3B3B',items:[
+    {t:'output.order',l:'下单',in:[['order','#FF3B3B']],out:[]},
+    {t:'output.alert',l:'告警',in:[['signal','#A855F7']],out:[]},
+    {t:'output.dashboard',l:'仪表盘',in:[['any','#888']],out:[]},
+  ]}
 ];
+const ALL = CATEGORIES.flatMap(c=>c.items);
+const getDef = t=>ALL.find(n=>n.t===t);
+const getColor = t=>{const d=getDef(t);if(!d)return'#888';const cat=CATEGORIES.find(c=>c.items.includes(d));return cat?cat.c:'#888'};
 
-// ====== Rendering ======
-function buildPalette() {
-    const palette = document.getElementById('palette');
-    CATEGORIES.forEach(cat => {
-        const section = document.createElement('div');
-        section.className = 'palette-section';
-        section.textContent = cat.name;
-        palette.appendChild(section);
-        cat.nodes.forEach(ndef => {
-            const item = document.createElement('div');
-            item.className = 'palette-item';
-            item.innerHTML = '<span class="dot" style="background:' + cat.color + '"></span>' + ndef.name;
-            item.onclick = (e) => { e.stopPropagation(); addNode(ndef); };
-            palette.appendChild(item);
-        });
-    });
+// ===== React Flow Setup =====
+const RF = window.ReactFlow;
+const {useState,useCallback,useRef,useEffect,useMemo}=React;
+const {ReactFlow,Controls,MiniMap,Background,BackgroundVariant,Handle,Position,useNodesState,useEdgesState,addEdge,ReactFlowProvider,useReactFlow}=RF;
+
+function StrategyNode({id,data,selected}){
+  const def=data.def||getDef(data.type)||{l:data.type,in:[],out:[]};
+  const color=getColor(data.type);
+  const h=React.createElement;
+  return h('div',{className:'node-wrap'+(selected?' selected':'')},
+    h('div',{className:'node-hdr',style:{color}},h('span',null,'⬡'),(data.label||def.l)),
+    h('div',{className:'node-ports'},
+      def.in.map((p,i)=>h('div',{className:'port in',key:'i'+i},
+        h(Handle,{type:'target',position:Position.Left,id:p[0],style:{background:p[1],borderColor:'var(--bg)',width:10,height:10}}),
+        h('span',{className:'port-lbl'},p[0]))),
+      def.out.map((p,i)=>h('div',{className:'port out',key:'o'+i},
+        h('span',{className:'port-lbl'},p[0]),
+        h(Handle,{type:'source',position:Position.Right,id:p[0],style:{background:p[1],borderColor:'var(--bg)',width:10,height:10}})))
+    )
+  );
 }
+const nodeTypes={strategyNode:StrategyNode};
 
-function addNode(ndef) {
-    if (!ndef) {
-        document.getElementById('search-overlay').classList.add('active');
-        document.getElementById('search-input').focus();
-        return;
+// ===== App State =====
+let _nodes=[],_edges=[],_setNodes=null,_setEdges=null,_rf=null;
+let _saving=false,_timer=null,_dirty=false;
+
+function triggerSave(){
+  _dirty=true;
+  if(_timer)clearTimeout(_timer);
+  _timer=setTimeout(()=>{
+    if(!_saving&&window.webkit?.messageHandlers?.canvasSave){
+      _saving=true;
+      const json=JSON.stringify({nodes:_nodes.map(n=>({id:n.id,type:n.data.type,position:n.position,data:n.data})),edges:_edges});
+      window.webkit.messageHandlers.canvasSave.postMessage(json);
+      setTimeout(()=>{_saving=false},800);
     }
-    var id = 'n' + (++nodeIdCounter);
-    var node = {
-        id: id,
-        type: ndef.type,
-        name: ndef.name,
-        x: 200 + Math.random() * 300,
-        y: 100 + Math.random() * 200,
-        ports: ndef.ports,
-        category: '#888'
-    };
-    // Find category color
-    for (var ci = 0; ci < CATEGORIES.length; ci++) {
-        for (var ni = 0; ni < CATEGORIES[ci].nodes.length; ni++) {
-            if (CATEGORIES[ci].nodes[ni].type === ndef.type) {
-                node.category = CATEGORIES[ci].color;
-                break;
-            }
-        }
-    }
-    nodes.push(node);
-    renderNode(node);
-    updateConnections();
-    updateStatus();
-    saveState();
+  },1500);
 }
 
-function renderNode(node) {
-    var el = document.createElement('div');
-    el.className = 'node';
-    el.id = node.id;
-    el.style.left = node.x + 'px';
-    el.style.top = node.y + 'px';
+window.__getGraph=()=>JSON.stringify({nodes:_nodes.map(n=>({id:n.id,type:n.data.type,position:n.position,data:n.data})),edges:_edges});
 
-    var html = '<div class="node-header" style="color:' + node.category + '">'
-        + '<span>&#x2B21;</span>' + node.name
-        + '</div><div class="node-body">';
-
-    // Input ports
-    for (var i = 0; i < (node.ports.in || []).length; i++) {
-        var p = node.ports.in[i];
-        html += '<div class="port port-input" data-port="' + p + '" data-dir="in">'
-            + '<span class="port-dot" style="background:' + getPortColor(p) + '"></span>'
-            + p + '</div>';
-    }
-
-    // Output ports
-    for (var i = 0; i < (node.ports.out || []).length; i++) {
-        var p = node.ports.out[i];
-        html += '<div class="port port-output" data-port="' + p + '" data-dir="out">'
-            + p + ' <span class="port-dot" style="background:' + getPortColor(p) + '"></span></div>';
-    }
-
-    html += '</div>';
-    el.innerHTML = html;
-
-    // Events
-    el.addEventListener('mousedown', function(e) { startDrag(e, node.id); });
-    el.addEventListener('click', function(e) { e.stopPropagation(); selectNode(node.id); });
-    el.addEventListener('contextmenu', function(e) { e.preventDefault(); showContextMenu(e, node.id); });
-
-    // Port clicks
-    var dots = el.querySelectorAll('.port-dot');
-    for (var i = 0; i < dots.length; i++) {
-        (function(dot) {
-            dot.addEventListener('mousedown', function(e) { e.stopPropagation(); e.preventDefault(); });
-            dot.addEventListener('click', function(e) {
-                e.stopPropagation();
-                var portEl = dot.parentElement;
-                var portName = portEl.dataset.port;
-                var dir = portEl.dataset.dir;
-                if (dir === 'out') {
-                    startWiring(node.id, portName);
-                } else if (dir === 'in' && wiringFrom) {
-                    completeWiring(node.id, portName);
-                }
-            });
-        })(dots[i]);
-    }
-
-    document.getElementById('canvas').appendChild(el);
-}
-
-function getPortColor(name) {
-    if (name.indexOf('kline') !== -1 || name.indexOf('ticker') !== -1) return '#00C2FF';
-    if (name.indexOf('signal') !== -1 || name.indexOf('rsi') !== -1 || name.indexOf('macd') !== -1) return '#A855F7';
-    if (name.indexOf('order') !== -1) return '#FF3B3B';
-    if (name.indexOf('sentiment') !== -1 || name.indexOf('score') !== -1) return '#00FF9D';
-    return '#888';
-}
-
-// ====== Interactions ======
-function startDrag(e, nodeId) {
-    if (e.button !== 0) return;
-    e.stopPropagation();
-    selectNode(nodeId);
-    var node = getNode(nodeId);
-    if (!node) return;
-    dragging = nodeId;
-    dragOffset = { x: e.clientX - node.x, y: e.clientY - node.y };
-}
-
-document.addEventListener('mousemove', function(e) {
-    if (dragging) {
-        var node = getNode(dragging);
-        if (node) {
-            node.x = e.clientX - dragOffset.x;
-            node.y = e.clientY - dragOffset.y;
-            var el = document.getElementById(node.id);
-            if (el) { el.style.left = node.x + 'px'; el.style.top = node.y + 'px'; }
-            updateConnections();
-        }
-    }
-});
-
-document.addEventListener('mouseup', function() { if (dragging) { dragging = null; saveState(); } });
-
-function getNode(id) {
-    for (var i = 0; i < nodes.length; i++) { if (nodes[i].id === id) return nodes[i]; }
-    return null;
-}
-
-function selectNode(nodeId) {
-    var els = document.querySelectorAll('.node.selected');
-    for (var i = 0; i < els.length; i++) { els[i].classList.remove('selected'); }
-    var el = document.getElementById(nodeId);
-    if (el) el.classList.add('selected');
-    selectedNodeId = nodeId;
-    updateStatus();
-}
-
-document.getElementById('canvas').addEventListener('click', function(e) {
-    if (e.target.id === 'canvas' || e.target.tagName === 'svg') {
-        selectNode(null);
-        hideContextMenu();
-    }
-});
-
-document.getElementById('canvas').addEventListener('dblclick', function(e) {
-    if (e.target.id === 'canvas' || e.target.tagName === 'svg') {
-        document.getElementById('search-overlay').classList.add('active');
-        document.getElementById('search-input').focus();
-    }
-});
-
-// ====== Wiring ======
-function startWiring(nodeId, portName) {
-    wiringFrom = { nodeId: nodeId, portName: portName };
-    var dots = document.querySelectorAll('.port-dot');
-    for (var i = 0; i < dots.length; i++) { dots[i].classList.add('wiring'); }
-}
-
-function completeWiring(targetNodeId, targetPortName) {
-    if (!wiringFrom || wiringFrom.nodeId === targetNodeId) { wiringFrom = null; return; }
-    // Check for duplicate
-    var exists = false;
-    for (var i = 0; i < edges.length; i++) {
-        if (edges[i].sourceNodeId === wiringFrom.nodeId && edges[i].sourcePort === wiringFrom.portName &&
-            edges[i].targetNodeId === targetNodeId && edges[i].targetPort === targetPortName) {
-            exists = true; break;
-        }
-    }
-    if (!exists) {
-        edges.push({
-            sourceNodeId: wiringFrom.nodeId, sourcePort: wiringFrom.portName,
-            targetNodeId: targetNodeId, targetPort: targetPortName
-        });
-    }
-    wiringFrom = null;
-    var dots = document.querySelectorAll('.port-dot');
-    for (var i = 0; i < dots.length; i++) { dots[i].classList.remove('wiring'); }
-    updateConnections();
-    updateStatus();
-    saveState();
-}
-
-function updateConnections() {
-    var svg = document.getElementById('connections');
-    var html = '';
-    for (var ei = 0; ei < edges.length; ei++) {
-        var e = edges[ei];
-        var srcNode = getNode(e.sourceNodeId);
-        var tgtNode = getNode(e.targetNodeId);
-        if (!srcNode || !tgtNode) continue;
-        var srcEl = document.getElementById(e.sourceNodeId);
-        var tgtEl = document.getElementById(e.targetNodeId);
-        if (!srcEl || !tgtEl) continue;
-
-        var srcPortIdx = (srcNode.ports.out || []).indexOf(e.sourcePort);
-        var tgtPortIdx = (tgtNode.ports.in || []).indexOf(e.targetPort);
-        var srcHeaderH = 30;
-        var tgtHeaderH = 30;
-        var srcH = srcEl.querySelector('.node-header');
-        var tgtH = tgtEl.querySelector('.node-header');
-        if (srcH) srcHeaderH = srcH.offsetHeight;
-        if (tgtH) tgtHeaderH = tgtH.offsetHeight;
-
-        var x1 = srcNode.x + srcEl.offsetWidth;
-        var y1 = srcNode.y + srcHeaderH + 16 + srcPortIdx * 20;
-        var x2 = tgtNode.x;
-        var y2 = tgtNode.y + tgtHeaderH + 16 + tgtPortIdx * 20;
-
-        html += '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="#00FF9D" stroke-opacity="0.25" stroke-width="2"/>';
-    }
-    svg.innerHTML = html;
-}
-
-// ====== Context Menu ======
-function showContextMenu(e, nodeId) {
-    selectNode(nodeId);
-    var menu = document.getElementById('context-menu');
-    menu.style.display = 'block';
-    menu.style.left = e.clientX + 'px';
-    menu.style.top = e.clientY + 'px';
-}
-
-function hideContextMenu() {
-    document.getElementById('context-menu').style.display = 'none';
-}
-document.addEventListener('click', function(e) {
-    if (!e.target.closest('#context-menu')) hideContextMenu();
-});
-
-function duplicateNode() {
-    var node = getNode(selectedNodeId);
-    if (!node) return;
-    var allDefs = [];
-    for (var ci = 0; ci < CATEGORIES.length; ci++) {
-        for (var ni = 0; ni < CATEGORIES[ci].nodes.length; ni++) {
-            allDefs.push(CATEGORIES[ci].nodes[ni]);
-        }
-    }
-    for (var i = 0; i < allDefs.length; i++) {
-        if (allDefs[i].type === node.type) { addNode(allDefs[i]); return; }
-    }
-}
-
-function deleteSelected() {
-    if (!selectedNodeId) return;
-    var newNodes = [];
-    for (var i = 0; i < nodes.length; i++) {
-        if (nodes[i].id !== selectedNodeId) newNodes.push(nodes[i]);
-    }
-    nodes = newNodes;
-    var newEdges = [];
-    for (var i = 0; i < edges.length; i++) {
-        if (edges[i].sourceNodeId !== selectedNodeId && edges[i].targetNodeId !== selectedNodeId) {
-            newEdges.push(edges[i]);
-        }
-    }
-    edges = newEdges;
-    var el = document.getElementById(selectedNodeId);
-    if (el) el.remove();
-    selectedNodeId = null;
-    updateConnections();
-    updateStatus();
-    saveState();
-}
-
-// ====== Search ======
-function updateSearch() {
-    var q = document.getElementById('search-input').value.toLowerCase();
-    var results = document.getElementById('search-results');
-    var allDefs = [];
-    for (var ci = 0; ci < CATEGORIES.length; ci++) {
-        for (var ni = 0; ni < CATEGORIES[ci].nodes.length; ni++) {
-            allDefs.push({
-                type: CATEGORIES[ci].nodes[ni].type,
-                name: CATEGORIES[ci].nodes[ni].name,
-                color: CATEGORIES[ci].color
-            });
-        }
-    }
-    var filtered = q ? allDefs.filter(function(d) { return d.name.toLowerCase().indexOf(q) !== -1 || d.type.indexOf(q) !== -1; }) : allDefs;
-    results.innerHTML = filtered.map(function(d, i) {
-        return '<div class="search-item' + (i===0?' active':'') + '" onclick="addNodeFromSearch(\'' + d.type + '\')">'
-            + '<span class="dot" style="background:' + d.color + '"></span>'
-            + d.name + ' <span style="color:#555;font-size:10px;margin-left:auto">' + d.type + '</span></div>';
-    }).join('');
-}
-
-function searchKeydown(e) {
-    if (e.key === 'Enter') {
-        var first = document.querySelector('.search-item');
-        if (first) first.click();
-    }
-    if (e.key === 'Escape') closeSearch();
-}
-
-function addNodeFromSearch(type) {
-    var allDefs = [];
-    for (var ci = 0; ci < CATEGORIES.length; ci++) {
-        for (var ni = 0; ni < CATEGORIES[ci].nodes.length; ni++) {
-            allDefs.push(CATEGORIES[ci].nodes[ni]);
-        }
-    }
-    for (var i = 0; i < allDefs.length; i++) {
-        if (allDefs[i].type === type) { addNode(allDefs[i]); return; }
-    }
-    closeSearch();
-}
-
-function closeSearch() {
-    document.getElementById('search-overlay').classList.remove('active');
-    document.getElementById('search-input').value = '';
-}
-
-// ====== Palette Toggle ======
-function togglePalette() {
-    paletteVisible = !paletteVisible;
-    document.getElementById('palette').classList.toggle('hidden', !paletteVisible);
-    document.getElementById('palette-toggle').style.left = paletteVisible ? '236px' : '8px';
-}
-
-function updateStatus() {
-    document.getElementById('node-count').textContent = '节点: ' + nodes.length;
-    document.getElementById('edge-count').textContent = '连线: ' + edges.length;
-}
-
-// ====== Save/Load (communicated to Swift via WebKit bridge) ======
-function saveState() {
-    if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.canvasSave) {
-        window.webkit.messageHandlers.canvasSave.postMessage(JSON.stringify(getGraphJSON()));
-    }
-}
-
-// Deploy workflow - posts graph to native for code generation
-function deployWorkflow() {
-    var graph = getGraphJSON();
-    var msg = JSON.stringify(graph);
-    if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.canvasDeploy) {
-        window.webkit.messageHandlers.canvasDeploy.postMessage(msg);
-    } else {
-        // Fallback for standalone use
-        alert('Deploy: ' + msg);
-    }
-}
-
-window.getGraphJSON = function() {
-    return { nodes: nodes, edges: edges };
+let _queue=[];
+window.loadGraph=(json)=>{
+  if(_setNodes&&_setEdges){
+    try{
+      const d=typeof json==='string'?JSON.parse(json):json;
+      if(d.nodes&&d.nodes.length){
+        _setNodes(d.nodes.map(n=>({...n,type:'strategyNode',data:{...n.data,def:getDef(n.data.type)}})));
+        _setEdges(d.edges||[]);
+      }
+    }catch(e){console.error('load',e)}
+  }else{_queue.push(json)}
 };
+// On React mount, process queued loads
+const _onReady=()=>{_queue.forEach(j=>window.loadGraph(j));_queue.length=0};
 
-window.loadGraphJSON = function(json) {
-    try {
-        var data = typeof json === 'string' ? JSON.parse(json) : json;
-        nodes = data.nodes || [];
-        edges = data.edges || [];
-        // Re-render everything
-        var existing = document.querySelectorAll('.node');
-        for (var i = 0; i < existing.length; i++) { existing[i].remove(); }
-        nodeIdCounter = 0;
-        for (var i = 0; i < nodes.length; i++) {
-            var idNum = parseInt(nodes[i].id.replace('n', ''), 10);
-            if (!isNaN(idNum) && idNum > nodeIdCounter) nodeIdCounter = idNum;
-            renderNode(nodes[i]);
-        }
-        updateConnections();
-        updateStatus();
-    } catch(e) { console.error('Load error:', e); }
-};
+// ===== Palette =====
+function Palette({visible}){
+  const [s,setS]=useState('');const [closed,setClosed]=useState({});const {screenToFlowPosition}=useReactFlow();
+  const add=useCallback((ndef)=>{
+    const pos=screenToFlowPosition({x:window.innerWidth/2,y:window.innerHeight/3});
+    const id='n'+Date.now()+Math.random().toString(36).slice(2,6);
+    _setNodes(nds=>[...nds,{id,type:'strategyNode',position:pos,data:{type:ndef.t,def:ndef,label:ndef.l}}]);
+    triggerSave();
+  },[screenToFlowPosition]);
 
-window.getWorkflowForDeploy = function() {
-    return JSON.stringify({ nodes: nodes, edges: edges });
-};
+  const filtered=CATEGORIES.map(cat=>({...cat,items:s?cat.items.filter(n=>n.l.toLowerCase().includes(s.toLowerCase())||n.t.includes(s)):cat.items})).filter(cat=>cat.items.length>0);
+  const h=React.createElement;
+  return h('div',{className:'panel panel-left'+(visible?'':' panel-hidden-left')},
+    h('div',{className:'panel-hdr'},
+      h('span',{style:{color:'var(--accent)'}},'⊞ 节点面板'),
+      h('button',{className:'close',onClick:()=>window._togglePalette()},'×')),
+    h('input',{className:'srch',placeholder:'搜索节点...',value:s,onChange:e=>setS(e.target.value)}),
+    h('div',{className:'panel-body'},
+      filtered.map((cat,i)=>h('div',{className:'cat'+(closed[i]?' closed':''),key:i},
+        h('div',{className:'cat-hdr',style:{color:cat.c},onClick:()=>setClosed(p=>({...p,[i]:!p[i]}))},
+          h('span',{className:'arr'},'▼'),cat.n,h('span',{style:{marginLeft:'auto',color:'var(--text3)',fontSize:9}},cat.items.length)),
+        h('div',{className:'cat-items'},cat.items.map(nd=>h('div',{className:'pitem',key:nd.t,onClick:()=>add(nd)},
+          h('span',{className:'dot',style:{background:cat.c}}),nd.l,
+          h('span',{style:{marginLeft:'auto',color:'var(--text3)',fontSize:9}},nd.t))))
+      ))
+    )
+  );
+}
 
-// ====== Init ======
-buildPalette();
-updateStatus();
+// ===== Config Panel =====
+function ConfigPanel({visible,selectedNode}){
+  const [name,setName]=useState('');const [cfg,setConfig]=useState({});
+  useEffect(()=>{if(selectedNode){setName(selectedNode.data?.label||'');setConfig(selectedNode.data?.config||{})}},[selectedNode]);
+  if(!selectedNode||!visible)return null;
+  const def=selectedNode.data?.def;const color=getColor(selectedNode.data?.type);
+  const h=React.createElement;
+  const update=(k,v)=>{const nc={...cfg,[k]:v};setConfig(nc);_setNodes(nds=>nds.map(n=>n.id===selectedNode.id?{...n,data:{...n.data,config:nc}}:n));triggerSave()};
+  const updateName=(v)=>{setName(v);_setNodes(nds=>nds.map(n=>n.id===selectedNode.id?{...n,data:{...n.data,label:v}}:n));triggerSave()};
+  return h('div',{className:'panel panel-right'},
+    h('div',{className:'panel-hdr'},
+      h('span',{style:{color}},'⚙ '+(def?def.l:'节点配置')),
+      h('button',{className:'close',onClick:()=>{_setNodes(nds=>nds.map(n=>({...n,selected:false})));window._onSel([])}},'×')),
+    h('div',{className:'panel-body'},
+      h('div',{className:'cfg-field'},h('div',{className:'cfg-label'},'名称'),h('input',{className:'cfg-input',value:name,onChange:e=>updateName(e.target.value)})),
+      h('div',{className:'cfg-field'},h('div',{className:'cfg-label'},'类型'),h('input',{className:'cfg-input',value:selectedNode.data?.type||'',disabled:true,style:{opacity:.5}})),
+      Object.entries(cfg).map(([k,v])=>h('div',{className:'cfg-field',key:k},h('div',{className:'cfg-label'},k),h('input',{className:'cfg-input',value:v,onChange:e=>update(k,e.target.value)}))),
+      h('div',{style:{padding:'16px 8px'}},h('button',{className:'tbtn danger',style:{width:'100%',justifyContent:'center',padding:'6px'},onClick:()=>{_setNodes(nds=>nds.filter(n=>n.id!==selectedNode.id));_setEdges(eds=>eds.filter(e=>e.source!==selectedNode.id&&e.target!==selectedNode.id));triggerSave()}},'✕ 删除节点'))
+    )
+  );
+}
+
+// ===== Main =====
+function App(){
+  const [nodes,setNodes,onNodesChange]=useNodesState([]);
+  const [edges,setEdges,onEdgesChange]=useEdgesState([]);
+  const [showPal,setShowPal]=useState(true);
+  const [showCfg,setShowCfg]=useState(false);
+  const [selNode,setSelNode]=useState(null);
+  const [hasNodes,setHasNodes]=useState(false);
+  const {fitView}=useReactFlow();
+
+  _nodes=nodes;_edges=edges;_setNodes=setNodes;_setEdges=setEdges;
+  useEffect(()=>{if(nodes.length>0&&!hasNodes){setHasNodes(true);setTimeout(()=>fitView({padding:.2,duration:300}),100)}},[nodes.length]);
+  useEffect(()=>{if(typeof _onReady==='function'){const fn=_onReady;_onReady=null;fn()}},[]);
+
+  const onSel=useCallback(({nodes:ns})=>{
+    if(ns.length===1){setSelNode(ns[0]);setShowCfg(true)}
+    else{setSelNode(null);if(ns.length===0)setShowCfg(false)}
+  },[]);
+
+  const onConnect=useCallback(p=>{setEdges(eds=>addEdge({...p,style:{stroke:'rgba(255,255,255,0.2)',strokeWidth:2}},eds));triggerSave()},[setEdges]);
+
+  useEffect(()=>{
+    window._togglePalette=()=>setShowPal(p=>!p);
+    window._onSel=onSel;
+    const h=e=>{if((e.key==='Delete'||e.key==='Backspace')&&document.activeElement?.tagName!=='INPUT'){setNodes(nds=>{const sel=nds.filter(n=>n.selected);const ids=new Set(sel.map(n=>n.id));setEdges(eds=>eds.filter(e=>!ids.has(e.source)&&!ids.has(e.target)));return nds.filter(n=>!n.selected)});triggerSave()}};
+    window.addEventListener('keydown',h);return ()=>window.removeEventListener('keydown',h);
+  },[]);
+
+  const h=React.createElement;
+  return h('div',{style:{width:'100%',height:'100vh',position:'relative'}},
+    h('button',{id:'palette-toggle',className:'toggle-btn',onClick:()=>setShowPal(p=>!p),title:'节点面板'},'☰'),
+    selNode&&h('button',{id:'config-toggle',className:'toggle-btn',style:{right:10,left:'auto'},onClick:()=>setShowCfg(c=>!c),title:'配置面板'},'⚙'),
+    h('div',{className:'status-bar'},
+      h('span',null,'节点 '+nodes.length),
+      h('span',null,'连线 '+edges.length)
+    ),
+    h(ReactFlow,{nodes,edges,onNodesChange,onEdgesChange,onConnect,onSelectionChange:onSel,
+      nodeTypes,snapToGrid:true,snapGrid:[20,20],deleteKeyCode:['Delete','Backspace'],
+      multiSelectionKeyCode:'Meta',proOptions:{hideAttribution:true},style:{background:'var(--bg)'}},
+      h(Background,{variant:BackgroundVariant.Dots,gap:20,size:1,color:'rgba(255,255,255,0.06)'}),
+      h(Controls,{position:'bottom-left'}),
+      h(MiniMap,{position:'bottom-right',nodeColor:n=>getColor(n.data?.type)||'#555',
+        style:{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:6},pannable:true})
+    ),
+    h(Palette,{visible:showPal}),
+    h(ConfigPanel,{visible:showCfg,selectedNode:selNode}),
+    h('div',{className:'toolbar'},
+      h('button',{className:'tbtn',onClick:()=>setShowPal(p=>!p)},'+ 节点'),h('span',{className:'tsep'}),
+      h('button',{className:'tbtn danger',onClick:()=>{setNodes(nds=>{const sel=nds.filter(n=>n.selected);const ids=new Set(sel.map(n=>n.id));setEdges(eds=>eds.filter(e=>!ids.has(e.source)&&!ids.has(e.target)));return nds.filter(n=>!n.selected)});triggerSave()}},'删除'),h('span',{className:'tsep'}),
+      h('button',{className:'tbtn',onClick:()=>fitView({padding:.2,duration:300})},'适应'),h('span',{className:'tsep'}),
+      h('button',{className:'tbtn primary',onClick:()=>{if(window.webkit?.messageHandlers?.canvasDeploy)window.webkit.messageHandlers.canvasDeploy.postMessage(window.__getGraph())}},'▶ 部署')
+    ),
+    !hasNodes&&h('div',{className:'welcome'},
+      h('div',{className:'welcome-card'},
+        h('h2',null,'策略画布'),
+        h('p',null,'从左侧面板选择节点添加到画布，连接端口构建策略。基于 React Flow — 与 n8n / Dify 相同的画布引擎。'),
+        h('button',{className:'wbtn',onClick:()=>setShowPal(true)},'打开节点面板')
+      )
+    )
+  );
+}
+
+function Root(){return React.createElement(ReactFlowProvider,null,React.createElement(App))}
+ReactDOM.render(React.createElement(Root),document.getElementById('root'));
 </script>
 </body>
 </html>
