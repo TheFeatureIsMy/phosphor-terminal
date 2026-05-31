@@ -134,7 +134,7 @@ struct ProofAlphaCard<Content: View>: View {
                     endRadius: 180
                 )
             )
-            .opacity(isHovering ? 1 : 0)
+            .opacity(isHovering && emphasis != .subtle ? 1 : 0)
             .allowsHitTesting(false)
     }
 
