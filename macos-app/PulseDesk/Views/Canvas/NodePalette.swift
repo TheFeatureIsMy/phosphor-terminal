@@ -1,194 +1,202 @@
-// NodePalette.swift — 左侧节点面板 (240px)
-// 按分类展示可用节点类型，支持搜索和折叠展开
-
 import SwiftUI
 
 struct NodePalette: View {
     @Environment(PulseColors.self) private var colors
     @Binding var isPresented: Bool
-    var onNodeSelected: ((NodeDefinition) -> Void)?
+    var onAddNode: (NodeDefinition) -> Void
 
     @State private var searchText = ""
-    @State private var expandedCategories: Set<NodeCategory> = [.data]
+    @State private var selectedCategory: NodeCategory? = nil
+    @State private var favoriteTypes: Set<String> = Set(UserDefaults.standard.stringArray(forKey: "canvas.favoriteNodes") ?? [])
+    @State private var recentlyUsed: [String] = UserDefaults.standard.stringArray(forKey: "canvas.recentNodes") ?? []
+    @FocusState private var isSearchFocused: Bool
+
+    private let allDefinitions = NodeRegistry.allDefinitions
+
+    private var displayedDefinitions: [NodeDefinition] {
+        let categoryFiltered: [NodeDefinition]
+        if let cat = selectedCategory {
+            categoryFiltered = allDefinitions.filter { $0.category == cat }
+        } else {
+            categoryFiltered = allDefinitions
+        }
+        if searchText.isEmpty { return categoryFiltered }
+        return categoryFiltered.filter { def in
+            def.name.localizedCaseInsensitiveContains(searchText) ||
+            def.type.localizedCaseInsensitiveContains(searchText)
+        }
+    }
+
+    private var favoriteDefs: [NodeDefinition] {
+        allDefinitions.filter { favoriteTypes.contains($0.type) }
+    }
+
+    private var recentDefs: [NodeDefinition] {
+        recentlyUsed.compactMap { type in allDefinitions.first(where: { $0.type == type }) }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
-            // Header
-            header
+            // Search bar
+            HStack(spacing: 6) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 10))
+                    .foregroundStyle(colors.textMuted)
+                TextField("搜索节点...", text: $searchText)
+                    .textFieldStyle(.plain)
+                    .font(PulseFonts.caption)
+                    .foregroundStyle(colors.textPrimary)
+                    .focused($isSearchFocused)
+            }
+            .padding(8)
+            .background(colors.surface)
+            .clipShape(RoundedRectangle(cornerRadius: 6))
+            .overlay(RoundedRectangle(cornerRadius: 6).stroke(colors.border, lineWidth: 1))
+            .padding(8)
 
-            Divider().foregroundStyle(colors.border)
-
-            // Search
-            searchBar
+            // Category tabs
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 4) {
+                    CategoryTab(label: "全部", isSelected: selectedCategory == nil) {
+                        selectedCategory = nil
+                    }
+                    ForEach(NodeCategory.allCases, id: \.self) { cat in
+                        CategoryTab(label: cat.label, isSelected: selectedCategory == cat) {
+                            selectedCategory = selectedCategory == cat ? nil : cat
+                        }
+                    }
+                }
+                .padding(.horizontal, 8)
+                .padding(.bottom, 4)
+            }
 
             Divider().foregroundStyle(colors.border)
 
             // Node list
             ScrollView(.vertical, showsIndicators: false) {
-                VStack(spacing: 0) {
-                    ForEach(NodeCategory.allCases, id: \.self) { category in
-                        let defs = filteredNodes(in: category)
-                        if searchText.isEmpty || !defs.isEmpty {
-                            categorySection(category, definitions: defs)
+                VStack(alignment: .leading, spacing: 0) {
+                    if searchText.isEmpty && selectedCategory == nil {
+                        if !favoriteDefs.isEmpty {
+                            sectionHeader("⭐ 收藏", onClear: { clearFavorites() })
+                            ForEach(favoriteDefs) { def in nodeRow(def) }
                         }
+                        if !recentDefs.isEmpty {
+                            sectionHeader("🕐 最近使用", onClear: { clearRecents() })
+                            ForEach(recentDefs) { def in nodeRow(def) }
+                        }
+                    }
+
+                    if searchText.isEmpty && selectedCategory == nil {
+                        ForEach(NodeCategory.allCases, id: \.self) { cat in
+                            let catDefs = allDefinitions.filter { $0.category == cat }
+                            if !catDefs.isEmpty {
+                                sectionHeader("📂 \(cat.label)", onClear: nil)
+                                ForEach(catDefs) { def in nodeRow(def) }
+                            }
+                        }
+                    } else {
+                        ForEach(displayedDefinitions) { def in nodeRow(def) }
                     }
                 }
             }
         }
-        .frame(width: 240)
-        .background(colors.surfaceElevated)
-        .overlay(
-            Rectangle()
-                .fill(PulseGlass.surfaceTint(colors))
-                .allowsHitTesting(false)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: PulseRadii.md))
-        .overlay(
-            RoundedRectangle(cornerRadius: PulseRadii.md)
-                .stroke(colors.border, lineWidth: 1)
-        )
-        .shadow(color: .black.opacity(0.3), radius: 8, y: 2)
+        .frame(width: 220)
+        .background(colors.background)
+        .overlay(Rectangle().frame(width: 1).foregroundStyle(colors.border), alignment: .trailing)
+        .onAppear { loadRecents() }
     }
 
-    // MARK: - Header
-
-    private var header: some View {
+    private func sectionHeader(_ title: String, onClear: (() -> Void)?) -> some View {
         HStack {
-            Image(systemName: "square.grid.2x2")
-                .font(.system(size: 12))
-                .foregroundStyle(PulseColors.accent)
-            Text("节点面板")
-                .font(PulseFonts.bodyMedium)
-                .foregroundStyle(colors.textPrimary)
+            Text(title).font(PulseFonts.micro).foregroundStyle(colors.textMuted)
+            Spacer()
+            if let onClear {
+                Button("清除") { onClear() }
+                    .font(PulseFonts.micro).foregroundStyle(PulseColors.accent).buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 8).padding(.vertical, 4)
+    }
+
+    private func nodeRow(_ def: NodeDefinition) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: def.icon).font(.system(size: 10)).foregroundStyle(def.color).frame(width: 14)
+            Text(def.name).font(PulseFonts.caption).foregroundStyle(colors.textPrimary).lineLimit(1)
             Spacer()
             Button {
-                withAnimation(PulseAnimation.easeOutFast) {
-                    isPresented = false
-                }
+                toggleFavorite(def)
             } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(colors.textMuted)
+                Image(systemName: favoriteTypes.contains(def.type) ? "star.fill" : "star")
+                    .font(.system(size: 9))
+                    .foregroundStyle(favoriteTypes.contains(def.type) ? PulseColors.amber : colors.textMuted)
             }
             .buttonStyle(.plain)
         }
-        .padding(PulseSpacing.sm)
+        .padding(.horizontal, 8).padding(.vertical, 4)
+        .contentShape(Rectangle())
+        .onTapGesture { onAddNode(def); addToRecent(def) }
+        .onDrag { NSItemProvider(object: def.type as NSString) }
     }
 
-    // MARK: - Search
-
-    private var searchBar: some View {
-        HStack(spacing: PulseSpacing.xs) {
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: 11))
-                .foregroundStyle(colors.textMuted)
-            TextField("搜索节点...", text: $searchText)
-                .textFieldStyle(.plain)
-                .font(PulseFonts.caption)
-                .foregroundStyle(colors.textPrimary)
-
-            if !searchText.isEmpty {
-                Button {
-                    searchText = ""
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 10))
-                        .foregroundStyle(colors.textMuted)
-                }
-                .buttonStyle(.plain)
-            }
+    private func toggleFavorite(_ def: NodeDefinition) {
+        if favoriteTypes.contains(def.type) {
+            favoriteTypes.remove(def.type)
+        } else {
+            favoriteTypes.insert(def.type)
         }
-        .padding(PulseSpacing.xs)
-        .background(colors.surface)
-        .clipShape(RoundedRectangle(cornerRadius: PulseRadii.sm))
-        .padding(.horizontal, PulseSpacing.sm)
-        .padding(.vertical, PulseSpacing.xs)
+        persistFavorites()
     }
 
-    // MARK: - Category section
-
-    private func categorySection(_ category: NodeCategory, definitions: [NodeDefinition]) -> some View {
-        DisclosureGroup(
-            isExpanded: Binding(
-                get: { expandedCategories.contains(category) },
-                set: { isExpanded in
-                    withAnimation(PulseAnimation.easeOutFast) {
-                        if isExpanded {
-                            expandedCategories.insert(category)
-                        } else {
-                            expandedCategories.remove(category)
-                        }
-                    }
-                }
-            )
-        ) {
-            VStack(spacing: 1) {
-                ForEach(definitions) { def in
-                    nodeRow(def)
-                }
-            }
-            .padding(.leading, PulseSpacing.xs)
-        } label: {
-            HStack(spacing: PulseSpacing.xs) {
-                Image(systemName: category.icon)
-                    .font(.system(size: 11))
-                    .foregroundStyle(category.color)
-                    .frame(width: 16)
-                Text(category.label)
-                    .font(PulseFonts.captionMedium)
-                    .foregroundStyle(colors.textPrimary)
-                Spacer()
-                Text("\(definitions.count)")
-                    .font(PulseFonts.micro)
-                    .foregroundStyle(colors.textMuted)
-            }
-        }
-        .padding(.horizontal, PulseSpacing.sm)
-        .padding(.vertical, 2)
+    private func persistFavorites() {
+        UserDefaults.standard.set(Array(favoriteTypes), forKey: "canvas.favoriteNodes")
     }
 
-    // MARK: - Node row
+    private func clearFavorites() {
+        favoriteTypes.removeAll()
+        persistFavorites()
+    }
 
-    private func nodeRow(_ def: NodeDefinition) -> some View {
-        Button {
-            onNodeSelected?(def)
-        } label: {
-            HStack(spacing: PulseSpacing.xs) {
-                Image(systemName: def.icon)
-                    .font(.system(size: 11))
-                    .foregroundStyle(def.color)
-                    .frame(width: 16)
-                Text(def.name)
-                    .font(PulseFonts.caption)
-                    .foregroundStyle(colors.textPrimary)
-                    .lineLimit(1)
-                Spacer()
-                // Port count indicator
-                if !def.outputPorts.isEmpty {
-                    Text("\(def.outputPorts.count)")
-                        .font(PulseFonts.micro)
-                        .foregroundStyle(colors.textMuted)
-                        .padding(.horizontal, 4)
-                        .padding(.vertical, 1)
-                        .background(colors.surfaceHover)
-                        .clipShape(RoundedRectangle(cornerRadius: PulseRadii.xs))
-                }
-            }
-            .padding(.vertical, 3)
-            .padding(.horizontal, PulseSpacing.xs)
-            .contentShape(Rectangle())
+    private func addToRecent(_ def: NodeDefinition) {
+        recentlyUsed.removeAll { $0 == def.type }
+        recentlyUsed.insert(def.type, at: 0)
+        if recentlyUsed.count > 10 { recentlyUsed = Array(recentlyUsed.prefix(10)) }
+        UserDefaults.standard.set(recentlyUsed, forKey: "canvas.recentNodes")
+    }
+
+    private func loadRecents() {
+        recentlyUsed = UserDefaults.standard.stringArray(forKey: "canvas.recentNodes") ?? []
+    }
+
+    private func clearRecents() {
+        recentlyUsed.removeAll()
+        UserDefaults.standard.set(recentlyUsed, forKey: "canvas.recentNodes")
+    }
+}
+
+// MARK: - CategoryTab
+private struct CategoryTab: View {
+    @Environment(PulseColors.self) private var colors
+    let label: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(label)
+                .font(.system(size: 10, weight: isSelected ? .semibold : .regular))
+                .foregroundStyle(isSelected ? PulseColors.accent : colors.textMuted)
+                .padding(.horizontal, 8).padding(.vertical, 4)
+                .background(
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(isSelected ? PulseColors.accent.opacity(0.1) : .clear)
+                )
+                .overlay(
+                    Rectangle()
+                        .frame(height: 2)
+                        .foregroundStyle(isSelected ? PulseColors.accent : .clear),
+                    alignment: .bottom
+                )
         }
         .buttonStyle(.plain)
-    }
-
-    // MARK: - Filter
-
-    private func filteredNodes(in category: NodeCategory) -> [NodeDefinition] {
-        let defs = NodeRegistry.nodes(in: category)
-        if searchText.isEmpty { return defs }
-        return defs.filter {
-            $0.name.localizedCaseInsensitiveContains(searchText) ||
-            $0.type.localizedCaseInsensitiveContains(searchText)
-        }
     }
 }
