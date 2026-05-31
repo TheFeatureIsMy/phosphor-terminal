@@ -325,17 +325,18 @@ final class CanvasViewModel {
             .first(where: { $0.id == targetNodeId })
             .flatMap { NodeRegistry.definition(for: $0.nodeType) }
 
-        if let sourcePort = sourceDef?.outputPorts.first(where: { $0.key == sourcePortKey }),
-           let targetPort = targetDef?.inputPorts.first(where: { $0.key == targetPortKey }) {
-            let result = schema.canConnect(
-                from: sourcePort,
-                to: targetPort,
-                sourceNodeId: sourceNodeId,
-                targetNodeId: targetNodeId,
-                existingEdges: graph.edges
-            )
-            guard result.isAllowed else { return }
-        }
+        guard let sourcePort = sourceDef?.outputPorts.first(where: { $0.key == sourcePortKey }),
+              let targetPort = targetDef?.inputPorts.first(where: { $0.key == targetPortKey })
+        else { return }
+
+        let result = schema.canConnect(
+            from: sourcePort,
+            to: targetPort,
+            sourceNodeId: sourceNodeId,
+            targetNodeId: targetNodeId,
+            existingEdges: graph.edges
+        )
+        guard result.isAllowed else { return }
 
         let edge = CanvasEdge(
             sourceNodeId: sourceNodeId,
@@ -512,6 +513,17 @@ final class CanvasViewModel {
     // MARK: - Templates
 
     func loadTemplate(_ template: CanvasTemplate) {
+        cancelWiring()
+        configDebounceTasks.values.forEach { $0.cancel() }
+        configDebounceTasks.removeAll()
+        configOldValues.removeAll()
+        draggingNodeId = nil
+        dragOffset = .zero
+        dragStartPosition = nil
+        multiDragStartPositions = nil
+        activeSnapGuides.removeAll()
+        selectionRect = nil
+
         graph = template.graph
         undoStack.removeAll()
         redoStack.removeAll()
