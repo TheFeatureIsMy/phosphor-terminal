@@ -111,9 +111,7 @@ struct StrategyDetailView: View {
         HStack(spacing: 0) {
             ForEach(Array(tabs.enumerated()), id: \.offset) { index, tab in
                 Button {
-                    withAnimation(PulseAnimation.easeOutFast) {
-                        selectedTab = index
-                    }
+                    selectedTab = index
                 } label: {
                     VStack(spacing: PulseSpacing.xxs) {
                         Text(tab)

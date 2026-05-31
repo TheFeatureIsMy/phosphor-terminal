@@ -108,9 +108,7 @@ struct AppShellView: View {
         case .settings:
             SettingsView()
         case .strategyDetail:
-            if let vm = strategiesVM,
-               let id = appState.selectedStrategyId,
-               let strategy = vm.strategies.first(where: { $0.id == id }) {
+            if let id = appState.selectedStrategyId {
                 StrategyDetailView(strategyId: id, client: networkClient)
             } else {
                 LoadingView(type: .detail)
