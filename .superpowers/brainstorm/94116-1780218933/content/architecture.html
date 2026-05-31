@@ -1,0 +1,125 @@
+<h2>架构设计 — 文件结构与分层</h2>
+<p class="subtitle">方案 C：混合重构，保持 SwiftUI NodeView + 深度优化渲染管线</p>
+
+<h3>重构后的文件结构</h3>
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; font-size:12px;">
+
+<div>
+<div style="color:#00FF9D; font-weight:600; margin-bottom:6px;">📁 Views/Canvas/ (12 文件 → 15 文件)</div>
+<div style="background:#0d1520; border:1px solid #1a2332; border-radius:6px; padding:10px;">
+<div style="color:#8090a0; font-size:11px;">
+<strong style="color:#5a8a6e;">保留增强：</strong><br>
+• CanvasBackground.swift — 维持<br>
+• CanvasEdges.swift → <strong style="color:#00FF9D;">重写</strong>（精确端口+粒子动画）<br>
+• CanvasDragPreview.swift — 维持<br>
+• CanvasSelectionRect.swift — 维持<br>
+• MiniMapView.swift → <strong style="color:#00FF9D;">增强</strong>（平滑滚动+缩略图）<br>
+• NodeView.swift → <strong style="color:#00FF9D;">增强</strong>（状态徽章+折叠摘要）<br>
+• NodePalette.swift → <strong style="color:#f59e0b;">重写</strong>（标签栏+收藏+拖出）<br>
+• NodeConfigPanel.swift → <strong style="color:#f59e0b;">重写</strong>（校验+预览+filePicker）<br>
+• CodePreviewSheet.swift — 维持<br><br>
+<strong style="color:#a855f7;">新增：</strong><br>
+• <strong style="color:#a855f7;">ViewportCuller.swift</strong> — 视口裁剪器<br>
+• <strong style="color:#a855f7;">SnapGuidesView.swift</strong> — 对齐辅助线<br>
+• <strong style="color:#a855f7;">NodeBadges.swift</strong> — 节点状态徽章<br>
+• <strong style="color:#a855f7;">EdgeValidator.swift</strong> — 连线即时校验<br>
+• <strong style="color:#a855f7;">CanvasSearchOverlay.swift</strong> — 画布内搜索<br>
+• <strong style="color:#a855f7;">ConnectionPreview.swift</strong> — 端口吸附预览
+</div>
+</div>
+</div>
+
+<div>
+<div style="color:#a855f7; font-weight:600; margin-bottom:6px;">📁 ViewModels/ + Services/ + Models/</div>
+<div style="background:#0d1520; border:1px solid #1a2332; border-radius:6px; padding:10px;">
+<div style="color:#8090a0; font-size:11px;">
+<strong style="color:#5a8a6e;">保留增强：</strong><br>
+• CanvasViewModel.swift → <strong style="color:#f59e0b;">重写</strong>（coalesce undo+copy/paste+多选拖拽）<br>
+• NodeRegistry.swift — 维持<br>
+• GraphSerializer.swift — 维持<br>
+• CodeGenerator.swift → <strong style="color:#00FF9D;">增强</strong>（覆盖率 15→50+）<br><br>
+<strong style="color:#a855f7;">新增：</strong><br>
+• <strong style="color:#a855f7;">ClipboardManager.swift</strong> — 复制粘贴管理器<br>
+• <strong style="color:#a855f7;">SnapEngine.swift</strong> — 吸附计算引擎<br>
+• <strong style="color:#a855f7;">EdgeRouter.swift</strong> — 连线路径规划<br>
+• <strong style="color:#a855f7;">CanvasErrorNotifier.swift</strong> — 错误提示服务
+</div>
+</div>
+</div>
+
+</div>
+
+<h3 style="margin-top:24px;">四层渲染架构</h3>
+
+<div class="mockup">
+  <div class="mockup-header">Canvas Z-Stack 分层</div>
+  <div class="mockup-body">
+    <div style="display:flex; flex-direction:column; gap:6px; padding:16px;">
+
+      <div style="display:flex; gap:12px; align-items:stretch;">
+        <div style="width:60px; text-align:right; color:#00FF9D; font-weight:700; font-size:10px; padding-top:8px;">z=4<br>顶层</div>
+        <div style="flex:1; background:linear-gradient(135deg, rgba(0,255,157,0.05), rgba(0,255,157,0.02)); border:1px dashed #00FF9D44; border-radius:6px; padding:10px;">
+          <div style="color:#00FF9D; font-size:11px; font-weight:600;">Overlay 层 — 交互反馈</div>
+          <div style="color:#5a6a7e; font-size:10px; display:flex; flex-wrap:wrap; gap:4px;">
+            <span style="border:1px solid #1a3340; border-radius:2px; padding:1px 6px;">框选矩形</span>
+            <span style="border:1px solid #1a3340; border-radius:2px; padding:1px 6px;">连线拖拽预览</span>
+            <span style="border:1px solid #1a3340; border-radius:2px; padding:1px 6px;">对齐辅助线</span>
+            <span style="border:1px solid #1a3340; border-radius:2px; padding:1px 6px;">类型校验指示</span>
+            <span style="border:1px solid #1a3340; border-radius:2px; padding:1px 6px;">吸附点预览</span>
+            <span style="border:1px solid #1a3340; border-radius:2px; padding:1px 6px;">搜索高亮</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:12px; align-items:stretch;">
+        <div style="width:60px; text-align:right; color:#f59e0b; font-weight:700; font-size:10px; padding-top:8px;">z=3<br>节点层</div>
+        <div style="flex:1; background:linear-gradient(135deg, rgba(245,158,11,0.05), rgba(245,158,11,0.02)); border:1px dashed #f59e0b44; border-radius:6px; padding:10px;">
+          <div style="color:#f59e0b; font-size:11px; font-weight:600;">ViewportCulledNodeLayer — 视口裁剪节点</div>
+          <div style="color:#5a6a7e; font-size:10px;">
+            <strong>ViewportCuller</strong> 计算可视矩形 → 仅渲染 range 内的 NodeDragWrapper<br>
+            视口外节点不创建 SwiftUI View（占位点保持选择状态）<br>
+            使用 GeometryReader 获取实际画布尺寸 → 传入 culler 计算可见集
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:12px; align-items:stretch;">
+        <div style="width:60px; text-align:right; color:#a855f7; font-weight:700; font-size:10px; padding-top:8px;">z=2<br>边线层</div>
+        <div style="flex:1; background:linear-gradient(135deg, rgba(168,85,247,0.05), rgba(168,85,247,0.02)); border:1px dashed #a855f744; border-radius:6px; padding:10px;">
+          <div style="color:#a855f7; font-size:11px; font-weight:600;">CanvasEdges（重写）— Bezier + 粒子</div>
+          <div style="color:#5a6a7e; font-size:10px;">
+            • EdgeRouter 计算每条边的精确屏幕路径（起点=输出端口坐标，终点=输入端口坐标）<br>
+            • 选中态边线加粗 + 发光<br>
+            • 数据流方向粒子沿路径运动（每秒 N 个粒子）<br>
+            • 同 Canvas 2D 绘制（批量 stroke 调用优化）
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:12px; align-items:stretch;">
+        <div style="width:60px; text-align:right; color:#3b82f6; font-weight:700; font-size:10px; padding-top:8px;">z=1<br>底层</div>
+        <div style="flex:1; background:linear-gradient(135deg, rgba(59,130,246,0.05), rgba(59,130,246,0.02)); border:1px dashed #3b82f644; border-radius:6px; padding:10px;">
+          <div style="color:#3b82f6; font-size:11px; font-weight:600;">CanvasBackground — 网格 + 扫描线</div>
+          <div style="color:#5a6a7e; font-size:10px;">维持现有实现，dot-grid + viewport culling 已足够高效</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<h3 style="margin-top:24px;">数据流</h3>
+<div style="background:#0d1520; border:1px solid #1a2332; border-radius:6px; padding:14px; font-size:11px;">
+  <div style="font-family:monospace; color:#8090a0; line-height:1.8;">
+    <span style="color:#f59e0b;">用户操作</span> → <span style="color:#00FF9D;">StrategyCanvasTab</span> (手势路由)<br>
+    &nbsp;&nbsp;→ <span style="color:#a855f7;">CanvasViewModel</span> (状态变更 + undo记录 + scheduleSave)<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;→ <span style="color:#3b82f6;">graph.nodes/edges</span> (@Observable → SwiftUI 自动刷新)<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;→ <span style="color:#3b82f6;">ViewportCuller</span> (过滤可见节点)<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;→ <span style="color:#3b82f6;">EdgeRouter</span> (计算可见边的屏幕路径)<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;→ <span style="color:#00FF9D;">CanvasEdges / NodeView</span> 渲染<br>
+    <br>
+    <span style="color:#f59e0b;">自动保存</span> → <span style="color:#a855f7;">CanvasViewModel.scheduleSave()</span> (3s debounce)<br>
+    &nbsp;&nbsp;→ <span style="color:#3b82f6;">GraphSerializer.serialize()</span> → <span style="color:#3b82f6;">APICanvas.save()</span><br>
+    &nbsp;&nbsp;→ <span style="color:#ef4444;">失败时</span> → <span style="color:#3b82f6;">CanvasErrorNotifier</span> → Toast/状态栏提示<br>
+  </div>
+</div>

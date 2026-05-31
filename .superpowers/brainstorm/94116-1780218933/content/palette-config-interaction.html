@@ -1,0 +1,193 @@
+<h2>调色板 · 配置面板 · 交互系统</h2>
+<p class="subtitle">从"能用"到"顺手"的关键提升</p>
+
+<h3>1. NodePalette 重写 — 从 DisclosureGroup 到标签栏+拖出</h3>
+<div class="mockup">
+  <div class="mockup-header">NodePalette.swift 完整重写</div>
+  <div class="mockup-body" style="padding:14px;">
+    <div style="display:flex; gap:0; min-height:360px; font-size:10px;">
+      <!-- New palette design -->
+      <div style="width:220px; background:#0a0e14; border:1px solid #1a2332; border-radius:4px; display:flex; flex-direction:column;">
+        <!-- Search -->
+        <div style="padding:8px;">
+          <div style="background:#080c12; border:1px solid #1a3340; border-radius:4px; padding:5px 8px; color:#5a6a7e; font-size:10px;">
+            🔍 搜索节点... <span style="float:right; color:#3a4a5e;">⌘K</span>
+          </div>
+        </div>
+        <!-- Category tabs -->
+        <div style="display:flex; border-bottom:1px solid #1a2332;">
+          <div style="padding:6px 8px; color:#00FF9D; border-bottom:2px solid #00FF9D; font-size:9px;">全部</div>
+          <div style="padding:6px 8px; color:#5a6a7e; font-size:9px;">数据</div>
+          <div style="padding:6px 8px; color:#5a6a7e; font-size:9px;">信号</div>
+          <div style="padding:6px 8px; color:#5a6a7e; font-size:9px;">决策</div>
+          <div style="padding:6px 8px; color:#5a6a7e; font-size:9px;">AI</div>
+        </div>
+        <!-- Node list -->
+        <div style="flex:1; overflow-y:auto; padding:4px;">
+          <div style="color:#a855f7; font-size:9px; padding:4px 6px;">⭐ 收藏</div>
+          <div style="display:flex; align-items:center; padding:5px 6px; margin:2px 0; background:#0d1520; border:1px solid #1a3340; border-radius:3px; cursor:pointer;">
+            <span style="color:#a855f7; margin-right:4px;">📊</span><span style="color:#8090a0;">RSI 指标</span>
+            <span style="color:#00FF9D; margin-left:auto; font-size:8px;">拖→</span>
+          </div>
+          <div style="display:flex; align-items:center; padding:5px 6px; margin:2px 0; border-radius:3px;">
+            <span style="color:#a855f7; margin-right:4px;">📈</span><span style="color:#8090a0;">MACD 指标</span>
+          </div>
+          <div style="color:#5a6a7e; font-size:9px; padding:4px 6px; margin-top:6px;">🕐 最近使用</div>
+          <div style="display:flex; align-items:center; padding:5px 6px; margin:2px 0; border-radius:3px;">
+            <span style="color:#00FF9D; margin-right:4px;">📡</span><span style="color:#8090a0;">K线数据源</span>
+          </div>
+          <div style="color:#5a6a7e; font-size:9px; padding:4px 6px; margin-top:6px;">📂 信号处理</div>
+          <div style="display:flex; align-items:center; padding:5px 6px; margin:2px 0; border-radius:3px;">
+            <span style="color:#a855f7; margin-right:4px;">〰</span><span style="color:#8090a0;">布林带</span>
+          </div>
+          <div style="display:flex; align-items:center; padding:5px 6px; margin:2px 0; border-radius:3px;">
+            <span style="color:#a855f7; margin-right:4px;">〰</span><span style="color:#8090a0;">EMA 均线</span>
+          </div>
+        </div>
+      </div>
+      <!-- Feature callouts -->
+      <div style="flex:1; padding-left:16px;">
+        <div style="margin-bottom:12px;">
+          <div style="color:#00FF9D; font-weight:600; font-size:11px;">🏷 标签栏替代折叠</div>
+          <div style="color:#5a6a7e; font-size:10px;">水平滚动标签栏，点击过滤分类。比 DisclosureGroup 减少 60% 滚动距离</div>
+        </div>
+        <div style="margin-bottom:12px;">
+          <div style="color:#f59e0b; font-weight:600; font-size:11px;">⭐ 收藏 + 最近使用</div>
+          <div style="color:#5a6a7e; font-size:10px;">收藏存储在 UserDefaults（本地持久化），最近使用保留 10 条（内存）</div>
+        </div>
+        <div style="margin-bottom:12px;">
+          <div style="color:#a855f7; font-weight:600; font-size:11px;">↗ 拖出添加</div>
+          <div style="color:#5a6a7e; font-size:10px;">节点项支持 DragGesture → 拖入画布区域释放即添加（计算世界坐标落点）<br>保留点击添加作为备选</div>
+        </div>
+        <div style="margin-bottom:12px;">
+          <div style="color:#3b82f6; font-weight:600; font-size:11px;">🔍 搜索增强</div>
+          <div style="color:#5a6a7e; font-size:10px;">模糊匹配（中/英文名、类型 key、分类名），搜索结果高亮关键词<br>⌘K 快捷键聚焦搜索框</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h3 style="margin-top:20px;">2. NodeConfigPanel 重写 — 校验 + 预览 + filePicker</h3>
+<div class="mockup">
+  <div class="mockup-header">NodeConfigPanel.swift 完整重写</div>
+  <div class="mockup-body" style="padding:14px; font-size:10px;">
+    <div style="display:flex; gap:16px;">
+      <div style="flex:1;">
+        <strong style="color:#00FF9D;">新增特性：</strong><br><br>
+        <span style="color:#8090a0;">
+        <strong>输入校验：</strong><br>
+        • number 字段 → 实时 min/max 校验，越界红框提示<br>
+        • text 字段 → 正则校验（如 Python 变量名规则）<br>
+        • required 字段 → 空值时红色星号标记<br><br>
+        <strong>实时预览：</strong><br>
+        • slider/参数变更 → 立即反映到节点外观<br>
+        • 通过 CanvasViewModel 的 @Observable 自动更新 NodeView<br><br>
+        <strong>filePicker 实现：</strong><br>
+        • NSOpenPanel 集成（macOS 原生文件选择器）<br>
+        • 支持 .py / .csv / .json 过滤<br>
+        • 选中后显示文件名 + 路径缩略<br><br>
+        <strong>撤销保护：</strong><br>
+        • 配置变更合并 500ms 内的连续改动为一次 undo 条目<br>
+        • 使用 Task.sleep 防抖 coalescing
+        </span>
+      </div>
+      <div style="flex:1;">
+        <strong style="color:#f59e0b;">面板布局重设计：</strong><br><br>
+        <div style="background:#0a0e14; border:1px solid #1a2332; border-radius:4px; padding:8px; font-size:9px;">
+          <div style="color:#00FF9D; font-weight:600; margin-bottom:6px;">📊 RSI 指标</div>
+          <div style="color:#5a6a7e; margin-bottom:2px;">名称</div>
+          <div style="background:#080c12; border:1px solid #1a3340; border-radius:3px; padding:3px 6px; margin-bottom:6px; color:#8090a0;">RSI_1</div>
+          <div style="color:#5a6a7e; margin-bottom:2px;">周期 <span style="color:#ef4444;">*</span></div>
+          <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
+            <div style="flex:1; height:4px; background:#1a2332; border-radius:2px; position:relative;"><div style="width:28%; height:100%; background:#00FF9D; border-radius:2px;"></div></div>
+            <span style="color:#8090a0;">14</span>
+          </div>
+          <div style="color:#5a6a7e; margin-bottom:2px;">数据源</div>
+          <div style="background:#080c12; border:1px solid #1a3340; border-radius:3px; padding:3px 6px; margin-bottom:6px; color:#8090a0;">close ▾</div>
+          <div style="border-top:1px solid #1a2332; margin-top:6px; padding-top:6px;">
+            <div style="color:#3b82f6; font-size:9px;">▶ 高级选项</div>
+          </div>
+          <div style="margin-top:8px; display:flex; gap:4px;">
+            <div style="background:#ef444422; border:1px solid #ef444466; border-radius:3px; padding:3px 8px; color:#ef4444; font-size:8px;">🗑 删除</div>
+            <div style="background:#1a2332; border:1px solid #2a3a4a; border-radius:3px; padding:3px 8px; color:#8090a0; font-size:8px; margin-left:auto;">↩ 重置</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h3 style="margin-top:20px;">3. 交互系统增强</h3>
+<div class="mockup">
+  <div class="mockup-header">Clipboard · Snap · Multi-select · Search</div>
+  <div class="mockup-body" style="padding:14px;">
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:10px;">
+
+      <div style="background:#0d1520; border:1px solid #1a2332; border-radius:4px; padding:10px;">
+        <div style="color:#00FF9D; font-weight:600; margin-bottom:6px;">📋 复制粘贴 ClipboardManager</div>
+        <div style="color:#5a6a7e;">
+          ⌘C → 序列化选中节点+边到内部剪贴板（NSPasteboard）<br>
+          ⌘V → 反序列化 + 新 UUID + 偏移 (50,50) 放置<br>
+          ⌘D → duplicate（⌘C + ⌘V 一步完成）<br>
+          <strong>剪贴板数据格式：</strong>JSON（GraphSerializer 的节点子集 + 边子集，不含 viewport）
+        </div>
+      </div>
+
+      <div style="background:#0d1520; border:1px solid #1a2332; border-radius:4px; padding:10px;">
+        <div style="color:#a855f7; font-weight:600; margin-bottom:6px;">📐 对齐吸附 SnapEngine</div>
+        <div style="color:#5a6a7e;">
+          • 吸附阈值：8px<br>
+          • 吸附目标：其他节点边缘（上/下/左/右/中心）<br>
+          • 吸附时显示 SnapGuidesView（虚线辅助线）<br>
+          • 网格吸附可选（20px grid，Shift 键切换）<br>
+          • 只在拖拽结束时计算（不在 onChanged 中）
+        </div>
+      </div>
+
+      <div style="background:#0d1520; border:1px solid #1a2332; border-radius:4px; padding:10px;">
+        <div style="color:#f59e0b; font-weight:600; margin-bottom:6px;">👥 多选操作增强</div>
+        <div style="color:#5a6a7e;">
+          • 框选：SelectionRect 接入多节点选中 + 多节点拖拽<br>
+          • 多节点拖拽：所有选中节点同步移动（保持相对位置）<br>
+          • ⇧ 点击：范围选择（追加到选中集）<br>
+          • ⌘A：全选<br>
+          • GroupBox 联动：选中组内节点 → 可一起移动/删除
+        </div>
+      </div>
+
+      <div style="background:#0d1520; border:1px solid #1a2332; border-radius:4px; padding:10px;">
+        <div style="color:#3b82f6; font-weight:600; margin-bottom:6px;">🔍 画布内搜索 CanvasSearchOverlay</div>
+        <div style="color:#5a6a7e;">
+          • ⌘F 打开搜索浮层（悬浮在画布上方中央）<br>
+          • 输入关键词 → 匹配的节点高亮 + 视口动画平移至第一个结果<br>
+          • ⌘G / ⇧⌘G 跳转到下一个/上一个匹配<br>
+          • 无匹配时搜索框变红 + 微抖动
+        </div>
+      </div>
+
+    </div>
+
+    <div style="margin-top:12px; padding:10px; background:#0a0e14; border:1px solid #1a2332; border-radius:4px;">
+      <div style="color:#00FF9D; font-weight:600; font-size:10px; margin-bottom:6px;">⌨ 完整快捷键映射</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:4px; font-size:9px; color:#5a6a7e;">
+        <div><kbd style="border:1px solid #2a3a4a; border-radius:3px; padding:1px 4px; color:#8090a0;">⌘C</kbd> 复制</div>
+        <div><kbd style="border:1px solid #2a3a4a; border-radius:3px; padding:1px 4px; color:#8090a0;">⌘V</kbd> 粘贴</div>
+        <div><kbd style="border:1px solid #2a3a4a; border-radius:3px; padding:1px 4px; color:#8090a0;">⌘D</kbd> 复制节点</div>
+        <div><kbd style="border:1px solid #2a3a4a; border-radius:3px; padding:1px 4px; color:#8090a0;">⌘A</kbd> 全选</div>
+        <div><kbd style="border:1px solid #2a3a4a; border-radius:3px; padding:1px 4px; color:#8090a0;">⌘F</kbd> 搜索节点</div>
+        <div><kbd style="border:1px solid #2a3a4a; border-radius:3px; padding:1px 4px; color:#8090a0;">⌘G</kbd> 下一个匹配</div>
+        <div><kbd style="border:1px solid #2a3a4a; border-radius:3px; padding:1px 4px; color:#8090a0;">⌘Z</kbd> 撤销</div>
+        <div><kbd style="border:1px solid #2a3a4a; border-radius:3px; padding:1px 4px; color:#8090a0;">⇧⌘Z</kbd> 重做</div>
+        <div><kbd style="border:1px solid #2a3a4a; border-radius:3px; padding:1px 4px; color:#8090a0;">⌫</kbd> 删除选中</div>
+        <div><kbd style="border:1px solid #2a3a4a; border-radius:3px; padding:1px 4px; color:#8090a0;">0</kbd> 适应画布</div>
+        <div><kbd style="border:1px solid #2a3a4a; border-radius:3px; padding:1px 4px; color:#8090a0;">⌘K</kbd> 聚焦调色板搜索</div>
+        <div><kbd style="border:1px solid #2a3a4a; border-radius:3px; padding:1px 4px; color:#8090a0;">Space</kbd> 拖拽画布(临时)</div>
+        <div><kbd style="border:1px solid #2a3a4a; border-radius:3px; padding:1px 4px; color:#8090a0;">⇧</kbd> 按住切换吸附</div>
+        <div><kbd style="border:1px solid #2a3a4a; border-radius:3px; padding:1px 4px; color:#8090a0;">⌘←→↑↓</kbd> 微移选中(1px)</div>
+        <div><kbd style="border:1px solid #2a3a4a; border-radius:3px; padding:1px 4px; color:#8090a0;">⇧⌘←→↑↓</kbd> 微移选中(10px)</div>
+      </div>
+    </div>
+  </div>
+</div>

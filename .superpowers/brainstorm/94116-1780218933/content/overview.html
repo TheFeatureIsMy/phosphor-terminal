@@ -1,0 +1,103 @@
+<h2>当前画布架构 — StrategyCanvasTab</h2>
+<p class="subtitle">左侧节点面板 + 中间无限画布 + 右侧配置面板（三栏布局）</p>
+
+<div class="mockup">
+  <div class="mockup-header">当前画布布局（三栏式）</div>
+  <div class="mockup-body">
+    <div style="display:flex; gap:0; min-height:400px; font-size:11px;">
+      <!-- Left: Node Palette -->
+      <div style="width:200px; background:#0a0e14; border:1px solid #1a2332; border-radius:4px 0 0 4px; padding:10px;">
+        <div style="color:#00FF9D; font-weight:600; margin-bottom:8px;">📦 节点面板</div>
+        <div style="color:#5a6a7e; margin-bottom:4px;">🔍 搜索...</div>
+        <div style="color:#3a4a5e; font-size:10px;">▼ 数据源 (25)</div>
+        <div style="color:#3a4a5e; font-size:10px;">▶ 信号处理 (22)</div>
+        <div style="color:#3a4a5e; font-size:10px;">▶ 决策 (13)</div>
+        <div style="color:#3a4a5e; font-size:10px;">▶ AI (13)</div>
+        <div style="color:#3a4a5e; font-size:10px;">▶ 输出 (5)</div>
+        <div style="margin-top:16px; padding:6px; background:#0d1520; border-radius:3px; border-left:2px solid #00FF9D;">
+          <div style="color:#8090a0; font-size:10px;">76 个节点类型</div>
+          <div style="color:#4a5a6e; font-size:9px;">DisclosureGroup 折叠</div>
+          <div style="color:#4a5a6e; font-size:9px;">无收藏/最近使用</div>
+        </div>
+      </div>
+      <!-- Center: Canvas -->
+      <div style="flex:1; background:#080c12; position:relative; border-top:1px solid #1a2332; border-bottom:1px solid #1a2332;">
+        <div style="position:absolute; top:8px; left:8px; color:#5a6a7e; font-size:10px;">⚙ 画布 (无限平移+缩放)</div>
+        <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);">
+          <div style="background:#0d1520; border:1px solid #1a3340; border-radius:6px; padding:14px 24px;">
+            <div style="color:#00FF9D; font-size:11px; margin-bottom:4px;">📊 RSI 指标</div>
+            <div style="color:#5a6a7e; font-size:9px;">period: 14</div>
+            <div style="display:flex; gap:4px; margin-top:6px;">
+              <div style="width:6px;height:6px;border-radius:50%;background:#a855f7;"></div>
+              <div style="width:6px;height:6px;border-radius:50%;background:#00FF9D; margin-left:auto;"></div>
+            </div>
+          </div>
+        </div>
+        <!-- MiniMap -->
+        <div style="position:absolute; bottom:8px; right:8px; width:120px; height:80px; background:#0a0e14; border:1px solid #1a3340; border-radius:3px; opacity:0.6;">
+          <div style="color:#3a4a5e; font-size:8px; text-align:center; padding-top:32px;">小地图</div>
+        </div>
+        <!-- Zoom indicator -->
+        <div style="position:absolute; bottom:8px; left:8px; color:#3a4a5e; font-size:9px;">100%</div>
+      </div>
+      <!-- Right: Config Panel -->
+      <div style="width:240px; background:#0a0e14; border:1px solid #1a2332; border-radius:0 4px 4px 0; padding:10px;">
+        <div style="color:#00FF9D; font-weight:600; margin-bottom:8px;">⚙ 配置面板</div>
+        <div style="color:#8090a0; font-size:10px; margin-bottom:4px;">名称</div>
+        <div style="background:#080c12; border:1px solid #1a2332; border-radius:2px; padding:4px; margin-bottom:8px; color:#5a6a7e; font-size:9px;">节点名称</div>
+        <div style="color:#8090a0; font-size:10px; margin-bottom:4px;">参数</div>
+        <div style="color:#5a6a7e; font-size:9px; margin-bottom:2px;">period: [====] 14</div>
+        <div style="color:#5a6a7e; font-size:9px; margin-bottom:2px;">source: [dropdown ▾]</div>
+        <div style="margin-top:16px; padding:6px; border-top:1px solid #1a2332;">
+          <div style="color:#4a5a6e; font-size:9px;">⚠ 高级选项 (折叠)</div>
+          <div style="color:#4a5a6e; font-size:9px;">⚠ filePicker 桩代码</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h3 style="margin-top:28px;">10 个关键问题区域</h3>
+
+<div class="section" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+  <div style="background:#0d1520; border-left:2px solid #ef4444; border-radius:4px; padding:10px;">
+    <div style="color:#ef4444; font-weight:600; font-size:12px;">🔴 性能</div>
+    <div style="color:#8090a0; font-size:11px;">无虚拟化/视口裁剪，大量节点全量渲染</div>
+  </div>
+  <div style="background:#0d1520; border-left:2px solid #ef4444; border-radius:4px; padding:10px;">
+    <div style="color:#ef4444; font-weight:600; font-size:12px;">🔴 连线精度</div>
+    <div style="color:#8090a0; font-size:11px;">只连节点中心，不精确到端口位置</div>
+  </div>
+  <div style="background:#0d1520; border-left:2px solid #f59e0b; border-radius:4px; padding:10px;">
+    <div style="color:#f59e0b; font-weight:600; font-size:12px;">🟡 撤销/重做</div>
+    <div style="color:#8090a0; font-size:11px;">拖拽时每次微移都记录，应合并为单次操作</div>
+  </div>
+  <div style="background:#0d1520; border-left:2px solid #f59e0b; border-radius:4px; padding:10px;">
+    <div style="color:#f59e0b; font-weight:600; font-size:12px;">🟡 错误处理</div>
+    <div style="color:#8090a0; font-size:11px;">自动保存静默失败，无用户提示</div>
+  </div>
+  <div style="background:#0d1520; border-left:2px solid #f59e0b; border-radius:4px; padding:10px;">
+    <div style="color:#f59e0b; font-weight:600; font-size:12px;">🟡 操作效率</div>
+    <div style="color:#8090a0; font-size:11px;">无复制粘贴/对齐吸附/画布内搜索/快捷键</div>
+  </div>
+  <div style="background:#0d1520; border-left:2px solid #f59e0b; border-radius:4px; padding:10px;">
+    <div style="color:#f59e0b; font-weight:600; font-size:12px;">🟡 调色板体验</div>
+    <div style="color:#8090a0; font-size:11px;">76 节点纯折叠列表，无收藏/最近/拖出添加</div>
+  </div>
+  <div style="background:#0d1520; border-left:2px solid #3b82f6; border-radius:4px; padding:10px;">
+    <div style="color:#3b82f6; font-weight:600; font-size:12px;">🔵 代码生成</div>
+    <div style="color:#8090a0; font-size:11px;">仅 15 种指标，其余输出 TODO 注释</div>
+  </div>
+  <div style="background:#0d1520; border-left:2px solid #3b82f6; border-radius:4px; padding:10px;">
+    <div style="color:#3b82f6; font-weight:600; font-size:12px;">🔵 连线验证</div>
+    <div style="color:#8090a0; font-size:11px;">循环依赖/类型不匹配在生成代码时才报错</div>
+  </div>
+  <div style="background:#0d1520; border-left:2px solid #3b82f6; border-radius:4px; padding:10px;">
+    <div style="color:#3b82f6; font-weight:600; font-size:12px;">🔵 配置面板</div>
+    <div style="color:#8090a0; font-size:11px;">filePicker 是桩、无可视化预览、无校验</div>
+  </div>
+  <div style="background:#0d1520; border-left:2px solid #3b82f6; border-radius:4px; padding:10px;">
+    <div style="color:#3b82f6; font-weight:600; font-size:12px;">🔵 多选/成组</div>
+    <div style="color:#8090a0; font-size:11px;">框选矩形未接入多节点操作，GroupBox 未使用</div>
+  </div>
+</div>
