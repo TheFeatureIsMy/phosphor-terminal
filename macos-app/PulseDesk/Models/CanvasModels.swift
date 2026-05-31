@@ -306,17 +306,13 @@ struct ConnectionSchema {
 
 // MARK: - CanvasTemplate
 
-struct CanvasTemplate: Identifiable, @unchecked Sendable {
+struct CanvasTemplate: Identifiable {
     let id: String
     let name: String
     let description: String
     let icon: String
     let nodeCount: Int
     let graph: WorkflowGraph
-
-    /// Built-in templates for quick-start canvases.
-    /// Fleshed out in Task 10 — currently empty.
-    static let builtInTemplates: [CanvasTemplate] = []
 }
 
 // MARK: - Cached port position (for edge rendering)
@@ -332,4 +328,124 @@ enum SaveStatus {
     case saving
     case error(String)
     case dirty
+}
+
+// MARK: - Built-in templates
+
+@MainActor
+extension CanvasTemplate {
+    static let builtInTemplates: [CanvasTemplate] = [maCrossTemplate, aiSignalTemplate, gridTemplate]
+
+    static let maCrossTemplate: CanvasTemplate = {
+        let klineId = UUID()
+        let fastMAId = UUID()
+        let slowMAId = UUID()
+        let entryId = UUID()
+
+        return CanvasTemplate(
+            id: "ma_cross",
+            name: "均线交叉",
+            description: "经典双均线交叉策略，金叉买入死叉卖出",
+            icon: "chart.line.flattrend.xyaxis",
+            nodeCount: 4,
+            graph: WorkflowGraph(
+                nodes: [
+                    CanvasNode(id: klineId, nodeType: "data.kline", position: CGPoint(x: 0, y: 80),
+                               size: CGSize(width: 200, height: 100),
+                               config: ["symbol": AnyCodable("BTC/USDT"), "timeframe": AnyCodable("1h")]),
+                    CanvasNode(id: fastMAId, nodeType: "indicator.ma", position: CGPoint(x: 260, y: 20),
+                               size: CGSize(width: 200, height: 100),
+                               config: ["period": AnyCodable(5), "type": AnyCodable("EMA")]),
+                    CanvasNode(id: slowMAId, nodeType: "indicator.ma", position: CGPoint(x: 260, y: 140),
+                               size: CGSize(width: 200, height: 100),
+                               config: ["period": AnyCodable(20), "type": AnyCodable("EMA")]),
+                    CanvasNode(id: entryId, nodeType: "strategy.entry", position: CGPoint(x: 520, y: 80),
+                               size: CGSize(width: 200, height: 100),
+                               config: ["entryConditions": AnyCodable("ma_fast > ma_slow"), "positionSize": AnyCodable(1000)]),
+                ],
+                edges: [
+                    CanvasEdge(sourceNodeId: klineId, sourcePortKey: "kline", targetNodeId: fastMAId, targetPortKey: "kline"),
+                    CanvasEdge(sourceNodeId: klineId, sourcePortKey: "kline", targetNodeId: slowMAId, targetPortKey: "kline"),
+                    CanvasEdge(sourceNodeId: fastMAId, sourcePortKey: "maValue", targetNodeId: entryId, targetPortKey: "signal"),
+                ]
+            )
+        )
+    }()
+
+    static let aiSignalTemplate: CanvasTemplate = {
+        let klineId = UUID()
+        let rsiId = UUID()
+        let macdId = UUID()
+        let llmId = UUID()
+        let scoringId = UUID()
+        let entryId = UUID()
+
+        return CanvasTemplate(
+            id: "ai_signal",
+            name: "AI 信号策略",
+            description: "利用AI情绪分析和LLM推理辅助交易决策",
+            icon: "brain.head.profile",
+            nodeCount: 6,
+            graph: WorkflowGraph(
+                nodes: [
+                    CanvasNode(id: klineId, nodeType: "data.kline", position: CGPoint(x: 0, y: 120),
+                               size: CGSize(width: 200, height: 100),
+                               config: ["symbol": AnyCodable("BTC/USDT"), "timeframe": AnyCodable("4h")]),
+                    CanvasNode(id: rsiId, nodeType: "indicator.rsi", position: CGPoint(x: 260, y: 20),
+                               size: CGSize(width: 200, height: 100),
+                               config: ["period": AnyCodable(14)]),
+                    CanvasNode(id: macdId, nodeType: "indicator.macd", position: CGPoint(x: 260, y: 140),
+                               size: CGSize(width: 200, height: 120),
+                               config: ["fast": AnyCodable(12), "slow": AnyCodable(26), "signal": AnyCodable(9)]),
+                    CanvasNode(id: llmId, nodeType: "ai.llm", position: CGPoint(x: 260, y: 260),
+                               size: CGSize(width: 200, height: 100),
+                               config: ["model": AnyCodable("Claude"), "temperature": AnyCodable(0.3)]),
+                    CanvasNode(id: scoringId, nodeType: "ai.scoring", position: CGPoint(x: 520, y: 80),
+                               size: CGSize(width: 200, height: 100)),
+                    CanvasNode(id: entryId, nodeType: "strategy.entry", position: CGPoint(x: 780, y: 120),
+                               size: CGSize(width: 200, height: 100),
+                               config: ["entryConditions": AnyCodable("score > 0.7"), "positionSize": AnyCodable(500)]),
+                ],
+                edges: [
+                    CanvasEdge(sourceNodeId: klineId, sourcePortKey: "kline", targetNodeId: rsiId, targetPortKey: "kline"),
+                    CanvasEdge(sourceNodeId: klineId, sourcePortKey: "kline", targetNodeId: macdId, targetPortKey: "kline"),
+                    CanvasEdge(sourceNodeId: rsiId, sourcePortKey: "rsiValue", targetNodeId: scoringId, targetPortKey: "signal"),
+                    CanvasEdge(sourceNodeId: macdId, sourcePortKey: "macd", targetNodeId: scoringId, targetPortKey: "signal"),
+                    CanvasEdge(sourceNodeId: llmId, sourcePortKey: "analysis", targetNodeId: scoringId, targetPortKey: "signal"),
+                    CanvasEdge(sourceNodeId: scoringId, sourcePortKey: "score", targetNodeId: entryId, targetPortKey: "signal"),
+                ]
+            )
+        )
+    }()
+
+    static let gridTemplate: CanvasTemplate = {
+        let klineId = UUID()
+        let bollingerId = UUID()
+        let entryId = UUID()
+
+        return CanvasTemplate(
+            id: "grid",
+            name: "网格交易",
+            description: "震荡市布林带网格交易策略",
+            icon: "tablecells",
+            nodeCount: 3,
+            graph: WorkflowGraph(
+                nodes: [
+                    CanvasNode(id: klineId, nodeType: "data.kline", position: CGPoint(x: 0, y: 50),
+                               size: CGSize(width: 200, height: 100),
+                               config: ["symbol": AnyCodable("ETH/USDT"), "timeframe": AnyCodable("15m")]),
+                    CanvasNode(id: bollingerId, nodeType: "indicator.bollinger", position: CGPoint(x: 260, y: 60),
+                               size: CGSize(width: 200, height: 120),
+                               config: ["period": AnyCodable(20), "stdDev": AnyCodable(2.0)]),
+                    CanvasNode(id: entryId, nodeType: "strategy.entry", position: CGPoint(x: 520, y: 50),
+                               size: CGSize(width: 200, height: 100),
+                               config: ["entryConditions": AnyCodable("price < lower"), "positionSize": AnyCodable(200)]),
+                ],
+                edges: [
+                    CanvasEdge(sourceNodeId: klineId, sourcePortKey: "kline", targetNodeId: bollingerId, targetPortKey: "kline"),
+                    CanvasEdge(sourceNodeId: bollingerId, sourcePortKey: "lower", targetNodeId: entryId, targetPortKey: "signal"),
+                ]
+            )
+        )
+    }()
 }
