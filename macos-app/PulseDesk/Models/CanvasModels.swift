@@ -262,3 +262,18 @@ struct NodeDefinition: Identifiable, @unchecked Sendable {
         self.widgetDefinitions = widgetDefinitions
     }
 }
+
+// MARK: - Cached port position (for edge rendering)
+struct CachedPortPosition {
+    let nodeId: UUID
+    let portName: String
+    let worldPosition: CGPoint
+}
+
+// MARK: - Save status for auto-save feedback
+enum SaveStatus {
+    case saved
+    case saving
+    case error(String)
+    case dirty
+}
