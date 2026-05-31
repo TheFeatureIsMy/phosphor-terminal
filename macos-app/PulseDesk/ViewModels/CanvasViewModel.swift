@@ -51,6 +51,7 @@ final class CanvasViewModel {
     private var strategyId: Int?
     private var saveTask: Task<Void, Never>?
     private var graphSerializer = GraphSerializer()
+    private let clipboard = ClipboardManager()
 
     // MARK: - Computed
 
@@ -249,6 +250,27 @@ final class CanvasViewModel {
             x: -minX * viewport.scale + 50,
             y: -minY * viewport.scale + 50
         )
+    }
+
+    // MARK: - Clipboard (copy / paste / duplicate)
+
+    func copySelected() {
+        let selNodes = graph.nodes.filter { selectedNodeIds.contains($0.id) }
+        guard !selNodes.isEmpty else { return }
+        clipboard.copy(nodes: selNodes, edges: graph.edges, from: graph)
+    }
+
+    func paste() {
+        guard let (newNodes, newEdges) = clipboard.paste() else { return }
+        for node in newNodes { graph.nodes.append(node); record(.addNode(node)) }
+        for edge in newEdges { graph.edges.append(edge); record(.addEdge(edge)) }
+        selectedNodeIds = Set(newNodes.map(\.id))
+        scheduleSave()
+    }
+
+    func duplicateSelected() {
+        copySelected()
+        paste()
     }
 
     // MARK: - Drag handling
