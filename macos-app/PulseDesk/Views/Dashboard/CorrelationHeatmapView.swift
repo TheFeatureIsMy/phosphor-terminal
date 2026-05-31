@@ -12,52 +12,73 @@ struct CorrelationHeatmapView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-            Text("资产相关性")
-                .font(PulseFonts.bodyMedium)
-                .foregroundStyle(colors.textPrimary)
+        GlassCard {
+            VStack(alignment: .leading, spacing: PulseSpacing.sm) {
+                Text("资产相关性")
+                    .font(PulseFonts.bodyMedium)
+                    .foregroundStyle(colors.textPrimary)
 
-            if snapshots.isEmpty {
-                Text("暂无相关性数据")
-                    .font(PulseFonts.caption)
-                    .foregroundStyle(colors.textMuted)
-                    .frame(maxWidth: .infinity, minHeight: 120)
-            } else {
-                let syms = symbols
-                Grid(alignment: .center, horizontalSpacing: 2, verticalSpacing: 2) {
-                    GridRow {
-                        Color.clear.frame(width: 40, height: 20)
-                        ForEach(syms, id: \.self) { sym in
-                            Text(sym.prefix(4))
-                                .font(PulseFonts.micro)
-                                .foregroundStyle(colors.textMuted)
-                        }
-                    }
-                    ForEach(syms, id: \.self) { rowSym in
+                if snapshots.isEmpty {
+                    Text("暂无相关性数据")
+                        .font(PulseFonts.caption)
+                        .foregroundStyle(colors.textMuted)
+                        .frame(maxWidth: .infinity, minHeight: 120)
+                } else {
+                    let syms = symbols
+                    Grid(alignment: .center, horizontalSpacing: 2, verticalSpacing: 2) {
                         GridRow {
-                            Text(rowSym.prefix(4))
-                                .font(PulseFonts.micro)
-                                .foregroundStyle(colors.textMuted)
-                                .frame(width: 40, alignment: .trailing)
-                            ForEach(syms, id: \.self) { colSym in
-                                let val = correlationValue(symA: rowSym, symB: colSym)
-                                RoundedRectangle(cornerRadius: 2)
-                                    .fill(colorForCorrelation(val))
-                                    .frame(height: 28)
-                                    .overlay(
-                                        Text(String(format: "%.1f", val))
+                            Color.clear.frame(width: 40, height: 20)
+                            ForEach(syms, id: \.self) { sym in
+                                Text(sym.prefix(4))
+                                    .font(PulseFonts.micro)
+                                    .foregroundStyle(colors.textMuted)
+                            }
+                        }
+                        ForEach(syms, id: \.self) { rowSym in
+                            GridRow {
+                                Text(rowSym.prefix(4))
+                                    .font(PulseFonts.micro)
+                                    .foregroundStyle(colors.textMuted)
+                                    .frame(width: 40, alignment: .trailing)
+                                ForEach(syms, id: \.self) { colSym in
+                                    if rowSym == colSym {
+                                        // Self-correlation diagonal
+                                        Text("1")
                                             .font(PulseFonts.micro)
-                                            .foregroundStyle(.white.opacity(0.8))
-                                    )
+                                            .foregroundStyle(colors.textMuted)
+                                            .frame(minWidth: 44, minHeight: 28)
+                                    } else {
+                                        let val = correlationValue(symA: rowSym, symB: colSym)
+                                        RoundedRectangle(cornerRadius: 2)
+                                            .fill(colorForCorrelation(val))
+                                            .frame(minWidth: 44, minHeight: 28)
+                                            .overlay(
+                                                Text(String(format: "%.1f", val))
+                                                    .font(PulseFonts.micro)
+                                                    .foregroundStyle(.white.opacity(0.8))
+                                            )
+                                    }
+                                }
                             }
                         }
                     }
+
+                    // 颜色图例
+                    HStack(spacing: PulseSpacing.xs) {
+                        Text("-1.0").font(PulseFonts.micro).foregroundStyle(colors.textMuted)
+                        LinearGradient(
+                            colors: [PulseColors.danger, colors.surface, colors.profit],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                        .frame(width: 120, height: 8)
+                        .clipShape(RoundedRectangle(cornerRadius: 2))
+                        Text("+1.0").font(PulseFonts.micro).foregroundStyle(colors.textMuted)
+                    }
+                    .padding(.top, PulseSpacing.xs)
                 }
             }
         }
-        .padding(PulseSpacing.md)
-        .background(colors.cardBackground)
-        .cornerRadius(PulseRadii.card)
     }
 
     private func correlationValue(symA: String, symB: String) -> Double {

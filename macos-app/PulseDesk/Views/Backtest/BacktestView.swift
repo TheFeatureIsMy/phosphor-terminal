@@ -43,7 +43,7 @@ struct BacktestView: View {
                             .font(PulseFonts.bodyMedium)
                             .foregroundStyle(colors.textPrimary)
 
-                        ForEach(viewModel.history) { backtest in
+                        ForEach(Array(viewModel.history.enumerated()), id: \.element.id) { index, backtest in
                             HStack {
                                 Text("策略 #\(backtest.strategyId)")
                                     .font(PulseFonts.caption)
@@ -57,6 +57,7 @@ struct BacktestView: View {
                             .padding(PulseSpacing.sm)
                             .background(colors.cardBackground)
                             .cornerRadius(PulseRadii.sm)
+                            .staggeredAppearance(index: index)
                         }
                     }
                     .cardStyle()
@@ -68,7 +69,7 @@ struct BacktestView: View {
                         title: "配置并运行回测",
                         description: "选择策略和参数，点击运行按钮开始回测"
                     )
-                    .frame(height: 300)
+                    .frame(minHeight: 200)
                 }
             }
             .padding(PulseSpacing.lg)
