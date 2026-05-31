@@ -57,7 +57,14 @@ struct StrategyCanvasTab: View {
                         ForEach(visible) { node in
                             NodeDragWrapper(viewModel: viewModel, node: node,
                                 onWireStart: { nid, port in startWire(nid, port) },
-                                onWireEnd: { tid, port in endWire(tid, port) }
+                                onWireEnd: { tid, port in endWire(tid, port) },
+                                onWireComplete: { pos, srcType in
+                                    if let t = nearestPort(to: pos, sourceType: srcType) {
+                                        endWire(t.nid, t.port)
+                                    } else {
+                                        viewModel.endWireDrag()
+                                    }
+                                }
                             )
                         }
                     }
@@ -107,6 +114,7 @@ struct StrategyCanvasTab: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .clipped()
             .background(colors.background)
             .gesture(zoomGesture)
             .simultaneousGesture(panGesture)
@@ -264,9 +272,15 @@ struct StrategyCanvasTab: View {
     // MARK: - Actions
     private func addNode(_ def: NodeDefinition) {
         let cx = (-viewModel.viewport.offset.x + 300) / viewModel.viewport.scale
-        let cy = (-viewModel.viewport.offset.y + 250) / viewModel.viewport.scale
+        let cy = (-viewModel.viewport.offset.y + 150) / viewModel.viewport.scale
+        // Cascade new nodes downward to avoid stacking
+        let count = viewModel.graph.nodes.count
+        let col = CGFloat(count % 3)
+        let row = CGFloat(count / 3)
+        let x = cx + col * 230
+        let y = cy + row * 150
         viewModel.addNode(CanvasNode(nodeType: def.type,
-            position: CGPoint(x: cx + CGFloat.random(in: -30...30), y: cy + CGFloat.random(in: -30...30)),
+            position: CGPoint(x: x, y: y),
             size: CGSize(width: 200, height: 120)))
     }
 
@@ -451,6 +465,7 @@ private struct NodeDragWrapper: View {
     let node: CanvasNode
     var onWireStart: (UUID, String) -> Void
     var onWireEnd: (UUID, String) -> Void
+    var onWireComplete: ((CGPoint, PortDataType?) -> Void)?
 
     @State private var dragOffset: CGSize = .zero
     @State private var isDragging = false
@@ -469,6 +484,28 @@ private struct NodeDragWrapper: View {
             onNodeDragEnd: nil,
             onOutputPortTap: { nid, port in onWireStart(nid, port) },
             onInputPortTap: { tid, port in onWireEnd(tid, port) },
+            onOutputPortDrag: { translation in
+                guard let def = NodeRegistry.definition(for: node.nodeType),
+                      let src = viewModel.wireDragSource else { return }
+                let pi = def.outputPorts.firstIndex(where: { $0.name == src.port }) ?? 0
+                let py = node.position.y + 30 + CGFloat(def.inputPorts.count) * 18 + 12 + CGFloat(pi) * 18 + 9
+                viewModel.updateWireDrag(to: CGPoint(
+                    x: node.position.x + node.size.width + translation.width,
+                    y: py + translation.height
+                ))
+            },
+            onOutputPortDragEnd: { translation in
+                guard let def = NodeRegistry.definition(for: node.nodeType),
+                      let src = viewModel.wireDragSource else { return }
+                let pi = def.outputPorts.firstIndex(where: { $0.name == src.port }) ?? 0
+                let py = node.position.y + 30 + CGFloat(def.inputPorts.count) * 18 + 12 + CGFloat(pi) * 18 + 9
+                let worldPos = CGPoint(
+                    x: node.position.x + node.size.width + translation.width,
+                    y: py + translation.height
+                )
+                let srcType = def.outputPorts.first(where: { $0.name == src.port })?.dataType
+                onWireComplete?(worldPos, srcType)
+            },
             viewportScale: viewModel.viewport.scale,
             viewportOffset: viewModel.viewport.offset,
             onCollapseToggle: {
@@ -484,19 +521,18 @@ private struct NodeDragWrapper: View {
         .shadow(color: (isDragging || selected) ? PulseColors.accent.opacity(0.3) : .black.opacity(0.15),
                 radius: isDragging ? 16 : 4, y: isDragging ? 4 : 2)
         .gesture(
-            DragGesture(minimumDistance: 3)
+            DragGesture(minimumDistance: 2)
                 .onChanged { v in
                     if !isDragging {
                         isDragging = true
                         viewModel.selectNode(id: node.id)
+                        viewModel.startDrag(nodeId: node.id, at: node.position)
                     }
-                    // Only track visual offset locally — NO model update during drag
                     dragOffset = v.translation
                 }
                 .onEnded { v in
                     isDragging = false
                     dragOffset = .zero
-                    // Commit final position to model once with snap
                     let s = viewModel.viewport.scale
                     let rawX = node.position.x + v.translation.width / s
                     let rawY = node.position.y + v.translation.height / s
@@ -509,7 +545,6 @@ private struct NodeDragWrapper: View {
                         excludeId: node.id,
                         useGrid: useGrid
                     )
-                    viewModel.startDrag(nodeId: node.id, at: node.position)
                     viewModel.updateDrag(to: result.snappedPosition)
                     viewModel.endDrag()
                     viewModel.activeSnapGuides = result.guides

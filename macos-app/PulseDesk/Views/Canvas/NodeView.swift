@@ -19,6 +19,10 @@ struct NodeView: View {
     var onOutputPortTap: ((UUID, String) -> Void)?
     /// Called when tapping an input port to complete a wire drag
     var onInputPortTap: ((UUID, String) -> Void)?
+    /// Called during output port drag — passes translation from drag start (node-local points)
+    var onOutputPortDrag: ((CGSize) -> Void)?
+    /// Called when output port drag ends — passes final translation
+    var onOutputPortDragEnd: ((CGSize) -> Void)?
     /// Viewport scale for coordinate conversion
     var viewportScale: CGFloat = 1.0
     /// Viewport offset for coordinate conversion
@@ -221,15 +225,17 @@ struct NodeView: View {
 
     /// Drag gesture on an output port circle to start/preview a wire connection
     private func outputPortDragGesture(nodeId: UUID, portName: String) -> some Gesture {
-        DragGesture(minimumDistance: 3)
+        DragGesture(minimumDistance: 0)
             .onChanged { value in
                 if !hasStartedWireDrag {
                     hasStartedWireDrag = true
                     onOutputPortTap?(nodeId, portName)
                 }
+                onOutputPortDrag?(value.translation)
             }
-            .onEnded { _ in
+            .onEnded { value in
                 hasStartedWireDrag = false
+                onOutputPortDragEnd?(value.translation)
             }
     }
 }

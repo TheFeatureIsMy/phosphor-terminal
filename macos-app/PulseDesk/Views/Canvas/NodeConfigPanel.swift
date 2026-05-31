@@ -65,9 +65,9 @@ struct NodeConfigPanel: View {
         .onChange(of: node.id) { _, _ in reloadNodeData() }
         .onChange(of: nameText) { _, new in onConfigChange?("name", AnyCodable(new)) }
         .onChange(of: notesText) { _, new in onConfigChange?("notes", AnyCodable(new)) }
-        .background(colors.surfaceElevated)
-        .overlay(Rectangle().fill(PulseGlass.surfaceTint(colors)).allowsHitTesting(false))
+        .background(colors.background)
         .overlay(Rectangle().frame(width: 1).foregroundStyle(colors.border), alignment: .leading)
+        .shadow(color: .black.opacity(0.4), radius: 8, x: -2)
         .fileImporter(isPresented: $showFilePicker, allowedContentTypes: [.json, .commaSeparatedText, UTType(filenameExtension: "py") ?? .data]) { result in
             if case .success(let url) = result {
                 onConfigChange?("filePath", AnyCodable(url.path))
