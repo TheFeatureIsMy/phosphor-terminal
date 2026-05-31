@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>策略创建 v2 — ProofAlpha</title>
+<style>
+  :root {
+    --bg-deep: #060a10;
+    --bg-base: #0a1018;
+    --bg-surface: #0d1520;
+    --bg-elevated: #111a28;
+    --border: #1a2a3a;
+    --accent: #00FF9D;
+    --purple: #a855f7;
+    --amber: #f59e0b;
+    --cyan: #22d3ee;
+    --danger: #ef4444;
+    --text-primary: #c8d6e5;
+    --text-secondary: #7a8ea0;
+    --text-muted: #4a5a6e;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 16px;
+    --font-mono: 'SF Mono', 'JetBrains Mono', monospace;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    min-height: 100vh;
+    padding: 32px 40px;
+    background-image:
+      radial-gradient(ellipse at 15% 20%, rgba(0,255,157,0.03) 0%, transparent 50%),
+      radial-gradient(ellipse at 85% 70%, rgba(168,85,247,0.04) 0%, transparent 50%),
+      radial-gradient(ellipse at 30% 80%, rgba(0,200,255,0.02) 0%, transparent 50%);
+  }
+  .page-title {
+    font-size: 22px; font-weight: 700; color: var(--text-primary);
+    margin-bottom: 4px; letter-spacing: -0.3px;
+  }
+  .page-subtitle {
+    font-size: 12px; color: var(--text-muted); margin-bottom: 28px;
+  }
+
+  /* === Glass Card === */
+  .glass-card {
+    background: linear-gradient(135deg,
+      rgba(13,21,32,0.9) 0%, rgba(17,26,40,0.85) 50%, rgba(13,21,32,0.9) 100%);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 22px;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.02);
+    position: relative; overflow: hidden;
+  }
+  .glass-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+  }
+  .accent-border { border-color: rgba(0,255,157,0.12); box-shadow: 0 4px 24px rgba(0,0,0,0.3), 0 0 40px rgba(0,255,157,0.04), inset 0 1px 0 rgba(255,255,255,0.02); }
+  .purple-border { border-color: rgba(168,85,247,0.18); box-shadow: 0 4px 24px rgba(0,0,0,0.3), 0 0 50px rgba(168,85,247,0.06), inset 0 1px 0 rgba(255,255,255,0.02); }
+
+  .card-icon { width: 30px; height: 30px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+  .card-icon.accent { background: rgba(0,255,157,0.1); color: var(--accent); }
+  .card-icon.purple { background: rgba(168,85,247,0.1); color: var(--purple); }
+  .card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+  .card-title { font-size: 14px; font-weight: 700; letter-spacing: -0.2px; }
+  .card-title.accent { color: var(--accent); }
+  .card-title.purple { color: var(--purple); }
+
+  /* === Layout === */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 0.9fr 1.1fr;
+    gap: 20px;
+    max-width: 1150px;
+  }
+
+  /* === Form === */
+  .field-label {
+    font-size: 9px; font-weight: 700; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 5px;
+  }
+  .text-input {
+    background: rgba(8,12,18,0.8); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 8px 10px; font-size: 12px;
+    color: var(--text-primary); font-family: var(--font-mono); width: 100%;
+    outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .text-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,255,157,0.06); }
+  .form-section { margin-bottom: 16px; }
+
+  .pill-group { display: flex; gap: 5px; flex-wrap: wrap; }
+  .pill {
+    padding: 5px 13px; border-radius: 20px; font-size: 10px; font-weight: 500;
+    cursor: pointer; transition: all 0.2s; border: 1px solid transparent; user-select: none;
+  }
+  .pill.off { background: rgba(13,21,32,0.6); border-color: var(--border); color: var(--text-muted); }
+  .pill.off:hover { border-color: rgba(255,255,255,0.1); color: var(--text-secondary); }
+  .pill.on {
+    background: rgba(0,255,157,0.1); border-color: rgba(0,255,157,0.3);
+    color: var(--accent); box-shadow: 0 0 12px rgba(0,255,157,0.06);
+  }
+  .btn-create {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--accent); color: #060a10; padding: 10px 22px;
+    border-radius: var(--radius-sm); font-size: 12px; font-weight: 700;
+    border: none; cursor: pointer; transition: all 0.2s; letter-spacing: -0.2px;
+    box-shadow: 0 2px 14px rgba(0,255,157,0.2);
+  }
+  .btn-create:hover { box-shadow: 0 4px 22px rgba(0,255,157,0.35); transform: translateY(-1px); }
+
+  /* === Type Toggle === */
+  .type-toggle-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .type-card {
+    background: rgba(13,21,32,0.7);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .type-card:hover { border-color: rgba(255,255,255,0.1); }
+  .type-card.selected {
+    border-color: var(--accent);
+    background: rgba(0,255,157,0.04);
+    box-shadow: 0 0 16px rgba(0,255,157,0.06);
+  }
+  .type-card.selected::after {
+    content: '✓'; position: absolute; top: 8px; right: 10px;
+    color: var(--accent); font-size: 11px; font-weight: 700;
+  }
+  .type-icon { font-size: 18px; margin-bottom: 6px; }
+  .type-name { font-size: 11px; font-weight: 600; color: var(--text-primary); margin-bottom: 2px; }
+  .type-desc { font-size: 9px; color: var(--text-muted); line-height: 1.4; }
+  .type-color {
+    width: 4px; height: 20px; border-radius: 2px; position: absolute; left: 8px; top: 12px;
+  }
+  .type-card .type-color.cyan { background: var(--cyan); }
+  .type-card .type-color.amber { background: var(--amber); }
+  .type-card .type-color.purple-line { background: var(--purple); }
+  .type-card .type-color.accent-line { background: var(--accent); }
+
+  /* === AI Chat — Advanced === */
+  .chat-window {
+    display: flex; flex-direction: column; gap: 10px;
+    min-height: 380px; max-height: 420px;
+  }
+  .chat-messages {
+    flex: 1; display: flex; flex-direction: column; gap: 10px;
+    overflow-y: auto; padding-right: 4px;
+  }
+  .chat-msg {
+    max-width: 92%; font-size: 10.5px; line-height: 1.6;
+    padding: 10px 12px; border-radius: var(--radius-sm);
+    animation: fadeIn 0.3s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .chat-msg.ai {
+    align-self: flex-start;
+    background: rgba(168,85,247,0.05); border: 1px solid rgba(168,85,247,0.1);
+    border-radius: var(--radius-sm) var(--radius-sm) var(--radius-sm) 2px;
+    color: var(--text-secondary);
+  }
+  .chat-msg.system {
+    align-self: flex-start;
+    background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.04);
+    border-radius: var(--radius-sm);
+    color: var(--text-muted); font-size: 9px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .chat-msg.user {
+    align-self: flex-end;
+    background: rgba(0,255,157,0.04); border: 1px solid rgba(0,255,157,0.1);
+    border-radius: var(--radius-sm) var(--radius-sm) 2px var(--radius-sm);
+    color: var(--text-primary);
+  }
+  .msg-sender {
+    font-size: 8px; font-weight: 700; margin-bottom: 3px;
+    text-transform: uppercase; letter-spacing: 0.4px;
+  }
+  .msg-sender.ai { color: var(--purple); }
+  .msg-sender.system { color: var(--text-muted); }
+  .msg-sender.user { color: var(--accent); }
+
+  /* AI extracted params card */
+  .param-card {
+    background: rgba(8,12,18,0.8);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px;
+    margin-top: 6px;
+  }
+  .param-row {
+    display: flex; gap: 10px; flex-wrap: wrap;
+    font-size: 9px;
+  }
+  .param-item {
+    display: flex; align-items: center; gap: 3px;
+  }
+  .param-key { color: var(--text-muted); }
+  .param-val {
+    padding: 1px 7px; border-radius: 8px; font-weight: 600;
+  }
+  .param-val.green { background: rgba(0,255,157,0.1); color: var(--accent); }
+  .param-val.purple { background: rgba(168,85,247,0.1); color: var(--purple); }
+  .param-val.amber { background: rgba(245,158,11,0.1); color: var(--amber); }
+
+  /* Generated canvas preview inside chat */
+  .canvas-mini {
+    background: rgba(8,12,18,0.9);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    margin-top: 6px;
+    display: flex; gap: 10px; align-items: center;
+    font-size: 9px;
+  }
+  .canvas-mini-node {
+    width: 46px; height: 28px;
+    background: rgba(13,21,32,0.9);
+    border: 1px solid var(--border);
+    border-radius: 3px; font-size: 7px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-muted);
+  }
+  .canvas-mini-node.data { border-color: rgba(34,211,238,0.3); color: var(--cyan); }
+  .canvas-mini-node.signal { border-color: rgba(168,85,247,0.3); color: var(--purple); }
+  .canvas-mini-node.decision { border-color: rgba(245,158,11,0.3); color: var(--amber); }
+  .canvas-mini-node.output { border-color: rgba(0,255,157,0.3); color: var(--accent); }
+  .canvas-mini-arrow { color: var(--text-muted); font-size: 7px; }
+
+  .chat-actions {
+    display: flex; gap: 6px; margin-top: 6px;
+  }
+  .chat-action-btn {
+    font-size: 9px; padding: 4px 12px; border-radius: 14px;
+    border: 1px solid var(--border); background: rgba(13,21,32,0.6);
+    color: var(--text-secondary); cursor: pointer; transition: all 0.2s;
+  }
+  .chat-action-btn:hover { border-color: rgba(255,255,255,0.15); color: var(--text-primary); }
+  .chat-action-btn.primary {
+    background: rgba(0,255,157,0.1); border-color: rgba(0,255,157,0.2); color: var(--accent);
+  }
+
+  .chat-input-row {
+    display: flex; gap: 8px; margin-top: auto;
+  }
+  .chat-input {
+    flex: 1;
+    background: rgba(8,12,18,0.9); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 9px 12px; font-size: 11px;
+    color: var(--text-primary); font-family: var(--font-mono); outline: none;
+    transition: border-color 0.2s;
+  }
+  .chat-input:focus { border-color: var(--purple); box-shadow: 0 0 0 3px rgba(168,85,247,0.05); }
+  .chat-input::placeholder { color: var(--text-muted); }
+  .btn-send {
+    background: var(--purple); color: #fff; border: none;
+    padding: 9px 18px; border-radius: var(--radius-sm); font-size: 11px;
+    font-weight: 600; cursor: pointer; transition: all 0.2s;
+    box-shadow: 0 2px 12px rgba(168,85,247,0.2);
+  }
+  .btn-send:hover { box-shadow: 0 4px 18px rgba(168,85,247,0.35); }
+
+  /* Thinking indicator */
+  .thinking {
+    display: flex; gap: 4px; padding: 6px 0;
+  }
+  .thinking-dot {
+    width: 5px; height: 5px; border-radius: 50%; background: var(--purple);
+    animation: think 1.2s infinite;
+  }
+  .thinking-dot:nth-child(2) { animation-delay: 0.2s; }
+  .thinking-dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes think {
+    0%, 60%, 100% { opacity: 0.2; transform: scale(0.8); }
+    30% { opacity: 1; transform: scale(1.2); }
+  }
+</style>
+</head>
+<body>
+
+<div class="page-title">新建策略</div>
+<div class="page-subtitle">快速创建或 AI 对话生成 · 创建后自动进入画布</div>
+
+<div class="main-grid">
+
+  <!-- === LEFT: Quick Create === -->
+  <div class="glass-card accent-border">
+    <div class="card-header">
+      <div class="card-icon accent">⚡</div>
+      <div class="card-title accent">快速创建</div>
+    </div>
+
+    <div class="form-section">
+      <div class="field-label">策略名称</div>
+      <input class="text-input" placeholder="输入策略名称..." value="BTC 趋势跟踪 v1">
+    </div>
+
+    <!-- Type Toggle -->
+    <div class="form-section">
+      <div class="field-label">策略类型</div>
+      <div class="type-toggle-group">
+        <div class="type-card selected" style="padding-left:18px;">
+          <div class="type-color cyan"></div>
+          <div class="type-icon">📊</div>
+          <div class="type-name">均线交叉</div>
+          <div class="type-desc">金叉/死叉信号，EMA/MA 趋势跟踪</div>
+        </div>
+        <div class="type-card" style="padding-left:18px;">
+          <div class="type-color amber"></div>
+          <div class="type-icon">📈</div>
+          <div class="type-name">突破策略</div>
+          <div class="type-desc">价格突破阻力/支撑位入场</div>
+        </div>
+        <div class="type-card" style="padding-left:18px;">
+          <div class="type-color purple-line"></div>
+          <div class="type-icon">🔲</div>
+          <div class="type-name">网格交易</div>
+          <div class="type-desc">区间震荡网格买卖</div>
+        </div>
+        <div class="type-card" style="padding-left:18px;">
+          <div class="type-color accent-line"></div>
+          <div class="type-icon">🔄</div>
+          <div class="type-name">均值回归</div>
+          <div class="type-desc">价格偏离均值后回归入场</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex; gap:16px;" class="form-section">
+      <div style="flex:1;">
+        <div class="field-label">交易市场</div>
+        <div class="pill-group">
+          <span class="pill on">加密</span>
+          <span class="pill off">美股</span>
+          <span class="pill off">A股</span>
+        </div>
+      </div>
+      <div style="flex:1;">
+        <div class="field-label">交易所</div>
+        <div class="pill-group">
+          <span class="pill on">Binance</span>
+          <span class="pill off">OKX</span>
+          <span class="pill off">Bybit</span>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn-create">创建并打开画布 →</button>
+  </div>
+
+  <!-- === RIGHT: AI Chat === -->
+  <div class="glass-card purple-border">
+    <div class="card-header">
+      <div class="card-icon purple">🤖</div>
+      <div class="card-title purple">AI 对话生成</div>
+    </div>
+
+    <div class="chat-window">
+      <div class="chat-messages">
+        <!-- AI greeting -->
+        <div class="chat-msg ai">
+          <div class="msg-sender ai">AI 策略助手</div>
+          你好！我是策略构建助手。用自然语言告诉我你想做什么样的交易策略，我会：<br>
+          <span style="color:var(--text-muted);">• 自动选择节点并连线</span><br>
+          <span style="color:var(--text-muted);">• 根据描述配置参数</span><br>
+          <span style="color:var(--text-muted);">• 生成可编辑的画布图</span><br><br>
+          试试描述你的交易想法 👇
+        </div>
+
+        <!-- User message -->
+        <div class="chat-msg user">
+          <div class="msg-sender user">你</div>
+          做一个 BTC 趋势跟踪策略，用 EMA12 和 EMA26 交叉生成买卖信号，RSI 低于 30 时过滤掉假买入信号避免追高，在 Binance 交易所
+        </div>
+
+        <!-- System: thinking -->
+        <div class="chat-msg system">
+          <div class="msg-sender system">分析中</div>
+          <div class="thinking">
+            <div class="thinking-dot"></div>
+            <div class="thinking-dot"></div>
+            <div class="thinking-dot"></div>
+          </div>
+        </div>
+
+        <!-- AI: extracted params + generated graph -->
+        <div class="chat-msg ai">
+          <div class="msg-sender ai">AI 策略助手</div>
+          已解析你的需求，生成以下策略图：
+
+          <div class="param-card">
+            <div class="param-row">
+              <div class="param-item"><span class="param-key">类型</span><span class="param-val green">均线交叉</span></div>
+              <div class="param-item"><span class="param-key">品种</span><span class="param-val amber">BTC/USDT</span></div>
+              <div class="param-item"><span class="param-key">市场</span><span class="param-val purple">加密</span></div>
+              <div class="param-item"><span class="param-key">交易所</span><span class="param-val purple">Binance</span></div>
+            </div>
+          </div>
+
+          <div class="canvas-mini">
+            <div class="canvas-mini-node data">📡 K线</div>
+            <span class="canvas-mini-arrow">→</span>
+            <div class="canvas-mini-node signal">📊 EMA</div>
+            <span class="canvas-mini-arrow">→</span>
+            <div class="canvas-mini-node decision">∧ 交叉</div>
+            <span class="canvas-mini-arrow">→</span>
+            <div class="canvas-mini-node decision">AND</div>
+            <span class="canvas-mini-arrow">→</span>
+            <div class="canvas-mini-node output">📤 买入</div>
+          </div>
+          <div class="canvas-mini" style="margin-top:3px;">
+            <div class="canvas-mini-node data">📡 K线</div>
+            <span class="canvas-mini-arrow">→</span>
+            <div class="canvas-mini-node signal">📊 RSI</div>
+            <span class="canvas-mini-arrow">→</span>
+            <div class="canvas-mini-node decision">&gt; 阈值</div>
+          </div>
+
+          <div class="chat-actions">
+            <button class="chat-action-btn primary">✓ 打开画布编辑</button>
+            <button class="chat-action-btn">🔄 换一种方案</button>
+            <button class="chat-action-btn">💬 微调参数</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-input-row">
+        <input class="chat-input" placeholder="描述你想构建的策略...">
+        <button class="btn-send">生成 →</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

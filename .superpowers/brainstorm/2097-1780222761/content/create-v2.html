@@ -1,0 +1,122 @@
+<h2>新建策略 — 第二轮方案（跳出"表单"框架）</h2>
+<p class="subtitle">从专业量化终端视角重新思考创建流程</p>
+
+<div class="options">
+
+  <div class="option" data-choice="d" onclick="toggleSelect(this)">
+    <div class="letter">D</div>
+    <div class="content">
+      <h3>画布即创建 ⭐ 推荐</h3>
+      <p>创建策略 = 直接进入画布。没有独立的"创建表单"——画布顶部有一个可折叠的"策略配置栏"，名称/类型/市场在画布内直接编辑。创建动作退化为列表顶部一个"+ 新建策略"按钮，点击后即刻进入空白画布。</p>
+      <div style="margin-top:8px; background:#0a0e14; border:1px solid #1a2332; border-radius:6px; padding:10px; font-size:10px;">
+        <div style="color:#5a6a7e; font-size:9px; margin-bottom:6px;">策略列表 — 点击"+ 新建"</div>
+        <div style="display:flex; gap:6px; margin-bottom:8px;">
+          <div style="width:80px; height:50px; background:#0d1520; border:1px solid #1a3340; border-radius:3px;"></div>
+          <div style="width:80px; height:50px; background:#0d1520; border:1px solid #1a3340; border-radius:3px;"></div>
+          <div style="padding:6px 12px; border:1px dashed #00FF9D66; border-radius:3px; color:#00FF9D; font-size:9px; display:flex; align-items:center;">+ 新建</div>
+        </div>
+        <div style="color:#5a6a7e; font-size:9px; margin-bottom:4px;">→ 直接进入画布页</div>
+        <div style="background:#080c12; border:1px solid #1a3340; border-radius:4px; padding:8px;">
+          <div style="display:flex; align-items:center; gap:8px; padding:4px 8px; background:#0d1520; border-radius:3px; margin-bottom:6px;">
+            <div style="color:#8090a0; font-size:9px;">名称</div>
+            <div style="color:#00FF9D; font-size:10px; border-bottom:1px dashed #00FF9D44; padding:0 4px;">未命名策略</div>
+            <div style="color:#8090a0; font-size:9px;">类型</div>
+            <div style="display:flex; gap:2px;">
+              <div style="padding:1px 5px; background:#00FF9D22; color:#00FF9D; font-size:7px; border-radius:2px;">均线</div>
+              <div style="padding:1px 5px; color:#5a6a7e; font-size:7px;">突破</div>
+              <div style="padding:1px 5px; color:#5a6a7e; font-size:7px;">网格</div>
+            </div>
+            <div style="color:#8090a0; font-size:9px;">市场</div>
+            <div style="padding:1px 5px; background:#00FF9D; color:#080c12; font-size:7px; border-radius:2px;">加密</div>
+            <div style="margin-left:auto; padding:2px 8px; background:#00FF9D22; color:#00FF9D; font-size:7px; border-radius:2px;">保存</div>
+          </div>
+          <div style="text-align:center; padding:30px 0; color:#3a4a5e; font-size:9px;">画布区域 — 从调色板拖入节点开始构建</div>
+        </div>
+      </div>
+      <div class="pros-cons" style="margin-top:8px;">
+        <div class="pros"><h4>Pros</h4><ul><li>零额外步骤，创建即开始工作</li><li>策略名/类型可随时改</li><li>自动保存草稿（未命名的也保留）</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>首次用户可能困惑"该做什么"</li><li>列表可能积累大量空白草稿</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="e" onclick="toggleSelect(this)">
+    <div class="letter">E</div>
+    <div class="content">
+      <h3>模板市场</h3>
+      <p>新建策略 = 从策略模板库中选择一个起点。模板是预配置好的画布（已包含节点和连线），用户选择一个模板后直接进入画布开始定制。同时支持"空白画布"作为兜底选项。</p>
+      <div style="margin-top:8px; background:#0a0e14; border:1px solid #1a2332; border-radius:6px; padding:10px; font-size:10px;">
+        <div style="color:#5a6a7e; font-size:9px; margin-bottom:6px;">点击"新建策略" → 模板选择页</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+          <div style="background:#0d1520; border:2px solid #00FF9D; border-radius:4px; padding:8px; text-align:center;">
+            <div style="color:#00FF9D; font-size:9px; font-weight:600;">📊 均线交叉</div>
+            <div style="color:#5a6a7e; font-size:7px;">RSI + MACD + 交叉决策</div>
+            <div style="color:#3a4a5e; font-size:7px;">12 节点 · 加密/Binance</div>
+          </div>
+          <div style="background:#0d1520; border:1px solid #1a3340; border-radius:4px; padding:8px; text-align:center;">
+            <div style="color:#8090a0; font-size:9px;">📈 突破策略</div>
+            <div style="color:#5a6a7e; font-size:7px;">布林带 + 突破检测 + 止损</div>
+            <div style="color:#3a4a5e; font-size:7px;">8 节点 · 加密/Binance</div>
+          </div>
+          <div style="background:#0d1520; border:1px solid #1a3340; border-radius:4px; padding:8px; text-align:center;">
+            <div style="color:#8090a0; font-size:9px;">🔲 网格交易</div>
+            <div style="color:#5a6a7e; font-size:7px;">价格区间 + 网格密度 + 止盈</div>
+            <div style="color:#3a4a5e; font-size:7px;">6 节点 · 加密/OKX</div>
+          </div>
+          <div style="background:#0d1520; border:1px dashed #1a3340; border-radius:4px; padding:8px; text-align:center;">
+            <div style="color:#a855f7; font-size:9px;">🤖 AI 生成</div>
+            <div style="color:#5a6a7e; font-size:7px;">RAG 知识库自动构建</div>
+            <div style="color:#3a4a5e; font-size:7px;">自定义提示词</div>
+          </div>
+        </div>
+        <div style="margin-top:6px; text-align:center; color:#3a4a5e; font-size:8px;">—— 或者 ——</div>
+        <div style="text-align:center; padding:6px; border:1px dashed #1a3340; border-radius:3px; color:#5a6a7e; font-size:9px;">🪹 从空白画布开始</div>
+      </div>
+      <div class="pros-cons" style="margin-top:8px;">
+        <div class="pros"><h4>Pros</h4><ul><li>降低上手门槛</li><li>模板即文档（展示最佳实践）</li><li>可扩展为用户自定义模板</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>需要维护模板库</li><li>需要额外一个"选择"页面</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="f" onclick="toggleSelect(this)">
+    <div class="letter">F</div>
+    <div class="content">
+      <h3>分屏工作台</h3>
+      <p>点击"新建策略"→ 列表页推入左侧窄栏，右侧展开画布工作区。画布顶部固定策略配置栏（名称+类型+市场+交易所+保存按钮）。列表和画布同时可见，可以边参考其他策略边构建新策略。</p>
+      <div style="margin-top:8px; background:#0a0e14; border:1px solid #1a2332; border-radius:6px; padding:10px; font-size:10px;">
+        <div style="display:flex; gap:0;">
+          <div style="width:120px; background:#0a0e14; border-right:1px solid #1a2332; padding:8px;">
+            <div style="color:#5a6a7e; font-size:8px; margin-bottom:4px;">策略列表</div>
+            <div style="padding:4px; background:#0d1520; border:1px solid #00FF9D; border-radius:2px; margin-bottom:2px;">
+              <div style="color:#00FF9D; font-size:7px;">★ 新建</div>
+            </div>
+            <div style="padding:4px; margin-bottom:2px;">
+              <div style="color:#8090a0; font-size:7px;">均线策略 v1</div>
+            </div>
+            <div style="padding:4px; margin-bottom:2px;">
+              <div style="color:#8090a0; font-size:7px;">网格 ETH</div>
+            </div>
+          </div>
+          <div style="flex:1; background:#080c12; padding:8px;">
+            <div style="display:flex; align-items:center; gap:6px; padding:4px 8px; background:#0d1520; border-radius:3px; margin-bottom:8px;">
+              <div style="color:#8090a0; font-size:8px;">名称</div>
+              <div style="color:#00FF9D; font-size:9px;">未命名策略</div>
+              <div style="color:#8090a0; font-size:8px;">类型</div>
+              <div style="padding:2px 6px; background:#a855f722; color:#a855f7; font-size:7px; border-radius:2px;">均线</div>
+              <div style="color:#8090a0; font-size:8px;">市场</div>
+              <div style="padding:2px 6px; background:#00FF9D22; color:#00FF9D; font-size:7px; border-radius:2px;">加密</div>
+              <div style="margin-left:auto; padding:3px 10px; background:#00FF9D; color:#080c12; font-size:8px; border-radius:3px; font-weight:600;">保存</div>
+            </div>
+            <div style="text-align:center; padding:30px 0; color:#3a4a5e; font-size:9px;">画布工作区</div>
+          </div>
+        </div>
+      </div>
+      <div class="pros-cons" style="margin-top:8px;">
+        <div class="pros"><h4>Pros</h4><ul><li>列表 + 画布同时可见</li><li>可参考已有策略构建新策略</li><li>专业交易终端的工作方式</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>小屏幕上空间紧张</li><li>交互复杂度增加</li><li>需要更多的状态管理</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+</div>

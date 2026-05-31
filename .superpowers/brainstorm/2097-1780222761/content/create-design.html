@@ -1,0 +1,95 @@
+<h2>设计第一部分：新建策略 + AI 对话生成</h2>
+<p class="subtitle">两条路径：快速创建（3 字段）和 AI 对话创建（自然语言→画布）</p>
+
+<h3>创建入口：两种方式</h3>
+
+<div class="mockup">
+  <div class="mockup-header">策略列表页 — 创建区域</div>
+  <div class="mockup-body" style="padding:16px;">
+    <div style="display:flex; gap:16px;">
+      <!-- Left: Quick Create -->
+      <div style="flex:1; background:#0a0e14; border:1px solid #1a2332; border-radius:8px; padding:14px;">
+        <div style="color:#00FF9D; font-weight:700; font-size:11px; margin-bottom:10px;">⚡ 快速创建</div>
+        <div style="font-size:9px; color:#8090a0; line-height:1.8;">
+          <div style="margin-bottom:4px;">
+            <div style="color:#5a6a7e; margin-bottom:1px;">策略名称</div>
+            <div style="background:#080c12; border:1px solid #1a3340; border-radius:3px; padding:5px 8px; width:180px;">输入名称...</div>
+          </div>
+          <div style="display:flex; gap:12px; margin-bottom:4px;">
+            <div>
+              <div style="color:#5a6a7e; margin-bottom:1px;">交易市场</div>
+              <div style="display:flex; gap:3px;">
+                <span style="padding:3px 8px; background:#00FF9D; color:#080c12; border-radius:10px;">加密</span>
+                <span style="padding:3px 8px; background:#1a2332; color:#5a6a7e; border-radius:10px;">美股</span>
+                <span style="padding:3px 8px; background:#1a2332; color:#5a6a7e; border-radius:10px;">A股</span>
+              </div>
+            </div>
+            <div>
+              <div style="color:#5a6a7e; margin-bottom:1px;">交易所</div>
+              <div style="display:flex; gap:3px;">
+                <span style="padding:3px 8px; background:#00FF9D; color:#080c12; border-radius:10px;">Binance</span>
+                <span style="padding:3px 8px; background:#1a2332; color:#5a6a7e; border-radius:10px;">OKX</span>
+              </div>
+            </div>
+          </div>
+          <div style="margin-bottom:6px;">
+            <div style="color:#5a6a7e; margin-bottom:1px;">起始模板（可选）</div>
+            <div style="background:#080c12; border:1px solid #1a3340; border-radius:3px; padding:3px 8px; display:inline-block; color:#8090a0;">空白画布 ▾</div>
+          </div>
+          <div style="background:#00FF9D; color:#080c12; padding:6px 14px; border-radius:4px; text-align:center; font-weight:700; font-size:10px; width:140px;">
+            创建并打开画布 →
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: AI Chat Create -->
+      <div style="flex:1.2; background:#0a0e14; border:2px solid #a855f744; border-radius:8px; padding:14px; position:relative;">
+        <div style="position:absolute; top:-10px; right:12px; background:#a855f7; color:#fff; padding:2px 8px; border-radius:8px; font-size:8px; font-weight:700;">推荐</div>
+        <div style="color:#a855f7; font-weight:700; font-size:11px; margin-bottom:10px;">🤖 AI 对话生成</div>
+        <div style="font-size:9px; color:#8090a0; line-height:1.8;">
+          <div style="background:#080c12; border:1px solid #a855f744; border-radius:6px; padding:8px; margin-bottom:6px; min-height:80px;">
+            <div style="color:#a855f7; font-size:8px; margin-bottom:4px;">AI</div>
+            <div style="color:#8090a0; font-size:8px; margin-bottom:4px;">你好！描述你想构建的策略，我会帮你生成完整的画布。</div>
+            <div style="color:#8090a0; font-size:8px; margin-bottom:4px;">比如："用 RSI 和 MACD 做加密货币短线交易，RSI 低于 30 买入，高于 70 卖出"</div>
+            <div style="background:#0d1520; border:1px solid #1a3340; border-radius:4px; padding:5px 8px; margin-top:6px;">
+              <div style="color:#00FF9D; font-size:8px;">用户</div>
+              <div style="color:#c0d0e0; font-size:8px;">我想做一个 BTC 的趋势跟踪策略，用 EMA 交叉 + RSI 过滤假信号，Binance 交易所</div>
+            </div>
+            <div style="display:flex; gap:4px; margin-top:4px;">
+              <span style="padding:1px 4px; background:#1a2332; border-radius:2px; color:#5a6a7e; font-size:7px;">EMA</span>
+              <span style="padding:1px 4px; background:#1a2332; border-radius:2px; color:#5a6a7e; font-size:7px;">RSI</span>
+              <span style="padding:1px 4px; background:#1a2332; border-radius:2px; color:#5a6a7e; font-size:7px;">趋势</span>
+            </div>
+          </div>
+          <div style="display:flex; gap:4px;">
+            <div style="flex:1; background:#080c12; border:1px solid #1a3340; border-radius:3px; padding:4px 8px; color:#5a6a7e; font-size:8px;">描述你的策略...</div>
+            <div style="background:#a855f7; color:#fff; padding:4px 10px; border-radius:3px; font-size:8px; font-weight:600;">生成 →</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h3 style="margin-top:20px;">AI 生成流程</h3>
+<div style="font-size:11px; color:#8090a0; line-height:1.8;">
+  <strong>1. 用户用自然语言描述策略</strong>（例如"用布林带做美股均值回归，触及下轨买入上轨卖出"）<br>
+  <strong>2. AI 解析需求，生成画布图</strong>（选择合适的节点、连线、参数）<br>
+  <strong>3. 用户进入画布查看/调整</strong>（AI 生成的是可编辑的起点，不是黑盒）<br>
+  <strong>4. 满意后部署运行</strong>
+</div>
+<div style="background:#0d1520; border:1px solid #1a3340; border-radius:6px; padding:10px; margin-top:8px; font-size:10px;">
+  <strong style="color:#a855f7;">关键设计原则：</strong><span style="color:#8090a0;">AI 生成的是可编辑的画布，用户可以修改任意节点和连线。不是生成黑盒代码，而是生成可视化的策略图，用户可以理解、调整、学习。</span>
+</div>
+
+<h3 style="margin-top:20px;">创建后 → 详情页（路由推入）</h3>
+<div style="font-size:10px; color:#8090a0; line-height:1.8;">
+  无论哪种创建方式，创建成功后自动推入 <strong>策略详情页</strong>（画布 Tab 默认选中）。详情页是路由推入（不是 sheet），包含：
+</div>
+<div style="display:flex; gap:8px; margin-top:8px; font-size:9px;">
+  <div style="flex:1; background:#0d1520; border:1px solid #1a2332; border-radius:4px; padding:8px; text-align:center; color:#8090a0;">← 返回列表</div>
+  <div style="flex:1; background:#0d1520; border-bottom:2px solid #00FF9D; border-radius:4px 4px 0 0; padding:8px; text-align:center; color:#00FF9D;">画布</div>
+  <div style="flex:1; background:#0d1520; border-radius:4px; padding:8px; text-align:center; color:#5a6a7e;">回测</div>
+  <div style="flex:1; background:#0d1520; border-radius:4px; padding:8px; text-align:center; color:#5a6a7e;">交易记录</div>
+  <div style="flex:1; background:#0d1520; border-radius:4px; padding:8px; text-align:center; color:#5a6a7e;">标签</div>
+</div>

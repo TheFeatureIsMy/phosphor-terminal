@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>新建策略 — ProofAlpha</title>
+<style>
+  :root {
+    --bg-deep: #060a10; --bg-base: #0a1018; --bg-surface: #0d1520; --bg-elevated: #111a28;
+    --border: #1a2a3a; --accent: #00FF9D; --purple: #a855f7; --amber: #f59e0b;
+    --text-primary: #c8d6e5; --text-secondary: #7a8ea0; --text-muted: #4a5a6e;
+    --radius-sm: 6px; --radius-md: 10px; --radius-lg: 16px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    min-height: 100vh; padding: 32px 40px;
+    background-image:
+      radial-gradient(ellipse at 15% 20%, rgba(0,255,157,0.03) 0%, transparent 50%),
+      radial-gradient(ellipse at 85% 70%, rgba(168,85,247,0.03) 0%, transparent 50%);
+  }
+  .page-title { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; margin-bottom: 4px; }
+  .page-subtitle { font-size: 12px; color: var(--text-muted); margin-bottom: 28px; }
+
+  /* === Glass Card === */
+  .glass-card {
+    background: linear-gradient(135deg, rgba(13,21,32,0.9), rgba(17,26,40,0.85), rgba(13,21,32,0.9));
+    border: 1px solid var(--border); border-radius: var(--radius-lg);
+    padding: 24px; backdrop-filter: blur(20px);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.02);
+    position: relative; overflow: hidden;
+  }
+  .glass-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+  }
+
+  .container { max-width: 700px; margin: 0 auto; }
+
+  /* === Mode Switcher === */
+  .mode-switcher {
+    display: flex; background: var(--bg-surface);
+    border: 1px solid var(--border); border-radius: var(--radius-md);
+    padding: 3px; margin-bottom: 20px;
+  }
+  .mode-btn {
+    flex: 1; padding: 9px 0; text-align: center;
+    font-size: 11px; font-weight: 600;
+    border-radius: 7px; cursor: pointer; transition: all 0.2s;
+    color: var(--text-muted); user-select: none;
+  }
+  .mode-btn.active {
+    background: var(--bg-elevated); color: var(--accent);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  }
+  .mode-btn:not(.active):hover { color: var(--text-secondary); }
+
+  /* === Form elements === */
+  .field-label {
+    font-size: 9px; font-weight: 700; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 5px;
+  }
+  .text-input {
+    background: rgba(8,12,18,0.8); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 9px 12px; font-size: 12px;
+    color: var(--text-primary); font-family: 'SF Mono', 'JetBrains Mono', monospace;
+    width: 100%; outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .text-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,255,157,0.06); }
+  .form-section { margin-bottom: 18px; }
+
+  .pill-group { display: flex; gap: 6px; flex-wrap: wrap; }
+  .pill {
+    padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 500;
+    cursor: pointer; transition: all 0.2s; border: 1px solid transparent; user-select: none;
+  }
+  .pill.off { background: rgba(13,21,32,0.6); border-color: var(--border); color: var(--text-muted); }
+  .pill.off:hover { border-color: rgba(255,255,255,0.1); color: var(--text-secondary); }
+  .pill.on {
+    background: rgba(0,255,157,0.1); border-color: rgba(0,255,157,0.3);
+    color: var(--accent); box-shadow: 0 0 12px rgba(0,255,157,0.06);
+  }
+
+  .btn-create {
+    width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;
+    background: var(--accent); color: #060a10; padding: 12px 0; border-radius: var(--radius-sm);
+    font-size: 13px; font-weight: 700; border: none; cursor: pointer; transition: all 0.2s;
+    box-shadow: 0 2px 14px rgba(0,255,157,0.2); margin-top: 20px;
+  }
+  .btn-create:hover { box-shadow: 0 4px 24px rgba(0,255,157,0.35); transform: translateY(-1px); }
+
+  /* === ChatGPT-style Chat === */
+  .chat-container {
+    display: flex; flex-direction: column; height: 480px;
+  }
+  .chat-messages {
+    flex: 1; overflow-y: auto; padding: 0 8px 16px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .chat-msg {
+    display: flex; gap: 10px; max-width: 90%;
+    animation: fadeIn 0.3s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .chat-msg.ai { align-self: flex-start; }
+  .chat-msg.user { align-self: flex-end; flex-direction: row-reverse; }
+
+  .msg-avatar {
+    width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 13px;
+  }
+  .msg-avatar.ai { background: rgba(168,85,247,0.15); color: var(--purple); }
+  .msg-avatar.user { background: rgba(0,255,157,0.15); color: var(--accent); }
+
+  .msg-bubble {
+    padding: 10px 14px; border-radius: 12px;
+    font-size: 11.5px; line-height: 1.6;
+  }
+  .chat-msg.ai .msg-bubble {
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);
+    color: var(--text-secondary);
+  }
+  .chat-msg.user .msg-bubble {
+    background: rgba(0,255,157,0.06); border: 1px solid rgba(0,255,157,0.1);
+    color: var(--text-primary);
+  }
+
+  .msg-typing {
+    display: flex; gap: 4px; padding: 8px 14px;
+  }
+  .typing-dot {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted);
+    animation: typing 1.4s infinite;
+  }
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes typing { 0%,60%,100% { opacity: 0.2; } 30% { opacity: 1; } }
+
+  /* Generated result card inside chat */
+  .gen-card {
+    background: rgba(13,21,32,0.8); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 12px; margin-top: 8px;
+  }
+  .gen-card-title {
+    font-size: 10px; font-weight: 700; color: var(--accent); margin-bottom: 8px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .gen-row {
+    display: flex; gap: 12px; font-size: 9px; margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
+  .gen-item { display: flex; align-items: center; gap: 4px; }
+  .gen-key { color: var(--text-muted); }
+  .gen-val { font-weight: 600; color: var(--text-primary); }
+  .gen-nodes {
+    display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
+    font-size: 8px; color: var(--text-muted);
+  }
+  .gen-node {
+    padding: 3px 8px; border-radius: 3px; border: 1px solid;
+    font-weight: 600;
+  }
+  .gen-node.data { border-color: rgba(34,211,238,0.3); color: #22d3ee; background: rgba(34,211,238,0.05); }
+  .gen-node.signal { border-color: rgba(168,85,247,0.3); color: #a855f7; background: rgba(168,85,247,0.05); }
+  .gen-node.decision { border-color: rgba(245,158,11,0.3); color: #f59e0b; background: rgba(245,158,11,0.05); }
+  .gen-node.output { border-color: rgba(0,255,157,0.3); color: #00FF9D; background: rgba(0,255,157,0.05); }
+  .gen-arrow { color: var(--text-muted); }
+  .gen-actions { display: flex; gap: 6px; margin-top: 10px; }
+  .gen-btn {
+    font-size: 9px; padding: 5px 12px; border-radius: 14px;
+    border: 1px solid var(--border); background: rgba(13,21,32,0.6);
+    color: var(--text-secondary); cursor: pointer; transition: all 0.2s;
+  }
+  .gen-btn:hover { border-color: rgba(255,255,255,0.15); }
+  .gen-btn.primary {
+    background: rgba(0,255,157,0.1); border-color: rgba(0,255,157,0.2); color: var(--accent);
+  }
+
+  .chat-input-area {
+    display: flex; gap: 8px; padding-top: 12px;
+    border-top: 1px solid var(--border);
+  }
+  .chat-input {
+    flex: 1;
+    background: rgba(8,12,18,0.9); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 10px 14px; font-size: 11px;
+    color: var(--text-primary); font-family: 'SF Mono', 'JetBrains Mono', monospace;
+    outline: none; transition: border-color 0.2s;
+  }
+  .chat-input:focus { border-color: var(--purple); box-shadow: 0 0 0 3px rgba(168,85,247,0.05); }
+  .chat-input::placeholder { color: var(--text-muted); }
+  .btn-send {
+    background: var(--purple); color: #fff; border: none;
+    padding: 10px 20px; border-radius: var(--radius-sm); font-size: 11px;
+    font-weight: 600; cursor: pointer; transition: all 0.2s;
+    box-shadow: 0 2px 10px rgba(168,85,247,0.2);
+  }
+  .btn-send:hover { box-shadow: 0 4px 16px rgba(168,85,247,0.35); }
+
+  .welcome-text {
+    text-align: center; color: var(--text-muted); font-size: 13px;
+    padding: 40px 20px;
+  }
+  .welcome-icon { font-size: 36px; margin-bottom: 12px; opacity: 0.5; }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="page-title">新建策略</div>
+  <div class="page-subtitle">手动配置或 AI 对话 — 创建后自动进入画布</div>
+
+  <div class="mode-switcher">
+    <div class="mode-btn active" id="btn-manual">手动创建</div>
+    <div class="mode-btn" id="btn-chat">AI 对话创建</div>
+  </div>
+
+  <!-- === MANUAL MODE === -->
+  <div class="glass-card" id="manual-panel">
+    <div class="form-section">
+      <div class="field-label">策略名称</div>
+      <input class="text-input" placeholder="输入策略名称..." value="BTC 趋势跟踪 v1">
+    </div>
+
+    <div style="display:flex; gap:20px;" class="form-section">
+      <div style="flex:1;">
+        <div class="field-label">交易市场</div>
+        <div class="pill-group">
+          <span class="pill on">加密</span>
+          <span class="pill off">美股</span>
+          <span class="pill off">A股</span>
+        </div>
+      </div>
+      <div style="flex:1;">
+        <div class="field-label">交易所</div>
+        <div class="pill-group">
+          <span class="pill on">Binance</span>
+          <span class="pill off">OKX</span>
+          <span class="pill off">Bybit</span>
+          <span class="pill off">Gate</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:8px; padding:8px 12px; background:rgba(13,21,32,0.5); border:1px solid var(--border); border-radius:var(--radius-sm); font-size:9px; color:var(--text-muted); display:flex; align-items:center; gap:6px;">
+      <span style="font-size:11px;">💡</span>
+      创建后进入画布，从调色板拖入节点开始构建策略逻辑
+    </div>
+
+    <button class="btn-create">创建并打开画布 →</button>
+  </div>
+
+  <!-- === AI CHAT MODE (hidden by default) === -->
+  <div class="glass-card" id="chat-panel" style="display:none;">
+    <div class="chat-container">
+      <div class="chat-messages" id="chat-msgs">
+
+        <!-- AI greeting -->
+        <div class="chat-msg ai">
+          <div class="msg-avatar ai">🤖</div>
+          <div class="msg-bubble">
+            你好！我是策略构建助手。用自然语言描述你想做的交易策略，我会自动生成对应的画布节点图。<br><br>
+            <span style="color:var(--text-muted);">试试说："用 EMA 和 RSI 做比特币趋势跟踪，RSI 低于 30 买入，Binance 交易所"</span>
+          </div>
+        </div>
+
+        <!-- User message -->
+        <div class="chat-msg user">
+          <div class="msg-avatar user">👤</div>
+          <div class="msg-bubble">
+            做一个 BTC 趋势跟踪策略，用 EMA12 和 EMA26 金叉买入死叉卖出，加上 RSI 低于 30 过滤掉假突破，在 Binance 上运行
+          </div>
+        </div>
+
+        <!-- AI typing indicator -->
+        <div class="chat-msg ai" id="typing-msg">
+          <div class="msg-avatar ai">🤖</div>
+          <div class="msg-bubble">
+            <div class="msg-typing">
+              <div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI result -->
+        <div class="chat-msg ai">
+          <div class="msg-avatar ai">🤖</div>
+          <div class="msg-bubble">
+            好的，我已根据你的描述生成了策略画布：
+
+            <div class="gen-card">
+              <div class="gen-card-title">📊 策略画布预览</div>
+              <div class="gen-row">
+                <div class="gen-item"><span class="gen-key">名称</span><span class="gen-val">BTC 趋势跟踪</span></div>
+                <div class="gen-item"><span class="gen-key">市场</span><span class="gen-val">加密</span></div>
+                <div class="gen-item"><span class="gen-key">交易所</span><span class="gen-val">Binance</span></div>
+              </div>
+              <div class="gen-nodes">
+                <span class="gen-node data">K线数据</span><span class="gen-arrow">→</span>
+                <span class="gen-node signal">EMA 12</span><span class="gen-arrow">→</span>
+                <span class="gen-node decision">交叉检测</span><span class="gen-arrow">→</span>
+                <span class="gen-node decision">AND</span><span class="gen-arrow">→</span>
+                <span class="gen-node output">买入信号</span>
+              </div>
+              <div class="gen-nodes" style="margin-top:4px;">
+                <span class="gen-node data">K线数据</span><span class="gen-arrow">→</span>
+                <span class="gen-node signal">RSI 14</span><span class="gen-arrow">→</span>
+                <span class="gen-node decision">RSI &gt; 30</span><span class="gen-arrow">↗</span>
+              </div>
+              <div style="font-size:8px; color:var(--text-muted); margin-top:6px;">共 8 个节点，已自动连线</div>
+              <div class="gen-actions">
+                <button class="gen-btn primary">✓ 打开画布</button>
+                <button class="gen-btn">🔄 调整参数</button>
+                <button class="gen-btn">↺ 重新生成</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="chat-input-area">
+        <input class="chat-input" placeholder="描述你的策略...">
+        <button class="btn-send">发送</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const btnManual = document.getElementById('btn-manual');
+  const btnChat = document.getElementById('btn-chat');
+  const manualPanel = document.getElementById('manual-panel');
+  const chatPanel = document.getElementById('chat-panel');
+
+  btnManual.addEventListener('click', () => {
+    btnManual.classList.add('active');
+    btnChat.classList.remove('active');
+    manualPanel.style.display = 'block';
+    chatPanel.style.display = 'none';
+  });
+  btnChat.addEventListener('click', () => {
+    btnChat.classList.add('active');
+    btnManual.classList.remove('active');
+    chatPanel.style.display = 'block';
+    manualPanel.style.display = 'none';
+  });
+</script>
+
+</body>
+</html>
