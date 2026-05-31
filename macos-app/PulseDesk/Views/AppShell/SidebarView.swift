@@ -16,7 +16,7 @@ struct SidebarView: View {
 
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 1) {
-                    ForEach(SidebarSection.allCases, id: \.self) { section in
+                    ForEach(Array(SidebarSection.allCases.enumerated()), id: \.element) { index, section in
                         let routes = AppRoute.allCases.filter { $0.section == section }
                         if !routes.isEmpty {
                             if !appState.sidebarCollapsed {
@@ -27,7 +27,7 @@ struct SidebarView: View {
                                 }
                                 .padding(.horizontal, PulseSpacing.sm)
                                 .padding(.top, PulseSpacing.md).padding(.bottom, PulseSpacing.xxs)
-                            } else {
+                            } else if index == 0 {
                                 Divider().foregroundStyle(colors.border)
                                     .padding(.vertical, PulseSpacing.xxs).padding(.horizontal, PulseSpacing.md)
                             }
