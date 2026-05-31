@@ -44,18 +44,16 @@ struct CanvasNode: Codable, Identifiable {
 struct CanvasEdge: Codable, Identifiable {
     let id: UUID
     let sourceNodeId: UUID
-    let sourcePort: String
+    let sourcePortKey: String     // matches PortDefinition.key
     let targetNodeId: UUID
-    let targetPort: String
-    let dataType: PortDataType
+    let targetPortKey: String
 
-    init(id: UUID = UUID(), sourceNodeId: UUID, sourcePort: String, targetNodeId: UUID, targetPort: String, dataType: PortDataType) {
+    init(id: UUID = UUID(), sourceNodeId: UUID, sourcePortKey: String, targetNodeId: UUID, targetPortKey: String) {
         self.id = id
         self.sourceNodeId = sourceNodeId
-        self.sourcePort = sourcePort
+        self.sourcePortKey = sourcePortKey
         self.targetNodeId = targetNodeId
-        self.targetPort = targetPort
-        self.dataType = dataType
+        self.targetPortKey = targetPortKey
     }
 }
 
@@ -78,9 +76,10 @@ struct ViewportState: Codable {
     var offset: CGPoint = .zero
 }
 
-// MARK: - Port side — simplified 4 fixed ports per node (midpoint of each edge)
-enum PortSide: String, Codable, CaseIterable {
-    case left, right, top, bottom
+// MARK: - Port direction — input (left side) / output (right side)
+enum PortDirection: String, Codable, CaseIterable {
+    case input   // rendered on left side of node
+    case output  // rendered on right side of node
 }
 
 // MARK: - PortDataType — determines wire color and connection compatibility
@@ -174,16 +173,22 @@ enum NodeCategory: String, CaseIterable, Codable {
 // MARK: - Port definition
 struct PortDefinition: Identifiable, @unchecked Sendable {
     let id = UUID()
-    let name: String
+    let key: String               // stable identifier, e.g. "kline", "rsiValue"
+    let name: String              // display label, e.g. "K线数据", "RSI值"
+    let direction: PortDirection  // .input or .output
     let dataType: PortDataType
     let isRequired: Bool
     let allowsMultiple: Bool
+    let tooltip: String
 
-    init(name: String, dataType: PortDataType, isRequired: Bool = false, allowsMultiple: Bool = false) {
+    init(key: String, name: String, direction: PortDirection, dataType: PortDataType, isRequired: Bool = false, allowsMultiple: Bool = false, tooltip: String = "") {
+        self.key = key
         self.name = name
+        self.direction = direction
         self.dataType = dataType
         self.isRequired = isRequired
         self.allowsMultiple = allowsMultiple
+        self.tooltip = tooltip
     }
 }
 
@@ -268,10 +273,52 @@ struct NodeDefinition: Identifiable, @unchecked Sendable {
     }
 }
 
+// MARK: - Connection validation
+
+enum ConnectionResult: Equatable {
+    case allowed
+    case incompatibleType(PortDataType, PortDataType)
+    case wrongDirection
+    case alreadyFullyConnected
+    case selfConnection
+
+    var isAllowed: Bool { self == .allowed }
+}
+
+struct ConnectionSchema {
+    func canConnect(from sourcePort: PortDefinition, to targetPort: PortDefinition, sourceNodeId: UUID, targetNodeId: UUID, existingEdges: [CanvasEdge]) -> ConnectionResult {
+        if sourceNodeId == targetNodeId { return .selfConnection }
+        if sourcePort.direction != .output { return .wrongDirection }
+        if targetPort.direction != .input { return .wrongDirection }
+        let compatible = sourcePort.dataType == targetPort.dataType
+            || sourcePort.dataType == .signal
+            || targetPort.dataType == .signal
+        if !compatible { return .incompatibleType(sourcePort.dataType, targetPort.dataType) }
+        if !targetPort.allowsMultiple {
+            let alreadyConnected = existingEdges.contains {
+                $0.targetNodeId == targetNodeId && $0.targetPortKey == targetPort.key
+            }
+            if alreadyConnected { return .alreadyFullyConnected }
+        }
+        return .allowed
+    }
+}
+
+// MARK: - CanvasTemplate
+
+struct CanvasTemplate: Identifiable {
+    let id: String
+    let name: String
+    let description: String
+    let icon: String
+    let nodeCount: Int
+    let graph: WorkflowGraph
+}
+
 // MARK: - Cached port position (for edge rendering)
 struct CachedPortPosition {
     let nodeId: UUID
-    let portName: String
+    let portKey: String
     let worldPosition: CGPoint
 }
 
