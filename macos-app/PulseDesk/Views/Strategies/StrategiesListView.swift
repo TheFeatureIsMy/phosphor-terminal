@@ -5,15 +5,26 @@ import SwiftUI
 
 struct StrategiesListView: View {
     @Environment(PulseColors.self) private var colors
+    @Environment(AppState.self) private var appState
     @Bindable var viewModel: StrategiesViewModel
     @Environment(\.networkClient) private var networkClient
-    @State private var selectedStrategy: Strategy?
+    @State private var showCreatePanel = false
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: PulseSpacing.lg) {
                 // 头部：统计 + 新建按钮
                 header
+
+                if showCreatePanel {
+                    Text("创建面板（即将在后续任务中接入）")
+                        .font(PulseFonts.caption)
+                        .foregroundStyle(colors.textMuted)
+                        .padding()
+                        .background(colors.surface)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
 
                 if viewModel.isLoading {
                     loadingGrid
@@ -22,7 +33,7 @@ struct StrategiesListView: View {
                         icon: "cpu",
                         title: "暂无策略",
                         description: "创建你的第一个量化交易策略",
-                        primaryAction: (title: "新建策略", action: { viewModel.showCreateSheet = true })
+                        primaryAction: (title: "新建策略", action: { withAnimation { showCreatePanel.toggle() } })
                     )
                     .frame(height: 300)
                 } else {
@@ -30,7 +41,8 @@ struct StrategiesListView: View {
                     LazyVGrid(columns: gridColumns, spacing: PulseSpacing.md) {
                         ForEach(Array(viewModel.strategies.enumerated()), id: \.element.id) { index, strategy in
                             StrategyCardView(strategy: strategy) {
-                                selectedStrategy = strategy
+                                appState.selectedStrategyId = strategy.id
+                                appState.selectedRoute = .strategyDetail
                             } onDeploy: {
                                 Task { await viewModel.deploy(id: strategy.id) }
                             } onStop: {
@@ -47,13 +59,6 @@ struct StrategiesListView: View {
         }
         .scrollEdgeEffectStyle(.soft, for: .vertical)
         .task { await viewModel.load() }
-        .sheet(isPresented: $viewModel.showCreateSheet) {
-            StrategyCreateSheet(viewModel: viewModel)
-        }
-        .sheet(item: $selectedStrategy) { strategy in
-            StrategyDetailView(strategyId: strategy.id, client: networkClient)
-                .frame(minWidth: 800, minHeight: 600)
-        }
     }
 
     // MARK: - 头部
@@ -74,7 +79,7 @@ struct StrategiesListView: View {
             Spacer()
 
             ProofAlphaButton(title: "新建策略") {
-                viewModel.showCreateSheet = true
+                withAnimation { showCreatePanel.toggle() }
             }
         }
     }
