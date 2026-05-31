@@ -79,19 +79,19 @@ struct AppShellView: View {
             if let vm = dashboardVM {
                 DashboardView(viewModel: vm)
             } else {
-                ProgressView("加载中...")
+                LoadingView(type: .detail)
             }
         case .strategies:
             if let vm = strategiesVM {
                 StrategiesListView(viewModel: vm)
             } else {
-                ProgressView("加载中...")
+                LoadingView(type: .detail)
             }
         case .backtest:
             if let vm = backtestVM {
                 BacktestView(viewModel: vm)
             } else {
-                ProgressView("加载中...")
+                LoadingView(type: .detail)
             }
         case .trades:
             TradesView()
@@ -119,6 +119,8 @@ struct ConsoleToolbar: View {
     @State private var currentTime = Date()
     @State private var showNotifications = false
     @State private var notificationViewModel: NotificationViewModel?
+    @State private var searchButtonHovered = false
+    @State private var notificationButtonHovered = false
 
     var systemStatus: SystemStatus?
 
@@ -173,9 +175,12 @@ struct ConsoleToolbar: View {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 13))
                     .foregroundStyle(colors.textMuted)
+                    .opacity(searchButtonHovered ? 1 : 0.7)
             }
             .buttonStyle(.plain)
             .keyboardShortcut("k", modifiers: .command)
+            .help("搜索 (⌘K)")
+            .onHover { searchButtonHovered = $0 }
 
             // 通知
             Button {
@@ -185,6 +190,7 @@ struct ConsoleToolbar: View {
                     Image(systemName: "bell")
                         .font(.system(size: 13))
                         .foregroundStyle(colors.textMuted)
+                        .opacity(notificationButtonHovered ? 1 : 0.7)
 
                     if let vm = notificationViewModel, vm.unreadCount > 0 {
                         Text(vm.unreadCount > 99 ? "99+" : "\(vm.unreadCount)")
@@ -198,6 +204,8 @@ struct ConsoleToolbar: View {
                 }
             }
             .buttonStyle(.plain)
+            .help("通知")
+            .onHover { notificationButtonHovered = $0 }
             .popover(isPresented: $showNotifications) {
                 if let vm = notificationViewModel {
                     NotificationPopover(viewModel: vm) {
