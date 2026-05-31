@@ -1,95 +1,55 @@
 // DashboardView.swift — 主仪表盘布局
-// 按信息重要程度分层：P&L Hero + 风险 → 持仓 → 权益曲线 → KPI条带 → 交易+相关性
+// 按信息重要程度分层：P&L Hero → 风险 → 持仓 → 权益曲线 → KPI条带 → 交易+相关性
 
 import SwiftUI
 import Charts
 
-// MARK: - 迷你权益走势图 (Hero PnL 卡片内嵌)
-struct MiniEquitySparkline: View {
-    let points: [EquityPoint]
-
-    var body: some View {
-        Chart(points) { point in
-            AreaMark(
-                x: .value("", point.date),
-                y: .value("", point.value)
-            )
-            .foregroundStyle(
-                LinearGradient(
-                    colors: [PulseColors.accent.opacity(0.25), PulseColors.accent.opacity(0.02)],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-            )
-            LineMark(
-                x: .value("", point.date),
-                y: .value("", point.value)
-            )
-            .foregroundStyle(PulseColors.accent)
-        }
-        .chartXAxis(.hidden)
-        .chartYAxis(.hidden)
-        .chartLegend(.hidden)
-    }
-}
-
-// MARK: - Hero PnL 卡片 (最大视觉权重)
+// MARK: - Hero PnL 卡片 (最大视觉权重, 无冗余走势图)
 struct HeroPnLCard: View {
     @Environment(PulseColors.self) private var colors
     let totalPnl: Double
     let pnlChangePct: Double
-    let equityCurve: [EquityPoint]
     let todaysTrades: Int
     let activeStrategies: Int
+    let openPositions: Int
+    let systemUptime: String
 
     @State private var appeared = false
-    @State private var displayPnl: Double = 0
 
     var body: some View {
         ProofAlphaCard(emphasis: .bold) {
             HStack(alignment: .top, spacing: PulseSpacing.lg) {
                 VStack(alignment: .leading, spacing: PulseSpacing.xs) {
-                    // 标签
                     TerminalLabel(text: "总盈亏 (P&L)")
 
-                    // 大数值 — 数字跳动效果
                     Text(pnlFormatted)
                         .font(.system(size: 42, weight: .bold, design: .monospaced))
                         .foregroundStyle(totalPnl >= 0 ? colors.profit : colors.loss)
                         .opacity(appeared ? 1 : 0)
                         .offset(y: appeared ? 0 : 8)
 
-                    // 副指标行
                     HStack(spacing: PulseSpacing.md) {
                         trendBadge
-                        HStack(spacing: 3) {
-                            Circle().fill(PulseColors.accent).frame(width: 4, height: 4)
-                            Text("\(todaysTrades) 笔交易")
-                                .font(PulseFonts.caption)
-                                .foregroundStyle(colors.textSecondary)
-                        }
-                        HStack(spacing: 3) {
-                            Circle().fill(PulseColors.cyan).frame(width: 4, height: 4)
-                            Text("\(activeStrategies) 个策略")
-                                .font(PulseFonts.caption)
-                                .foregroundStyle(colors.textSecondary)
-                        }
+                        contextPill(icon: "arrow.left.arrow.right", value: "\(todaysTrades)", label: "交易")
+                        contextPill(icon: "brain.head.profile", value: "\(activeStrategies)", label: "策略")
+                        contextPill(icon: "briefcase", value: "\(openPositions)", label: "持仓")
                     }
                 }
 
                 Spacer()
 
-                // 迷你权益走势 (右侧)
-                if !equityCurve.isEmpty {
-                    MiniEquitySparkline(points: equityCurve)
-                        .frame(width: 200, height: 80)
+                // System status on the right
+                VStack(alignment: .trailing, spacing: PulseSpacing.xxs) {
+                    HStack(spacing: PulseSpacing.xxs) {
+                        StatusDot(status: .online)
+                        Text("运行中").font(PulseFonts.micro).foregroundStyle(colors.textMuted)
+                    }
+                    Text(systemUptime).font(PulseFonts.monoLabel).foregroundStyle(colors.textSecondary)
                 }
             }
         }
         .onAppear {
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.7).delay(0.1)) {
-                appeared = true
-            }
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.7).delay(0.1)) { appeared = true }
         }
     }
 
@@ -112,6 +72,14 @@ struct HeroPnLCard: View {
             RoundedRectangle(cornerRadius: PulseRadii.badge)
                 .fill(pnlChangePct >= 0 ? colors.profit.opacity(0.12) : colors.loss.opacity(0.12))
         )
+    }
+
+    private func contextPill(icon: String, value: String, label: String) -> some View {
+        HStack(spacing: 3) {
+            Image(systemName: icon).font(.system(size: 9))
+            Text(value).font(PulseFonts.bodyMedium).foregroundStyle(colors.textPrimary)
+            Text(label).font(PulseFonts.micro).foregroundStyle(colors.textMuted)
+        }
     }
 }
 
@@ -179,45 +147,99 @@ struct RiskAlertStrip: View {
     }
 }
 
-// MARK: - 持仓水平卡片（紧凑横向）
-struct PositionCard: View {
+// MARK: - 持仓行 (可展开详情)
+struct RichPositionRow: View {
     @Environment(PulseColors.self) private var colors
     let position: Position
 
+    @State private var isExpanded = false
+
+    private var pnlPercent: Double {
+        let cost = position.quantity * position.avgPrice
+        guard cost != 0 else { return 0 }
+        return (position.unrealizedPnl / cost) * 100
+    }
+
     var body: some View {
-        HStack(spacing: PulseSpacing.sm) {
-            // 方向色条
-            RoundedRectangle(cornerRadius: 1)
-                .fill(position.unrealizedPnl >= 0 ? colors.profit : colors.loss)
-                .frame(width: 3, height: 36)
+        VStack(spacing: 0) {
+            Button {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { isExpanded.toggle() }
+            } label: {
+                HStack(spacing: PulseSpacing.sm) {
+                    // PnL color bar
+                    RoundedRectangle(cornerRadius: 1)
+                        .fill(position.unrealizedPnl >= 0 ? colors.profit : colors.loss)
+                        .frame(width: 3, height: 40)
 
-            // 交易对
-            VStack(alignment: .leading, spacing: 1) {
-                Text(position.symbol)
-                    .font(PulseFonts.bodyMedium)
-                    .foregroundStyle(colors.textPrimary)
-                Text(position.side.label)
-                    .font(PulseFonts.micro)
-                    .foregroundStyle(position.side.color(colors))
+                    // Symbol + side
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(position.symbol)
+                            .font(PulseFonts.bodyMedium).foregroundStyle(colors.textPrimary)
+                        HStack(spacing: PulseSpacing.xxs) {
+                            Text(position.side.label)
+                                .font(PulseFonts.micro)
+                                .foregroundStyle(position.side.color(colors))
+                            Text("·").foregroundStyle(colors.textMuted)
+                            Text("开仓 @ \(String(format: "%.2f", position.avgPrice))")
+                                .font(PulseFonts.micro).foregroundStyle(colors.textMuted)
+                        }
+                    }
+
+                    Spacer()
+
+                    // Key metrics
+                    VStack(alignment: .trailing, spacing: 1) {
+                        Text(String(format: "%+.2f", position.unrealizedPnl))
+                            .font(PulseFonts.tabular).fontWeight(.medium)
+                            .foregroundStyle(position.unrealizedPnl >= 0 ? colors.profit : colors.loss)
+                        Text("\(String(format: "%.4f", position.quantity)) · \(String(format: "%.1f%%", pnlPercent))")
+                            .font(PulseFonts.micro).foregroundStyle(colors.textMuted)
+                    }
+
+                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                        .font(.system(size: 10)).foregroundStyle(colors.textMuted)
+                        .frame(width: 16)
+                }
+                .padding(.vertical, PulseSpacing.sm)
+                .padding(.horizontal, PulseSpacing.xs)
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
 
-            Spacer()
-
-            // 数量 + 未实现盈亏
-            VStack(alignment: .trailing, spacing: 1) {
-                Text(String(format: "%.4f", position.quantity))
-                    .font(PulseFonts.tabular)
-                    .foregroundStyle(colors.textSecondary)
-                Text(String(format: "%+.2f", position.unrealizedPnl))
-                    .font(PulseFonts.tabular)
-                    .foregroundStyle(position.unrealizedPnl >= 0 ? colors.profit : colors.loss)
+            // Expanded detail
+            if isExpanded {
+                VStack(spacing: PulseSpacing.xs) {
+                    Divider().foregroundStyle(colors.border)
+                    HStack(spacing: PulseSpacing.lg) {
+                        detailItem("数量", String(format: "%.4f", position.quantity))
+                        detailItem("均价", String(format: "%.2f", position.avgPrice))
+                        detailItem("止损", position.stopLossPrice.map { String(format: "%.2f", $0) } ?? "未设置")
+                        detailItem("止盈", position.takeProfitPrice.map { String(format: "%.2f", $0) } ?? "未设置")
+                        detailItem("开仓时间", formatDate(position.openedAt))
+                    }
+                    .font(PulseFonts.caption)
+                }
+                .padding(.horizontal, PulseSpacing.xs)
+                .padding(.bottom, PulseSpacing.sm)
+                .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
-        .padding(PulseSpacing.xs)
         .background(
             RoundedRectangle(cornerRadius: PulseRadii.sm)
-                .fill(colors.surface)
+                .fill(colors.surface.opacity(0.4))
         )
+    }
+
+    private func detailItem(_ label: String, _ value: String) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text(label).font(PulseFonts.micro).foregroundStyle(colors.textMuted)
+            Text(value).font(PulseFonts.captionMedium).foregroundStyle(colors.textPrimary)
+        }
+    }
+
+    private func formatDate(_ iso: String) -> String {
+        guard let d = ISO8601DateFormatter().date(from: iso) else { return iso }
+        let f = DateFormatter(); f.dateFormat = "MM-dd HH:mm"; return f.string(from: d)
     }
 }
 
@@ -288,13 +310,18 @@ struct DashboardView: View {
             if viewModel.kpis == nil && !viewModel.isLoading {
                 EmptyStateView(icon: "chart.bar.xaxis", title: "无法加载数据", description: "请检查后端连接后重试")
             } else if let kpis = viewModel.kpis {
-                // Row 1: Hero P&L + 风险警报
-                rowHeroAndRisk(kpis)
+                // Row 1: Hero P&L (full width)
+                rowHero(kpis)
 
-                // Row 2: 当前持仓水平
-                rowPositions
+                // Row 2: 风险事件 (compact strip)
+                RiskAlertStrip(events: viewModel.riskEvents)
 
-                // Row 3: 权益曲线
+                // Row 3: 当前持仓 (expandable list)
+                if !viewModel.positions.isEmpty {
+                    rowPositions
+                }
+
+                // Row 4: 权益曲线
                 EquityCurveChart(points: viewModel.equityCurve)
                     .frame(maxWidth: .infinity)
 
@@ -307,64 +334,54 @@ struct DashboardView: View {
                         .frame(width: 6, height: 6)
                 }
 
-                // Row 4: 紧凑 KPI 条带
+                // Row 5: 紧凑 KPI 条带
                 CompactKPIStrip(kpis: kpis)
 
-                // Row 5: 最近交易 + 相关性热力图
+                // Row 6: 最近交易 + 相关性热力图
                 rowBottom
             }
         }
         .padding(PulseSpacing.lg)
     }
 
-    // MARK: - Row 1: Hero PnL (60%) + 风险警报 (40%)
+    // MARK: - Row 1: Hero PnL
 
-    private func rowHeroAndRisk(_ kpis: DashboardKPIs) -> some View {
-        HStack(alignment: .top, spacing: PulseSpacing.md) {
-            HeroPnLCard(
-                totalPnl: kpis.totalPnl,
-                pnlChangePct: kpis.pnlChangePct,
-                equityCurve: viewModel.equityCurve,
-                todaysTrades: kpis.todaysTrades,
-                activeStrategies: kpis.activeStrategies
-            )
-            .frame(maxWidth: .infinity)
-
-            RiskAlertStrip(events: viewModel.riskEvents)
-                .frame(width: 300)
-        }
+    private func rowHero(_ kpis: DashboardKPIs) -> some View {
+        HeroPnLCard(
+            totalPnl: kpis.totalPnl,
+            pnlChangePct: kpis.pnlChangePct,
+            todaysTrades: kpis.todaysTrades,
+            activeStrategies: kpis.activeStrategies,
+            openPositions: kpis.openPositions,
+            systemUptime: viewModel.systemStatus?.uptime ?? "--"
+        )
     }
 
-    // MARK: - Row 2: 当前持仓 (水平滚动卡片)
+    // MARK: - Row 3: 当前持仓 (expandable rich list)
 
     @ViewBuilder
     private var rowPositions: some View {
-        if !viewModel.positions.isEmpty {
-            ProofAlphaCard(emphasis: .subtle) {
-                VStack(alignment: .leading, spacing: PulseSpacing.xs) {
-                    HStack {
-                        TerminalLabel(text: "当前持仓")
-                        Spacer()
-                        Text("\(viewModel.positions.count) 个")
-                            .font(PulseFonts.caption)
-                            .foregroundStyle(colors.textMuted)
-                    }
+        ProofAlphaCard(emphasis: .subtle) {
+            VStack(alignment: .leading, spacing: PulseSpacing.xs) {
+                HStack {
+                    TerminalLabel(text: "当前持仓")
+                    Spacer()
+                    Text("\(viewModel.positions.count) 个")
+                        .font(PulseFonts.caption)
+                        .foregroundStyle(colors.textMuted)
+                }
 
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: PulseSpacing.xs) {
-                            ForEach(Array(viewModel.positions.enumerated()), id: \.element.id) { index, pos in
-                                PositionCard(position: pos)
-                                    .frame(width: 200)
-                                    .staggeredAppearance(index: index)
-                            }
-                        }
+                VStack(spacing: PulseSpacing.xxs) {
+                    ForEach(Array(viewModel.positions.enumerated()), id: \.element.id) { index, pos in
+                        RichPositionRow(position: pos)
+                            .staggeredAppearance(index: index)
                     }
                 }
             }
         }
     }
 
-    // MARK: - Row 5: 最近交易 + 相关性
+    // MARK: - Row 6: 最近交易 + 相关性
 
     private var rowBottom: some View {
         HStack(alignment: .top, spacing: PulseSpacing.md) {
@@ -380,13 +397,21 @@ struct DashboardView: View {
 
     private var loadingSkeleton: some View {
         VStack(spacing: PulseSpacing.md) {
-            // Hero + 风险骨架
-            HStack(alignment: .top, spacing: PulseSpacing.md) {
-                RoundedRectangle(cornerRadius: PulseRadii.card)
-                    .fill(colors.surface).frame(height: 120).shimmer()
-                RoundedRectangle(cornerRadius: PulseRadii.card)
-                    .fill(colors.surface).frame(width: 300, height: 120).shimmer()
-            }
+            // Hero 骨架
+            RoundedRectangle(cornerRadius: PulseRadii.card)
+                .fill(colors.surface).frame(height: 120).shimmer()
+
+            // 风险骨架
+            RoundedRectangle(cornerRadius: PulseRadii.card)
+                .fill(colors.surface).frame(height: 60).shimmer()
+
+            // 持仓骨架
+            RoundedRectangle(cornerRadius: PulseRadii.card)
+                .fill(colors.surface).frame(height: 200).shimmer()
+
+            // 权益曲线骨架
+            RoundedRectangle(cornerRadius: PulseRadii.card)
+                .fill(colors.surface).frame(height: 200).shimmer()
 
             // KPI 骨架
             HStack(spacing: 0) {
@@ -395,10 +420,6 @@ struct DashboardView: View {
                         .fill(colors.surface).frame(height: 40).shimmer()
                 }
             }
-
-            // 权益曲线骨架
-            RoundedRectangle(cornerRadius: PulseRadii.card)
-                .fill(colors.surface).frame(height: 200).shimmer()
 
             // 底部骨架
             HStack(alignment: .top, spacing: PulseSpacing.md) {
