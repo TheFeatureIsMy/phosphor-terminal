@@ -263,6 +263,7 @@ enum AppRoute: String, CaseIterable, Identifiable {
     case aiStudio
     case sentiment, attribution, aiProviders, risk
     case settings
+    case strategyDetail
 
     var id: String { rawValue }
 
@@ -270,6 +271,7 @@ enum AppRoute: String, CaseIterable, Identifiable {
         switch self {
         case .dashboard: return "chart.line.uptrend.xyaxis"
         case .strategies: return "cpu"
+        case .strategyDetail: return "doc.text.magnifyingglass"
         case .backtest: return "clock.arrow.circlepath"
         case .trades: return "list.bullet.rectangle"
         case .aiStudio: return "brain.head.profile"
@@ -285,6 +287,7 @@ enum AppRoute: String, CaseIterable, Identifiable {
         switch self {
         case .dashboard: return "仪表盘"
         case .strategies: return "策略管理"
+        case .strategyDetail: return "策略详情"
         case .backtest: return "回测中心"
         case .trades: return "交易记录"
         case .aiStudio: return "AI 工作室"
@@ -299,7 +302,7 @@ enum AppRoute: String, CaseIterable, Identifiable {
     var section: SidebarSection {
         switch self {
         case .dashboard, .trades, .risk: return .trading
-        case .strategies, .backtest: return .strategy
+        case .strategies, .backtest, .strategyDetail: return .strategy
         case .aiStudio, .sentiment, .attribution, .aiProviders: return .ai
         case .settings: return .system
         }

@@ -107,6 +107,14 @@ struct AppShellView: View {
             RiskView()
         case .settings:
             SettingsView()
+        case .strategyDetail:
+            if let vm = strategiesVM,
+               let id = appState.selectedStrategyId,
+               let strategy = vm.strategies.first(where: { $0.id == id }) {
+                StrategyDetailView(strategy: strategy, client: networkClient)
+            } else {
+                LoadingView(type: .detail)
+            }
         }
     }
 }

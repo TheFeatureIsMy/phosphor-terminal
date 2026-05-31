@@ -26,6 +26,9 @@ final class AppState {
     /// 系统状态
     var systemStatus: SystemStatus?
 
+    /// 当前选中的策略 ID（用于详情页路由）
+    var selectedStrategyId: Int?
+
     /// 切换侧边栏折叠
     func toggleSidebar() {
         withAnimation(PulseAnimation.springDefault) {
