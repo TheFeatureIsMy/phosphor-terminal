@@ -1,87 +1,109 @@
 // StrategyDetailView.swift — 策略详情页
-// 标签栏：概览、画布、回测、交易记录
+// 标签栏：画布、回测、交易记录、版本
 
 import SwiftUI
 
 struct StrategyDetailView: View {
     @Environment(PulseColors.self) private var colors
-    let strategy: Strategy
+    @Environment(AppState.self) private var appState
+    let strategyId: Int
     let client: NetworkClientProtocol
-    @State private var selectedTab = 0
 
-    private let tabs = ["概览", "画布", "回测", "交易记录"]
+    @State private var strategy: Strategy?
+    @State private var selectedTab = 0
+    private let tabs = ["画布", "回测", "交易记录", "版本"]
 
     var body: some View {
-        VStack(spacing: 0) {
-            // 顶部信息
-            strategyHeader
-
-            // 标签栏
-            tabBar
-
-            Divider()
-                .foregroundStyle(colors.border)
-
-            // 标签内容
-            TabView(selection: $selectedTab) {
-                StrategyOverviewTab(strategy: strategy)
-                    .tag(0)
-
-                StrategyCanvasTab(strategy: strategy, client: client)
-                    .tag(1)
-
-                StrategyBacktestTab(strategy: strategy, client: client)
-                    .tag(2)
-
-                TradesView()
-                    .tag(3)
+        Group {
+            if let strategy {
+                VStack(spacing: 0) {
+                    navBar
+                    Divider().foregroundStyle(colors.border)
+                    configBar
+                    Divider().foregroundStyle(colors.border)
+                    tabBar
+                    Divider().foregroundStyle(colors.border)
+                    tabContent(strategy)
+                }
+            } else {
+                LoadingView(type: .detail)
             }
-            .tabViewStyle(.automatic)
         }
-        .navigationTitle(strategy.name)
+        .task { await loadStrategy() }
     }
 
-    // MARK: - 策略头部
-    private var strategyHeader: some View {
-        HStack(spacing: PulseSpacing.md) {
-            VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
-                Text(strategy.name)
-                    .font(PulseFonts.displayHeading)
-                    .foregroundStyle(colors.textPrimary)
+    private func loadStrategy() async {
+        let api = APIStrategies(client: client)
+        strategy = try? await api.get(id: strategyId)
+    }
 
-                HStack(spacing: PulseSpacing.xs) {
-                    BadgeView(text: strategy.type.label, color: strategy.type.color, size: .small)
-                    BadgeView(text: strategy.status.label, color: strategy.status.color(colors), size: .small)
+    // MARK: - 面包屑导航栏
+    private var navBar: some View {
+        HStack(spacing: PulseSpacing.xs) {
+            Button {
+                appState.selectedRoute = .strategies
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "chevron.left").font(.system(size: 10, weight: .semibold))
+                    Text("策略列表").font(PulseFonts.caption)
                 }
+                .foregroundStyle(colors.textMuted)
             }
+            .buttonStyle(.plain)
+
+            Text("/").foregroundStyle(colors.textMuted).font(PulseFonts.caption)
+
+            Text(strategy?.name ?? "")
+                .font(PulseFonts.bodyMedium)
+                .foregroundStyle(colors.textPrimary)
+                .lineLimit(1)
 
             Spacer()
 
-            // 关键指标
-            HStack(spacing: PulseSpacing.lg) {
-                if let sharpe = strategy.sharpeRatio {
-                    VStack(alignment: .trailing, spacing: 1) {
-                        Text("夏普比率")
-                            .font(PulseFonts.micro)
-                            .foregroundStyle(colors.textMuted)
-                        Text(String(format: "%.2f", sharpe))
-                            .font(PulseFonts.tabular)
-                            .foregroundStyle(PulseColors.accent)
-                    }
-                }
-                if let dd = strategy.maxDrawdown {
-                    VStack(alignment: .trailing, spacing: 1) {
-                        Text("最大回撤")
-                            .font(PulseFonts.micro)
-                            .foregroundStyle(colors.textMuted)
-                        Text(String(format: "%.1f%%", dd))
-                            .font(PulseFonts.tabular)
-                            .foregroundStyle(PulseColors.loss)
+            if let s = strategy {
+                ProofAlphaButton(title: s.status == .active ? "停止" : "部署") {
+                    Task {
+                        let vm = StrategiesViewModel(client: client)
+                        if s.status == .active { await vm.stop(id: s.id) }
+                        else { await vm.deploy(id: s.id) }
                     }
                 }
             }
         }
-        .padding(PulseSpacing.lg)
+        .padding(.horizontal, PulseSpacing.lg)
+        .padding(.vertical, PulseSpacing.sm)
+    }
+
+    // MARK: - 配置栏
+    private var configBar: some View {
+        HStack(spacing: PulseSpacing.sm) {
+            configItem(label: "名称", value: strategy?.name ?? "")
+            Text("|").foregroundStyle(colors.border).font(PulseFonts.micro)
+            configPill(label: "市场", value: strategy?.market ?? "", color: PulseColors.accent)
+            configPill(label: "交易所", value: strategy?.exchange ?? "", color: PulseColors.purple)
+            Spacer()
+            Circle().fill(PulseColors.accent).frame(width: 6, height: 6)
+        }
+        .padding(.horizontal, PulseSpacing.lg)
+        .padding(.vertical, PulseSpacing.xs)
+    }
+
+    private func configItem(label: String, value: String) -> some View {
+        HStack(spacing: 3) {
+            Text(label).font(PulseFonts.micro).foregroundStyle(colors.textMuted)
+            Text(value).font(PulseFonts.captionMedium).foregroundStyle(colors.textPrimary)
+        }
+    }
+
+    private func configPill(label: String, value: String, color: Color) -> some View {
+        HStack(spacing: 3) {
+            Text(label).font(PulseFonts.micro).foregroundStyle(colors.textMuted)
+            Text(value).font(PulseFonts.caption).foregroundStyle(color)
+                .padding(.horizontal, 6).padding(.vertical, 2)
+                .background(color.opacity(0.1))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(color.opacity(0.2), lineWidth: 1))
+        }
     }
 
     // MARK: - 标签栏
@@ -111,5 +133,29 @@ struct StrategyDetailView: View {
                 .buttonStyle(.plain)
             }
         }
+    }
+
+    // MARK: - 标签内容
+    @ViewBuilder
+    private func tabContent(_ strategy: Strategy) -> some View {
+        switch selectedTab {
+        case 0: StrategyCanvasTab(strategy: strategy, client: client)
+        case 1: StrategyBacktestTab(strategy: strategy, client: client)
+        case 2: TradesView()
+        case 3: StrategyVersionPlaceholder()
+        default: EmptyView()
+        }
+    }
+}
+
+// MARK: - 版本占位
+struct StrategyVersionPlaceholder: View {
+    @Environment(PulseColors.self) private var colors
+    var body: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "clock.arrow.circlepath").font(.system(size: 32)).foregroundStyle(colors.textMuted)
+            Text("版本历史").font(PulseFonts.body).foregroundStyle(colors.textSecondary)
+            Text("即将推出").font(PulseFonts.caption).foregroundStyle(colors.textMuted)
+        }.frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }

@@ -51,7 +51,7 @@ struct StrategiesListView: View {
             StrategyCreateSheet(viewModel: viewModel)
         }
         .sheet(item: $selectedStrategy) { strategy in
-            StrategyDetailView(strategy: strategy, client: networkClient)
+            StrategyDetailView(strategyId: strategy.id, client: networkClient)
                 .frame(minWidth: 800, minHeight: 600)
         }
     }
