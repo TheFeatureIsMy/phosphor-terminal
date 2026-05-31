@@ -66,35 +66,65 @@ struct CommandPaletteView: View {
                     .foregroundStyle(colors.border)
 
                 // 搜索结果
-                ScrollView {
-                    VStack(spacing: 2) {
-                        // 页面结果
-                        ForEach(Array(filteredRoutes.enumerated()), id: \.element.id) { index, route in
-                            resultRow(route, index: index)
-                        }
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        VStack(spacing: 2) {
+                            // "页面" section header
+                            if !filteredRoutes.isEmpty {
+                                Text("页面")
+                                    .font(PulseFonts.caption)
+                                    .foregroundStyle(colors.textMuted)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.horizontal, PulseSpacing.xs)
+                            }
 
-                        // 策略搜索结果
-                        if !searchResults.isEmpty {
-                            Divider()
-                                .foregroundStyle(colors.border)
-                                .padding(.vertical, PulseSpacing.xs)
+                            // 页面结果
+                            ForEach(Array(filteredRoutes.enumerated()), id: \.element.id) { index, route in
+                                resultRow(route, index: index)
+                                    .id(index)
+                            }
 
-                            Text("策略")
-                                .font(PulseFonts.caption)
-                                .foregroundStyle(colors.textMuted)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.horizontal, PulseSpacing.xs)
+                            // 无匹配状态
+                            if filteredRoutes.isEmpty && searchResults.isEmpty && !searchText.isEmpty {
+                                Text("无匹配结果")
+                                    .font(PulseFonts.body)
+                                    .foregroundStyle(colors.textMuted)
+                                    .frame(maxWidth: .infinity, alignment: .center)
+                                    .padding(.vertical, PulseSpacing.xl)
+                            }
 
-                            ForEach(Array(searchResults.enumerated()), id: \.element.id) { index, strategy in
-                                strategyRow(strategy, index: filteredRoutes.count + index)
+                            // 策略搜索结果
+                            if !searchResults.isEmpty {
+                                Divider()
+                                    .foregroundStyle(colors.border)
+                                    .padding(.vertical, PulseSpacing.xs)
+
+                                Text("策略")
+                                    .font(PulseFonts.caption)
+                                    .foregroundStyle(colors.textMuted)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.horizontal, PulseSpacing.xs)
+
+                                ForEach(Array(searchResults.enumerated()), id: \.element.id) { index, strategy in
+                                    strategyRow(strategy, index: filteredRoutes.count + index)
+                                        .id(filteredRoutes.count + index)
+                                }
                             }
                         }
+                        .padding(PulseSpacing.xs)
                     }
-                    .padding(PulseSpacing.xs)
+                    .onChange(of: selectedIndex) { _, newValue in
+                        withAnimation {
+                            proxy.scrollTo(newValue, anchor: .center)
+                        }
+                    }
                 }
                 .frame(maxHeight: 320)
             }
             .frame(width: 480)
+            .scaleEffect(appState.showCommandPalette ? 1 : 0.95)
+            .opacity(appState.showCommandPalette ? 1 : 0)
+            .animation(PulseAnimation.springDefault, value: appState.showCommandPalette)
             .background(
                 RoundedRectangle(cornerRadius: PulseRadii.lg)
                     .fill(colors.cardBackground)
@@ -146,96 +176,24 @@ struct CommandPaletteView: View {
 
     // MARK: - 策略结果行
     private func strategyRow(_ strategy: Strategy, index: Int) -> some View {
-        let isSelected = index == selectedIndex
-
-        return Button {
-            selectStrategy(strategy)
-        } label: {
-            HStack(spacing: PulseSpacing.sm) {
-                Image(systemName: "chart.line.uptrend.xyaxis")
-                    .font(.system(size: 16))
-                    .foregroundStyle(isSelected ? PulseColors.accent : colors.textSecondary)
-                    .frame(width: 24)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(strategy.name)
-                        .font(PulseFonts.bodyMedium)
-                        .foregroundStyle(colors.textPrimary)
-                    Text(strategy.type.label)
-                        .font(PulseFonts.caption)
-                        .foregroundStyle(colors.textMuted)
-                }
-
-                Spacer()
-
-                if isSelected {
-                    Text("Enter")
-                        .font(PulseFonts.monoLabel)
-                        .foregroundStyle(colors.textMuted)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(
-                            RoundedRectangle(cornerRadius: 4)
-                                .fill(colors.surfaceHover)
-                        )
-                }
-            }
-            .padding(.vertical, PulseSpacing.xs)
-            .padding(.horizontal, PulseSpacing.xs)
-            .background(
-                RoundedRectangle(cornerRadius: PulseRadii.md)
-                    .fill(isSelected ? PulseColors.accent.opacity(0.1) : .clear)
-            )
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
+        CommandPaletteRow(
+            icon: "chart.line.uptrend.xyaxis",
+            title: strategy.name,
+            subtitle: strategy.type.label,
+            isSelected: index == selectedIndex,
+            action: { selectStrategy(strategy) }
+        )
     }
 
     // MARK: - 结果行
     private func resultRow(_ route: AppRoute, index: Int) -> some View {
-        let isSelected = index == selectedIndex
-
-        return Button {
-            selectRoute(route)
-        } label: {
-            HStack(spacing: PulseSpacing.sm) {
-                Image(systemName: route.icon)
-                    .font(.system(size: 16))
-                    .foregroundStyle(isSelected ? PulseColors.accent : colors.textSecondary)
-                    .frame(width: 24)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(route.label)
-                        .font(PulseFonts.bodyMedium)
-                        .foregroundStyle(colors.textPrimary)
-                    Text(route.section.label)
-                        .font(PulseFonts.caption)
-                        .foregroundStyle(colors.textMuted)
-                }
-
-                Spacer()
-
-                if isSelected {
-                    Text("Enter")
-                        .font(PulseFonts.monoLabel)
-                        .foregroundStyle(colors.textMuted)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(
-                            RoundedRectangle(cornerRadius: 4)
-                                .fill(colors.surfaceHover)
-                        )
-                }
-            }
-            .padding(.vertical, PulseSpacing.xs)
-            .padding(.horizontal, PulseSpacing.xs)
-            .background(
-                RoundedRectangle(cornerRadius: PulseRadii.md)
-                    .fill(isSelected ? PulseColors.accent.opacity(0.1) : .clear)
-            )
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
+        CommandPaletteRow(
+            icon: route.icon,
+            title: route.label,
+            subtitle: route.section.label,
+            isSelected: index == selectedIndex,
+            action: { selectRoute(route) }
+        )
     }
 
     private func selectRoute(_ route: AppRoute) {
@@ -265,6 +223,42 @@ struct CommandPaletteView: View {
     private func dismiss() {
         withAnimation(PulseAnimation.easeOutFast) {
             appState.showCommandPalette = false
+        }
+    }
+
+    // MARK: - 共享行组件
+    private struct CommandPaletteRow: View {
+        @Environment(PulseColors.self) private var colors
+        let icon: String
+        let title: String
+        let subtitle: String
+        let isSelected: Bool
+        let action: () -> Void
+
+        var body: some View {
+            Button(action: action) {
+                HStack(spacing: PulseSpacing.sm) {
+                    Image(systemName: icon)
+                        .font(.system(size: 16))
+                        .foregroundStyle(isSelected ? PulseColors.accent : colors.textSecondary)
+                        .frame(width: 24)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(title).font(PulseFonts.bodyMedium).foregroundStyle(colors.textPrimary)
+                        Text(subtitle).font(PulseFonts.caption).foregroundStyle(colors.textMuted)
+                    }
+                    Spacer()
+                    if isSelected {
+                        Text("Enter").font(PulseFonts.monoLabel).foregroundStyle(colors.textMuted)
+                            .padding(.horizontal, 6).padding(.vertical, 2)
+                            .background(RoundedRectangle(cornerRadius: 4).fill(colors.surfaceHover))
+                    }
+                }
+                .padding(.vertical, PulseSpacing.xs).padding(.horizontal, PulseSpacing.xs)
+                .background(RoundedRectangle(cornerRadius: PulseRadii.md)
+                    .fill(isSelected ? PulseColors.accent.opacity(0.1) : .clear))
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
         }
     }
 }
