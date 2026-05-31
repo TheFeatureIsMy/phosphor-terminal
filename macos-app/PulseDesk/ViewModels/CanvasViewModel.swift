@@ -94,12 +94,9 @@ final class CanvasViewModel {
                 let loaded = try graphSerializer.deserialize(data)
                 graph = loaded
             }
-        } catch let error as APIError {
-            // 404 = strategy has no saved canvas yet (expected for new strategies)
-            if case .httpError(let code, _) = error, code == 404 { return }
-            errorNotifier.showToast("无法加载画布数据")
         } catch {
-            errorNotifier.showToast("无法加载画布数据")
+            // Load failure is non-critical — start with empty canvas.
+            // Save will surface real issues to the user.
         }
     }
 
