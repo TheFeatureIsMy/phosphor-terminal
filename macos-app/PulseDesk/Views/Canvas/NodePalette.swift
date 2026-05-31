@@ -4,6 +4,7 @@ struct NodePalette: View {
     @Environment(PulseColors.self) private var colors
     @Binding var isPresented: Bool
     var onAddNode: (NodeDefinition) -> Void
+    var onLoadTemplate: ((CanvasTemplate) -> Void)?
 
     @State private var searchText = ""
     @State private var selectedCategory: NodeCategory? = nil
@@ -12,6 +13,7 @@ struct NodePalette: View {
     @FocusState private var isSearchFocused: Bool
 
     private let allDefinitions = NodeRegistry.allDefinitions
+    private let templates = CanvasTemplate.builtInTemplates
 
     private var displayedDefinitions: [NodeDefinition] {
         let categoryFiltered: [NodeDefinition]
@@ -41,12 +43,22 @@ struct NodePalette: View {
             HStack(spacing: 6) {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 10))
-                    .foregroundStyle(colors.textMuted)
+                    .foregroundStyle(PulseColors.accent)
                 TextField("搜索节点...", text: $searchText)
                     .textFieldStyle(.plain)
                     .font(PulseFonts.caption)
                     .foregroundStyle(colors.textPrimary)
                     .focused($isSearchFocused)
+                if !searchText.isEmpty {
+                    Button {
+                        searchText = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 10))
+                            .foregroundStyle(colors.textMuted)
+                    }
+                    .buttonStyle(.plain)
+                }
             }
             .padding(8)
             .background(colors.surface)
@@ -54,14 +66,14 @@ struct NodePalette: View {
             .overlay(RoundedRectangle(cornerRadius: 6).stroke(colors.border, lineWidth: 1))
             .padding(8)
 
-            // Category tabs
+            // Category filter chips
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 4) {
-                    CategoryTab(label: "全部", isSelected: selectedCategory == nil) {
+                    CategoryChip(label: "全部", color: PulseColors.accent, isSelected: selectedCategory == nil) {
                         selectedCategory = nil
                     }
                     ForEach(NodeCategory.allCases, id: \.self) { cat in
-                        CategoryTab(label: cat.label, isSelected: selectedCategory == cat) {
+                        CategoryChip(label: cat.label, color: cat.color, isSelected: selectedCategory == cat) {
                             selectedCategory = selectedCategory == cat ? nil : cat
                         }
                     }
@@ -76,6 +88,14 @@ struct NodePalette: View {
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
                     if searchText.isEmpty && selectedCategory == nil {
+                        // Templates section
+                        if !templates.isEmpty {
+                            sectionHeader("模板", onClear: nil)
+                            ForEach(templates) { template in
+                                templateRow(template)
+                            }
+                        }
+
                         if !favoriteDefs.isEmpty {
                             sectionHeader("⭐ 收藏", onClear: { clearFavorites() })
                             ForEach(favoriteDefs) { def in nodeRow(def) }
@@ -103,8 +123,13 @@ struct NodePalette: View {
         .frame(width: 220)
         .background(colors.background)
         .overlay(Rectangle().frame(width: 1).foregroundStyle(colors.border), alignment: .trailing)
-        .onAppear { loadRecents() }
+        .onAppear {
+            loadRecents()
+            isSearchFocused = true
+        }
     }
+
+    // MARK: - Section Header
 
     private func sectionHeader(_ title: String, onClear: (() -> Void)?) -> some View {
         HStack {
@@ -118,10 +143,46 @@ struct NodePalette: View {
         .padding(.horizontal, 8).padding(.vertical, 4)
     }
 
+    // MARK: - Template Row
+
+    private func templateRow(_ template: CanvasTemplate) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: template.icon)
+                .font(.system(size: 12))
+                .foregroundStyle(PulseColors.accent)
+                .frame(width: 16)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(template.name)
+                    .font(PulseFonts.caption)
+                    .foregroundStyle(colors.textPrimary)
+                Text("\(template.nodeCount) 个节点")
+                    .font(.system(size: 9))
+                    .foregroundStyle(colors.textMuted)
+            }
+            Spacer()
+        }
+        .padding(.horizontal, 8).padding(.vertical, 6)
+        .contentShape(Rectangle())
+        .onTapGesture { onLoadTemplate?(template) }
+    }
+
+    // MARK: - Node Row
+
     private func nodeRow(_ def: NodeDefinition) -> some View {
         HStack(spacing: 6) {
-            Image(systemName: def.icon).font(.system(size: 10)).foregroundStyle(def.color).frame(width: 14)
-            Text(def.name).font(PulseFonts.caption).foregroundStyle(colors.textPrimary).lineLimit(1)
+            Image(systemName: def.icon)
+                .font(.system(size: 10))
+                .foregroundStyle(def.color)
+                .frame(width: 14)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(def.name)
+                    .font(PulseFonts.caption)
+                    .foregroundStyle(colors.textPrimary)
+                    .lineLimit(1)
+                Text("\(def.inputPorts.count) 入 · \(def.outputPorts.count) 出")
+                    .font(.system(size: 9))
+                    .foregroundStyle(colors.textMuted)
+            }
             Spacer()
             Button {
                 toggleFavorite(def)
@@ -137,6 +198,8 @@ struct NodePalette: View {
         .onTapGesture { onAddNode(def); addToRecent(def) }
         .onDrag { NSItemProvider(object: def.type as NSString) }
     }
+
+    // MARK: - Favorites
 
     private func toggleFavorite(_ def: NodeDefinition) {
         if favoriteTypes.contains(def.type) {
@@ -156,6 +219,8 @@ struct NodePalette: View {
         persistFavorites()
     }
 
+    // MARK: - Recent
+
     private func addToRecent(_ def: NodeDefinition) {
         recentlyUsed.removeAll { $0 == def.type }
         recentlyUsed.insert(def.type, at: 0)
@@ -173,10 +238,12 @@ struct NodePalette: View {
     }
 }
 
-// MARK: - CategoryTab
-private struct CategoryTab: View {
+// MARK: - CategoryChip
+
+private struct CategoryChip: View {
     @Environment(PulseColors.self) private var colors
     let label: String
+    let color: Color
     let isSelected: Bool
     let action: () -> Void
 
@@ -184,17 +251,15 @@ private struct CategoryTab: View {
         Button(action: action) {
             Text(label)
                 .font(.system(size: 10, weight: isSelected ? .semibold : .regular))
-                .foregroundStyle(isSelected ? PulseColors.accent : colors.textMuted)
+                .foregroundStyle(isSelected ? .white : colors.textMuted)
                 .padding(.horizontal, 8).padding(.vertical, 4)
                 .background(
                     RoundedRectangle(cornerRadius: 4)
-                        .fill(isSelected ? PulseColors.accent.opacity(0.1) : .clear)
+                        .fill(isSelected ? color.opacity(0.8) : .clear)
                 )
                 .overlay(
-                    Rectangle()
-                        .frame(height: 2)
-                        .foregroundStyle(isSelected ? PulseColors.accent : .clear),
-                    alignment: .bottom
+                    RoundedRectangle(cornerRadius: 4)
+                        .stroke(isSelected ? .clear : colors.border, lineWidth: 1)
                 )
         }
         .buttonStyle(.plain)
