@@ -4,6 +4,7 @@
 import SwiftUI
 
 struct NodeView: View {
+    @Environment(PulseColors.self) private var colors
     let node: CanvasNode
     let definition: NodeDefinition?
     let isSelected: Bool
@@ -38,7 +39,7 @@ struct NodeView: View {
             titleBar
 
             if !node.isCollapsed {
-                Divider().foregroundStyle(PulseColors.border)
+                Divider().foregroundStyle(colors.border)
 
                 // Input ports
                 inputPorts
@@ -54,13 +55,14 @@ struct NodeView: View {
         }
         .frame(width: node.size.width)
         .opacity(node.isDisabled ? 0.5 : 1.0)
+        .saturation(node.isDisabled ? 0.3 : 1.0)
         .background(
             RoundedRectangle(cornerRadius: PulseRadii.card)
-                .fill(PulseColors.surfaceElevated)
+                .fill(colors.surfaceElevated)
         )
         .overlay(
             RoundedRectangle(cornerRadius: PulseRadii.card)
-                .stroke(isSelected ? PulseColors.accent : PulseColors.border, lineWidth: isSelected ? 2 : 1)
+                .stroke(isSelected ? PulseColors.accent : colors.border, lineWidth: isSelected ? 2 : 1)
         )
         .shadow(color: isSelected ? PulseColors.accent.opacity(0.2) : .clear, radius: 8)
     }
@@ -71,11 +73,11 @@ struct NodeView: View {
         HStack(spacing: PulseSpacing.xs) {
             Image(systemName: definition?.icon ?? "circle")
                 .font(.system(size: 12))
-                .foregroundStyle(definition?.color ?? PulseColors.textSecondary)
+                .foregroundStyle(definition?.color ?? colors.textSecondary)
 
             Text(definition?.name ?? node.nodeType)
                 .font(PulseFonts.captionMedium)
-                .foregroundStyle(PulseColors.textPrimary)
+                .foregroundStyle(colors.textPrimary)
                 .lineLimit(1)
 
             Spacer()
@@ -86,7 +88,7 @@ struct NodeView: View {
             } label: {
                 Image(systemName: node.isCollapsed ? "chevron.down" : "chevron.up")
                     .font(.system(size: 10))
-                    .foregroundStyle(PulseColors.textMuted)
+                    .foregroundStyle(colors.textMuted)
             }
             .buttonStyle(.plain)
         }
@@ -103,15 +105,16 @@ struct NodeView: View {
             ForEach(definition?.inputPorts ?? []) { port in
                 HStack(spacing: 6) {
                     Circle()
-                        .fill(port.dataType.color)
-                        .frame(width: 10, height: 10)
-                        .overlay(Circle().stroke(PulseColors.background, lineWidth: 2))
+                        .fill(port.dataType.color(colors))
+                        .frame(width: 12, height: 12)
+                        .overlay(Circle().stroke(colors.background, lineWidth: 2))
+                        .contentShape(Circle().scale(1.5))
                         .onTapGesture {
                             onInputPortTap?(node.id, port.name)
                         }
                     Text(port.name)
                         .font(PulseFonts.micro)
-                        .foregroundStyle(PulseColors.textSecondary)
+                        .foregroundStyle(colors.textSecondary)
                 }
                 .padding(.leading, PulseSpacing.sm)
             }
@@ -127,12 +130,12 @@ struct NodeView: View {
                 HStack(spacing: 6) {
                     Text(port.name)
                         .font(PulseFonts.micro)
-                        .foregroundStyle(PulseColors.textSecondary)
+                        .foregroundStyle(colors.textSecondary)
                     Circle()
-                        .fill(port.dataType.color)
-                        .frame(width: 10, height: 10)
-                        .overlay(Circle().stroke(PulseColors.background, lineWidth: 2))
-                        .contentShape(Circle())
+                        .fill(port.dataType.color(colors))
+                        .frame(width: 12, height: 12)
+                        .overlay(Circle().stroke(colors.background, lineWidth: 2))
+                        .contentShape(Circle().scale(1.5))
                         .gesture(outputPortDragGesture(nodeId: node.id, portName: port.name))
                 }
                 .padding(.trailing, PulseSpacing.sm)
@@ -150,7 +153,7 @@ struct NodeView: View {
                 HStack {
                     Text(widget.label)
                         .font(PulseFonts.micro)
-                        .foregroundStyle(PulseColors.textMuted)
+                        .foregroundStyle(colors.textMuted)
                         .frame(width: 50, alignment: .leading)
 
                     switch widget.widgetType {
@@ -162,10 +165,14 @@ struct NodeView: View {
                             set: { onWidgetChange?(widget.key, AnyCodable($0)) }
                         ), in: range)
                         .tint(PulseColors.accent)
+                        Text(String(format: "%.1f", currentValue))
+                            .font(PulseFonts.micro)
+                            .foregroundStyle(colors.textSecondary)
+                            .frame(width: 28, alignment: .trailing)
                     case .dropdown:
                         Text(widget.options?.first ?? "—")
                             .font(PulseFonts.micro)
-                            .foregroundStyle(PulseColors.textSecondary)
+                            .foregroundStyle(colors.textSecondary)
                     default:
                         EmptyView()
                     }
@@ -180,7 +187,7 @@ struct NodeView: View {
 
     /// Drag gesture on the title bar to move the node (world coordinates)
     private var nodeDragGesture: some Gesture {
-        DragGesture()
+        DragGesture(minimumDistance: 4)
             .onChanged { value in
                 let worldPos = CGPoint(
                     x: (value.location.x - viewportOffset.x) / viewportScale,

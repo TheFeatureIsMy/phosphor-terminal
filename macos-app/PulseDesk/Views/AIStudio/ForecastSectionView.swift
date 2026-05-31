@@ -115,6 +115,7 @@ struct ForecastSectionView: View {
                     // 简化图表 — 用 Canvas 绘制
                     ChartCanvas(data: forecastData)
                         .frame(height: 240)
+                        .transition(.opacity)
 
                     // 统计摘要
                     HStack(spacing: PulseSpacing.lg) {
@@ -232,6 +233,22 @@ private struct ChartCanvas: View {
             }
             bandPath.closeSubpath()
             context.fill(bandPath, with: .color(PulseColors.accent.opacity(0.1)))
+
+            // Y 轴标签
+            let yLabelCount = 3
+            for j in 0..<yLabelCount {
+                let value = minVal + range * CGFloat(j) / CGFloat(yLabelCount - 1)
+                let y = padding + chartHeight * (1 - CGFloat(j) / CGFloat(yLabelCount - 1))
+                let label = value >= 1000 ? String(format: "$%.0f", value) : String(format: "$%.2f", value)
+                context.draw(Text(label).font(.system(size: 9)).foregroundColor(.gray), at: CGPoint(x: 2, y: y), anchor: .topLeading)
+            }
+
+            // X 轴标签 (首/中/尾)
+            let xLabelIndices = [0, data.count / 2, data.count - 1]
+            for idx in xLabelIndices {
+                let p = point(at: idx, value: minVal)
+                context.draw(Text(data[idx].date).font(.system(size: 9)).foregroundColor(.gray), at: CGPoint(x: p.x, y: size.height - 2), anchor: .top)
+            }
 
             // 预测线
             var linePath = Path()

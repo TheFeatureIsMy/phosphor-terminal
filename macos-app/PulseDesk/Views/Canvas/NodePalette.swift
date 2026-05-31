@@ -4,6 +4,7 @@
 import SwiftUI
 
 struct NodePalette: View {
+    @Environment(PulseColors.self) private var colors
     @Binding var isPresented: Bool
     var onNodeSelected: ((NodeDefinition) -> Void)?
 
@@ -15,19 +16,19 @@ struct NodePalette: View {
             // Header
             header
 
-            Divider().foregroundStyle(PulseColors.border)
+            Divider().foregroundStyle(colors.border)
 
             // Search
             searchBar
 
-            Divider().foregroundStyle(PulseColors.border)
+            Divider().foregroundStyle(colors.border)
 
             // Node list
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: 0) {
                     ForEach(NodeCategory.allCases, id: \.self) { category in
                         let defs = filteredNodes(in: category)
-                        if !defs.isEmpty || searchText.isEmpty {
+                        if searchText.isEmpty || !defs.isEmpty {
                             categorySection(category, definitions: defs)
                         }
                     }
@@ -35,16 +36,16 @@ struct NodePalette: View {
             }
         }
         .frame(width: 240)
-        .background(PulseColors.surfaceElevated)
+        .background(colors.surfaceElevated)
         .overlay(
             Rectangle()
-                .fill(PulseGlass.surfaceTint)
+                .fill(PulseGlass.surfaceTint(colors))
                 .allowsHitTesting(false)
         )
         .clipShape(RoundedRectangle(cornerRadius: PulseRadii.md))
         .overlay(
             RoundedRectangle(cornerRadius: PulseRadii.md)
-                .stroke(PulseColors.border, lineWidth: 1)
+                .stroke(colors.border, lineWidth: 1)
         )
         .shadow(color: .black.opacity(0.3), radius: 8, y: 2)
     }
@@ -58,7 +59,7 @@ struct NodePalette: View {
                 .foregroundStyle(PulseColors.accent)
             Text("节点面板")
                 .font(PulseFonts.bodyMedium)
-                .foregroundStyle(PulseColors.textPrimary)
+                .foregroundStyle(colors.textPrimary)
             Spacer()
             Button {
                 withAnimation(PulseAnimation.easeOutFast) {
@@ -67,7 +68,7 @@ struct NodePalette: View {
             } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(PulseColors.textMuted)
+                    .foregroundStyle(colors.textMuted)
             }
             .buttonStyle(.plain)
         }
@@ -80,14 +81,25 @@ struct NodePalette: View {
         HStack(spacing: PulseSpacing.xs) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 11))
-                .foregroundStyle(PulseColors.textMuted)
+                .foregroundStyle(colors.textMuted)
             TextField("搜索节点...", text: $searchText)
                 .textFieldStyle(.plain)
                 .font(PulseFonts.caption)
-                .foregroundStyle(PulseColors.textPrimary)
+                .foregroundStyle(colors.textPrimary)
+
+            if !searchText.isEmpty {
+                Button {
+                    searchText = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 10))
+                        .foregroundStyle(colors.textMuted)
+                }
+                .buttonStyle(.plain)
+            }
         }
         .padding(PulseSpacing.xs)
-        .background(PulseColors.surface)
+        .background(colors.surface)
         .clipShape(RoundedRectangle(cornerRadius: PulseRadii.sm))
         .padding(.horizontal, PulseSpacing.sm)
         .padding(.vertical, PulseSpacing.xs)
@@ -124,11 +136,11 @@ struct NodePalette: View {
                     .frame(width: 16)
                 Text(category.label)
                     .font(PulseFonts.captionMedium)
-                    .foregroundStyle(PulseColors.textPrimary)
+                    .foregroundStyle(colors.textPrimary)
                 Spacer()
                 Text("\(definitions.count)")
                     .font(PulseFonts.micro)
-                    .foregroundStyle(PulseColors.textMuted)
+                    .foregroundStyle(colors.textMuted)
             }
         }
         .padding(.horizontal, PulseSpacing.sm)
@@ -148,17 +160,17 @@ struct NodePalette: View {
                     .frame(width: 16)
                 Text(def.name)
                     .font(PulseFonts.caption)
-                    .foregroundStyle(PulseColors.textPrimary)
+                    .foregroundStyle(colors.textPrimary)
                     .lineLimit(1)
                 Spacer()
                 // Port count indicator
                 if !def.outputPorts.isEmpty {
                     Text("\(def.outputPorts.count)")
                         .font(PulseFonts.micro)
-                        .foregroundStyle(PulseColors.textMuted)
+                        .foregroundStyle(colors.textMuted)
                         .padding(.horizontal, 4)
                         .padding(.vertical, 1)
-                        .background(PulseColors.surface)
+                        .background(colors.surfaceHover)
                         .clipShape(RoundedRectangle(cornerRadius: PulseRadii.xs))
                 }
             }

@@ -4,6 +4,7 @@
 import SwiftUI
 
 struct NodeConfigPanel: View {
+    @Environment(PulseColors.self) private var colors
     let node: CanvasNode
     let definition: NodeDefinition?
     var onDelete: (() -> Void)?
@@ -11,6 +12,7 @@ struct NodeConfigPanel: View {
     var onWidgetChange: ((String, AnyCodable) -> Void)?
 
     @State private var showAdvanced = false
+    @State private var showDeleteConfirm = false
     @State private var nameText: String = ""
     @State private var notesText: String = ""
 
@@ -19,7 +21,7 @@ struct NodeConfigPanel: View {
             // Header
             header
 
-            Divider().foregroundStyle(PulseColors.border)
+            Divider().foregroundStyle(colors.border)
 
             // Scrollable content
             ScrollView(.vertical, showsIndicators: false) {
@@ -32,7 +34,7 @@ struct NodeConfigPanel: View {
                     sectionLabel("备注")
                     configTextField(text: $notesText, placeholder: "添加备注...")
 
-                    Divider().foregroundStyle(PulseColors.border)
+                    Divider().foregroundStyle(colors.border)
 
                     // Dynamic config fields
                     if let definition, !definition.configSchema.isEmpty {
@@ -42,7 +44,7 @@ struct NodeConfigPanel: View {
                         }
                     }
 
-                    Divider().foregroundStyle(PulseColors.border)
+                    Divider().foregroundStyle(colors.border)
 
                     // Advanced section (collapsible)
                     DisclosureGroup(isExpanded: $showAdvanced) {
@@ -57,7 +59,7 @@ struct NodeConfigPanel: View {
                     } label: {
                         Text("高级选项")
                             .font(PulseFonts.captionMedium)
-                            .foregroundStyle(PulseColors.textSecondary)
+                            .foregroundStyle(colors.textMuted)
                     }
                 }
                 .padding(PulseSpacing.md)
@@ -69,22 +71,27 @@ struct NodeConfigPanel: View {
                 ?? definition?.name ?? ""
             notesText = node.config["notes"]?.value as? String ?? ""
         }
+        .onChange(of: node.id) { _, _ in
+            nameText = node.config["name"]?.value as? String
+                ?? definition?.name ?? ""
+            notesText = node.config["notes"]?.value as? String ?? ""
+        }
         .onChange(of: nameText) {
             onConfigChange?("name", AnyCodable(nameText))
         }
         .onChange(of: notesText) {
             onConfigChange?("notes", AnyCodable(notesText))
         }
-        .background(PulseColors.surfaceElevated)
+        .background(colors.surfaceElevated)
         .overlay(
             Rectangle()
-                .fill(PulseGlass.surfaceTint)
+                .fill(PulseGlass.surfaceTint(colors))
                 .allowsHitTesting(false)
         )
         .overlay(
             Rectangle()
                 .frame(width: 1)
-                .foregroundStyle(PulseColors.border),
+                .foregroundStyle(colors.border),
             alignment: .leading
         )
     }
@@ -95,17 +102,17 @@ struct NodeConfigPanel: View {
         HStack(spacing: PulseSpacing.xs) {
             Image(systemName: definition?.icon ?? "circle")
                 .font(.system(size: 14))
-                .foregroundStyle(definition?.color ?? PulseColors.textSecondary)
+                .foregroundStyle(definition?.color ?? colors.textSecondary)
 
             Text(definition?.name ?? node.nodeType)
                 .font(PulseFonts.bodyMedium)
-                .foregroundStyle(PulseColors.textPrimary)
+                .foregroundStyle(colors.textPrimary)
                 .lineLimit(1)
 
             Spacer()
 
             Button {
-                onDelete?()
+                showDeleteConfirm = true
             } label: {
                 Image(systemName: "trash")
                     .font(.system(size: 12))
@@ -113,6 +120,12 @@ struct NodeConfigPanel: View {
             }
             .buttonStyle(.plain)
             .help("删除节点")
+            .confirmationDialog("确认删除", isPresented: $showDeleteConfirm) {
+                Button("删除", role: .destructive) { onDelete?() }
+                Button("取消", role: .cancel) {}
+            } message: {
+                Text("确定要删除节点 \"\(node.nodeType)\" 吗？")
+            }
         }
         .padding(PulseSpacing.sm)
     }
@@ -124,7 +137,7 @@ struct NodeConfigPanel: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(field.label)
                 .font(PulseFonts.caption)
-                .foregroundStyle(PulseColors.textSecondary)
+                .foregroundStyle(colors.textMuted)
 
             switch field.fieldType {
             case .text, .expression, .code:
@@ -152,7 +165,7 @@ struct NodeConfigPanel: View {
                     if let min = field.min, let max = field.max {
                         Text("[\(Int(min))-\(Int(max))]")
                             .font(PulseFonts.micro)
-                            .foregroundStyle(PulseColors.textMuted)
+                            .foregroundStyle(colors.textMuted)
                     }
                 }
 
@@ -172,8 +185,8 @@ struct NodeConfigPanel: View {
                     )
                     .tint(PulseColors.accent)
                     Text(String(format: "%.0f", current))
-                        .font(PulseFonts.monoSmall)
-                        .foregroundStyle(PulseColors.textSecondary)
+                        .font(PulseFonts.caption)
+                        .foregroundStyle(colors.textSecondary)
                         .frame(width: 36, alignment: .trailing)
                 }
 
@@ -234,20 +247,20 @@ struct NodeConfigPanel: View {
     private func sectionLabel(_ text: String) -> some View {
         Text(text)
             .font(PulseFonts.captionMedium)
-            .foregroundStyle(PulseColors.textMuted)
+            .foregroundStyle(colors.textMuted)
     }
 
     private func configTextField(text: Binding<String>, placeholder: String) -> some View {
         TextField(placeholder, text: text)
             .textFieldStyle(.plain)
             .font(PulseFonts.caption)
-            .foregroundStyle(PulseColors.textPrimary)
+            .foregroundStyle(colors.textPrimary)
             .padding(PulseSpacing.xs)
-            .background(PulseColors.surface)
+            .background(colors.surface)
             .clipShape(RoundedRectangle(cornerRadius: PulseRadii.sm))
             .overlay(
                 RoundedRectangle(cornerRadius: PulseRadii.sm)
-                    .stroke(PulseColors.border, lineWidth: 1)
+                    .stroke(colors.border, lineWidth: 1)
             )
     }
 }

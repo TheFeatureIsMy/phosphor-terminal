@@ -4,13 +4,15 @@
 import SwiftUI
 
 struct GroupBoxView: View {
+    @Environment(PulseColors.self) private var colors
     let group: NodeGroup
     let nodes: [CanvasNode]
 
     var body: some View {
-        let bounds = computeBounds()
+        if !group.nodeIds.isEmpty {
+            let bounds = computeBounds()
 
-        ZStack(alignment: .top) {
+            ZStack(alignment: .top) {
             // Dashed border background
             RoundedRectangle(cornerRadius: PulseRadii.md)
                 .fill(PulseColors.accent.opacity(0.04))
@@ -28,16 +30,18 @@ struct GroupBoxView: View {
                 .foregroundStyle(PulseColors.accent)
                 .padding(.horizontal, PulseSpacing.xs)
                 .padding(.vertical, 2)
-                .background(PulseColors.surfaceElevated)
+                .background(colors.surfaceElevated)
                 .clipShape(RoundedRectangle(cornerRadius: PulseRadii.xs))
                 .overlay(
                     RoundedRectangle(cornerRadius: PulseRadii.xs)
                         .stroke(PulseColors.accent.opacity(0.2), lineWidth: 1)
                 )
-                .offset(y: -10)
+                .offset(y: -PulseSpacing.xs)
         }
-        .frame(width: bounds.width + 30, height: bounds.height + 50)
+        .frame(width: bounds.width + PulseSpacing.xl, height: bounds.height + PulseSpacing.xxl + PulseSpacing.xxs)
         .position(x: bounds.midX, y: bounds.midY - 5)
+        .animation(.easeInOut(duration: 0.2), value: bounds)
+        }
     }
 
     private func computeBounds() -> CGRect {
