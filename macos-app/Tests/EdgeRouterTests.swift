@@ -11,7 +11,7 @@ struct EdgeRouterTests {
         let def = NodeRegistry.definition(for: "indicator.rsi")!
         let router = EdgeRouter()
 
-        let pos = router.portPosition(node: node, definition: def, portName: "kline", isInput: true)
+        let pos = router.portPosition(node: node, definition: def, portKey: "kline", isInput: true)
 
         #expect(pos != nil)
         #expect(pos!.x == 100)
@@ -25,7 +25,7 @@ struct EdgeRouterTests {
         let def = NodeRegistry.definition(for: "indicator.rsi")!
         let router = EdgeRouter()
 
-        let pos = router.portPosition(node: node, definition: def, portName: "rsiValue", isInput: false)
+        let pos = router.portPosition(node: node, definition: def, portKey: "rsiValue", isInput: false)
 
         #expect(pos != nil)
         #expect(pos!.x == 300)  // 100 + 200
@@ -39,7 +39,7 @@ struct EdgeRouterTests {
         let def = NodeRegistry.definition(for: "indicator.rsi")!
         let router = EdgeRouter()
 
-        let pos = router.portPosition(node: node, definition: def, portName: "nonexistent", isInput: true)
+        let pos = router.portPosition(node: node, definition: def, portKey: "nonexistent", isInput: true)
 
         #expect(pos == nil)
     }

@@ -9,11 +9,11 @@ struct EdgeRouter {
     func portPosition(
         node: CanvasNode,
         definition: NodeDefinition,
-        portName: String,
+        portKey: String,
         isInput: Bool
     ) -> CGPoint? {
         if isInput {
-            guard let index = definition.inputPorts.firstIndex(where: { $0.name == portName }) else {
+            guard let index = definition.inputPorts.firstIndex(where: { $0.key == portKey }) else {
                 return nil
             }
             return CGPoint(
@@ -21,7 +21,7 @@ struct EdgeRouter {
                 y: node.position.y + titleBarHeight + CGFloat(index) * portSpacing + halfPortSize
             )
         } else {
-            guard let index = definition.outputPorts.firstIndex(where: { $0.name == portName }) else {
+            guard let index = definition.outputPorts.firstIndex(where: { $0.key == portKey }) else {
                 return nil
             }
             let inputCount = CGFloat(definition.inputPorts.count)

@@ -37,8 +37,8 @@ struct EdgeValidatorTests {
     @Test func wouldCreateCycle_withValidEdge_returnsFalse() {
         let n1 = UUID(); let n2 = UUID(); let n3 = UUID()
         let edges = [
-            CanvasEdge(id: UUID(), sourceNodeId: n1, sourcePort: "out", targetNodeId: n2, targetPort: "in1", dataType: .indicator),
-            CanvasEdge(id: UUID(), sourceNodeId: n2, sourcePort: "out", targetNodeId: n3, targetPort: "in1", dataType: .signal),
+            CanvasEdge(id: UUID(), sourceNodeId: n1, sourcePortKey: "out", targetNodeId: n2, targetPortKey: "in1"),
+            CanvasEdge(id: UUID(), sourceNodeId: n2, sourcePortKey: "out", targetNodeId: n3, targetPortKey: "in1"),
         ]
         let validator = EdgeValidator()
         // Adding edge from n1 straight to n3 — already reachable but no back-edge, so no cycle
@@ -48,8 +48,8 @@ struct EdgeValidatorTests {
     @Test func wouldCreateCycle_withBackEdge_returnsTrue() {
         let n1 = UUID(); let n2 = UUID(); let n3 = UUID()
         let edges = [
-            CanvasEdge(id: UUID(), sourceNodeId: n1, sourcePort: "out", targetNodeId: n2, targetPort: "in1", dataType: .indicator),
-            CanvasEdge(id: UUID(), sourceNodeId: n2, sourcePort: "out", targetNodeId: n3, targetPort: "in1", dataType: .signal),
+            CanvasEdge(id: UUID(), sourceNodeId: n1, sourcePortKey: "out", targetNodeId: n2, targetPortKey: "in1"),
+            CanvasEdge(id: UUID(), sourceNodeId: n2, sourcePortKey: "out", targetNodeId: n3, targetPortKey: "in1"),
         ]
         let validator = EdgeValidator()
         // Adding edge from n3 back to n1 creates cycle: n3 → n1 → n2 → n3
