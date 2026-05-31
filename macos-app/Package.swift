@@ -12,6 +12,11 @@ let package = Package(
             swiftSettings: [
                 .unsafeFlags(["-parse-as-library"]),
             ]
-        )
+        ),
+        .testTarget(
+            name: "PulseDeskTests",
+            dependencies: ["PulseDesk"],
+            path: "Tests"
+        ),
     ]
 )
