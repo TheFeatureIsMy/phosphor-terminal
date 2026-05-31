@@ -306,7 +306,7 @@ struct ConnectionSchema {
 
 // MARK: - CanvasTemplate
 
-struct CanvasTemplate: Identifiable {
+struct CanvasTemplate: Identifiable, @unchecked Sendable {
     let id: String
     let name: String
     let description: String

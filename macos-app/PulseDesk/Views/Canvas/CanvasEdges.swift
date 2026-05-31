@@ -1,4 +1,5 @@
-// CanvasEdges.swift — 正交走线，自动避开节点
+// CanvasEdges.swift — 连线渲染
+// Bezier 曲线，橡皮筋预览线，箭头
 
 import SwiftUI
 
@@ -10,156 +11,101 @@ struct CanvasEdges: View {
     let scale: CGFloat
     let offset: CGPoint
 
+    // Rubber-band preview line (from source port position to cursor)
+    var rubberBand: (from: CGPoint, to: CGPoint)?
+
     var body: some View {
         Canvas { context, size in
             let nodeMap = Dictionary(uniqueKeysWithValues: nodes.map { ($0.id, $0) })
 
             for edge in edges {
-                guard let src = nodeMap[edge.sourceNodeId],
-                      let tgt = nodeMap[edge.targetNodeId],
-                      let srcSide = PortSide(rawValue: edge.sourcePort),
-                      let tgtSide = PortSide(rawValue: edge.targetPort) else { continue }
+                guard let srcNode = nodeMap[edge.sourceNodeId],
+                      let tgtNode = nodeMap[edge.targetNodeId],
+                      let srcDef = NodeRegistry.definition(for: srcNode.nodeType),
+                      let tgtDef = NodeRegistry.definition(for: tgtNode.nodeType) else { continue }
 
-                let from = portWorldPos(node: src, side: srcSide)
-                let to = portWorldPos(node: tgt, side: tgtSide)
-
-                let screenFrom = CGPoint(x: from.x * scale + offset.x, y: from.y * scale + offset.y)
-                let screenTo = CGPoint(x: to.x * scale + offset.x, y: to.y * scale + offset.y)
+                let from = portScreenPos(node: srcNode, portKey: edge.sourcePortKey, definition: srcDef)
+                let to = portScreenPos(node: tgtNode, portKey: edge.targetPortKey, definition: tgtDef)
 
                 let isSelected = selectedEdgeIds.contains(edge.id)
-                let color = edge.dataType.color(colors)
-                let lineWidth: CGFloat = isSelected ? 2.5 : 1.5
-                let opacity: CGFloat = src.isDisabled || tgt.isDisabled ? 0.3 : 0.8
+                let dataType = srcDef.outputPorts.first { $0.key == edge.sourcePortKey }?.dataType ?? .signal
+                let color = dataType.color(colors)
+                let lineWidth: CGFloat = isSelected ? 3.0 : 1.5
+                let opacity: CGFloat = srcNode.isDisabled || tgtNode.isDisabled ? 0.3 : 0.8
 
-                drawOrthogonal(context: context, from: screenFrom, to: screenTo,
-                               fromSide: srcSide, toSide: tgtSide,
-                               color: color.opacity(opacity), lineWidth: lineWidth)
+                drawBezier(context: context, from: from, to: to, color: color.opacity(opacity), lineWidth: lineWidth)
+                drawArrowhead(context: context, at: to, from: from, color: color.opacity(opacity))
+            }
+
+            // Rubber-band preview line
+            if let rb = rubberBand {
+                var path = Path()
+                path.move(to: rb.from)
+                let dx = abs(rb.to.x - rb.from.x) * 0.4
+                path.addCurve(to: rb.to,
+                              control1: CGPoint(x: rb.from.x + dx, y: rb.from.y),
+                              control2: CGPoint(x: rb.to.x - dx, y: rb.to.y))
+                context.stroke(path, with: .color(PulseColors.accent.opacity(0.6)),
+                               style: StrokeStyle(lineWidth: 2, dash: [6, 4]))
             }
         }
     }
 
-    private func drawOrthogonal(context: GraphicsContext, from: CGPoint, to: CGPoint,
-                                 fromSide: PortSide, toSide: PortSide,
-                                 color: Color, lineWidth: CGFloat) {
+    // Bezier curve
+    private func drawBezier(context: GraphicsContext, from: CGPoint, to: CGPoint, color: Color, lineWidth: CGFloat) {
         var path = Path()
         path.move(to: from)
-        let seg: CGFloat = 20
 
-        switch (fromSide, toSide) {
-        case (.right, .left):
-            if to.x > from.x {
-                let mx = (from.x + to.x) / 2
-                path.addLine(to: CGPoint(x: mx, y: from.y))
-                path.addLine(to: CGPoint(x: mx, y: to.y))
-            } else {
-                let dy = min(from.y, to.y) - 30
-                path.addLine(to: CGPoint(x: from.x + seg, y: from.y))
-                path.addLine(to: CGPoint(x: from.x + seg, y: dy))
-                path.addLine(to: CGPoint(x: to.x - seg, y: dy))
-                path.addLine(to: CGPoint(x: to.x - seg, y: to.y))
-            }
-            path.addLine(to: to)
+        let dx = abs(to.x - from.x) * 0.4
+        let cp1 = CGPoint(x: from.x + dx, y: from.y)
+        let cp2 = CGPoint(x: to.x - dx, y: to.y)
 
-        case (.bottom, .top):
-            if to.y > from.y {
-                let my = (from.y + to.y) / 2
-                path.addLine(to: CGPoint(x: from.x, y: my))
-                path.addLine(to: CGPoint(x: to.x, y: my))
-            } else {
-                let dx = max(from.x, to.x) + 30
-                path.addLine(to: CGPoint(x: from.x, y: from.y + seg))
-                path.addLine(to: CGPoint(x: dx, y: from.y + seg))
-                path.addLine(to: CGPoint(x: dx, y: to.y - seg))
-                path.addLine(to: CGPoint(x: to.x, y: to.y - seg))
-            }
-            path.addLine(to: to)
-
-        case (.right, .top):
-            path.addLine(to: CGPoint(x: from.x + seg, y: from.y))
-            path.addLine(to: CGPoint(x: from.x + seg, y: to.y - seg))
-            path.addLine(to: CGPoint(x: to.x, y: to.y - seg))
-            path.addLine(to: to)
-
-        case (.right, .bottom):
-            path.addLine(to: CGPoint(x: from.x + seg, y: from.y))
-            path.addLine(to: CGPoint(x: from.x + seg, y: to.y + seg))
-            path.addLine(to: CGPoint(x: to.x, y: to.y + seg))
-            path.addLine(to: to)
-
-        case (.bottom, .left):
-            path.addLine(to: CGPoint(x: from.x, y: from.y + seg))
-            path.addLine(to: CGPoint(x: to.x - seg, y: from.y + seg))
-            path.addLine(to: CGPoint(x: to.x - seg, y: to.y))
-            path.addLine(to: to)
-
-        case (.bottom, .right):
-            path.addLine(to: CGPoint(x: from.x, y: from.y + seg))
-            path.addLine(to: CGPoint(x: to.x + seg, y: from.y + seg))
-            path.addLine(to: CGPoint(x: to.x + seg, y: to.y))
-            path.addLine(to: to)
-
-        case (.left, .top):
-            path.addLine(to: CGPoint(x: from.x - seg, y: from.y))
-            path.addLine(to: CGPoint(x: from.x - seg, y: to.y - seg))
-            path.addLine(to: CGPoint(x: to.x, y: to.y - seg))
-            path.addLine(to: to)
-
-        case (.left, .bottom):
-            path.addLine(to: CGPoint(x: from.x - seg, y: from.y))
-            path.addLine(to: CGPoint(x: from.x - seg, y: to.y + seg))
-            path.addLine(to: CGPoint(x: to.x, y: to.y + seg))
-            path.addLine(to: to)
-
-        case (.top, .left):
-            path.addLine(to: CGPoint(x: from.x, y: from.y - seg))
-            path.addLine(to: CGPoint(x: to.x - seg, y: from.y - seg))
-            path.addLine(to: CGPoint(x: to.x - seg, y: to.y))
-            path.addLine(to: to)
-
-        case (.top, .right):
-            path.addLine(to: CGPoint(x: from.x, y: from.y - seg))
-            path.addLine(to: CGPoint(x: to.x + seg, y: from.y - seg))
-            path.addLine(to: CGPoint(x: to.x + seg, y: to.y))
-            path.addLine(to: to)
-
-        default:
-            path.addLine(to: CGPoint(x: to.x, y: from.y))
-            path.addLine(to: to)
-        }
-
+        path.addCurve(to: to, control1: cp1, control2: cp2)
         context.stroke(path, with: .color(color), lineWidth: lineWidth)
+    }
 
-        // Arrowhead
-        let sz: CGFloat = 5
+    // Arrowhead at target end
+    private func drawArrowhead(context: GraphicsContext, at point: CGPoint, from: CGPoint, color: Color) {
+        let angle = atan2(point.y - from.y, point.x - from.x)
+        let sz: CGFloat = 6
         var arrow = Path()
-        switch toSide {
-        case .left:
-            arrow.move(to: to)
-            arrow.addLine(to: CGPoint(x: to.x + sz, y: to.y - sz))
-            arrow.addLine(to: CGPoint(x: to.x + sz, y: to.y + sz))
-        case .right:
-            arrow.move(to: to)
-            arrow.addLine(to: CGPoint(x: to.x - sz, y: to.y - sz))
-            arrow.addLine(to: CGPoint(x: to.x - sz, y: to.y + sz))
-        case .top:
-            arrow.move(to: to)
-            arrow.addLine(to: CGPoint(x: to.x - sz, y: to.y + sz))
-            arrow.addLine(to: CGPoint(x: to.x + sz, y: to.y + sz))
-        case .bottom:
-            arrow.move(to: to)
-            arrow.addLine(to: CGPoint(x: to.x - sz, y: to.y - sz))
-            arrow.addLine(to: CGPoint(x: to.x + sz, y: to.y - sz))
-        }
+        arrow.move(to: point)
+        arrow.addLine(to: CGPoint(x: point.x - sz * cos(angle - .pi / 6),
+                                   y: point.y - sz * sin(angle - .pi / 6)))
+        arrow.addLine(to: CGPoint(x: point.x - sz * cos(angle + .pi / 6),
+                                   y: point.y - sz * sin(angle + .pi / 6)))
         arrow.closeSubpath()
         context.fill(arrow, with: .color(color))
     }
 
-    private func portWorldPos(node: CanvasNode, side: PortSide) -> CGPoint {
-        switch side {
-        case .left:  return CGPoint(x: node.position.x, y: node.position.y + node.size.height / 2)
-        case .right: return CGPoint(x: node.position.x + node.size.width, y: node.position.y + node.size.height / 2)
-        case .top:   return CGPoint(x: node.position.x + node.size.width / 2, y: node.position.y)
-        case .bottom: return CGPoint(x: node.position.x + node.size.width / 2, y: node.position.y + node.size.height)
+    // Port screen position using PortDirection
+    private func portScreenPos(node: CanvasNode, portKey: String, definition: NodeDefinition) -> CGPoint {
+        let titleH: CGFloat = 32
+        let y = portY(node: node, portKey: portKey, definition: definition, titleH: titleH)
+
+        let allInputs = definition.inputPorts
+        let isInput = allInputs.contains { $0.key == portKey }
+        let x = isInput ? node.position.x : node.position.x + node.size.width
+
+        return CGPoint(x: x * scale + offset.x, y: y * scale + offset.y)
+    }
+
+    private func portY(node: CanvasNode, portKey: String, definition: NodeDefinition, titleH: CGFloat) -> CGFloat {
+        let inputPorts = definition.inputPorts
+        let outputPorts = definition.outputPorts
+
+        if let idx = inputPorts.firstIndex(where: { $0.key == portKey }) {
+            let bodyH = node.isCollapsed ? 0 : node.size.height - titleH
+            let count = inputPorts.count
+            let spacing = bodyH / CGFloat(max(count, 1) + 1)
+            return node.position.y + titleH + spacing * CGFloat(idx + 1)
         }
+        if let idx = outputPorts.firstIndex(where: { $0.key == portKey }) {
+            let bodyH = node.isCollapsed ? 0 : node.size.height - titleH
+            let count = outputPorts.count
+            let spacing = bodyH / CGFloat(max(count, 1) + 1)
+            return node.position.y + titleH + spacing * CGFloat(idx + 1)
+        }
+        return node.position.y + node.size.height / 2
     }
 }

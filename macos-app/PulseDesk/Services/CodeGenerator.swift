@@ -135,7 +135,7 @@ struct CodeGenerator {
             let def = NodeRegistry.definition(for: node.nodeType)
             guard let def else { continue }
             for port in def.inputPorts where port.isRequired {
-                let connected = graph.edges.contains { $0.targetNodeId == node.id && $0.targetPort == port.name }
+                let connected = graph.edges.contains { $0.targetNodeId == node.id && $0.targetPortKey == port.key }
                 if !connected {
                     issues.append("\(def.name) 缺少必需输入: \(port.name)")
                 }
@@ -320,7 +320,7 @@ struct CodeGenerator {
                let sourceDef = NodeRegistry.definition(for: sourceNode.nodeType) {
                 let varName = sourceNode.config["outputVar"]?.value as? String
                     ?? "\(sourceNode.nodeType.replacingOccurrences(of: ".", with: "_"))_\(sourceNode.id.uuidString.prefix(8))"
-                vars[edge.targetPort] = varName
+                vars[edge.targetPortKey] = varName
             }
         }
         return vars
@@ -397,7 +397,7 @@ struct CodeGenerator {
     }
 
     private func resolveInputColumn(_ node: CanvasNode, graph: WorkflowGraph, port: String, fallback: String) -> String {
-        guard let edge = graph.edges.first(where: { $0.targetNodeId == node.id && $0.targetPort == port }) else {
+        guard let edge = graph.edges.first(where: { $0.targetNodeId == node.id && $0.targetPortKey == port }) else {
             return fallback
         }
         guard let sourceNode = graph.nodes.first(where: { $0.id == edge.sourceNodeId }) else {
