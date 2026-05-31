@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Strategy Canvas</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    background: #0A0A0B;
+    color: #E0E0E0;
+    font-family: 'SF Mono', 'Menlo', monospace;
+    overflow: hidden;
+    height: 100vh;
+    user-select: none;
+    -webkit-user-select: none;
+}
+#canvas {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    background-image: radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+.node {
+    position: absolute;
+    min-width: 180px;
+    background: rgba(24,24,28,0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 4px;
+    cursor: move;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+.node.selected {
+    border-color: rgba(0,255,157,0.5);
+    box-shadow: 0 0 16px rgba(0,255,157,0.12);
+}
+.node:hover { border-color: rgba(255,255,255,0.15); }
+.node-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.node-body { padding: 6px 0; }
+.port {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    font-size: 10px;
+    cursor: pointer;
+}
+.port:hover { background: rgba(255,255,255,0.04); }
+.port-input { justify-content: flex-start; }
+.port-output { justify-content: flex-end; }
+.port-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    border: 2px solid rgba(0,0,0,0.5);
+    transition: transform 0.15s;
+}
+.port-dot:hover { transform: scale(1.3); }
+.port-dot.wiring { box-shadow: 0 0 8px currentColor; }
+svg#connections {
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 0;
+}
+svg#connections line {
+    stroke: rgba(0,255,157,0.3);
+    stroke-width: 2;
+}
+#palette {
+    position: absolute; top: 8px; left: 8px;
+    width: 220px; max-height: calc(100vh - 16px);
+    background: rgba(20,20,24,0.95);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 6px;
+    overflow-y: auto;
+    z-index: 100;
+    transition: transform 0.2s;
+}
+#palette.hidden { transform: translateX(-240px); }
+#palette-toggle {
+    position: absolute; top: 8px; left: 236px;
+    z-index: 101;
+    background: rgba(20,20,24,0.9);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 4px;
+    color: #888; padding: 6px 8px;
+    cursor: pointer; font-size: 13px;
+}
+#palette-toggle:hover { color: #00FF9D; }
+.palette-section {
+    padding: 8px 10px 4px;
+    font-size: 9px; text-transform: uppercase;
+    letter-spacing: 1px; color: #555;
+}
+.palette-item {
+    padding: 6px 10px; font-size: 11px;
+    cursor: pointer; display: flex; align-items: center; gap: 6px;
+    transition: background 0.1s;
+}
+.palette-item:hover { background: rgba(0,255,157,0.06); color: #00FF9D; }
+.palette-item .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+#context-menu {
+    position: absolute; z-index: 200;
+    background: rgba(20,20,24,0.95);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 4px;
+    min-width: 140px;
+    display: none;
+}
+.context-item {
+    padding: 6px 12px; font-size: 11px;
+    cursor: pointer; display: flex; align-items: center; gap: 8px;
+}
+.context-item:hover { background: rgba(255,255,255,0.06); }
+.context-item.danger { color: #FF3B3B; }
+#toolbar {
+    position: absolute; bottom: 8px; left: 50%;
+    transform: translateX(-50%);
+    display: flex; gap: 4px;
+    background: rgba(20,20,24,0.9);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 6px; padding: 4px 8px;
+    z-index: 100;
+}
+.tool-btn {
+    background: none; border: none; color: #888;
+    padding: 4px 8px; cursor: pointer; font-size: 11px;
+    border-radius: 3px;
+}
+.tool-btn:hover { color: #00FF9D; background: rgba(0,255,157,0.06); }
+#search-overlay {
+    display: none; position: absolute; inset: 0;
+    background: rgba(10,10,11,0.7);
+    z-index: 200;
+    align-items: center; justify-content: center;
+}
+#search-overlay.active { display: flex; }
+#search-box {
+    width: 380px;
+    background: rgba(20,20,24,0.95);
+    border: 1px solid rgba(0,255,157,0.2);
+    border-radius: 8px;
+    overflow: hidden;
+}
+#search-input {
+    width: 100%; padding: 12px 16px;
+    background: rgba(30,30,35,0.8);
+    border: none; color: #E0E0E0;
+    font-size: 14px; font-family: inherit;
+    outline: none;
+}
+#search-results { max-height: 300px; overflow-y: auto; }
+.search-item {
+    padding: 8px 16px; cursor: pointer;
+    display: flex; align-items: center; gap: 8px; font-size: 12px;
+}
+.search-item:hover, .search-item.active { background: rgba(0,255,157,0.06); color: #00FF9D; }
+#status-bar {
+    position: absolute; top: 8px; right: 12px;
+    font-size: 10px; color: #555; z-index: 50;
+}
+</style>
+</head>
+<body>
+<div id="canvas">
+    <svg id="connections"></svg>
+
+    <!-- Palette -->
+    <div id="palette">
+        <div style="padding:10px 10px 6px;font-size:12px;font-weight:600;color:#00FF9D;display:flex;align-items:center;gap:6px;">
+            <span style="font-size:14px;">&#x229E;</span> 节点面板
+        </div>
+        <!-- Nodes injected by JS -->
+    </div>
+    <button id="palette-toggle" onclick="togglePalette()">&#x2630;</button>
+
+    <!-- Toolbar -->
+    <div id="toolbar">
+        <button class="tool-btn" onclick="addNode()" title="添加节点 (双击空白)">+节点</button>
+        <button class="tool-btn" onclick="deleteSelected()" title="删除选中">删除</button>
+        <button class="tool-btn" id="deploy-btn" onclick="deployWorkflow()" title="部署策略" style="color:#00FF9D">&#x25B6; 部署</button>
+    </div>
+
+    <!-- Search overlay -->
+    <div id="search-overlay" onclick="if(event.target===this) closeSearch()">
+        <div id="search-box">
+            <input id="search-input" placeholder="搜索节点类型..." oninput="updateSearch()" onkeydown="searchKeydown(event)">
+            <div id="search-results"></div>
+        </div>
+    </div>
+
+    <!-- Context menu -->
+    <div id="context-menu">
+        <div class="context-item" onclick="duplicateNode()">&#x1F4CB; 复制</div>
+        <div class="context-item" onclick="deleteSelected()">&#x1F5D1; 删除</div>
+        <div class="context-item danger" onclick="deleteSelected()">&#x2715; 删除节点</div>
+    </div>
+
+    <!-- Status -->
+    <div id="status-bar">
+        <span id="node-count">节点: 0</span> &#xB7;
+        <span id="edge-count">连线: 0</span>
+    </div>
+</div>
+
+<script>
+// ====== State ======
+let nodes = [];
+let edges = [];
+let nodeIdCounter = 0;
+let selectedNodeId = null;
+let wiringFrom = null;
+let paletteVisible = true;
+let dragging = null;
+let dragOffset = {x:0, y:0};
+
+// ====== Node Definitions ======
+const CATEGORIES = [
+    { name: '数据源', color: '#00C2FF', icon: '⬡', nodes: [
+        {type:'data.kline', name:'K线数据', ports:{in:[], out:['ticker','kline[]']}},
+        {type:'data.orderbook', name:'订单簿', ports:{in:[], out:['orderbook']}},
+        {type:'data.funding', name:'资金费率', ports:{in:[], out:['fundingRate']}},
+        {type:'data.sentiment.social', name:'社交媒体情绪', ports:{in:[], out:['sentimentScore']}},
+        {type:'data.sentiment.fearGreed', name:'恐惧贪婪指数', ports:{in:[], out:['index']}},
+    ]},
+    { name: '信号处理', color: '#A855F7', icon: '≋', nodes: [
+        {type:'indicator.rsi', name:'RSI', ports:{in:['kline[]'], out:['rsiValue']}},
+        {type:'indicator.macd', name:'MACD', ports:{in:['kline[]'], out:['macd','signal','histogram']}},
+        {type:'indicator.bollinger', name:'布林带', ports:{in:['kline[]'], out:['upper','middle','lower']}},
+        {type:'indicator.ma', name:'移动均线', ports:{in:['kline[]'], out:['maValue']}},
+        {type:'indicator.atr', name:'ATR', ports:{in:['kline[]'], out:['atrValue']}},
+        {type:'indicator.obv', name:'OBV', ports:{in:['kline[]'], out:['obv']}},
+        {type:'indicator.stochastic', name:'随机指标', ports:{in:['kline[]'], out:['k','d']}},
+        {type:'indicator.adx', name:'ADX', ports:{in:['kline[]'], out:['adx','diPlus','diMinus']}},
+        {type:'filter.threshold', name:'阈值过滤', ports:{in:['signal'], out:['signal']}},
+        {type:'transform.normalize', name:'归一化', ports:{in:['signal'], out:['normalized[]']}},
+        {type:'logic.gate', name:'逻辑门', ports:{in:['signal','signal'], out:['signal']}},
+    ]},
+    { name: '决策', color: '#FFB800', icon: '⬡', nodes: [
+        {type:'condition.if', name:'条件分支', ports:{in:['signal'], out:['true','false']}},
+        {type:'condition.combine', name:'信号组合', ports:{in:['signal','signal'], out:['combined']}},
+        {type:'strategy.entry', name:'入场信号', ports:{in:['combined'], out:['order']}},
+        {type:'strategy.exit', name:'离场信号', ports:{in:['combined'], out:['order']}},
+        {type:'sizing.fixed', name:'固定仓位', ports:{in:[], out:['quantity']}},
+        {type:'sizing.percentage', name:'百分比仓位', ports:{in:[], out:['quantity']}},
+    ]},
+    { name: 'AI', color: '#00FF9D', icon: '◈', nodes: [
+        {type:'ai.llm', name:'LLM 分析', ports:{in:['text'], out:['text','analysis']}},
+        {type:'ai.sentiment.finbert', name:'FinBERT', ports:{in:['text'], out:['score','label']}},
+        {type:'ai.forecast', name:'AI 预测', ports:{in:['kline[]'], out:['prediction','confidence']}},
+        {type:'ai.anomaly', name:'异常检测', ports:{in:['kline[]'], out:['anomalies[]']}},
+    ]},
+    { name: '输出', color: '#FF3B3B', icon: '▶', nodes: [
+        {type:'output.order', name:'下单', ports:{in:['order'], out:[]}},
+        {type:'output.alert', name:'告警', ports:{in:['signal'], out:[]}},
+        {type:'output.dashboard', name:'仪表盘', ports:{in:['any'], out:[]}},
+    ]},
+];
+
+// ====== Rendering ======
+function buildPalette() {
+    const palette = document.getElementById('palette');
+    CATEGORIES.forEach(cat => {
+        const section = document.createElement('div');
+        section.className = 'palette-section';
+        section.textContent = cat.name;
+        palette.appendChild(section);
+        cat.nodes.forEach(ndef => {
+            const item = document.createElement('div');
+            item.className = 'palette-item';
+            item.innerHTML = '<span class="dot" style="background:' + cat.color + '"></span>' + ndef.name;
+            item.onclick = (e) => { e.stopPropagation(); addNode(ndef); };
+            palette.appendChild(item);
+        });
+    });
+}
+
+function addNode(ndef) {
+    if (!ndef) {
+        document.getElementById('search-overlay').classList.add('active');
+        document.getElementById('search-input').focus();
+        return;
+    }
+    var id = 'n' + (++nodeIdCounter);
+    var node = {
+        id: id,
+        type: ndef.type,
+        name: ndef.name,
+        x: 200 + Math.random() * 300,
+        y: 100 + Math.random() * 200,
+        ports: ndef.ports,
+        category: '#888'
+    };
+    // Find category color
+    for (var ci = 0; ci < CATEGORIES.length; ci++) {
+        for (var ni = 0; ni < CATEGORIES[ci].nodes.length; ni++) {
+            if (CATEGORIES[ci].nodes[ni].type === ndef.type) {
+                node.category = CATEGORIES[ci].color;
+                break;
+            }
+        }
+    }
+    nodes.push(node);
+    renderNode(node);
+    updateConnections();
+    updateStatus();
+    saveState();
+}
+
+function renderNode(node) {
+    var el = document.createElement('div');
+    el.className = 'node';
+    el.id = node.id;
+    el.style.left = node.x + 'px';
+    el.style.top = node.y + 'px';
+
+    var html = '<div class="node-header" style="color:' + node.category + '">'
+        + '<span>&#x2B21;</span>' + node.name
+        + '</div><div class="node-body">';
+
+    // Input ports
+    for (var i = 0; i < (node.ports.in || []).length; i++) {
+        var p = node.ports.in[i];
+        html += '<div class="port port-input" data-port="' + p + '" data-dir="in">'
+            + '<span class="port-dot" style="background:' + getPortColor(p) + '"></span>'
+            + p + '</div>';
+    }
+
+    // Output ports
+    for (var i = 0; i < (node.ports.out || []).length; i++) {
+        var p = node.ports.out[i];
+        html += '<div class="port port-output" data-port="' + p + '" data-dir="out">'
+            + p + ' <span class="port-dot" style="background:' + getPortColor(p) + '"></span></div>';
+    }
+
+    html += '</div>';
+    el.innerHTML = html;
+
+    // Events
+    el.addEventListener('mousedown', function(e) { startDrag(e, node.id); });
+    el.addEventListener('click', function(e) { e.stopPropagation(); selectNode(node.id); });
+    el.addEventListener('contextmenu', function(e) { e.preventDefault(); showContextMenu(e, node.id); });
+
+    // Port clicks
+    var dots = el.querySelectorAll('.port-dot');
+    for (var i = 0; i < dots.length; i++) {
+        (function(dot) {
+            dot.addEventListener('mousedown', function(e) { e.stopPropagation(); e.preventDefault(); });
+            dot.addEventListener('click', function(e) {
+                e.stopPropagation();
+                var portEl = dot.parentElement;
+                var portName = portEl.dataset.port;
+                var dir = portEl.dataset.dir;
+                if (dir === 'out') {
+                    startWiring(node.id, portName);
+                } else if (dir === 'in' && wiringFrom) {
+                    completeWiring(node.id, portName);
+                }
+            });
+        })(dots[i]);
+    }
+
+    document.getElementById('canvas').appendChild(el);
+}
+
+function getPortColor(name) {
+    if (name.indexOf('kline') !== -1 || name.indexOf('ticker') !== -1) return '#00C2FF';
+    if (name.indexOf('signal') !== -1 || name.indexOf('rsi') !== -1 || name.indexOf('macd') !== -1) return '#A855F7';
+    if (name.indexOf('order') !== -1) return '#FF3B3B';
+    if (name.indexOf('sentiment') !== -1 || name.indexOf('score') !== -1) return '#00FF9D';
+    return '#888';
+}
+
+// ====== Interactions ======
+function startDrag(e, nodeId) {
+    if (e.button !== 0) return;
+    e.stopPropagation();
+    selectNode(nodeId);
+    var node = getNode(nodeId);
+    if (!node) return;
+    dragging = nodeId;
+    dragOffset = { x: e.clientX - node.x, y: e.clientY - node.y };
+}
+
+document.addEventListener('mousemove', function(e) {
+    if (dragging) {
+        var node = getNode(dragging);
+        if (node) {
+            node.x = e.clientX - dragOffset.x;
+            node.y = e.clientY - dragOffset.y;
+            var el = document.getElementById(node.id);
+            if (el) { el.style.left = node.x + 'px'; el.style.top = node.y + 'px'; }
+            updateConnections();
+        }
+    }
+});
+
+document.addEventListener('mouseup', function() { if (dragging) { dragging = null; saveState(); } });
+
+function getNode(id) {
+    for (var i = 0; i < nodes.length; i++) { if (nodes[i].id === id) return nodes[i]; }
+    return null;
+}
+
+function selectNode(nodeId) {
+    var els = document.querySelectorAll('.node.selected');
+    for (var i = 0; i < els.length; i++) { els[i].classList.remove('selected'); }
+    var el = document.getElementById(nodeId);
+    if (el) el.classList.add('selected');
+    selectedNodeId = nodeId;
+    updateStatus();
+}
+
+document.getElementById('canvas').addEventListener('click', function(e) {
+    if (e.target.id === 'canvas' || e.target.tagName === 'svg') {
+        selectNode(null);
+        hideContextMenu();
+    }
+});
+
+document.getElementById('canvas').addEventListener('dblclick', function(e) {
+    if (e.target.id === 'canvas' || e.target.tagName === 'svg') {
+        document.getElementById('search-overlay').classList.add('active');
+        document.getElementById('search-input').focus();
+    }
+});
+
+// ====== Wiring ======
+function startWiring(nodeId, portName) {
+    wiringFrom = { nodeId: nodeId, portName: portName };
+    var dots = document.querySelectorAll('.port-dot');
+    for (var i = 0; i < dots.length; i++) { dots[i].classList.add('wiring'); }
+}
+
+function completeWiring(targetNodeId, targetPortName) {
+    if (!wiringFrom || wiringFrom.nodeId === targetNodeId) { wiringFrom = null; return; }
+    // Check for duplicate
+    var exists = false;
+    for (var i = 0; i < edges.length; i++) {
+        if (edges[i].sourceNodeId === wiringFrom.nodeId && edges[i].sourcePort === wiringFrom.portName &&
+            edges[i].targetNodeId === targetNodeId && edges[i].targetPort === targetPortName) {
+            exists = true; break;
+        }
+    }
+    if (!exists) {
+        edges.push({
+            sourceNodeId: wiringFrom.nodeId, sourcePort: wiringFrom.portName,
+            targetNodeId: targetNodeId, targetPort: targetPortName
+        });
+    }
+    wiringFrom = null;
+    var dots = document.querySelectorAll('.port-dot');
+    for (var i = 0; i < dots.length; i++) { dots[i].classList.remove('wiring'); }
+    updateConnections();
+    updateStatus();
+    saveState();
+}
+
+function updateConnections() {
+    var svg = document.getElementById('connections');
+    var html = '';
+    for (var ei = 0; ei < edges.length; ei++) {
+        var e = edges[ei];
+        var srcNode = getNode(e.sourceNodeId);
+        var tgtNode = getNode(e.targetNodeId);
+        if (!srcNode || !tgtNode) continue;
+        var srcEl = document.getElementById(e.sourceNodeId);
+        var tgtEl = document.getElementById(e.targetNodeId);
+        if (!srcEl || !tgtEl) continue;
+
+        var srcPortIdx = (srcNode.ports.out || []).indexOf(e.sourcePort);
+        var tgtPortIdx = (tgtNode.ports.in || []).indexOf(e.targetPort);
+        var srcHeaderH = 30;
+        var tgtHeaderH = 30;
+        var srcH = srcEl.querySelector('.node-header');
+        var tgtH = tgtEl.querySelector('.node-header');
+        if (srcH) srcHeaderH = srcH.offsetHeight;
+        if (tgtH) tgtHeaderH = tgtH.offsetHeight;
+
+        var x1 = srcNode.x + srcEl.offsetWidth;
+        var y1 = srcNode.y + srcHeaderH + 16 + srcPortIdx * 20;
+        var x2 = tgtNode.x;
+        var y2 = tgtNode.y + tgtHeaderH + 16 + tgtPortIdx * 20;
+
+        html += '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="#00FF9D" stroke-opacity="0.25" stroke-width="2"/>';
+    }
+    svg.innerHTML = html;
+}
+
+// ====== Context Menu ======
+function showContextMenu(e, nodeId) {
+    selectNode(nodeId);
+    var menu = document.getElementById('context-menu');
+    menu.style.display = 'block';
+    menu.style.left = e.clientX + 'px';
+    menu.style.top = e.clientY + 'px';
+}
+
+function hideContextMenu() {
+    document.getElementById('context-menu').style.display = 'none';
+}
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('#context-menu')) hideContextMenu();
+});
+
+function duplicateNode() {
+    var node = getNode(selectedNodeId);
+    if (!node) return;
+    var allDefs = [];
+    for (var ci = 0; ci < CATEGORIES.length; ci++) {
+        for (var ni = 0; ni < CATEGORIES[ci].nodes.length; ni++) {
+            allDefs.push(CATEGORIES[ci].nodes[ni]);
+        }
+    }
+    for (var i = 0; i < allDefs.length; i++) {
+        if (allDefs[i].type === node.type) { addNode(allDefs[i]); return; }
+    }
+}
+
+function deleteSelected() {
+    if (!selectedNodeId) return;
+    var newNodes = [];
+    for (var i = 0; i < nodes.length; i++) {
+        if (nodes[i].id !== selectedNodeId) newNodes.push(nodes[i]);
+    }
+    nodes = newNodes;
+    var newEdges = [];
+    for (var i = 0; i < edges.length; i++) {
+        if (edges[i].sourceNodeId !== selectedNodeId && edges[i].targetNodeId !== selectedNodeId) {
+            newEdges.push(edges[i]);
+        }
+    }
+    edges = newEdges;
+    var el = document.getElementById(selectedNodeId);
+    if (el) el.remove();
+    selectedNodeId = null;
+    updateConnections();
+    updateStatus();
+    saveState();
+}
+
+// ====== Search ======
+function updateSearch() {
+    var q = document.getElementById('search-input').value.toLowerCase();
+    var results = document.getElementById('search-results');
+    var allDefs = [];
+    for (var ci = 0; ci < CATEGORIES.length; ci++) {
+        for (var ni = 0; ni < CATEGORIES[ci].nodes.length; ni++) {
+            allDefs.push({
+                type: CATEGORIES[ci].nodes[ni].type,
+                name: CATEGORIES[ci].nodes[ni].name,
+                color: CATEGORIES[ci].color
+            });
+        }
+    }
+    var filtered = q ? allDefs.filter(function(d) { return d.name.toLowerCase().indexOf(q) !== -1 || d.type.indexOf(q) !== -1; }) : allDefs;
+    results.innerHTML = filtered.map(function(d, i) {
+        return '<div class="search-item' + (i===0?' active':'') + '" onclick="addNodeFromSearch(\'' + d.type + '\')">'
+            + '<span class="dot" style="background:' + d.color + '"></span>'
+            + d.name + ' <span style="color:#555;font-size:10px;margin-left:auto">' + d.type + '</span></div>';
+    }).join('');
+}
+
+function searchKeydown(e) {
+    if (e.key === 'Enter') {
+        var first = document.querySelector('.search-item');
+        if (first) first.click();
+    }
+    if (e.key === 'Escape') closeSearch();
+}
+
+function addNodeFromSearch(type) {
+    var allDefs = [];
+    for (var ci = 0; ci < CATEGORIES.length; ci++) {
+        for (var ni = 0; ni < CATEGORIES[ci].nodes.length; ni++) {
+            allDefs.push(CATEGORIES[ci].nodes[ni]);
+        }
+    }
+    for (var i = 0; i < allDefs.length; i++) {
+        if (allDefs[i].type === type) { addNode(allDefs[i]); return; }
+    }
+    closeSearch();
+}
+
+function closeSearch() {
+    document.getElementById('search-overlay').classList.remove('active');
+    document.getElementById('search-input').value = '';
+}
+
+// ====== Palette Toggle ======
+function togglePalette() {
+    paletteVisible = !paletteVisible;
+    document.getElementById('palette').classList.toggle('hidden', !paletteVisible);
+    document.getElementById('palette-toggle').style.left = paletteVisible ? '236px' : '8px';
+}
+
+function updateStatus() {
+    document.getElementById('node-count').textContent = '节点: ' + nodes.length;
+    document.getElementById('edge-count').textContent = '连线: ' + edges.length;
+}
+
+// ====== Save/Load (communicated to Swift via WebKit bridge) ======
+function saveState() {
+    if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.canvasSave) {
+        window.webkit.messageHandlers.canvasSave.postMessage(JSON.stringify(getGraphJSON()));
+    }
+}
+
+// Deploy workflow - posts graph to native for code generation
+function deployWorkflow() {
+    var graph = getGraphJSON();
+    var msg = JSON.stringify(graph);
+    if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.canvasDeploy) {
+        window.webkit.messageHandlers.canvasDeploy.postMessage(msg);
+    } else {
+        // Fallback for standalone use
+        alert('Deploy: ' + msg);
+    }
+}
+
+window.getGraphJSON = function() {
+    return { nodes: nodes, edges: edges };
+};
+
+window.loadGraphJSON = function(json) {
+    try {
+        var data = typeof json === 'string' ? JSON.parse(json) : json;
+        nodes = data.nodes || [];
+        edges = data.edges || [];
+        // Re-render everything
+        var existing = document.querySelectorAll('.node');
+        for (var i = 0; i < existing.length; i++) { existing[i].remove(); }
+        nodeIdCounter = 0;
+        for (var i = 0; i < nodes.length; i++) {
+            var idNum = parseInt(nodes[i].id.replace('n', ''), 10);
+            if (!isNaN(idNum) && idNum > nodeIdCounter) nodeIdCounter = idNum;
+            renderNode(nodes[i]);
+        }
+        updateConnections();
+        updateStatus();
+    } catch(e) { console.error('Load error:', e); }
+};
+
+window.getWorkflowForDeploy = function() {
+    return JSON.stringify({ nodes: nodes, edges: edges });
+};
+
+// ====== Init ======
+buildPalette();
+updateStatus();
+</script>
+</body>
+</html>

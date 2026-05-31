@@ -8,6 +8,7 @@ let package = Package(
         .executableTarget(
             name: "PulseDesk",
             path: "PulseDesk",
+            resources: [.process("Resources")],
             swiftSettings: [
                 .unsafeFlags(["-parse-as-library"]),
             ]
