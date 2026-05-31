@@ -33,6 +33,7 @@ struct StrategyCanvasTab: View {
             ZStack {
                 CanvasBackground(scale: viewModel.viewport.scale, offset: viewModel.viewport.offset)
                 CanvasEdges(edges: viewModel.graph.edges, nodes: viewModel.graph.nodes,
+                            selectedEdgeIds: [],
                             scale: viewModel.viewport.scale, offset: viewModel.viewport.offset)
 
                 if viewModel.graph.nodes.isEmpty { emptyState }
