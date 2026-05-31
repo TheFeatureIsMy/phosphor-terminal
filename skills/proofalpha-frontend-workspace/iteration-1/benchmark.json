@@ -1,0 +1,34 @@
+{
+  "skill_name": "proofalpha-frontend",
+  "iteration": 1,
+  "configurations": [
+    {
+      "name": "with_skill",
+      "display_name": "With ProofAlpha Skill",
+      "pass_rate": { "mean": 1.0, "stddev": 0.0 },
+      "total_assertions": 32,
+      "passed_assertions": 32,
+      "evals": [
+        { "name": "dashboard-metrics", "pass_rate": 1.0, "assertions_passed": 10, "assertions_total": 10 },
+        { "name": "login-page", "pass_rate": 1.0, "assertions_passed": 11, "assertions_total": 11 },
+        { "name": "data-table", "pass_rate": 1.0, "assertions_passed": 11, "assertions_total": 11 }
+      ]
+    },
+    {
+      "name": "without_skill",
+      "display_name": "Without Skill (Baseline)",
+      "pass_rate": { "mean": 0.518, "stddev": 0.118 },
+      "total_assertions": 21,
+      "passed_assertions": 11,
+      "evals": [
+        { "name": "dashboard-metrics", "pass_rate": 0.4, "assertions_passed": 4, "assertions_total": 10 },
+        { "name": "login-page", "pass_rate": 0.0, "assertions_passed": 0, "assertions_total": 0, "note": "baseline failed to generate" },
+        { "name": "data-table", "pass_rate": 0.636, "assertions_passed": 7, "assertions_total": 11 }
+      ]
+    }
+  ],
+  "delta": {
+    "pass_rate": "+0.482",
+    "summary": "Skill version passes 100% of assertions vs 52% baseline — major improvement in design token usage, glass-morphism, terminal labels, and animation patterns"
+  }
+}

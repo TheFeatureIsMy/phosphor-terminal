@@ -4,6 +4,7 @@
 import SwiftUI
 
 struct NotificationRow: View {
+    @Environment(PulseColors.self) private var colors
     let notification: AppNotification
     let onTap: () -> Void
 
@@ -36,18 +37,18 @@ struct NotificationRow: View {
 
                         Text(notification.title)
                             .font(notification.isRead ? PulseFonts.caption : PulseFonts.captionMedium)
-                            .foregroundStyle(notification.isRead ? PulseColors.textSecondary : PulseColors.textPrimary)
+                            .foregroundStyle(notification.isRead ? colors.textSecondary : colors.textPrimary)
                             .lineLimit(1)
                     }
 
                     Text(notification.message)
                         .font(PulseFonts.caption)
-                        .foregroundStyle(PulseColors.textMuted)
+                        .foregroundStyle(colors.textMuted)
                         .lineLimit(2)
 
                     Text(NotificationViewModel.relativeTime(from: notification.createdAt))
                         .font(PulseFonts.micro)
-                        .foregroundStyle(PulseColors.textMuted)
+                        .foregroundStyle(colors.textMuted)
                 }
 
                 Spacer()
@@ -64,7 +65,7 @@ struct NotificationRow: View {
             .padding(.horizontal, PulseSpacing.sm)
             .background(
                 RoundedRectangle(cornerRadius: PulseRadii.sm)
-                    .fill(isHovering ? PulseColors.surfaceHover : Color.clear)
+                    .fill(isHovering ? colors.surfaceHover : Color.clear)
             )
         }
         .buttonStyle(.plain)
@@ -79,6 +80,7 @@ struct NotificationRow: View {
 
 // MARK: - 预览
 #Preview("未读通知") {
+    let colors = PulseColors(themeManager: ThemeManager())
     NotificationRow(
         notification: AppNotification(
             id: UUID(),
@@ -95,10 +97,12 @@ struct NotificationRow: View {
     )
     .frame(width: 320)
     .padding()
-    .background(PulseColors.background)
+    .background(colors.background)
+    .environment(colors)
 }
 
 #Preview("已读通知") {
+    let colors = PulseColors(themeManager: ThemeManager())
     NotificationRow(
         notification: AppNotification(
             id: UUID(),
@@ -115,5 +119,6 @@ struct NotificationRow: View {
     )
     .frame(width: 320)
     .padding()
-    .background(PulseColors.background)
+    .background(colors.background)
+    .environment(colors)
 }

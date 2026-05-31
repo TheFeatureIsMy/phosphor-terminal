@@ -26,7 +26,21 @@ class DecisionPathRequest(BaseModel):
     values: List[float]
     thresholds: Optional[List[float]] = None
 @router.get("/summary/{strategy_id}")
-def attribution_summary(strategy_id: int):
+def attribution_summary(strategy_id: int, db: Session = Depends(get_db)):
+    reports = db.query(AttributionReport).filter(AttributionReport.strategy_id == strategy_id).order_by(AttributionReport.created_at.desc()).limit(1).all()
+    if reports:
+        r = reports[0]
+        return {
+            "strategy_id": strategy_id,
+            "feature_importance": {
+                "features": list(r.feature_contributions.keys()) if r.feature_contributions else [],
+                "importances": list(r.feature_contributions.values()) if r.feature_contributions else [],
+                "base_value": 0.05,
+                "strategy_type": "ma_cross",
+            },
+            "decision_path": {"path": [], "decision": "hold", "final_score": 0},
+            "top_factors": r.top_loss_factors[:3] if r.top_loss_factors else [],
+        }
     return get_attribution_summary(strategy_id)
 @router.post("/feature-importance")
 def feature_importance(body: FeatureImportanceRequest):

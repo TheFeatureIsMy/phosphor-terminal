@@ -4,62 +4,79 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
+### Backend (backend/)
 ```bash
-npm run dev        # Start Vite dev server on port 5173
-npm run build      # Type-check (tsc -b) then Vite production build
-npm run lint       # ESLint with flat config
-npm run preview    # Serve production build locally
+cd backend
+python3 run.py                          # Start FastAPI on :8000
+python3 -m pytest tests/ -q             # Run all tests
+python3 -m pytest tests/ -q --cov=app   # Tests with coverage (CI threshold: 30%)
+python3 -m pytest tests/test_risk_rules.py -q  # Single test file
+```
+
+### macOS App (macos-app/)
+```bash
+cd macos-app
+swift build                             # Build debug binary
+swift run                               # Build and run
+open .build/arm64-apple-macosx/debug/PulseDesk  # Run compiled binary
+```
+
+### Docker (full stack)
+```bash
+docker compose up                       # Starts backend API (:8000) + Freqtrade (:8080)
 ```
 
 ## Architecture
 
-Crypto quantitative trading dashboard (React 19 SPA). All UI is Chinese-language (zh-CN). Dark theme by default.
+PulseDesk — AI-driven crypto quant trading dashboard. macOS native SwiftUI app + Python/FastAPI backend. All UI is Chinese (zh-CN), dark cyberpunk theme by default.
 
-### Data Flow (three layers)
+**Two independent codebases** share no code:
+- `backend/` — Python 3.11, FastAPI, SQLAlchemy, Pydantic v2
+- `macos-app/` — Swift 5.9, SwiftUI, macOS 14+, no external dependencies (SPM only)
 
-1. **`src/api/client.ts`** — Dual-mode API client. Controlled by `VITE_USE_MOCK` env var. When `"true"` (default), calls a `mockFn` callback with simulated latency (200-500ms). When `"false"`, fetches from `VITE_API_BASE_URL` (default `http://localhost:8000`). Exports `apiGet`, `apiPost`, `apiPut`, `apiDelete`.
+### Backend
 
-2. **`src/api/*.ts`** — Domain modules (`strategies.ts`, `orders.ts`, `dashboard.ts`). Each function passes endpoint + mock factory to the client. `strategies.ts` maintains a mutable in-memory array so mock CRUD persists for the session.
+FastAPI app with 18 routers and ~40 service modules. Key architectural patterns:
 
-3. **`src/hooks/*.ts`** — TanStack Query v5 wrappers. Manage caching, polling intervals, and mutation invalidation. Strategy mutations invalidate `['strategies']` key.
+- **`config.py`** — Pydantic Settings from `.env` (FREQTRADE_URL, DATABASE_URL, etc.)
+- **`routers/`** — Thin route handlers, delegate to services
+- **`services/`** — Business logic. Notable: `freqtrade_client.py` (async HTTP to Freqtrade API), `freqtrade_db.py` (direct SQLite reader for trade history), `risk_rules.py` (stop-loss/drawdown/correlation), `rag_service.py` (PDF→strategy generation), `code_safety.py` (static analysis for AI-generated code), `tradingagents_adapter.py` (multi-agent research), `signal_scoring.py` (agent signal quality), `sentiment_finbert.py` (FinBERT sentiment)
+- **`services/` also contains data structure utilities** (bloom_filter, trie, skip_list, segment_tree, lru_cache, graph, etc.) — these are standalone implementations, not trading-specific
+- **Tests** in `tests/` — 7 test files, run with pytest-asyncio
 
-### State Management
+The backend talks to **Freqtrade** in two ways: REST API via `freqtrade_client.py` and direct SQLite reads via `freqtrade_db.py` (path configured by `FREQTRADE_DB_PATH`).
 
-- **Zustand** (`src/stores/app-store.ts`) — Client-only UI state (sidebar collapse).
-- **TanStack Query** — All server state. Polling intervals: `useSystemStatus` 10s, `usePositions` 15s, `useDashboardKPIs` 30s.
+### macOS App
 
-### Routing
+SwiftUI app with no third-party dependencies. Key patterns:
 
-React Router v7 with `AppShell` layout wrapper (`Sidebar` + `TopBar` + `<Outlet />`). Six routes: `/`, `/strategies`, `/strategies/:id/canvas`, `/backtest`, `/trades`, `/settings`.
+- **`Models/Types.swift`** — All domain models (Strategy, Order, Position, Backtest, AIResearchRun, AgentSignal, etc.)
+- **`Models/Enums.swift`** — Business enums (StrategyType, AppRoute, SidebarSection, etc.)
+- **`Services/NetworkClient.swift`** — Protocol-based dual-mode: `MockNetworkClient` (returns mock data with delay) and `LiveNetworkClient` (hits `http://localhost:8000` with Bearer auth)
+- **`Services/API*.swift`** — Domain-specific API extensions on `NetworkClientProtocol`, each with mock data generators
+- **`ViewModels/`** — `@Observable` classes calling API services, exposing state to views
+- **`DesignSystem/`** — Design tokens, view modifiers, animated effects (all in SwiftUI, no external libs)
 
-### Key Libraries
+**Data flow**: View → ViewModel → API service → NetworkClient (mock or live) → Backend
 
-- **Recharts** — Equity curves and PnL charts. Tooltip formatters must accept `ValueType | undefined`, not `number`.
-- **@xyflow/react** — Strategy canvas with 4 custom node types: `dataSource`, `indicator`, `logicGate`, `executor`.
-- **Tailwind CSS v4** — Uses `@import "tailwindcss"` + `@theme` block in `index.css`. No `tailwind.config.js`.
-- **lucide-react** — All icons.
+**Routing**: `AppRoute` enum drives navigation. Landing page (`LandingView`) → login → `AppShellView` with sidebar.
 
-### Styling Conventions
+### Design System (ProofAlpha)
 
-Dark trading dashboard theme defined in `src/index.css` `@theme` block. Semantic color tokens: `profit` (green), `loss` (red), `primary` (blue), `warning` (amber), `danger`, `info`, `background`, `surface`, `border`, `text-primary`, `text-secondary`, `text-muted`. Use `cn()` from `@/lib/utils` for conditional classes (clsx + tailwind-merge). Financial numbers use `.font-tabular` class for tabular-nums alignment.
+Dark cyberpunk glass-morphism theme. All design tokens in `DesignSystem/DesignTokens.swift` — never hardcode colors.
 
-### Path Alias
+- Neon green accent (#00FF9D), profit/loss color semantics
+- Cards: `DepthCard` (3D tilt + spotlight), `SpotlightCard` (cursor glow), `CardModifier` (glass base)
+- Backgrounds: 4-layer system (mesh gradient, scanlines, dot grid, noise texture)
 
-`@/*` maps to `./src/*` (configured in both `vite.config.ts` and `tsconfig.app.json`).
+### CI
 
-### Environment Variables
-
-Set in `.env` (Vite auto-loads):
-- `VITE_USE_MOCK` — `"true"` for mock data, `"false"` for real API
-- `VITE_API_BASE_URL` — Backend API base URL (default `http://localhost:8000`)
+GitHub Actions (`.github/workflows/ci.yml`): backend pytest with 30% coverage threshold + macOS `swift build`.
 
 ## Conventions
 
-- TypeScript strict: `noUnusedLocals`, `noUnusedParameters` enforced — remove unused imports.
-- All domain types defined in `src/types/index.ts` — add new types there, not inline.
-- New API endpoints: add mock data generator in `mock-data.ts`, domain function in the appropriate `api/*.ts`, and React Query hook in `hooks/*.ts`.
-- Pages go in `src/pages/`, layout components in `src/components/layout/`.
-
-## PRD Reference
-
-The full product requirements are in the PulseDesk quantitative trading system PRD. Key differentiating features: RAG strategy lab (PDF→code), SHAP XAI attribution, microstructure audit (wash trading/spoofing detection), FinBERT sentiment, FreqAI incremental learning. Python backend (Freqtrade + CCXT) is planned but not yet built.
+- New domain types → `macos-app/PulseDesk/Models/Types.swift`. New enums → `Models/Enums.swift`.
+- New API endpoints → add mock data in `Services/API*.swift`, add domain types in `Types.swift`.
+- Views organized by feature domain under `Views/`.
+- Backend: thin routers, logic in services. Tests mirror service/router structure.
+- Design tokens in `DesignSystem/DesignTokens.swift` — use view modifiers from `ViewModifiers.swift`.

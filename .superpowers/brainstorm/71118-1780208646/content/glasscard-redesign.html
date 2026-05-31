@@ -1,0 +1,118 @@
+h2 PulseDesk GlassCard 卡片系统重设计
+
+p.subtitle 这是所有页面的基础组件，修复后会渗透到全部 60+ 视图。以下是 3 个方向的对比。
+
+<div class="section">
+  <h3>核心修复点</h3>
+  <div class="pros-cons">
+    <div class="cons">
+      <h4>当前问题</h4>
+      <ul>
+        <li>3D tilt 用 NSApp.windows.first 计算，所有卡片倾斜角度相同</li>
+        <li>SpotlightCard 聚光灯固定在中心 (0.5, 0.5)，不跟随光标</li>
+        <li>DepthCard 和 GlassCard 80% 代码重复</li>
+        <li>悬停边框 glow 效果不明显</li>
+        <li>按压反馈用 DragGesture 劫持，与 ScrollView 冲突</li>
+      </ul>
+    </div>
+    <div class="pros">
+      <h4>修复方案</h4>
+      <ul>
+        <li>GeometryReader 获取卡片自身坐标，每个卡片独立 tilt</li>
+        <li>聚光灯实时追踪光标位置</li>
+        <li>合并为统一的 Card 组件 + 配置参数</li>
+        <li>hover 时 accent 边框 glow + 微缩放 (1.005)</li>
+        <li>按压用 simultaneousGesture + TapGesture，不冲突滚动</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>选择卡片视觉风格方向</h3>
+</div>
+
+<div class="cards">
+  <div class="card" data-choice="subtle" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#0a0a0b;padding:32px;border-radius:4px;display:flex;gap:12px;flex-direction:column;">
+        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:4px;padding:20px;position:relative;">
+          <div style="color:#888;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">月度盈亏</div>
+          <div style="color:#00ff9d;font-size:28px;font-weight:700;margin-top:4px;">+$12,450</div>
+          <div style="color:#666;font-size:11px;margin-top:4px;">+3.2% vs 上月</div>
+        </div>
+        <div style="text-align:center;color:#555;font-size:11px;padding:8px;">方向 A — 克制玻璃</div>
+        <div style="color:#888;font-size:10px;text-align:center;">低透明度 · 细微边框 · 仅 hover 才显示 glow · 无 tilt · 适合密集数据页</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A. 克制玻璃 Subtle Glass</h3>
+      <p>低透明度材质、仅 hover 时显示微光边框、无 3D tilt。适合数据密集页面（Dashboard、Trades）— 减少视觉噪音，让数据说话。</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="bold" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#0a0a0b;padding:32px;border-radius:4px;display:flex;gap:12px;flex-direction:column;">
+        <div style="background:rgba(24,24,28,0.7);border:1px solid rgba(0,255,157,0.12);border-radius:4px;padding:20px;position:relative;box-shadow:0 0 20px rgba(0,255,157,0.05),0 4px 12px rgba(0,0,0,0.3);">
+          <div style="color:#aaa;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">月度盈亏</div>
+          <div style="color:#00ff9d;font-size:28px;font-weight:700;margin-top:4px;text-shadow:0 0 12px rgba(0,255,157,0.2);">+$12,450</div>
+          <div style="color:#888;font-size:11px;margin-top:4px;">+3.2% vs 上月</div>
+        </div>
+        <div style="text-align:center;color:#00ff9d;font-size:11px;padding:8px;">方向 B — 赛博玻璃</div>
+        <div style="color:#888;font-size:10px;text-align:center;">高透明度 · accent 边框 · 常驻 glow · 3D tilt · 适合仪表盘/着陆页</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. 赛博玻璃 Cyber Glass</h3>
+      <p>明显玻璃材质、accent 色常驻边框 glow、3D tilt 视差、聚光灯跟随光标。适合着陆页、AI Studio — 强化沉浸感和科技感。</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="hybrid" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#0a0a0b;padding:32px;border-radius:4px;display:flex;gap:12px;flex-direction:column;">
+        <div style="background:rgba(24,24,28,0.55);border:1px solid rgba(255,255,255,0.06);border-radius:4px;padding:20px;position:relative;transition:all 0.2s;">
+          <div style="color:#888;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">月度盈亏</div>
+          <div style="color:#00ff9d;font-size:28px;font-weight:700;margin-top:4px;">+$12,450</div>
+          <div style="color:#666;font-size:11px;margin-top:4px;">+3.2% vs 上月</div>
+          <div style="position:absolute;right:12px;top:12px;color:rgba(0,255,157,0.4);font-size:10px;">HOVER</div>
+        </div>
+        <div style="text-align:center;color:#ffb800;font-size:11px;padding:8px;">方向 C — 自适应混合</div>
+        <div style="color:#888;font-size:10px;text-align:center;">默认克制 · hover 时升级为赛博 · 上下文自适应 · 一个组件两种表现</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C. 混合自适应 Adaptive Hybrid</h3>
+      <p>默认低调（同 A），hover 时逐步增强（边框 glow 出现、背景透明度增加、聚光灯激活）。一个 Card 组件，通过 <code>emphasis: .subtle | .balanced | .bold</code> 参数控制级别。不同页面用不同默认级别。</p>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>按压反馈方案</h3>
+</div>
+
+<div class="options">
+  <div class="option" data-choice="press-scale" onclick="toggleSelect(this)">
+    <div class="letter">1</div>
+    <div class="content">
+      <h3>微缩放 Scale</h3>
+      <p>按下时缩放到 0.97，spring 回弹。简单可靠，不和 ScrollView 冲突。</p>
+    </div>
+  </div>
+  <div class="option" data-choice="press-brightness" onclick="toggleSelect(this)">
+    <div class="letter">2</div>
+    <div class="content">
+      <h3>亮度变化 Brightness</h3>
+      <p>按下时背景变亮 5%，释放时恢复。更细微，适合行/列表项。</p>
+    </div>
+  </div>
+  <div class="option" data-choice="press-both" onclick="toggleSelect(this)">
+    <div class="letter">3</div>
+    <div class="content">
+      <h3>组合 Scale + Brightness</h3>
+      <p>卡片按 0.98 + 变亮，行/列表按仅亮度变化。组件内根据 context 自动选择。</p>
+    </div>
+  </div>
+</div>

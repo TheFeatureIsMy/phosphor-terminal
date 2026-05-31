@@ -4,6 +4,7 @@
 import SwiftUI
 
 struct VariableSelector: View {
+    @Environment(PulseColors.self) private var colors
     let nodeId: UUID
     let edges: [CanvasEdge]
     let nodes: [CanvasNode]
@@ -14,7 +15,7 @@ struct VariableSelector: View {
             if upstreamNodes.isEmpty {
                 Text("无可用变量")
                     .font(PulseFonts.caption)
-                    .foregroundStyle(PulseColors.textMuted)
+                    .foregroundStyle(colors.textMuted)
             } else {
                 ForEach(upstreamNodes) { node in
                     let def = NodeRegistry.definition(for: node.nodeType)
@@ -25,14 +26,14 @@ struct VariableSelector: View {
                             } label: {
                                 HStack {
                                     Circle()
-                                        .fill(port.dataType.color)
+                                        .fill(port.dataType.color(colors))
                                         .frame(width: 6, height: 6)
                                     Text(port.name)
                                         .font(PulseFonts.caption)
                                     Spacer()
                                     Text(port.dataType.label)
                                         .font(PulseFonts.micro)
-                                        .foregroundStyle(PulseColors.textMuted)
+                                        .foregroundStyle(colors.textMuted)
                                 }
                             }
                         }
@@ -57,15 +58,15 @@ struct VariableSelector: View {
                 Spacer()
                 Image(systemName: "chevron.up.chevron.down")
                     .font(.system(size: 8, weight: .semibold))
-                    .foregroundStyle(PulseColors.textMuted)
+                    .foregroundStyle(colors.textMuted)
             }
-            .foregroundStyle(selectedVar != nil ? PulseColors.textPrimary : PulseColors.textSecondary)
+            .foregroundStyle(selectedVar != nil ? colors.textPrimary : colors.textSecondary)
             .padding(PulseSpacing.xs)
-            .background(PulseColors.surface)
+            .background(colors.surface)
             .clipShape(RoundedRectangle(cornerRadius: PulseRadii.sm))
             .overlay(
                 RoundedRectangle(cornerRadius: PulseRadii.sm)
-                    .stroke(PulseColors.border, lineWidth: 1)
+                    .stroke(colors.border, lineWidth: 1)
             )
         }
         .menuStyle(.borderlessButton)

@@ -149,6 +149,15 @@ enum RiskSeverity: String, Codable {
         case .critical: return PulseColors.danger
         }
     }
+
+    var icon: String {
+        switch self {
+        case .low: return "info.circle"
+        case .medium: return "exclamationmark.triangle"
+        case .high: return "exclamationmark.shield"
+        case .critical: return "xmark.shield.fill"
+        }
+    }
 }
 
 // API 状态

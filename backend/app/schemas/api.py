@@ -190,6 +190,7 @@ class CorrelationResponse(BaseModel):
     window_days: int
     alert_level: Optional[str]
     created_at: datetime
+    data_source: Optional[DataSourceStatus] = None
 
 
 class AttributionReportCreate(BaseModel):

@@ -7,9 +7,14 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.ai import ForecastRun, FactorResearchRun, FreqAIRun, GeneratedStrategyArtifact
+from app.routers.backtest import _generate_simulated_backtest
+from app.schemas.api import BacktestRequest, BacktestResponse
 from app.services.code_safety import scan_strategy_code
-from app.services.forecasting import deterministic_forecast
+from app.services.forecasting import generate_forecast
 from app.services.rag_service import generate_strategy
+from app.services.factor_qlib import QlibAdapter
+from app.services.strategy_registry import strategy_class_name, strategy_file_path, STRATEGY_DIR
+from app.services.freqtrade_client import freqtrade_client
 
 
 router = APIRouter(prefix="/api/ai", tags=["ai-phase3"])
@@ -41,8 +46,8 @@ class FreqAITrainingRequest(BaseModel):
 
 
 @router.post("/strategies/generate")
-def generate_strategy_artifact(body: StrategyGenerationRequest, db: Session = Depends(get_db)):
-    result = generate_strategy(body.prompt, body.risk_level, body.market)
+async def generate_strategy_artifact(body: StrategyGenerationRequest, db: Session = Depends(get_db)):
+    result = await generate_strategy(body.prompt, body.risk_level, body.market)
     scan = scan_strategy_code(result["code"])
     artifact = GeneratedStrategyArtifact(
         prompt=body.prompt,
@@ -57,6 +62,18 @@ def generate_strategy_artifact(body: StrategyGenerationRequest, db: Session = De
     db.add(artifact)
     db.commit()
     db.refresh(artifact)
+
+    # Write strategy file to disk so Freqtrade can load it
+    strategy_file_written = False
+    if artifact.safety_status == "safe":
+        try:
+            class_name = strategy_class_name(artifact.id, artifact.strategy_name)
+            STRATEGY_DIR.mkdir(parents=True, exist_ok=True)
+            strategy_file_path(class_name).write_text(artifact.code, encoding="utf-8")
+            strategy_file_written = True
+        except (ValueError, OSError):
+            pass
+
     return {
         "id": artifact.id,
         "strategy": result["strategy"],
@@ -65,12 +82,13 @@ def generate_strategy_artifact(body: StrategyGenerationRequest, db: Session = De
         "safety_findings": artifact.safety_findings,
         "explanation": result["explanation"],
         "context_used": result["context_used"],
+        "strategy_file_written": strategy_file_written,
     }
 
 
 @router.post("/forecast")
-def create_forecast(body: ForecastRequest, db: Session = Depends(get_db)):
-    forecast = deterministic_forecast(body.symbol, body.model, body.horizon)
+async def create_forecast(body: ForecastRequest, db: Session = Depends(get_db)):
+    forecast = await generate_forecast(body.symbol, body.model, body.horizon)
     run = ForecastRun(
         symbol=body.symbol,
         model=body.model,
@@ -85,20 +103,18 @@ def create_forecast(body: ForecastRequest, db: Session = Depends(get_db)):
     return run
 
 
+_qlib = QlibAdapter()
+
+
 @router.post("/factors/research")
-def create_factor_research(body: FactorResearchRequest, db: Session = Depends(get_db)):
-    metrics = {
-        "ic_mean": 0.041,
-        "ic_std": 0.18,
-        "rank_ic": 0.057,
-        "turnover": 0.32,
-        "note": "Qlib adapter boundary; install optional Qlib runtime for full factor pipeline.",
-    }
+async def create_factor_research(body: FactorResearchRequest, db: Session = Depends(get_db)):
+    result = await _qlib.research(body.market, body.universe, body.factor_name)
+    metrics = result.get("metrics", {})
     run = FactorResearchRun(
         market=body.market,
         universe=body.universe,
         factor_name=body.factor_name,
-        status="completed",
+        status=result.get("status", "completed"),
         metrics=metrics,
         qlib_config=body.qlib_config,
     )
@@ -106,6 +122,65 @@ def create_factor_research(body: FactorResearchRequest, db: Session = Depends(ge
     db.commit()
     db.refresh(run)
     return run
+
+
+@router.post("/strategies/{artifact_id}/backtest", response_model=BacktestResponse)
+async def backtest_generated_strategy(artifact_id: int, db: Session = Depends(get_db)):
+    artifact = db.query(GeneratedStrategyArtifact).filter(GeneratedStrategyArtifact.id == artifact_id).first()
+    if not artifact:
+        from fastapi import HTTPException
+        raise HTTPException(404, "Generated strategy artifact not found")
+
+    request = BacktestRequest(
+        strategy_id=artifact_id,
+        start_date="2025-01-01",
+        end_date="2025-12-31",
+        initial_capital=10000,
+        symbols=[f"{artifact.market.upper()}/USDT"] if artifact.market else ["BTC/USDT"],
+    )
+
+    # Try real Freqtrade backtest first
+    ft_result = await freqtrade_client.run_backtest({
+        "strategy": artifact.strategy_name,
+        "timerange": f"{request.start_date.replace('-', '')}-{request.end_date.replace('-', '')}",
+        "stake_amount": request.initial_capital,
+    })
+
+    if "error" not in ft_result:
+        data_source = {"source": "freqtrade", "simulated": False, "available": True, "detail": None}
+        result = BacktestResponse(
+            id=artifact_id,
+            strategy_id=artifact_id,
+            config=request.model_dump(),
+            result=ft_result.get("result"),
+            sharpe_ratio=ft_result.get("sharpe_ratio", 0),
+            max_drawdown=ft_result.get("max_drawdown", 0),
+            win_rate=ft_result.get("win_rate", 0),
+            total_return=ft_result.get("total_return", 0),
+            passed=ft_result.get("sharpe_ratio", 0) > 1.0,
+            created_at=datetime.now(timezone.utc),
+            data_source=data_source,
+        )
+    else:
+        # Fall back to simulated backtest
+        simulated = _generate_simulated_backtest(request)
+        result = BacktestResponse(
+            id=artifact_id,
+            strategy_id=artifact_id,
+            config=request.model_dump(),
+            result=simulated["result"],
+            sharpe_ratio=simulated["sharpe_ratio"],
+            max_drawdown=simulated["max_drawdown"],
+            win_rate=simulated["win_rate"],
+            total_return=simulated["total_return"],
+            passed=simulated["sharpe_ratio"] > 1.0,
+            created_at=datetime.now(timezone.utc),
+            data_source=simulated["data_source"],
+        )
+
+    artifact.backtest_id = artifact_id
+    db.commit()
+    return result
 
 
 @router.post("/freqai/train")
@@ -123,3 +198,38 @@ def create_freqai_run(body: FreqAITrainingRequest, db: Session = Depends(get_db)
     db.commit()
     db.refresh(run)
     return run
+
+
+@router.get("/freqai/status")
+def get_freqai_status(db: Session = Depends(get_db)):
+    latest = db.query(FreqAIRun).order_by(FreqAIRun.created_at.desc()).first()
+    if not latest:
+        return {"status": "no_runs", "latest_run": None}
+    return {"status": latest.status, "latest_run": {
+        "id": latest.id,
+        "model_name": latest.model_name,
+        "strategy_id": latest.strategy_id,
+        "status": latest.status,
+        "started_at": latest.started_at,
+        "completed_at": latest.completed_at,
+    }}
+
+
+@router.get("/freqai/runs")
+def list_freqai_runs(db: Session = Depends(get_db)):
+    runs = db.query(FreqAIRun).order_by(FreqAIRun.created_at.desc()).limit(50).all()
+    return {
+        "runs": [
+            {
+                "id": r.id,
+                "strategy_id": r.strategy_id,
+                "model_name": r.model_name,
+                "status": r.status,
+                "started_at": r.started_at,
+                "completed_at": r.completed_at,
+                "created_at": r.created_at,
+            }
+            for r in runs
+        ],
+        "total": len(runs),
+    }

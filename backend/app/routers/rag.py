@@ -1,18 +1,15 @@
 from __future__ import annotations
 import hashlib
+from typing import Any
 
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models.ai import KnowledgeChunk, KnowledgeDocument
-from app.services.rag_service import (
-    parse_pdf_content,
-    search_knowledge,
-    generate_strategy,
-    list_knowledge,
-)
+from app.models.ai import GeneratedStrategyArtifact, KnowledgeChunk, KnowledgeDocument
+from app.services.code_safety import scan_strategy_code
+from app.services.rag_service import parse_pdf_content, generate_strategy
 
 router = APIRouter(prefix="/rag", tags=["rag"])
 
@@ -110,25 +107,64 @@ def search(body: SearchRequest, db: Session = Depends(get_db)):
             }
         )
     results.sort(key=lambda item: item["relevance"], reverse=True)
-    if not results:
-        results = search_knowledge(body.query, body.top_k)
-    else:
-        results = results[: body.top_k]
+    results = results[: body.top_k]
     return {"results": results, "total": len(results)}
 
 
 @router.post("/generate")
-def generate(body: GenerateRequest):
+async def generate(body: GenerateRequest, db: Session = Depends(get_db)):
     if not body.prompt.strip():
         raise HTTPException(400, "Prompt is required")
-    return generate_strategy(body.prompt, body.risk_level, body.market)
+
+    context_chunks: list[dict[str, Any]] = []
+    db_chunks = db.query(KnowledgeChunk).order_by(KnowledgeChunk.created_at.desc()).limit(300).all()
+    docs = {doc.id: doc for doc in db.query(KnowledgeDocument).all()}
+    for chunk in db_chunks:
+        score = _score_chunk(body.prompt, chunk.content)
+        if score <= 0:
+            continue
+        document = docs.get(chunk.document_id)
+        context_chunks.append({
+            "doc_id": chunk.document_id,
+            "filename": document.filename if document else "unknown",
+            "content": chunk.content[:500],
+            "relevance": round(score, 3),
+            "persisted": True,
+        })
+    context_chunks.sort(key=lambda x: x["relevance"], reverse=True)
+    context_chunks = context_chunks[:5]
+
+    result = await generate_strategy(body.prompt, body.risk_level, body.market, context=context_chunks or None)
+
+    scan = scan_strategy_code(result["code"])
+    artifact = GeneratedStrategyArtifact(
+        prompt=body.prompt,
+        risk_level=body.risk_level,
+        market=body.market,
+        strategy_name=result["strategy"]["name"],
+        strategy_type=result["strategy"]["type"],
+        code=result["code"],
+        safety_status=scan["status"],
+        safety_findings=scan["findings"],
+    )
+    db.add(artifact)
+    db.commit()
+    db.refresh(artifact)
+
+    return {
+        "id": artifact.id,
+        "strategy": result["strategy"],
+        "code": artifact.code,
+        "safety_status": artifact.safety_status,
+        "safety_findings": artifact.safety_findings,
+        "explanation": result["explanation"],
+        "context_used": result["context_used"],
+    }
 
 
 @router.get("/knowledge")
 def get_knowledge(db: Session = Depends(get_db)):
     documents = db.query(KnowledgeDocument).order_by(KnowledgeDocument.created_at.desc()).all()
-    if not documents:
-        return {"documents": list_knowledge()}
     return {
         "documents": [
             {
@@ -140,5 +176,5 @@ def get_knowledge(db: Session = Depends(get_db)):
                 "persisted": True,
             }
             for doc in documents
-        ]
+        ] if documents else []
     }

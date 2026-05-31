@@ -1,0 +1,18 @@
+{
+  "eval_id": 0,
+  "eval_name": "dashboard-metrics",
+  "configuration": "with_skill",
+  "expectations": [
+    { "text": "uses-design-tokens", "passed": true, "evidence": "Uses #0a0a0a background, rgba(0,255,157,...) for green, rgba(255,59,59,...) for red, custom getPnlBg/getPnlBorder helpers with opacity-based system" },
+    { "text": "glass-morphism", "passed": true, "evidence": "SpotlightCard uses backdrop-blur-[14px] backdrop-saturate-120 bg-[rgba(24,24,27,0.55)] with top edge highlight gradient" },
+    { "text": "monospace-typography", "passed": true, "evidence": "font-mono on all data, labels, breadcrumbs. font-['Instrument_Sans'] for headings" },
+    { "text": "subtle-borders", "passed": true, "evidence": "border-white/[0.05] default, hover:border-white/[0.09]" },
+    { "text": "small-radius", "passed": true, "evidence": "rounded-lg (8px) on cards, rounded-sm on badges/buttons" },
+    { "text": "hover-states", "passed": true, "evidence": "SpotlightCard cursor-following glow, border lightens on hover" },
+    { "text": "terminal-labels", "passed": true, "evidence": "SectionLabel component with // prefix, 10px uppercase tracking-[0.15em]" },
+    { "text": "tabular-nums", "passed": true, "evidence": "tabular-nums class on all numeric values" },
+    { "text": "pnl-colors", "passed": true, "evidence": "getPnlColor/getPnlBg/getPnlBorder functions with green/red semantics" },
+    { "text": "responsive-grid", "passed": true, "evidence": "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4" }
+  ],
+  "pass_rate": 1.0
+}

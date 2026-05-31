@@ -4,6 +4,7 @@
 import SwiftUI
 
 struct CanvasEdges: View {
+    @Environment(PulseColors.self) private var colors
     let edges: [CanvasEdge]
     let nodes: [CanvasNode]
     let scale: CGFloat
@@ -40,7 +41,7 @@ struct CanvasEdges: View {
                     context: context,
                     from: screenFrom,
                     to: screenTo,
-                    color: edge.dataType.color
+                    color: edge.dataType.color(colors)
                 )
             }
         }

@@ -132,4 +132,60 @@ class FreqtradeDB:
                 "drawdown": round(drawdown, 2),
             })
         return result
+
+    def compute_correlations(self, days: int = 30) -> List[dict]:
+        start = (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%d")
+        sql = """
+            SELECT pair as symbol, DATE(close_date) as date, profit_ratio as pnl
+            FROM trades
+            WHERE is_open = 0 AND close_date >= :start
+            ORDER BY pair, date
+        """
+        rows = self._query(sql, {"start": start})
+        if not rows:
+            return []
+        by_pair: dict[str, list[tuple[str, float]]] = {}
+        for r in rows:
+            sym = r["symbol"]
+            if sym not in by_pair:
+                by_pair[sym] = []
+            by_pair[sym].append((r["date"], float(r["pnl"] or 0)))
+        pairs = list(by_pair.keys())
+        if len(pairs) < 2:
+            return []
+        results = []
+        from collections import defaultdict
+        daily_returns: dict[str, dict[str, float]] = defaultdict(dict)
+        for sym, trades in by_pair.items():
+            for date, pnl in trades:
+                daily_returns[sym][date] = daily_returns[sym].get(date, 0) + pnl
+        import math
+        for i in range(len(pairs)):
+            for j in range(i + 1, len(pairs)):
+                a, b = pairs[i], pairs[j]
+                common_dates = sorted(set(daily_returns[a].keys()) & set(daily_returns[b].keys()))
+                if len(common_dates) < 2:
+                    continue
+                ra = [daily_returns[a][d] for d in common_dates]
+                rb = [daily_returns[b][d] for d in common_dates]
+                mean_a = sum(ra) / len(ra)
+                mean_b = sum(rb) / len(rb)
+                cov = sum((ra[k] - mean_a) * (rb[k] - mean_b) for k in range(len(ra)))
+                std_a = math.sqrt(sum((x - mean_a) ** 2 for x in ra))
+                std_b = math.sqrt(sum((x - mean_b) ** 2 for x in rb))
+                if std_a == 0 or std_b == 0:
+                    corr = 0.0
+                else:
+                    corr = cov / (std_a * std_b)
+                corr = max(-1.0, min(1.0, corr))
+                level = "red" if abs(corr) > 0.85 else ("yellow" if abs(corr) > 0.7 else "normal")
+                results.append({
+                    "symbol_a": a,
+                    "symbol_b": b,
+                    "correlation": round(corr, 3),
+                    "window_days": days,
+                    "alert_level": level,
+                })
+        return results
+
 freqtrade_db = FreqtradeDB()

@@ -4,6 +4,7 @@
 import SwiftUI
 
 struct NotificationPopover: View {
+    @Environment(PulseColors.self) private var colors
     let viewModel: NotificationViewModel
     var onViewAll: (() -> Void)?
 
@@ -28,7 +29,7 @@ struct NotificationPopover: View {
         }
         .frame(width: 320)
         .frame(maxHeight: 400)
-        .background(PulseColors.background)
+        .background(colors.background)
         .task {
             await viewModel.fetchNotifications()
         }
@@ -39,7 +40,7 @@ struct NotificationPopover: View {
         HStack {
             Text("通知中心")
                 .font(PulseFonts.bodyMedium)
-                .foregroundStyle(PulseColors.textPrimary)
+                .foregroundStyle(colors.textPrimary)
 
             if viewModel.unreadCount > 0 {
                 Text("\(viewModel.unreadCount)")
@@ -59,7 +60,7 @@ struct NotificationPopover: View {
         .padding(.vertical, PulseSpacing.sm)
         .overlay(
             Rectangle()
-                .fill(PulseColors.border)
+                .fill(colors.border)
                 .frame(height: 1),
             alignment: .bottom
         )
@@ -79,7 +80,7 @@ struct NotificationPopover: View {
 
                     if index < viewModel.notifications.prefix(20).count - 1 {
                         Divider()
-                            .foregroundStyle(PulseColors.border)
+                            .foregroundStyle(colors.border)
                             .padding(.horizontal, PulseSpacing.sm)
                     }
                 }
@@ -95,7 +96,7 @@ struct NotificationPopover: View {
                 .tint(PulseColors.accent)
             Text("加载中...")
                 .font(PulseFonts.caption)
-                .foregroundStyle(PulseColors.textMuted)
+                .foregroundStyle(colors.textMuted)
         }
         .frame(maxWidth: .infinity, minHeight: 120)
     }
@@ -105,10 +106,10 @@ struct NotificationPopover: View {
         VStack(spacing: PulseSpacing.sm) {
             Image(systemName: "bell.slash")
                 .font(.system(size: 24))
-                .foregroundStyle(PulseColors.textMuted)
+                .foregroundStyle(colors.textMuted)
             Text("暂无通知")
                 .font(PulseFonts.caption)
-                .foregroundStyle(PulseColors.textMuted)
+                .foregroundStyle(colors.textMuted)
         }
         .frame(maxWidth: .infinity, minHeight: 120)
     }
@@ -134,7 +135,7 @@ struct NotificationPopover: View {
                 Button(action: onViewAll) {
                     Text("查看全部")
                         .font(PulseFonts.captionMedium)
-                        .foregroundStyle(PulseColors.textSecondary)
+                        .foregroundStyle(colors.textSecondary)
                 }
                 .buttonStyle(.plain)
             }
@@ -143,7 +144,7 @@ struct NotificationPopover: View {
         .padding(.vertical, PulseSpacing.sm)
         .overlay(
             Rectangle()
-                .fill(PulseColors.border)
+                .fill(colors.border)
                 .frame(height: 1),
             alignment: .top
         )
@@ -152,10 +153,12 @@ struct NotificationPopover: View {
 
 // MARK: - 预览
 #Preview {
+    let colors = PulseColors(themeManager: ThemeManager())
     NotificationPopover(
         viewModel: NotificationViewModel(client: MockNetworkClient()),
         onViewAll: {}
     )
     .padding()
-    .background(PulseColors.background)
+    .background(colors.background)
+    .environment(colors)
 }

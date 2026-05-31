@@ -1,0 +1,6 @@
+{
+  "eval_id": 2,
+  "eval_name": "data-table",
+  "prompt": "Build a trading history table component showing recent trades with columns: pair, side (buy/sell), entry price, exit price, PnL, and status. Use color-coded badges for buy/sell, green/red for profit/loss, and status dots for open/closed positions. Include a loading skeleton state.",
+  "assertions": []
+}

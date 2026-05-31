@@ -108,7 +108,7 @@ enum PortDataType: String, Codable, CaseIterable {
         }
     }
 
-    var color: Color {
+    func color(_ colors: PulseColors) -> Color {
         switch self {
         case .ticker, .kline, .orderbook: return PulseColors.cyan
         case .indicator: return PulseColors.purple
@@ -116,7 +116,7 @@ enum PortDataType: String, Codable, CaseIterable {
         case .position: return PulseColors.danger
         case .llmOutput, .sentiment, .riskMetric, .macro: return PulseColors.accent
         case .onchain, .fundingRate, .liquidation: return PulseColors.cyan
-        case .text, .number, .array, .object: return PulseColors.textSecondary
+        case .text, .number, .array, .object: return colors.textSecondary
         }
     }
 }

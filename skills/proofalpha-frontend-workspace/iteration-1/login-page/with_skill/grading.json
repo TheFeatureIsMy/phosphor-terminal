@@ -1,0 +1,19 @@
+{
+  "eval_id": 1,
+  "eval_name": "login-page",
+  "configuration": "with_skill",
+  "expectations": [
+    { "text": "uses-design-tokens", "passed": true, "evidence": "Uses bg-background, text-text-primary, border-white/[0.08], bg-white/[0.03] for inputs, primary/primary-hover for buttons" },
+    { "text": "glass-morphism", "passed": true, "evidence": "SpotlightCard with backdrop-blur-[14px] backdrop-saturate-120 bg-[rgba(24,24,27,0.55)]" },
+    { "text": "monospace-typography", "passed": true, "evidence": "font-mono on all inputs, labels, buttons. font-display on logo wordmark only" },
+    { "text": "subtle-borders", "passed": true, "evidence": "border-white/[0.05] on card, border-white/[0.08] on inputs" },
+    { "text": "small-radius", "passed": true, "evidence": "rounded-sm (2px) on inputs, button, card" },
+    { "text": "hover-states", "passed": true, "evidence": "Button hover:bg-primary-hover hover:shadow glow, ghost button hover:border-primary hover:text-primary" },
+    { "text": "terminal-labels", "passed": true, "evidence": "// EMAIL, // PASSWORD labels with 10px uppercase tracking-[0.15em], // AI QUANT TRADING" },
+    { "text": "particle-background", "passed": true, "evidence": "ParticleCanvas with 60 particles in #00ff9d, #00c2ff, #a855f7" },
+    { "text": "ghost-button", "passed": true, "evidence": "Dashed border, uppercase, hover transitions to primary color with bg-primary-dim" },
+    { "text": "background-layers", "passed": true, "evidence": "Mesh gradient + grid overlay + particle canvas, all fixed and pointer-events-none" },
+    { "text": "reduced-motion", "passed": true, "evidence": "@media (prefers-reduced-motion: reduce) block disabling all animations" }
+  ],
+  "pass_rate": 1.0
+}

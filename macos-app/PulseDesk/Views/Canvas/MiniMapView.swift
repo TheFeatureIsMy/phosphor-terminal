@@ -4,6 +4,7 @@
 import SwiftUI
 
 struct MiniMapView: View {
+    @Environment(PulseColors.self) private var colors
     let nodes: [CanvasNode]
     let viewport: ViewportState
     let canvasSize: CGSize
@@ -16,7 +17,7 @@ struct MiniMapView: View {
             // Background
             context.fill(
                 Path(CGRect(origin: .zero, size: minimapSize)),
-                with: .color(PulseColors.surface.opacity(0.85))
+                with: .color(colors.surface.opacity(0.85))
             )
 
             // Grid lines for visual depth
@@ -25,13 +26,13 @@ struct MiniMapView: View {
                 var gridPath = Path()
                 gridPath.move(to: CGPoint(x: x, y: 0))
                 gridPath.addLine(to: CGPoint(x: x, y: minimapSize.height))
-                context.stroke(gridPath, with: .color(PulseColors.border.opacity(0.3)), lineWidth: 0.5)
+                context.stroke(gridPath, with: .color(colors.border.opacity(0.3)), lineWidth: 0.5)
             }
             for y in stride(from: 0, through: minimapSize.height, by: gridSpacing) {
                 var gridPath = Path()
                 gridPath.move(to: CGPoint(x: 0, y: y))
                 gridPath.addLine(to: CGPoint(x: minimapSize.width, y: y))
-                context.stroke(gridPath, with: .color(PulseColors.border.opacity(0.3)), lineWidth: 0.5)
+                context.stroke(gridPath, with: .color(colors.border.opacity(0.3)), lineWidth: 0.5)
             }
 
             guard !nodes.isEmpty else { return }
@@ -43,7 +44,7 @@ struct MiniMapView: View {
             // Draw nodes as small colored rectangles
             for node in nodes {
                 let def = NodeRegistry.definition(for: node.nodeType)
-                let color = def?.category.color ?? PulseColors.textMuted
+                let color = def?.category.color ?? colors.textMuted
                 let x = (node.position.x - bounds.minX) * scale
                 let y = (node.position.y - bounds.minY) * scale
                 let w = max(node.size.width * scale, 4)
@@ -78,7 +79,7 @@ struct MiniMapView: View {
         .clipShape(RoundedRectangle(cornerRadius: PulseRadii.sm))
         .overlay(
             RoundedRectangle(cornerRadius: PulseRadii.sm)
-                .stroke(PulseColors.border, lineWidth: 1)
+                .stroke(colors.border, lineWidth: 1)
         )
         .shadow(color: .black.opacity(0.3), radius: 4, y: 2)
         .gesture(

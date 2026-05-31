@@ -1,0 +1,12 @@
+-r requirements.txt
+langchain-core>=0.3.81
+langchain-anthropic>=0.3.15
+langchain-experimental>=0.3.4
+langchain-google-genai>=4.0.0
+langchain-openai>=0.3.23
+langgraph>=0.4.8
+langgraph-checkpoint-sqlite>=2.0.0
+pandas>=2.3.0
+stockstats>=0.6.5
+yfinance>=0.2.63
+redis>=6.2.0

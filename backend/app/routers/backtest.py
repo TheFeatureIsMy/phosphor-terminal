@@ -1,6 +1,9 @@
 from datetime import datetime, timedelta, timezone
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
 
+from app.database import get_db
+from app.models.strategy import BacktestRun
 from app.services.freqtrade_client import freqtrade_client
 from app.schemas.api import (
     BacktestRequest, BacktestResponse, BacktestResultResponse,
@@ -99,8 +102,7 @@ def _generate_simulated_backtest(request: BacktestRequest) -> dict:
 
 
 @router.post("", response_model=BacktestResponse)
-async def run_backtest(request: BacktestRequest):
-    # Try Freqtrade first
+async def run_backtest(request: BacktestRequest, db: Session = Depends(get_db)):
     ft_result = await freqtrade_client.run_backtest({
         "strategy": request.strategy_id,
         "timerange": f"{request.start_date.replace('-', '')}-{request.end_date.replace('-', '')}",
@@ -108,76 +110,109 @@ async def run_backtest(request: BacktestRequest):
     })
 
     if "error" not in ft_result:
-        return BacktestResponse(
-            id=1,
+        data_source = {"source": "freqtrade", "simulated": False, "available": True, "detail": None}
+        result_data = BacktestResultResponse(
+            equity_curve=ft_result.get("equity_curve", []),
+            trades=ft_result.get("trades", []),
+            metrics=BacktestMetricsResponse(
+                total_return=ft_result.get("total_return", 0),
+                sharpe_ratio=ft_result.get("sharpe_ratio", 0),
+                max_drawdown=ft_result.get("max_drawdown", 0),
+                win_rate=ft_result.get("win_rate", 0),
+                profit_factor=ft_result.get("profit_factor", 0),
+                total_trades=ft_result.get("total_trades", 0),
+                avg_trade_duration=ft_result.get("avg_trade_duration", "0h 0m"),
+                best_trade=ft_result.get("best_trade", 0),
+                worst_trade=ft_result.get("worst_trade", 0),
+            ),
+        )
+        resp = BacktestResponse(
+            id=0,
             strategy_id=request.strategy_id,
             config=request.model_dump(),
-            result=BacktestResultResponse(
-                equity_curve=ft_result.get("equity_curve", []),
-                trades=ft_result.get("trades", []),
-                metrics=BacktestMetricsResponse(
-                    total_return=ft_result.get("total_return", 0),
-                    sharpe_ratio=ft_result.get("sharpe_ratio", 0),
-                    max_drawdown=ft_result.get("max_drawdown", 0),
-                    win_rate=ft_result.get("win_rate", 0),
-                    profit_factor=ft_result.get("profit_factor", 0),
-                    total_trades=ft_result.get("total_trades", 0),
-                    avg_trade_duration=ft_result.get("avg_trade_duration", "0h 0m"),
-                    best_trade=ft_result.get("best_trade", 0),
-                    worst_trade=ft_result.get("worst_trade", 0),
-                ),
-            ),
+            result=result_data,
             sharpe_ratio=ft_result.get("sharpe_ratio", 0),
             max_drawdown=ft_result.get("max_drawdown", 0),
             win_rate=ft_result.get("win_rate", 0),
             total_return=ft_result.get("total_return", 0),
             passed=ft_result.get("sharpe_ratio", 0) > 1.0,
             created_at=datetime.now(timezone.utc),
-            data_source={
-                "source": "freqtrade",
-                "simulated": False,
-                "available": True,
-                "detail": None,
-            },
+            data_source=data_source,
+        )
+    else:
+        simulated = _generate_simulated_backtest(request)
+        resp = BacktestResponse(
+            id=0,
+            strategy_id=request.strategy_id,
+            config=request.model_dump(),
+            result=BacktestResultResponse(
+                equity_curve=simulated["equity_curve"],
+                trades=simulated["trades"],
+                metrics=simulated["metrics"],
+            ),
+            sharpe_ratio=simulated["sharpe_ratio"],
+            max_drawdown=simulated["max_drawdown"],
+            win_rate=simulated["win_rate"],
+            total_return=simulated["total_return"],
+            passed=simulated["sharpe_ratio"] > 1.0,
+            created_at=datetime.now(timezone.utc),
+            data_source=simulated["data_source"],
         )
 
-    simulated = _generate_simulated_backtest(request)
-    return BacktestResponse(
-        id=1,
+    run = BacktestRun(
         strategy_id=request.strategy_id,
+        start_date=request.start_date,
+        end_date=request.end_date,
+        initial_capital=request.initial_capital,
+        symbols=request.symbols or [],
         config=request.model_dump(),
-        result=BacktestResultResponse(
-            equity_curve=simulated["equity_curve"],
-            trades=simulated["trades"],
-            metrics=simulated["metrics"],
-        ),
-        sharpe_ratio=simulated["sharpe_ratio"],
-        max_drawdown=simulated["max_drawdown"],
-        win_rate=simulated["win_rate"],
-        total_return=simulated["total_return"],
-        passed=simulated["sharpe_ratio"] > 1.0,
-        created_at=datetime.now(timezone.utc),
-        data_source=simulated["data_source"],
+        result=resp.result.model_dump(),
+        sharpe_ratio=resp.sharpe_ratio,
+        max_drawdown=resp.max_drawdown,
+        win_rate=resp.win_rate,
+        total_return=resp.total_return,
+        data_source=resp.data_source if isinstance(resp.data_source, dict) else resp.data_source.model_dump(),
     )
+    db.add(run)
+    db.commit()
+    db.refresh(run)
+    resp.id = run.id
+    return resp
+
+
+@router.get("")
+async def list_backtests(db: Session = Depends(get_db)):
+    runs = db.query(BacktestRun).order_by(BacktestRun.created_at.desc()).limit(50).all()
+    return [
+        {
+            "id": r.id,
+            "strategy_id": r.strategy_id,
+            "sharpe_ratio": r.sharpe_ratio,
+            "max_drawdown": r.max_drawdown,
+            "win_rate": r.win_rate,
+            "total_return": r.total_return,
+            "data_source": r.data_source,
+            "created_at": r.created_at.isoformat() if r.created_at else None,
+        }
+        for r in runs
+    ]
 
 
 @router.get("/{backtest_id}", response_model=BacktestResponse)
-async def get_backtest(backtest_id: int):
-    simulated = _generate_simulated_backtest(BacktestRequest(strategy_id=1))
+async def get_backtest(backtest_id: int, db: Session = Depends(get_db)):
+    run = db.query(BacktestRun).filter(BacktestRun.id == backtest_id).first()
+    if not run:
+        raise HTTPException(status_code=404, detail="Backtest not found")
     return BacktestResponse(
-        id=backtest_id,
-        strategy_id=1,
-        config={"start_date": "2025-01-01", "end_date": "2025-12-31", "initial_capital": 10000},
-        result=BacktestResultResponse(
-            equity_curve=simulated["equity_curve"],
-            trades=simulated["trades"],
-            metrics=simulated["metrics"],
-        ),
-        sharpe_ratio=simulated["sharpe_ratio"],
-        max_drawdown=simulated["max_drawdown"],
-        win_rate=simulated["win_rate"],
-        total_return=simulated["total_return"],
-        passed=simulated["sharpe_ratio"] > 1.0,
-        created_at=datetime.now(timezone.utc),
-        data_source=simulated["data_source"],
+        id=run.id,
+        strategy_id=run.strategy_id,
+        config=run.config,
+        result=BacktestResultResponse(**run.result),
+        sharpe_ratio=run.sharpe_ratio,
+        max_drawdown=run.max_drawdown,
+        win_rate=run.win_rate,
+        total_return=run.total_return,
+        passed=run.sharpe_ratio > 1.0,
+        created_at=run.created_at,
+        data_source=run.data_source,
     )

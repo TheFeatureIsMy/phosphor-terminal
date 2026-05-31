@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
+import aiohttp
+
 
 def build_risk_message(event: dict[str, Any]) -> str:
     severity = str(event.get("severity", "info")).upper()
@@ -11,7 +13,7 @@ def build_risk_message(event: dict[str, Any]) -> str:
     return f"[PulseDesk][{severity}] {event_type}: {description} Action: {action}"
 
 
-def send_telegram_notification(
+async def send_telegram_notification(
     event: dict[str, Any],
     *,
     dry_run: bool = True,
@@ -26,8 +28,28 @@ def send_telegram_notification(
             "destination": chat_id or "not_configured",
         }
 
-    return {
-        "status": "queued",
-        "message": message,
-        "destination": chat_id,
-    }
+    url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+    try:
+        timeout = aiohttp.ClientTimeout(total=10)
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.post(url, json={"chat_id": chat_id, "text": message}) as resp:
+                if resp.status == 200:
+                    return {
+                        "status": "sent",
+                        "message": message,
+                        "destination": chat_id,
+                        "telegram_response": await resp.json(),
+                    }
+                return {
+                    "status": "error",
+                    "message": message,
+                    "destination": chat_id,
+                    "detail": f"HTTP {resp.status}: {await resp.text()}",
+                }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": message,
+            "destination": chat_id,
+            "detail": str(e),
+        }

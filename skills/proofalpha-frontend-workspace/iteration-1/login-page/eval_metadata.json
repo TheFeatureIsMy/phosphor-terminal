@@ -1,0 +1,6 @@
+{
+  "eval_id": 1,
+  "eval_name": "login-page",
+  "prompt": "Create a login page with a centered glass-morphism card containing email/password inputs, a primary submit button, and a 'forgot password' ghost link. Add a subtle particle background effect and the product logo at the top of the card.",
+  "assertions": []
+}

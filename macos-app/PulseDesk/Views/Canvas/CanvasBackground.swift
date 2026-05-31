@@ -4,6 +4,7 @@
 import SwiftUI
 
 struct CanvasBackground: View {
+    @Environment(PulseColors.self) private var colors
     let scale: CGFloat
     let offset: CGPoint
 
@@ -37,7 +38,7 @@ struct CanvasBackground: View {
                             width: dotRadius * 2,
                             height: dotRadius * 2
                         )),
-                        with: .color(PulseColors.textMuted.opacity(0.3))
+                        with: .color(colors.textMuted.opacity(0.3))
                     )
                     y += gridSize
                 }

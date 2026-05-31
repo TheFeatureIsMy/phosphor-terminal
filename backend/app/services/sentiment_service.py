@@ -8,35 +8,19 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 
+from app.services.sentiment_finbert import FinBERTAdapter
+
+_finbert = FinBERTAdapter()
+
+
 def analyze_sentiment(text: str) -> dict[str, Any]:
-    """
-    Analyze sentiment of financial text.
-    Returns sentiment label and confidence score.
-    """
-    # Simulated FinBERT-like analysis
-    positive_words = ["bullish", "surge", "rally", "gain", "growth", "profit", "breakout", "upgrade"]
-    negative_words = ["bearish", "crash", "drop", "loss", "decline", "sell-off", "downgrade", "risk"]
-
-    text_lower = text.lower()
-    pos_count = sum(1 for w in positive_words if w in text_lower)
-    neg_count = sum(1 for w in negative_words if w in text_lower)
-
-    if pos_count > neg_count:
-        sentiment = "positive"
-        score = min(0.6 + pos_count * 0.1, 0.95)
-    elif neg_count > pos_count:
-        sentiment = "negative"
-        score = min(0.6 + neg_count * 0.1, 0.95)
-    else:
-        sentiment = "neutral"
-        score = 0.5 + random.random() * 0.2
-
+    result = _finbert.analyze_text(text)
     return {
         "text": text[:200],
-        "sentiment": sentiment,
-        "score": round(score, 3),
-        "positive_prob": round(score if sentiment == "positive" else 1 - score, 3),
-        "negative_prob": round(1 - score if sentiment == "positive" else score, 3),
+        "sentiment": result["label"],
+        "score": round(abs(result["score"]), 3) if result["label"] != "neutral" else round(0.5 + abs(result["score"]) * 0.5, 3),
+        "positive_prob": round(max(result["score"], 0), 3) if result["label"] == "positive" else round(max(1 - abs(result["score"]), 0), 3),
+        "negative_prob": round(max(-result["score"], 0), 3) if result["label"] == "negative" else round(max(1 - abs(result["score"]), 0), 3),
     }
 
 

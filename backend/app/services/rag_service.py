@@ -1,16 +1,45 @@
 """
 RAG Strategy Lab service.
 Provides PDF parsing, knowledge retrieval, and strategy generation.
-In production, this would use actual vector DB and LLM.
+Uses LLM when available, falls back to template matching.
 """
+from __future__ import annotations
 import hashlib
 import json
+import logging
 from datetime import datetime, timezone
 from typing import Any
 
+logger = logging.getLogger(__name__)
 
-# In-memory knowledge store (would be vector DB in production)
-_knowledge_store: dict[str, dict] = {}
+# Lazy-initialized LLM service singleton
+_llm_service = None
+_llm_service_initialized = False
+
+
+def _get_llm_service():
+    """Return the LLM service if available, None otherwise. Initialized once."""
+    global _llm_service, _llm_service_initialized
+    if _llm_service_initialized:
+        return _llm_service
+    _llm_service_initialized = True
+    try:
+        from app.services.llm_service import create_llm_service_from_env
+        _llm_service = create_llm_service_from_env()
+        if not _llm_service.providers:
+            logger.info("No LLM providers configured; RAG will use template fallback")
+            _llm_service = None
+    except Exception as exc:
+        logger.warning("Failed to initialize LLM service: %s", exc)
+        _llm_service = None
+    return _llm_service
+
+
+def _reset_llm_service():
+    """Reset the cached LLM service (for testing)."""
+    global _llm_service, _llm_service_initialized
+    _llm_service = None
+    _llm_service_initialized = False
 
 
 def parse_pdf_content(text: str, filename: str) -> dict[str, Any]:
@@ -18,7 +47,6 @@ def parse_pdf_content(text: str, filename: str) -> dict[str, Any]:
     Extract trading-relevant knowledge from PDF text.
     In production, would use actual PDF parser + NLP.
     """
-    # Simulate extraction of key concepts
     concepts = []
     lines = text.split('\n')
     for line in lines:
@@ -28,14 +56,6 @@ def parse_pdf_content(text: str, filename: str) -> dict[str, Any]:
 
     doc_id = hashlib.md5(f"{filename}:{text[:100]}".encode()).hexdigest()[:12]
 
-    _knowledge_store[doc_id] = {
-        "id": doc_id,
-        "filename": filename,
-        "concepts": concepts[:20],
-        "chunk_count": max(1, len(concepts) // 3),
-        "created_at": datetime.now(timezone.utc).isoformat(),
-    }
-
     return {
         "doc_id": doc_id,
         "filename": filename,
@@ -44,44 +64,131 @@ def parse_pdf_content(text: str, filename: str) -> dict[str, Any]:
     }
 
 
-def search_knowledge(query: str, top_k: int = 5) -> list[dict]:
-    """
-    Search knowledge base for relevant content.
-    In production, would use vector similarity search.
-    """
-    results = []
-    query_lower = query.lower()
-
-    for doc_id, doc in _knowledge_store.items():
-        for concept in doc.get("concepts", []):
-            # Simple keyword matching (would be vector similarity in production)
-            score = sum(1 for word in query_lower.split() if word in concept.lower())
-            if score > 0:
-                results.append({
-                    "doc_id": doc_id,
-                    "filename": doc["filename"],
-                    "content": concept,
-                    "relevance": min(0.95, score * 0.3 + 0.2),
-                })
-
-    results.sort(key=lambda x: x["relevance"], reverse=True)
-    return results[:top_k]
-
-
-def generate_strategy(
+async def generate_strategy(
     prompt: str,
     risk_level: str = "medium",
     market: str = "crypto",
+    context: list[dict] | None = None,
 ) -> dict[str, Any]:
     """
     Generate a trading strategy based on prompt and knowledge base.
-    In production, would use LLM with RAG context.
+    Tries LLM first, falls back to template matching if unavailable.
     """
-    # Search knowledge base for relevant context
-    context = search_knowledge(prompt, top_k=3)
-    context_text = "\n".join([c["content"] for c in context]) if context else ""
+    llm = _get_llm_service()
+    if llm is not None:
+        try:
+            return await _generate_strategy_via_llm(llm, prompt, risk_level, market, context)
+        except Exception as exc:
+            logger.warning("LLM strategy generation failed, falling back to template: %s", exc)
 
-    # Simulate strategy generation
+    return _generate_strategy_from_template(prompt, risk_level, market, context)
+
+
+async def _generate_strategy_via_llm(
+    llm,
+    prompt: str,
+    risk_level: str,
+    market: str,
+    context: list[dict] | None,
+) -> dict[str, Any]:
+    """Use LLM to generate a strategy. Raises on failure so caller can fall back."""
+    context_text = ""
+    if context:
+        context_text = "\n".join(
+            f"- [{c.get('filename', 'unknown')}] {c.get('content', '')[:200]}"
+            for c in context[:5]
+        )
+
+    system_msg = (
+        "You are a quantitative trading strategy expert. "
+        "Generate a Freqtrade-compatible trading strategy in JSON format. "
+        "Respond ONLY with valid JSON, no markdown fences, no extra text."
+    )
+
+    context_block = ("Knowledge base context:" + chr(10) + context_text) if context_text else ""
+
+    user_msg = (
+        f'Generate a trading strategy based on this request:\n'
+        f'"{prompt}"\n\n'
+        f'Risk level: {risk_level}\n'
+        f'Market: {market}\n'
+        f'{context_block}\n\n'
+        f'Respond with this exact JSON structure:\n'
+        f'{{\n'
+        f'  "name": "策略中文名称",\n'
+        f'  "type": "one of: ma_cross, breakout, mean_reversion, rsi, macd, bollinger",\n'
+        f'  "parameters": {{\n'
+        f'    "key1": value1,\n'
+        f'    "key2": value2\n'
+        f'  }},\n'
+        f'  "explanation": "中文解释，说明策略逻辑和为什么适合用户需求"\n'
+        f'}}\n\n'
+        f'Parameters should be numeric values suitable for a Freqtrade strategy class.'
+    )
+
+    response = await llm.chat(
+        messages=[
+            {"role": "system", "content": system_msg},
+            {"role": "user", "content": user_msg},
+        ],
+        temperature=0.7,
+        max_tokens=1024,
+    )
+
+    parsed = _parse_llm_strategy_json(response.content)
+    template = {
+        "name": parsed["name"],
+        "type": parsed["type"],
+        "parameters": parsed["parameters"],
+    }
+
+    code = _generate_strategy_code(template, risk_level, market)
+
+    return {
+        "strategy": {
+            **template,
+            "market": market,
+            "source": "llm_generated",
+            "model": response.model,
+            "provider": response.provider,
+        },
+        "code": code,
+        "context_used": context,
+        "risk_level": risk_level,
+        "explanation": parsed.get("explanation", f"LLM 生成了{template['name']}。"),
+    }
+
+
+def _parse_llm_strategy_json(content: str) -> dict:
+    """Parse LLM response into strategy dict. Raises ValueError on bad JSON."""
+    # Strip markdown fences if present
+    text = content.strip()
+    if text.startswith("```"):
+        lines = text.split("\n")
+        # Remove first and last fence lines
+        lines = [l for l in lines if not l.strip().startswith("```")]
+        text = "\n".join(lines)
+
+    parsed = json.loads(text)
+
+    # Validate required fields
+    if not isinstance(parsed.get("name"), str):
+        raise ValueError("LLM response missing 'name' string")
+    if not isinstance(parsed.get("type"), str):
+        raise ValueError("LLM response missing 'type' string")
+    if not isinstance(parsed.get("parameters"), dict):
+        raise ValueError("LLM response missing 'parameters' dict")
+
+    return parsed
+
+
+def _generate_strategy_from_template(
+    prompt: str,
+    risk_level: str,
+    market: str,
+    context: list[dict] | None,
+) -> dict[str, Any]:
+    """Template-based strategy generation (fallback when no LLM available)."""
     strategy_templates = {
         "ma_cross": {
             "name": "MA交叉策略",
@@ -215,15 +322,4 @@ class RAG{template["type"].title().replace("_", "")}Strategy(IStrategy):
 '''
 
 
-def list_knowledge() -> list[dict]:
-    """List all documents in knowledge base."""
-    return [
-        {
-            "id": doc["id"],
-            "filename": doc["filename"],
-            "concepts": len(doc.get("concepts", [])),
-            "chunks": doc.get("chunk_count", 0),
-            "created_at": doc["created_at"],
-        }
-        for doc in _knowledge_store.values()
-    ]
+

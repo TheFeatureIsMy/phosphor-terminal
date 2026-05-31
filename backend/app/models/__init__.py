@@ -6,6 +6,8 @@ from app.models.strategy import (
     SlippageAttribution,
     SentimentData,
     PortfolioStressTest,
+    BacktestRun,
+    NotificationRecord,
 )
 from app.models.user import User, UserSettings
 from app.models.ai import (
@@ -16,6 +18,9 @@ from app.models.ai import (
     FactorResearchRun,
     FreqAIRun,
 )
+from app.models.research import AIResearchRun, AIResearchLink
+from app.models.agent_signal import AgentProfile, AgentSignal, AgentSignalScore
+from app.models.ai_provider import AIProviderConfig, AIUsageLog
 
 __all__ = [
     "Strategy",
@@ -25,6 +30,8 @@ __all__ = [
     "SlippageAttribution",
     "SentimentData",
     "PortfolioStressTest",
+    "BacktestRun",
+    "NotificationRecord",
     "User",
     "UserSettings",
     "KnowledgeDocument",
@@ -33,4 +40,11 @@ __all__ = [
     "ForecastRun",
     "FactorResearchRun",
     "FreqAIRun",
+    "AIResearchRun",
+    "AIResearchLink",
+    "AgentProfile",
+    "AgentSignal",
+    "AgentSignalScore",
+    "AIProviderConfig",
+    "AIUsageLog",
 ]
