@@ -32,6 +32,8 @@ struct NodeView: View {
     @State private var hasStartedDrag = false
     /// Tracks whether an output port wire drag has already fired its start callback
     @State private var hasStartedWireDrag = false
+    /// Tracks which port circle is currently hovered
+    @State private var portHovered: UUID?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -80,6 +82,8 @@ struct NodeView: View {
                 .foregroundStyle(colors.textPrimary)
                 .lineLimit(1)
 
+            NodeBadgesView(node: node, definition: definition, connectedEdgeCount: 0)
+
             Spacer()
 
             // Collapse button
@@ -109,6 +113,11 @@ struct NodeView: View {
                         .frame(width: 12, height: 12)
                         .overlay(Circle().stroke(colors.background, lineWidth: 2))
                         .contentShape(Circle().scale(1.5))
+                        .scaleEffect(portHovered == port.id ? 1.3 : 1.0)
+                        .animation(.spring(response: 0.2), value: portHovered)
+                        .onHover { hovering in
+                            portHovered = hovering ? port.id : nil
+                        }
                         .onTapGesture {
                             onInputPortTap?(node.id, port.name)
                         }
@@ -136,6 +145,11 @@ struct NodeView: View {
                         .frame(width: 12, height: 12)
                         .overlay(Circle().stroke(colors.background, lineWidth: 2))
                         .contentShape(Circle().scale(1.5))
+                        .scaleEffect(portHovered == port.id ? 1.3 : 1.0)
+                        .animation(.spring(response: 0.2), value: portHovered)
+                        .onHover { hovering in
+                            portHovered = hovering ? port.id : nil
+                        }
                         .gesture(outputPortDragGesture(nodeId: node.id, portName: port.name))
                 }
                 .padding(.trailing, PulseSpacing.sm)
