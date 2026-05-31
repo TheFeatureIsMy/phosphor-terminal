@@ -10,9 +10,13 @@ struct MiniMapView: View {
     let canvasSize: CGSize
     var onPan: ((CGPoint) -> Void)?
 
-    private let minimapSize = CGSize(width: 200, height: 150)
+    @State private var minimapSize: CGSize = CGSize(width: 200, height: 150)
+    @State private var visibleOpacity: CGFloat = 0.4
+    @State private var opacityTask: Task<Void, Never>?
+    var selectedNodeIds: Set<UUID> = []
 
     var body: some View {
+        ZStack(alignment: .bottomTrailing) {
         Canvas { context, size in
             // Background
             context.fill(
@@ -44,7 +48,9 @@ struct MiniMapView: View {
             // Draw nodes as small colored rectangles
             for node in nodes {
                 let def = NodeRegistry.definition(for: node.nodeType)
-                let color = def?.category.color ?? colors.textMuted
+                let isSelected = selectedNodeIds.contains(node.id)
+                let color = isSelected ? PulseColors.accent : (def?.category.color ?? colors.textMuted)
+                let nodeOpacity: Double = isSelected ? 0.9 : 0.7
                 let x = (node.position.x - bounds.minX) * scale
                 let y = (node.position.y - bounds.minY) * scale
                 let w = max(node.size.width * scale, 4)
@@ -52,7 +58,7 @@ struct MiniMapView: View {
                 let rect = CGRect(x: x, y: y, width: w, height: h)
                 context.fill(
                     Path(roundedRect: rect, cornerRadius: 1),
-                    with: .color(color.opacity(0.7))
+                    with: .color(color.opacity(nodeOpacity))
                 )
             }
 
@@ -82,6 +88,7 @@ struct MiniMapView: View {
                 .stroke(colors.border, lineWidth: 1)
         )
         .shadow(color: .black.opacity(0.3), radius: 4, y: 2)
+        .opacity(visibleOpacity)
         .gesture(
             DragGesture(minimumDistance: 0)
                 .onChanged { value in
@@ -97,6 +104,35 @@ struct MiniMapView: View {
                     onPan?(CGPoint(x: -worldX * viewport.scale, y: -worldY * viewport.scale))
                 }
         )
+
+            // Resize handle
+            Circle()
+                .fill(colors.textMuted.opacity(0.4))
+                .frame(width: 10, height: 10)
+                .padding(2)
+                .gesture(
+                    DragGesture(minimumDistance: 1)
+                        .onChanged { v in
+                            let newW = max(100, min(400, minimapSize.width + v.translation.width))
+                            let newH = max(75, min(300, minimapSize.height + v.translation.height))
+                            minimapSize = CGSize(width: newW, height: newH)
+                        }
+                )
+        }
+        .onHover { hovering in
+            opacityTask?.cancel()
+            withAnimation(.easeInOut(duration: 0.2)) {
+                visibleOpacity = hovering ? 0.9 : 0.4
+            }
+            if !hovering {
+                opacityTask = Task {
+                    try? await Task.sleep(for: .seconds(3))
+                    await MainActor.run {
+                        withAnimation(.easeInOut(duration: 0.3)) { visibleOpacity = 0.4 }
+                    }
+                }
+            }
+        }
     }
 
     private func computeBounds() -> CGRect {

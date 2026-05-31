@@ -243,6 +243,18 @@ struct StrategyCanvasTab: View {
             .padding(.horizontal, 8).padding(.vertical, 4)
             .background(colors.background.opacity(0.8))
         }
+        .overlay(alignment: .bottomTrailing) {
+            if !viewModel.graph.nodes.isEmpty {
+                MiniMapView(
+                    nodes: viewModel.graph.nodes,
+                    viewport: viewModel.viewport,
+                    canvasSize: CGSize(width: 1200, height: 800),
+                    onPan: { delta in viewModel.pan(by: delta) },
+                    selectedNodeIds: viewModel.selectedNodeIds
+                )
+                .padding(8)
+            }
+        }
         .sheet(isPresented: $showCodePreview) {
             CodePreviewSheet(code: generatedCode,
                 onDeploy: { Task { await deployStrategy() } }, onCancel: {})
