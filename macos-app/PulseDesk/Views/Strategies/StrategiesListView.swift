@@ -50,8 +50,9 @@ struct StrategiesListView: View {
         .sheet(isPresented: $viewModel.showCreateSheet) {
             StrategyCreateSheet(viewModel: viewModel)
         }
-        .navigationDestination(item: $selectedStrategy) { strategy in
+        .sheet(item: $selectedStrategy) { strategy in
             StrategyDetailView(strategy: strategy, client: networkClient)
+                .frame(minWidth: 800, minHeight: 600)
         }
     }
 
