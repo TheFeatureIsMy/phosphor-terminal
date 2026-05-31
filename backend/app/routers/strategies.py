@@ -163,7 +163,7 @@ class CanvasSaveRequest(BaseModel):
     code_snapshot: Optional[str] = None
 
 
-@router.post("/{strategy_id}/canvas")
+@router.post("/{strategy_id}/canvas", status_code=201)
 def save_canvas(strategy_id: int, body: CanvasSaveRequest, db: Session = Depends(get_db)):
     from app.models.strategy import CanvasWorkflow
     strategy = db.query(Strategy).filter(Strategy.id == strategy_id).first()
