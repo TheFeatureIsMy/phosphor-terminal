@@ -23,28 +23,29 @@ struct OrdersTableView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // 数据来源
-            HStack {
-                DataSourceBadge(status: firstDataSource)
-                Spacer()
-            }
-            .padding(.bottom, PulseSpacing.xxs)
+        ProofAlphaCard(emphasis: .subtle, cardPadding: PulseSpacing.md) {
+            VStack(alignment: .leading, spacing: 0) {
+                // 数据来源
+                HStack {
+                    DataSourceBadge(status: firstDataSource)
+                    Spacer()
+                }
+                .padding(.bottom, PulseSpacing.xxs)
 
-            // 表头
-            headerRow
+                // 表头
+                headerRow
 
-            Divider()
-                .foregroundStyle(colors.border)
+                Divider()
+                    .foregroundStyle(colors.border)
 
-            // 数据行
-            ForEach(Array(orders.enumerated()), id: \.element.id) { index, order in
-                dataRow(order)
-                    .staggeredAppearance(index: index, baseDelay: 0.02)
-                    .background(index % 2 == 0 ? colors.surface.opacity(0.3) : Color.clear)
+                // 数据行
+                ForEach(Array(orders.enumerated()), id: \.element.id) { index, order in
+                    dataRow(order)
+                        .staggeredAppearance(index: index, baseDelay: 0.02)
+                        .background(index % 2 == 0 ? colors.surface.opacity(0.3) : Color.clear)
+                }
             }
         }
-        .padding(PulseSpacing.md)
     }
 
     private var headerRow: some View {
@@ -114,7 +115,7 @@ struct OrdersTableView: View {
             BadgeView(text: order.status.label, color: order.status.color(colors), size: .small)
                 .layoutPriority(colStatus / colTotal)
         }
-        .padding(.vertical, PulseSpacing.xxs)
+        .padding(.vertical, PulseSpacing.xs)
     }
 
     private func formatDate(_ iso: String) -> String {

@@ -27,22 +27,46 @@ struct TradesView: View {
                 .foregroundStyle(colors.border)
 
             if selectedTab == 0 {
+                // Custom filter bar (replaces native TextField + Picker)
                 HStack(spacing: PulseSpacing.sm) {
-                    TextField("搜索币对", text: $symbolFilter)
-                        .textFieldStyle(.roundedBorder)
-                        .frame(width: 150)
-
-                    Picker("方向", selection: $sideFilter) {
-                        Text("全部").tag(nil as OrderSide?)
-                        Text("买入").tag(OrderSide.buy)
-                        Text("卖出").tag(OrderSide.sell)
+                    // Custom search field
+                    HStack(spacing: PulseSpacing.xxs) {
+                        Image(systemName: "magnifyingglass")
+                            .font(.system(size: 11))
+                            .foregroundStyle(colors.textMuted)
+                        TextField("搜索币对...", text: $symbolFilter)
+                            .textFieldStyle(.plain)
+                            .font(PulseFonts.caption)
+                        if !symbolFilter.isEmpty {
+                            Button { symbolFilter = "" } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(colors.textMuted)
+                            }
+                            .buttonStyle(.plain)
+                        }
                     }
-                    .pickerStyle(.segmented)
-                    .frame(width: 150)
+                    .padding(.horizontal, PulseSpacing.xs)
+                    .padding(.vertical, 6)
+                    .background(RoundedRectangle(cornerRadius: 4).fill(colors.surface))
+                    .overlay(RoundedRectangle(cornerRadius: 4).stroke(colors.border, lineWidth: 1))
+                    .frame(width: 180)
+
+                    // Custom side filter pills
+                    HStack(spacing: 2) {
+                        filterPill("全部", isActive: sideFilter == nil) { sideFilter = nil }
+                        filterPill("买入", isActive: sideFilter == .buy) { sideFilter = .buy }
+                        filterPill("卖出", isActive: sideFilter == .sell) { sideFilter = .sell }
+                    }
 
                     Spacer()
+
+                    Text("\(filteredOrders.count) 条")
+                        .font(PulseFonts.caption)
+                        .foregroundStyle(colors.textMuted)
                 }
                 .padding(.horizontal, PulseSpacing.lg)
+                .padding(.vertical, PulseSpacing.xs)
             }
 
             if isLoading {
@@ -108,6 +132,21 @@ struct TradesView: View {
             (symbolFilter.isEmpty || order.symbol.localizedCaseInsensitiveContains(symbolFilter)) &&
             (sideFilter == nil || order.side == sideFilter)
         }
+    }
+
+    private func filterPill(_ label: String, isActive: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(label)
+                .font(PulseFonts.monoLabel)
+                .foregroundStyle(isActive ? colors.background : colors.textSecondary)
+                .padding(.horizontal, PulseSpacing.sm)
+                .padding(.vertical, 4)
+                .background(
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(isActive ? PulseColors.accent : Color.clear)
+                )
+        }
+        .buttonStyle(.plain)
     }
 
     private func loadData() async {
