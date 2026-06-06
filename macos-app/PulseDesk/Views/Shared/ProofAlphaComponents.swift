@@ -1,5 +1,5 @@
 // ProofAlphaComponents.swift — ProofAlpha 核心交互组件
-// DepthCard (3D倾斜+聚光灯), SpotlightCard (光标跟随), TerminalLabel, BadgeDot
+// SpotlightCard (光标跟随), TerminalLabel, BadgeDot
 
 import SwiftUI
 
@@ -155,109 +155,6 @@ struct ProofAlphaCard<Content: View>: View {
             Color.clear.onAppear { viewSize = geo.size }
                 .onChange(of: geo.size) { _, newSize in viewSize = newSize }
         }
-    }
-}
-
-// DEPRECATED: Use ProofAlphaCard(emphasis:) instead.
-// Kept for source compatibility during migration; remove after Batch C.
-// MARK: - DepthCard — 3D 倾斜 + 聚光灯效果
-struct DepthCard<Content: View>: View {
-    @Environment(PulseColors.self) private var colors
-    var maxRotation: Double = 3.5
-    var spotlightColor: Color = PulseColors.accent.opacity(0.08)
-    var cardPadding: CGFloat = PulseSpacing.md
-    let content: () -> Content
-
-    @State private var rotateX: Double = 0
-    @State private var rotateY: Double = 0
-    @State private var spotlightX: CGFloat = 0
-    @State private var spotlightY: CGFloat = 0
-    @State private var spotlightOpacity: Double = 0
-    @State private var isHovering = false
-
-    var body: some View {
-        content()
-            .padding(cardPadding)
-            .background(
-                RoundedRectangle(cornerRadius: PulseRadii.card)
-                    .fill(colors.cardBackground)
-                    .background(
-                        RoundedRectangle(cornerRadius: PulseRadii.card)
-                            .fill(.ultraThinMaterial)
-                    )
-            )
-            .clipShape(RoundedRectangle(cornerRadius: PulseRadii.card))
-            .overlay(
-                RoundedRectangle(cornerRadius: PulseRadii.card)
-                    .stroke(Color.white.opacity(0.05), lineWidth: 1)
-            )
-            .applyShadow(PulseShadow.card(colors))
-            .overlay(
-                ZStack {
-                    // 顶部高光线
-                    VStack {
-                        LinearGradient(
-                            colors: [.clear, PulseColors.accent.opacity(0.35), .clear],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                        .frame(height: 1)
-                        Spacer()
-                    }
-
-                    // 聚光灯叠加层
-                    RoundedRectangle(cornerRadius: PulseRadii.card)
-                        .fill(
-                            RadialGradient(
-                                colors: [spotlightColor, .clear],
-                                center: UnitPoint(x: 0.5, y: 0.5),
-                                startRadius: 0,
-                                endRadius: 180
-                            )
-                        )
-                        .opacity(spotlightOpacity)
-                        .allowsHitTesting(false)
-                }
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: PulseRadii.card)
-                    .stroke(
-                        isHovering ? PulseGlass.accentBorderHover : Color.clear,
-                        lineWidth: 1
-                    )
-            )
-            .rotation3DEffect(
-                .degrees(rotateX),
-                axis: (x: 1, y: 0, z: 0),
-                perspective: 0.5
-            )
-            .rotation3DEffect(
-                .degrees(rotateY),
-                axis: (x: 0, y: 1, z: 0),
-                perspective: 0.5
-            )
-            .animation(PulseAnimation.easeOutFast, value: isHovering)
-            .onContinuousHover { phase in
-                switch phase {
-                case .active(let point):
-                    isHovering = true
-                    spotlightX = point.x
-                    spotlightY = point.y
-                    spotlightOpacity = 1
-                    if let window = NSApp.windows.first {
-                        let viewSize = window.frame.size
-                        let normalizedX = point.x / max(viewSize.width, 1) - 0.5
-                        let normalizedY = point.y / max(viewSize.height, 1) - 0.5
-                        rotateY = normalizedX * maxRotation * 2
-                        rotateX = -normalizedY * maxRotation * 2
-                    }
-                case .ended:
-                    isHovering = false
-                    spotlightOpacity = 0
-                    rotateX = 0
-                    rotateY = 0
-                }
-            }
     }
 }
 

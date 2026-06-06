@@ -79,46 +79,4 @@ struct NotificationRow: View {
 }
 
 // MARK: - 预览
-#Preview("未读通知") {
-    let colors = PulseColors(themeManager: ThemeManager())
-    NotificationRow(
-        notification: AppNotification(
-            id: UUID(),
-            type: .riskAlert,
-            title: "BTC/USDT 触发止损",
-            message: "浮亏超过5%，已自动平仓。建议检查策略参数。",
-            severity: .critical,
-            isRead: false,
-            actionRoute: "risk",
-            actionPayload: nil,
-            createdAt: Date().addingTimeInterval(-5 * 60)
-        ),
-        onTap: {}
-    )
-    .frame(width: 320)
-    .padding()
-    .background(colors.background)
-    .environment(colors)
-}
 
-#Preview("已读通知") {
-    let colors = PulseColors(themeManager: ThemeManager())
-    NotificationRow(
-        notification: AppNotification(
-            id: UUID(),
-            type: .tradeExecuted,
-            title: "ETH/USDT 买入成交",
-            message: "MACD趋势跟踪策略以 $3,420 买入 2.5 ETH。",
-            severity: .info,
-            isRead: true,
-            actionRoute: "orders",
-            actionPayload: nil,
-            createdAt: Date().addingTimeInterval(-3 * 3600)
-        ),
-        onTap: {}
-    )
-    .frame(width: 320)
-    .padding()
-    .background(colors.background)
-    .environment(colors)
-}

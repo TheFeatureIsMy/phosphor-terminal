@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Query
@@ -6,6 +7,7 @@ from app.services.freqtrade_db import freqtrade_db
 from app.schemas.api import OrderResponse, PositionResponse
 
 router = APIRouter(prefix="/api", tags=["orders"])
+logger = logging.getLogger(__name__)
 
 _SYMBOLS = ["BTC/USDT", "ETH/USDT", "SOL/USDT", "BNB/USDT", "XRP/USDT"]
 
@@ -49,13 +51,21 @@ def _mock_positions() -> list[dict]:
 
 @router.get("/orders", response_model=list[OrderResponse])
 def list_orders(limit: int = Query(default=50, ge=1, le=500)):
-    trades = freqtrade_db.get_trades(limit=limit)
+    try:
+        trades = freqtrade_db.get_trades(limit=limit)
+    except Exception as e:
+        logger.warning(f"[orders] freqtrade_db.get_trades failed, mock fallback: {e}")
+        trades = None
+
     if not trades:
+        if trades is None:
+            logger.warning("[orders] freqtrade_db returned no data, using mock")
         trades = _mock_orders(limit)
     else:
         source = freqtrade_db.source_status()
         for trade in trades:
             trade["data_source"] = source
+
     result = []
     for t in trades:
         result.append(OrderResponse(
@@ -80,13 +90,21 @@ def list_orders(limit: int = Query(default=50, ge=1, le=500)):
 
 @router.get("/positions", response_model=list[PositionResponse])
 def list_positions():
-    trades = freqtrade_db.get_open_trades()
+    try:
+        trades = freqtrade_db.get_open_trades()
+    except Exception as e:
+        logger.warning(f"[positions] freqtrade_db.get_open_trades failed, mock fallback: {e}")
+        trades = None
+
     if not trades:
+        if trades is None:
+            logger.warning("[positions] freqtrade_db returned no data, using mock")
         trades = _mock_positions()
     else:
         source = freqtrade_db.source_status()
         for trade in trades:
             trade["data_source"] = source
+
     result = []
     for t in trades:
         result.append(PositionResponse(

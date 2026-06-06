@@ -1,65 +1,37 @@
-import asyncio
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
 from app.config import settings
-from app.database import init_db, engine as db_engine
+from app.database import init_db
+from app.logging import setup_logging
 from app.middleware import ErrorHandlerMiddleware, RateLimitMiddleware, RequestLoggerMiddleware
-from app.models.strategy import RiskEvent
-from app.routers import strategies, orders, dashboard, backtest, risk, system, auth, search, notifications, attribution, sentiment, rag, ai_phase3, markets, ai_research, agent_signals, ai_providers, factor_research, websocket
-
-
-async def _periodic_risk_evaluation():
-    from app.database import SessionLocal
-    while True:
-        await asyncio.sleep(60)
-        try:
-            from app.services.freqtrade_db import freqtrade_db
-            if freqtrade_db.is_available():
-                positions = freqtrade_db.get_open_trades()
-                for pos in positions:
-                    pnl = float(pos["unrealized_pnl"]) if pos.get("unrealized_pnl") else 0
-                    payload = {
-                        "symbol": pos["symbol"],
-                        "position_pnl_pct": pnl,
-                        "take_profit_pct": pnl if pnl > 0 else None,
-                        "drawdown_pct": abs(pnl) if pnl < 0 else 0,
-                        "max_drawdown_pct": 10,
-                    }
-                    from app.services.risk_rules import evaluate_risk_rules
-                    candidates = evaluate_risk_rules(payload)
-                    if candidates:
-                        db = SessionLocal()
-                        for c in candidates:
-                            db.add(RiskEvent(**c))
-                        db.commit()
-                        db.close()
-        except Exception:
-            pass
+from app.routers import (
+    manipulation,
+    growth,
+    live_small,
+    health, commands, ledger, strategies, strategies_v2, orders, dashboard, backtest, dryrun, risk, system, auth,
+    search, notifications, attribution, sentiment, rag, markets,
+    ai_research, agent_signals, ai_providers, factor_research, websocket,
+    signals_v2, strategy_runs, inference, mcp, admin,
+    decision,
+)
+from app.routers import overview, execution_bff, reconciliation_bff, risk_bff, structure_bff
+from app.routers import market_structure_bff, failure_clustering_bff, data_source_bff
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    setup_logging(level=settings.log_level, fmt=settings.log_format)
     init_db()
-    from app.services.freqai_worker import freqai_worker_loop
-    risk_task = asyncio.create_task(_periodic_risk_evaluation())
-    freqai_task = asyncio.create_task(freqai_worker_loop(db_engine))
     yield
-    risk_task.cancel()
-    freqai_task.cancel()
-    for t in [risk_task, freqai_task]:
-        try:
-            await t
-        except asyncio.CancelledError:
-            pass
 
 
 app = FastAPI(
     title="PulseDesk",
-    description="AI驱动的加密货币量化交易API",
-    version="0.3.0",
+    description="AI-driven crypto quant trading API — v2.5",
+    version="2.5.0",
     lifespan=lifespan,
     docs_url="/docs",
     redoc_url="/redoc",
@@ -76,10 +48,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# v2.5 infrastructure
+app.include_router(health.router)
+app.include_router(commands.router)
+app.include_router(ledger.router)
+
+# Legacy routers (will be replaced module-by-module in Phase 01+)
 app.include_router(strategies.router)
+app.include_router(strategies_v2.router)
 app.include_router(orders.router)
 app.include_router(dashboard.router)
 app.include_router(backtest.router)
+app.include_router(dryrun.router)
 app.include_router(risk.router)
 app.include_router(system.router)
 app.include_router(auth.router)
@@ -88,15 +68,30 @@ app.include_router(notifications.router)
 app.include_router(attribution.router)
 app.include_router(sentiment.router)
 app.include_router(rag.router)
-app.include_router(ai_phase3.router)
 app.include_router(markets.router)
 app.include_router(ai_research.router)
 app.include_router(agent_signals.router)
 app.include_router(ai_providers.router)
 app.include_router(factor_research.router)
 app.include_router(websocket.router)
+app.include_router(growth.router)
+app.include_router(live_small.router)
+app.include_router(manipulation.router)
 
+# v2.5 new routers
+app.include_router(signals_v2.router)
+app.include_router(strategy_runs.router)
+app.include_router(inference.router)
+app.include_router(mcp.router)
+app.include_router(admin.router)
+app.include_router(decision.router)
 
-@app.get("/health")
-def health():
-    return {"status": "ok"}
+# BFF aggregation layer
+app.include_router(overview.router)
+app.include_router(execution_bff.router)
+app.include_router(reconciliation_bff.router)
+app.include_router(risk_bff.router)
+app.include_router(structure_bff.router)
+app.include_router(market_structure_bff.router)
+app.include_router(failure_clustering_bff.router)
+app.include_router(data_source_bff.router)

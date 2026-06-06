@@ -1,6 +1,0 @@
-{
-  "eval_id": 0,
-  "eval_name": "dashboard-metrics",
-  "prompt": "Build a crypto portfolio dashboard page with 4 metric cards showing total balance, 24h PnL, active positions, and win rate. Each card should have a label, main value, and percentage change. Use a responsive grid layout. The page should have a header with title and breadcrumbs.",
-  "assertions": []
-}

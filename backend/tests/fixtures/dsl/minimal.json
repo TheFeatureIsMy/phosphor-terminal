@@ -1,0 +1,42 @@
+{
+  "schema_version": "2.5",
+  "timeframe": "1h",
+  "symbols": ["BTC/USDT"],
+  "entry": {
+    "logic": "AND",
+    "rules": [
+      {
+        "type": "indicator_threshold",
+        "indicator": "rsi",
+        "params": {"period": 14},
+        "operator": "<",
+        "value": 30
+      }
+    ]
+  },
+  "exit": {
+    "logic": "OR",
+    "rules": [
+      {
+        "type": "indicator_threshold",
+        "indicator": "rsi",
+        "params": {"period": 14},
+        "operator": ">",
+        "value": 70
+      }
+    ]
+  },
+  "filters": [],
+  "position_sizing": {
+    "type": "fixed_pct",
+    "position_pct": 0.02
+  },
+  "risk": {
+    "stoploss": -0.05,
+    "max_open_trades": 3
+  },
+  "metadata": {
+    "name": "RSI Oversold Strategy",
+    "description": "Buy when RSI < 30, sell when RSI > 70"
+  }
+}

@@ -1,6 +1,36 @@
 version: "3.8"
 
 services:
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: pulsedesk
+      POSTGRES_PASSWORD: pulsedesk
+      POSTGRES_DB: pulsedesk
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pulsedesk"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
   api:
     build:
       context: ./backend
@@ -8,15 +38,22 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./data:/app/data
       - ./backend:/app
     environment:
-      - DATABASE_URL=sqlite:///./data/pulsedesk.db
+      - DATABASE_URL=postgresql://pulsedesk:pulsedesk@postgres:5432/pulsedesk
+      - REDIS_URL=redis://redis:6379/0
       - FREQTRADE_URL=http://freqtrade:8080
       - FREQTRADE_DB_PATH=../freqtrade/user_data/tradesv3.sqlite
       - CORS_ORIGINS=["http://localhost:5173"]
+      - LOG_LEVEL=INFO
+      - LOG_FORMAT=json
     depends_on:
-      - freqtrade
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      freqtrade:
+        condition: service_started
     restart: unless-stopped
 
   freqtrade:
@@ -25,10 +62,15 @@ services:
       - ./freqtrade/user_data:/freqtrade/user_data
     ports:
       - "8080:8080"
+    environment:
+      - PULSEDESK_REDIS_URL=redis://redis:6379/0
     command: >
       trade
       --logfile /freqtrade/user_data/logs/freqtrade.log
       --config /freqtrade/user_data/config.json
-      --strategy SampleStrategy
       --dry-run
     restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:

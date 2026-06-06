@@ -1,21 +1,26 @@
-// StrategiesViewModel.swift — 策略列表视图模型
-// 管理策略 CRUD、部署/停止操作
+// StrategiesViewModel.swift — 策略列表视图模型 (v2.5)
 
 import SwiftUI
 
 @Observable
 @MainActor
 final class StrategiesViewModel {
-    var strategies: [Strategy] = []
+    var strategies: [StrategyV2] = []
     var isLoading = true
     var error: String?
     var errorHandler: ErrorHandler?
     var showCreateSheet = false
 
-    private let api: APIStrategies
+    // MARK: - Delete / Rename state
+    var showDeleteConfirm = false
+    var showRenameSheet = false
+    var targetStrategy: StrategyV2?
+    var newName: String = ""
+
+    private let api: APIStrategiesV2
 
     init(client: NetworkClientProtocol) {
-        self.api = APIStrategies(client: client)
+        self.api = APIStrategiesV2(client: client)
     }
 
     func load() async {
@@ -30,9 +35,9 @@ final class StrategiesViewModel {
         isLoading = false
     }
 
-    func create(name: String, market: String, exchange: String, tags: [String] = []) async {
+    func create(name: String) async {
         do {
-            let strategy = try await api.create(name: name, market: market, exchange: exchange, tags: tags)
+            let strategy = try await api.create(name: name)
             strategies.insert(strategy, at: 0)
         } catch {
             errorHandler?.handle(error, context: "创建策略")
@@ -40,56 +45,28 @@ final class StrategiesViewModel {
         }
     }
 
-    func delete(id: Int) async {
+    func delete(strategyId: String) async {
         do {
-            try await api.delete(id: id)
-            strategies.removeAll { $0.id == id }
+            try await api.deleteStrategy(id: strategyId)
+            strategies.removeAll { $0.id == strategyId }
         } catch {
             errorHandler?.handle(error, context: "删除策略")
             self.error = error.localizedDescription
         }
     }
 
-    func deploy(id: Int) async {
+    func rename(strategyId: String, newName: String) async {
         do {
-            let updated = try await api.deploy(id: id)
-            if let index = strategies.firstIndex(where: { $0.id == id }) {
-                strategies[index] = updated
+            let updated = try await api.updateStrategy(id: strategyId, name: newName)
+            if let idx = strategies.firstIndex(where: { $0.id == strategyId }) {
+                strategies[idx] = updated
             }
         } catch {
-            errorHandler?.handle(error, context: "部署策略")
+            errorHandler?.handle(error, context: "重命名策略")
             self.error = error.localizedDescription
         }
     }
 
-    func stop(id: Int) async {
-        do {
-            let updated = try await api.stop(id: id)
-            if let index = strategies.firstIndex(where: { $0.id == id }) {
-                strategies[index] = updated
-            }
-        } catch {
-            errorHandler?.handle(error, context: "停止策略")
-            self.error = error.localizedDescription
-        }
-    }
-
-    func update(id: Int, name: String? = nil, market: String? = nil) async {
-        do {
-            let updated = try await api.update(id: id, name: name, market: market)
-            if let index = strategies.firstIndex(where: { $0.id == id }) {
-                strategies[index] = updated
-            }
-        } catch {
-            errorHandler?.handle(error, context: "更新策略")
-            self.error = error.localizedDescription
-        }
-    }
-
-    /// 按状态分组的统计
-    var activeCount: Int { strategies.filter { $0.status == .active }.count }
-    var averageSharpe: Double {
-        let sharpes = strategies.compactMap(\.sharpeRatio)
-        return sharpes.isEmpty ? 0 : sharpes.reduce(0, +) / Double(sharpes.count)
-    }
+    var draftCount: Int { strategies.filter { $0.status == "draft" }.count }
+    var activeCount: Int { strategies.filter { $0.status == "active" }.count }
 }

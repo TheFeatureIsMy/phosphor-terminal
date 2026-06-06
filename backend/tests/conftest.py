@@ -1,29 +1,52 @@
 import os
 import sys
-import tempfile
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 
 BACKEND_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if BACKEND_ROOT not in sys.path:
     sys.path.insert(0, BACKEND_ROOT)
 
-from app.main import app
-from app.database import Base, get_db
+from app.main import app as fastapi_app
+from app.database import get_db
+from app.database.base import Base
+
+import app.models.strategy  # noqa: F401
+import app.models.user  # noqa: F401
+import app.models.agent_signal  # noqa: F401
+import app.models.ai_provider  # noqa: F401
+import app.models.ai  # noqa: F401
+import app.models.research  # noqa: F401
+import app.domain.ledger  # noqa: F401
+import app.domain.command  # noqa: F401
+import app.models.dryrun  # noqa: F401
+import app.domain.strategy  # noqa: F401
+import app.models.research_v2  # noqa: F401
+import app.domain.provider  # noqa: F401
+import app.domain.risk  # noqa: F401
+import app.domain.execution  # noqa: F401
+import app.domain.order  # noqa: F401
+import app.domain.growth  # noqa: F401
+import app.domain.manipulation  # noqa: F401
+import app.domain.inference  # noqa: F401
+import app.domain.mcp  # noqa: F401
+import app.domain.reconciliation  # noqa: F401
+import app.domain.archive  # noqa: F401
 
 
 @pytest.fixture(scope="session")
 def test_engine():
-    db_fd, db_path = tempfile.mkstemp(suffix=".db")
-    os.close(db_fd)
-    engine = create_engine(f"sqlite:///{db_path}", connect_args={"check_same_thread": False})
+    engine = create_engine(
+        "sqlite://",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
     yield engine
     engine.dispose()
-    if os.path.exists(db_path):
-        os.unlink(db_path)
 
 
 @pytest.fixture(autouse=True)
@@ -35,30 +58,19 @@ def setup_db(test_engine):
 
 @pytest.fixture(autouse=True)
 def _disable_rate_limiting():
-    """Clear rate limiter state before each test to avoid 429s."""
-    # Walk the middleware stack to find RateLimitMiddleware instances and clear their state
-    _clear_rate_limits()
-    yield
-    _clear_rate_limits()
+    stack = getattr(fastapi_app, "middleware_stack", None)
+    if stack is not None:
+        _walk_and_clear(stack)
 
 
-def _clear_rate_limits():
-    """Find all RateLimitMiddleware instances and clear their request tracking dicts."""
+def _walk_and_clear(node):
     from app.middleware.rate_limiter import RateLimitMiddleware
-    # The middleware stack is built lazily; access it to force construction
-    stack = app.middleware_stack
-    _walk_and_clear(stack, RateLimitMiddleware)
-
-
-def _walk_and_clear(node, cls):
-    """Recursively walk ASGI middleware chain and clear rate limiter state."""
-    if isinstance(node, cls):
+    if isinstance(node, RateLimitMiddleware):
         node.requests.clear()
         return
-    # BaseHTTPMiddleware wraps an inner 'app'
-    inner = getattr(node, 'app', None)
+    inner = getattr(node, "app", None)
     if inner:
-        _walk_and_clear(inner, cls)
+        _walk_and_clear(inner)
 
 
 @pytest.fixture
@@ -69,6 +81,13 @@ def session(test_engine):
         yield db
     finally:
         db.close()
+
+
+@pytest.fixture(autouse=True)
+def _patch_init_db(monkeypatch, test_engine):
+    """Prevent lifespan init_db from connecting to real Postgres."""
+    monkeypatch.setattr('app.database.engine', test_engine)
+    monkeypatch.setattr('app.database.init_db', lambda: Base.metadata.create_all(bind=test_engine))
 
 
 @pytest.fixture
@@ -82,6 +101,7 @@ def client(test_engine):
         finally:
             db.close()
 
-    app.dependency_overrides[get_db] = override_get_db
-    yield TestClient(app)
-    app.dependency_overrides.clear()
+    fastapi_app.dependency_overrides[get_db] = override_get_db
+    with TestClient(fastapi_app, raise_server_exceptions=False) as c:
+        yield c
+    fastapi_app.dependency_overrides.clear()

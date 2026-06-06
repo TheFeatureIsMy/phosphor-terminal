@@ -154,8 +154,8 @@ final class CanvasViewModel {
         do {
             let data = try graphSerializer.serialize(graph)
             let json = String(data: data, encoding: .utf8) ?? "{}"
-            let code = try CodeGenerator().generate(from: graph, strategyName: "Strategy_\(sid)")
-            _ = try await api.save(strategyId: sid, graphJson: json, codeSnapshot: code)
+            
+            _ = try await api.save(strategyId: sid, graphJson: json)
             saveStatus = .saved
             errorNotifier.reportSaveSuccess()
         } catch {

@@ -17,7 +17,7 @@ struct SidebarView: View {
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 1) {
                     ForEach(Array(SidebarSection.allCases.enumerated()), id: \.element) { index, section in
-                        let routes = AppRoute.allCases.filter { $0.section == section }
+                        let routes = AppRoute.allCases.filter { $0.section == section && $0.sidebarVisible }
                         if !routes.isEmpty {
                             if !appState.sidebarCollapsed {
                                 HStack(spacing: 4) {

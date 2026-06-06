@@ -76,7 +76,7 @@ struct MockData {
                 status: statuses[i],
                 sharpeRatio: (randomBetween(0.5, 2.5) * 100).rounded() / 100,
                 maxDrawdown: (randomBetween(5, 25) * 100).rounded() / 100,
-                freqtradeStrategyId: nil, tags: [],
+                tags: [],
                 createdAt: dateISO(randomBetween(1, 90)),
                 updatedAt: dateISO(randomBetween(0, 7))
             )

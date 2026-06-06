@@ -13,10 +13,11 @@ struct CommandPaletteView: View {
     @FocusState private var isSearchFocused: Bool
 
     private var filteredRoutes: [AppRoute] {
+        let visible = AppRoute.allCases.filter { $0.sidebarVisible }
         if searchText.isEmpty {
-            return AppRoute.allCases
+            return visible
         }
-        return AppRoute.allCases.filter {
+        return visible.filter {
             $0.label.localizedCaseInsensitiveContains(searchText) ||
             $0.rawValue.localizedCaseInsensitiveContains(searchText)
         }
@@ -205,7 +206,7 @@ struct CommandPaletteView: View {
 
     private func selectStrategy(_ strategy: Strategy) {
         withAnimation(PulseAnimation.easeOutFast) {
-            appState.selectedRoute = .strategies
+            appState.selectedRoute = .strategyWorkspace
             dismiss()
         }
     }

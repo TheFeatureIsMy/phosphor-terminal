@@ -1,4 +1,5 @@
-// ProviderCardView.swift — AI Provider 卡片
+// ProviderCardView.swift — AI Provider 卡片（保留兼容性）
+// 注意：AIProvidersView 已内联卡片实现，此文件保留供其他页面引用
 
 import SwiftUI
 
@@ -8,53 +9,50 @@ struct ProviderCardView: View {
     let onTest: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-            HStack {
-                Image(systemName: iconForProvider)
-                    .font(.system(size: 18))
-                    .foregroundStyle(provider.isAvailable ? PulseColors.accent : colors.textMuted)
+        ProofAlphaCard(emphasis: .subtle) {
+            VStack(alignment: .leading, spacing: PulseSpacing.sm) {
+                HStack {
+                    Image(systemName: iconForProvider)
+                        .font(.system(size: 18))
+                        .foregroundStyle(provider.isAvailable ? PulseColors.accent : colors.textMuted)
 
-                VStack(alignment: .leading) {
-                    Text(provider.name)
-                        .font(PulseFonts.bodyMedium)
-                        .foregroundStyle(colors.textPrimary)
-                    Text(provider.type)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(provider.name)
+                            .font(PulseFonts.bodyMedium)
+                            .foregroundStyle(colors.textPrimary)
+                        Text(provider.type)
+                            .font(PulseFonts.micro)
+                            .foregroundStyle(colors.textMuted)
+                    }
+
+                    Spacer()
+
+                    StatusDot(status: provider.isAvailable ? .online : .offline)
+                }
+
+                if let baseUrl = provider.baseUrl {
+                    Text(baseUrl)
                         .font(PulseFonts.micro)
                         .foregroundStyle(colors.textMuted)
+                        .lineLimit(1)
                 }
 
-                Spacer()
+                HStack {
+                    if let count = provider.modelCount {
+                        Text("\(count) 模型")
+                            .font(PulseFonts.caption)
+                            .foregroundStyle(PulseColors.accent)
+                    }
 
-                Circle()
-                    .fill(provider.isAvailable ? PulseColors.success : PulseColors.danger)
-                    .frame(width: 8, height: 8)
-            }
+                    Spacer()
 
-            if let baseUrl = provider.baseUrl {
-                Text(baseUrl)
-                    .font(PulseFonts.micro)
-                    .foregroundStyle(colors.textMuted)
-                    .lineLimit(1)
-            }
-
-            HStack {
-                if let count = provider.modelCount {
-                    Text("\(count) 模型")
-                        .font(PulseFonts.caption)
+                    Button("测试连接") { onTest() }
+                        .buttonStyle(.plain)
+                        .font(PulseFonts.monoLabel)
                         .foregroundStyle(PulseColors.accent)
                 }
-
-                Spacer()
-
-                Button("测试连接") { onTest() }
-                    .buttonStyle(.plain)
-                    .font(PulseFonts.caption)
-                    .foregroundStyle(PulseColors.accent)
             }
         }
-        .padding(PulseSpacing.md)
-        .background(colors.cardBackground)
-        .cornerRadius(PulseRadii.card)
     }
 
     private var iconForProvider: String {

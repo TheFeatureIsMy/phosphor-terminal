@@ -1,27 +1,40 @@
-"""
-Common schemas for API responses
-"""
-from typing import Dict,  Optional,  Any, Generic, TypeVar
+from typing import Any, Optional
 from pydantic import BaseModel
-T = TypeVar("T")
-class SuccessResponse(BaseModel, Generic[T]):
-    """Standard success response"""
-    success: bool = True
-    data: T
-    message: str = "OK"
-class ErrorResponse(BaseModel):
-    """Standard error response"""
-    success: bool = False
-    error: str
-    message: str
-    details: Optional[Dict[str, Any]] = None
-class PaginatedResponse(BaseModel, Generic[T]):
-    """Paginated response"""
-    items: list[T]
+
+
+class PaginatedResponse(BaseModel):
+    items: list[Any]
     total: int
     page: int
     page_size: int
     pages: int
-class MessageResponse(BaseModel):
-    """Simple message response"""
-    message: str
+
+
+class ErrorResponse(BaseModel):
+    detail: str
+    code: Optional[str] = None
+
+
+# ── BFF Unified Response Schema ──────────────────────────────────────
+"""统一 BFF Response Schema — 所有聚合 API 必须返回 state + reason_codes + available_actions"""
+
+
+class AvailableAction(BaseModel):
+    type: str
+    enabled: bool = True
+    label: str
+    confirm_required: bool = False
+    metadata: dict[str, Any] = {}
+
+
+class ReasonCode(BaseModel):
+    code: str
+    message: str = ""
+    severity: str = "info"  # info / warning / error / critical
+
+
+class UnifiedState(BaseModel):
+    """Unified state model for all BFF responses"""
+    state: str  # healthy / warning / blocked / locked / running / stopped / failed / reconciling / stale / unknown
+    reason_codes: list[str] = []
+    available_actions: list[AvailableAction] = []

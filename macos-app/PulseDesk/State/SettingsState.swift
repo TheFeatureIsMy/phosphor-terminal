@@ -7,6 +7,12 @@ import SwiftUI
 @MainActor
 @Observable
 final class SettingsState {
+    /// 全局单例，供 L10n 等静态访问使用
+    static let shared = SettingsState()
+
+    // 语言设置
+    var language: Language = .zhCN
+
     // 交易所配置
     var exchange: Exchange = .binance
     var tradingMode: TradingMode = .spot
@@ -54,6 +60,9 @@ final class SettingsState {
             self.tradingMode = TradingMode(rawValue: settings.defaultMarket) ?? self.tradingMode
             self.notifyRiskEvents = settings.notificationsEnabled
             self.riskTolerance = settings.riskTolerance
+            if let parsed = Language(rawValue: settings.language) {
+                self.language = parsed
+            }
         } catch {
             // 离线或后端不可用时使用本地默认值，不中断用户操作
         }
@@ -73,8 +82,8 @@ final class SettingsState {
     func saveToBackend() async {
         guard let api = settingsAPI else { return }
         let body = UserSettingsUpdateBody(
-            theme: nil,       // theme 由 ThemeManager 管理，暂不同步
-            language: nil,    // 语言固定 zh-CN
+            theme: nil,
+            language: language.rawValue,
             notificationsEnabled: notifyRiskEvents,
             defaultExchange: exchange.rawValue,
             defaultMarket: tradingMode.rawValue,

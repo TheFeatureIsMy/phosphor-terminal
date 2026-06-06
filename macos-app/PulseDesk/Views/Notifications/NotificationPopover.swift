@@ -152,13 +152,4 @@ struct NotificationPopover: View {
 }
 
 // MARK: - 预览
-#Preview {
-    let colors = PulseColors(themeManager: ThemeManager())
-    NotificationPopover(
-        viewModel: NotificationViewModel(client: MockNetworkClient()),
-        onViewAll: {}
-    )
-    .padding()
-    .background(colors.background)
-    .environment(colors)
-}
+// #Preview disabled for swift build

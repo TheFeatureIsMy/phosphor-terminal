@@ -44,3 +44,12 @@ DerivedData/
 *.xcodeproj/
 *.xcworkspace/
 xcuserdata/
+
+# Cleanup additions
+node_modules/
+**/.DS_Store
+canvas-web/dist/
+**/__pycache__/
+.superpowers/
+.agents/
+skills/

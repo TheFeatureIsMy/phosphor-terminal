@@ -1,0 +1,315 @@
+// OrdersPositionsView.swift — 订单/持仓页面
+
+import SwiftUI
+
+struct OrdersPositionsView: View {
+    @Environment(\.networkClient) private var networkClient
+    @Environment(PulseColors.self) private var colors
+    @State private var viewModel: ExecutionCenterViewModel?
+    @State private var selectedTab = 0
+
+    var body: some View {
+        VStack(spacing: 0) {
+            if let vm = viewModel {
+                if vm.isLoading && vm.ordersPositions == nil {
+                    LoadingView(type: .detail)
+                } else if let data = vm.ordersPositions {
+                    // 状态横幅
+                    stateBanner(data)
+
+                    // Tab 选择器 + 状态指示
+                    tabHeader(data)
+
+                    Divider().foregroundStyle(colors.border)
+
+                    // 内容区
+                    ScrollView {
+                        if selectedTab == 0 {
+                            ordersSection(data.orders)
+                        } else {
+                            positionsSection(data.positions)
+                        }
+                    }
+                } else if let error = vm.error {
+                    EmptyStateView(
+                        icon: "exclamationmark.triangle",
+                        title: "加载失败",
+                        description: error,
+                        primaryAction: (title: "重试", action: { Task { await vm.loadOrdersPositions() } })
+                    )
+                } else {
+                    EmptyStateView(
+                        icon: "tray",
+                        title: "暂无数据",
+                        description: "当前没有订单或持仓数据"
+                    )
+                }
+            }
+        }
+        .task {
+            let vm = ExecutionCenterViewModel(client: networkClient)
+            viewModel = vm
+            await vm.loadOrdersPositions()
+        }
+    }
+
+    // MARK: - 状态横幅
+
+    @ViewBuilder
+    private func stateBanner(_ data: OrdersPositionsBFFResponse) -> some View {
+        if data.state != "healthy" {
+            HStack(spacing: PulseSpacing.sm) {
+                Image(systemName: data.state == "error" ? "xmark.octagon.fill" : "exclamationmark.triangle.fill")
+                    .font(.system(size: 14))
+                    .foregroundStyle(data.state == "error" ? PulseColors.StateColors.red : PulseColors.StateColors.orange)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(data.state == "error" ? "连接异常" : "状态异常")
+                        .font(PulseFonts.captionMedium)
+                        .foregroundStyle(colors.textPrimary)
+
+                    if !data.reasonCodes.isEmpty {
+                        Text(data.reasonCodes.joined(separator: ", "))
+                            .font(PulseFonts.micro)
+                            .foregroundStyle(colors.textMuted)
+                    }
+                }
+
+                Spacer()
+            }
+            .padding(PulseSpacing.sm)
+            .padding(.horizontal, PulseSpacing.lg)
+            .background(
+                (data.state == "error" ? PulseColors.StateColors.red : PulseColors.StateColors.orange).opacity(0.08)
+            )
+        }
+    }
+
+    // MARK: - Tab 选择器
+
+    private func tabHeader(_ data: OrdersPositionsBFFResponse) -> some View {
+        HStack(spacing: PulseSpacing.md) {
+            tabButton("订单", index: 0, count: data.orders.count)
+            tabButton("持仓", index: 1, count: data.positions.count)
+
+            Spacer()
+
+            statusIndicators(data)
+        }
+        .padding(.horizontal, PulseSpacing.lg)
+        .padding(.vertical, PulseSpacing.sm)
+    }
+
+    private func tabButton(_ title: String, index: Int, count: Int) -> some View {
+        Button { selectedTab = index } label: {
+            HStack(spacing: PulseSpacing.xxs) {
+                Text(title)
+                    .font(selectedTab == index ? PulseFonts.bodyMedium : PulseFonts.body)
+                Text("\(count)")
+                    .font(PulseFonts.micro)
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 1)
+                    .background(selectedTab == index ? PulseColors.accent.opacity(0.2) : colors.surface)
+                    .clipShape(Capsule())
+            }
+            .foregroundStyle(selectedTab == index ? PulseColors.accent : colors.textMuted)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func statusIndicators(_ data: OrdersPositionsBFFResponse) -> some View {
+        let exchangeOk = data.state != "error"
+        let ftOk = !data.reasonCodes.contains("freqtrade_down")
+
+        return HStack(spacing: PulseSpacing.xs) {
+            Circle()
+                .fill(exchangeOk ? PulseColors.StateColors.green : PulseColors.StateColors.red)
+                .frame(width: 6, height: 6)
+            Text("Exchange: \(exchangeOk ? "OK" : "Error")")
+                .font(PulseFonts.micro)
+                .foregroundStyle(colors.textMuted)
+
+            Circle()
+                .fill(ftOk ? PulseColors.StateColors.green : PulseColors.StateColors.red)
+                .frame(width: 6, height: 6)
+            Text("Freqtrade: \(ftOk ? "Healthy" : "Down")")
+                .font(PulseFonts.micro)
+                .foregroundStyle(colors.textMuted)
+        }
+    }
+
+    // MARK: - 订单列表
+
+    private func ordersSection(_ orders: [OrderBFFResponse]) -> some View {
+        VStack(spacing: PulseSpacing.xs) {
+            if orders.isEmpty {
+                EmptyStateView(
+                    icon: "doc.text",
+                    title: "暂无订单",
+                    description: "当前没有活跃订单"
+                )
+                .padding(.top, PulseSpacing.lg)
+            } else {
+                ForEach(Array(orders.enumerated()), id: \.element.id) { index, order in
+                    orderRow(order)
+                        .staggeredAppearance(index: index)
+                }
+            }
+        }
+        .padding(PulseSpacing.lg)
+    }
+
+    private func orderRow(_ order: OrderBFFResponse) -> some View {
+        HStack(spacing: PulseSpacing.md) {
+            Text(order.side.uppercased())
+                .font(PulseFonts.captionMedium)
+                .foregroundStyle(sideColor(order.side))
+                .frame(width: 40)
+
+            Text(order.symbol)
+                .font(PulseFonts.bodyMedium)
+                .foregroundStyle(colors.textPrimary)
+
+            Text(order.type.uppercased())
+                .font(PulseFonts.micro)
+                .foregroundStyle(colors.textMuted)
+
+            Spacer()
+
+            Text("Qty: \(order.quantity, specifier: "%.4f")")
+                .font(PulseFonts.caption)
+                .foregroundStyle(colors.textSecondary)
+
+            if let price = order.price {
+                Text("@ \(formatPrice(price))")
+                    .font(PulseFonts.caption)
+                    .foregroundStyle(colors.textPrimary)
+            }
+
+            Text(order.status)
+                .font(PulseFonts.micro)
+                .foregroundStyle(orderStatusColor(order.status))
+                .padding(.horizontal, 5)
+                .padding(.vertical, 2)
+                .background(orderStatusColor(order.status).opacity(0.1))
+                .clipShape(Capsule())
+
+            if let exchangeId = order.exchangeOrderId {
+                Text(exchangeId)
+                    .font(PulseFonts.micro)
+                    .foregroundStyle(colors.textMuted)
+                    .lineLimit(1)
+                    .help("Exchange Order ID: \(exchangeId)")
+            }
+        }
+        .padding(PulseSpacing.sm)
+        .background(colors.cardBackground)
+        .clipShape(RoundedRectangle(cornerRadius: PulseRadii.sm))
+    }
+
+    // MARK: - 持仓列表
+
+    private func positionsSection(_ positions: [PositionBFFResponse]) -> some View {
+        VStack(spacing: PulseSpacing.xs) {
+            if positions.isEmpty {
+                EmptyStateView(
+                    icon: "chart.bar",
+                    title: "暂无持仓",
+                    description: "当前没有未平仓头寸"
+                )
+                .padding(.top, PulseSpacing.lg)
+            } else {
+                ForEach(Array(positions.enumerated()), id: \.element.id) { index, position in
+                    positionRow(position)
+                        .staggeredAppearance(index: index)
+                }
+            }
+        }
+        .padding(PulseSpacing.lg)
+    }
+
+    private func positionRow(_ position: PositionBFFResponse) -> some View {
+        HStack(spacing: PulseSpacing.md) {
+            Text(position.side.uppercased())
+                .font(PulseFonts.captionMedium)
+                .foregroundStyle(sideColor(position.side))
+                .frame(width: 50)
+
+            Text(position.symbol)
+                .font(PulseFonts.bodyMedium)
+                .foregroundStyle(colors.textPrimary)
+
+            Spacer()
+
+            VStack(alignment: .trailing, spacing: 1) {
+                Text("Entry: \(formatPrice(position.avgEntryPrice))")
+                    .font(PulseFonts.micro)
+                    .foregroundStyle(colors.textMuted)
+                Text("Current: \(formatPrice(position.currentPrice))")
+                    .font(PulseFonts.micro)
+                    .foregroundStyle(colors.textPrimary)
+            }
+
+            VStack(alignment: .trailing, spacing: 1) {
+                Text("\(position.unrealizedPnl >= 0 ? "+" : "")\(position.unrealizedPnl, specifier: "%.1f") USDT")
+                    .font(PulseFonts.captionMedium)
+                    .foregroundStyle(pnlColor(position.unrealizedPnl))
+                Text("\(position.unrealizedPnlPct >= 0 ? "+" : "")\(position.unrealizedPnlPct, specifier: "%.2f")%")
+                    .font(PulseFonts.micro)
+                    .foregroundStyle(pnlColor(position.unrealizedPnl))
+            }
+
+            if let stopLoss = position.stopLoss {
+                Text("SL: \(formatPrice(stopLoss))")
+                    .font(PulseFonts.micro)
+                    .foregroundStyle(PulseColors.StateColors.orangeRed)
+            }
+
+            // reason_codes 提示
+            if !position.reasonCodes.isEmpty {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: 10))
+                    .foregroundStyle(PulseColors.StateColors.yellow)
+                    .help(position.reasonCodes.joined(separator: ", "))
+            }
+        }
+        .padding(PulseSpacing.sm)
+        .background(colors.cardBackground)
+        .clipShape(RoundedRectangle(cornerRadius: PulseRadii.sm))
+    }
+
+    // MARK: - 辅助方法
+
+    private func sideColor(_ side: String) -> Color {
+        switch side.lowercased() {
+        case "buy", "long": return PulseColors.StateColors.green
+        case "sell", "short": return PulseColors.StateColors.red
+        default: return PulseColors.StateColors.gray
+        }
+    }
+
+    private func pnlColor(_ pnl: Double) -> Color {
+        pnl >= 0 ? PulseColors.StateColors.green : PulseColors.StateColors.red
+    }
+
+    private func orderStatusColor(_ status: String) -> Color {
+        switch status.lowercased() {
+        case "filled": return PulseColors.StateColors.green
+        case "pending", "open": return PulseColors.StateColors.yellow
+        case "cancelled", "canceled": return PulseColors.StateColors.gray
+        case "rejected", "error": return PulseColors.StateColors.red
+        case "partially_filled": return PulseColors.StateColors.orange
+        default: return PulseColors.StateColors.gray
+        }
+    }
+
+    private func formatPrice(_ price: Double) -> String {
+        if price >= 1000 {
+            return String(format: "%.0f", price)
+        } else if price >= 1 {
+            return String(format: "%.2f", price)
+        } else {
+            return String(format: "%.4f", price)
+        }
+    }
+}

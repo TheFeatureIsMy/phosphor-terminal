@@ -19,6 +19,7 @@ from app.models.ai import (
     FreqAIRun,
 )
 from app.models.research import AIResearchRun, AIResearchLink
+from app.models.research_v2 import ResearchReport, SignalCandidate, StrategyDraft
 from app.models.agent_signal import AgentProfile, AgentSignal, AgentSignalScore
 from app.models.ai_provider import AIProviderConfig, AIUsageLog
 
@@ -42,6 +43,9 @@ __all__ = [
     "FreqAIRun",
     "AIResearchRun",
     "AIResearchLink",
+    "ResearchReport",
+    "SignalCandidate",
+    "StrategyDraft",
     "AgentProfile",
     "AgentSignal",
     "AgentSignalScore",

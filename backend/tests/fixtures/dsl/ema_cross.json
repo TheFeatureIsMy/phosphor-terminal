@@ -1,0 +1,63 @@
+{
+  "schema_version": "2.5",
+  "timeframe": "4h",
+  "symbols": ["BTC/USDT", "ETH/USDT"],
+  "entry": {
+    "logic": "AND",
+    "rules": [
+      {
+        "type": "indicator_cross",
+        "indicator": "ema",
+        "params": {"period": 12},
+        "cross_indicator": "ema",
+        "cross_params": {"period": 26},
+        "direction": "crosses_above"
+      },
+      {
+        "type": "indicator_threshold",
+        "indicator": "rsi",
+        "params": {"period": 14},
+        "operator": "<",
+        "value": 70
+      }
+    ]
+  },
+  "exit": {
+    "logic": "OR",
+    "rules": [
+      {
+        "type": "indicator_cross",
+        "indicator": "ema",
+        "params": {"period": 12},
+        "cross_indicator": "ema",
+        "cross_params": {"period": 26},
+        "direction": "crosses_below"
+      }
+    ]
+  },
+  "filters": [
+    {
+      "type": "volume_filter",
+      "indicator": "volume_sma",
+      "params": {"period": 20},
+      "operator": ">",
+      "value": 1000000
+    }
+  ],
+  "position_sizing": {
+    "type": "fixed_pct",
+    "position_pct": 0.03
+  },
+  "risk": {
+    "stoploss": -0.07,
+    "trailing_stop": true,
+    "trailing_stop_positive": 0.02,
+    "trailing_stop_positive_offset": 0.03,
+    "max_open_trades": 5
+  },
+  "metadata": {
+    "name": "EMA Cross Strategy",
+    "description": "EMA 12/26 golden cross with volume confirmation",
+    "tags": ["trend_following", "multi_asset"]
+  }
+}

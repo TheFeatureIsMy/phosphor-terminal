@@ -29,7 +29,7 @@ final class APIStrategies: @unchecked Sendable {
                 id: newId, userId: 1, name: name,
                 parameters: [:], source: .manual, market: market, exchange: exchange,
                 version: 1, status: .draft, sharpeRatio: nil, maxDrawdown: nil,
-                freqtradeStrategyId: nil, tags: tags,
+                tags: tags,
                 createdAt: ISO8601DateFormatter().string(from: Date()),
                 updatedAt: ISO8601DateFormatter().string(from: Date())
             )

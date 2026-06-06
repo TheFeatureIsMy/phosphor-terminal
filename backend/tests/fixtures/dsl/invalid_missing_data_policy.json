@@ -1,0 +1,22 @@
+{
+  "schema_version": "2.5",
+  "timeframe": "1h",
+  "symbols": ["BTC/USDT"],
+  "entry": {
+    "logic": "AND",
+    "rules": [{"type": "indicator_threshold", "indicator": "rsi", "params": {"period": 14}, "operator": "<", "value": 30}]
+  },
+  "exit": {
+    "logic": "OR",
+    "rules": [{"type": "indicator_threshold", "indicator": "rsi", "params": {"period": 14}, "operator": ">", "value": 70}]
+  },
+  "filters": [
+    {
+      "type": "manipulation_score_filter",
+      "max_score": 0.3,
+      "missing_data_policy": "ignore"
+    }
+  ],
+  "position_sizing": {"type": "fixed_pct", "position_pct": 0.02},
+  "risk": {"stoploss": -0.05, "max_open_trades": 3}
+}

@@ -1,8 +1,30 @@
 // WebSocketManager.swift — WebSocket 连接管理
-// 自动重连、心跳、频道订阅
+// 自动重连、心跳、频道订阅、实时通知广播
 
 import Foundation
 import SwiftUI
+
+// MARK: - WebSocket Channel Definitions
+extension WebSocketManager {
+    /// Well-known real-time channels
+    enum Channel: String, CaseIterable {
+        case kpiUpdate   = "kpi_update"    // Dashboard KPI 实时刷新
+        case signalNew   = "signal_new"    // 新信号通知
+        case dryrunStatus = "dryrun_status" // Dry-run 状态变更
+    }
+}
+
+// MARK: - Notification Names for WebSocket Events
+extension Notification.Name {
+    /// Fired when a KPI update arrives. `userInfo` contains the payload dict.
+    static let wsKPIUpdate    = Notification.Name("PulseDesk.ws.kpiUpdate")
+    /// Fired when a new signal is received. `userInfo` contains the payload dict.
+    static let wsSignalNew    = Notification.Name("PulseDesk.ws.signalNew")
+    /// Fired when dry-run status changes. `userInfo` contains the payload dict.
+    static let wsDryrunStatus = Notification.Name("PulseDesk.ws.dryrunStatus")
+    /// Fired when WebSocket connection state changes. `userInfo["state"]` is a ConnectionState raw value.
+    static let wsConnectionStateChanged = Notification.Name("PulseDesk.ws.connectionStateChanged")
+}
 
 @Observable
 final class WebSocketManager: NSObject, URLSessionWebSocketDelegate {
@@ -15,9 +37,22 @@ final class WebSocketManager: NSObject, URLSessionWebSocketDelegate {
     private let baseURL: URL
 
     var onMessage: ((String, [String: Any]) -> Void)?
-    var connectionState: ConnectionState = .disconnected
+    var connectionState: ConnectionState = .disconnected {
+        didSet {
+            NotificationCenter.default.post(
+                name: .wsConnectionStateChanged,
+                object: self,
+                userInfo: ["state": connectionState.rawValue]
+            )
+        }
+    }
 
-    enum ConnectionState {
+    /// Last received payload per channel (views can read on appear)
+    var lastKPIPayload: [String: Any]?
+    var lastSignalPayload: [String: Any]?
+    var lastDryrunPayload: [String: Any]?
+
+    enum ConnectionState: String {
         case connected, disconnected, reconnecting
     }
 
@@ -25,6 +60,25 @@ final class WebSocketManager: NSObject, URLSessionWebSocketDelegate {
         self.baseURL = baseURL
         super.init()
     }
+
+    // MARK: - Auto-Connect for Live Mode
+
+    /// Called when the app determines it is in Live mode. Connects to the
+    /// WebSocket endpoint and subscribes to all well-known channels.
+    func connectForLiveMode() {
+        guard connectionState == .disconnected else { return }
+        NSLog("[PulseDesk:WS] Connecting for live mode")
+        connect()
+        subscribeToDefaultChannels()
+    }
+
+    /// Subscribe to all well-known channels
+    func subscribeToDefaultChannels() {
+        let channels = Channel.allCases.map(\.rawValue)
+        subscribe(channels)
+    }
+
+    // MARK: - Connection Lifecycle
 
     func connect() {
         let wsURL = baseURL.appendingPathComponent("ws")
@@ -42,6 +96,7 @@ final class WebSocketManager: NSObject, URLSessionWebSocketDelegate {
         webSocket = nil
         isConnected = false
         connectionState = .disconnected
+        NSLog("[PulseDesk:WS] Disconnected")
     }
 
     func subscribe(_ channels: [String]) {
@@ -89,9 +144,31 @@ final class WebSocketManager: NSObject, URLSessionWebSocketDelegate {
 
         if let channel = json["channel"] as? String,
            let payload = json["data"] as? [String: Any] {
+            // Generic callback
             onMessage?(channel, payload)
+            // Channel-specific NotificationCenter broadcast
+            broadcastChannelEvent(channel: channel, payload: payload)
         }
     }
+
+    // MARK: - Channel Event Broadcasting
+
+    private func broadcastChannelEvent(channel: String, payload: [String: Any]) {
+        guard let ch = Channel(rawValue: channel) else { return }
+        switch ch {
+        case .kpiUpdate:
+            lastKPIPayload = payload
+            NotificationCenter.default.post(name: .wsKPIUpdate, object: self, userInfo: payload)
+        case .signalNew:
+            lastSignalPayload = payload
+            NotificationCenter.default.post(name: .wsSignalNew, object: self, userInfo: payload)
+        case .dryrunStatus:
+            lastDryrunPayload = payload
+            NotificationCenter.default.post(name: .wsDryrunStatus, object: self, userInfo: payload)
+        }
+    }
+
+    // MARK: - Reconnection & Heartbeat
 
     private func handleDisconnect() {
         isConnected = false
@@ -102,6 +179,7 @@ final class WebSocketManager: NSObject, URLSessionWebSocketDelegate {
     private func scheduleReconnect() {
         reconnectTimer?.invalidate()
         reconnectTimer = Timer.scheduledTimer(withTimeInterval: 5, repeats: false) { [weak self] _ in
+            NSLog("[PulseDesk:WS] Attempting reconnect")
             self?.connect()
         }
         connectionState = .reconnecting
@@ -120,6 +198,7 @@ final class WebSocketManager: NSObject, URLSessionWebSocketDelegate {
         isConnected = true
         connectionState = .connected
         startHeartbeat()
+        NSLog("[PulseDesk:WS] Connected")
 
         if !subscribedChannels.isEmpty {
             subscribe(Array(subscribedChannels))

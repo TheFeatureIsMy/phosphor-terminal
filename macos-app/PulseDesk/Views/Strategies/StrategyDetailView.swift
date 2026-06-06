@@ -1,47 +1,47 @@
-// StrategyDetailView.swift — 策略详情页
-// 标签栏：画布、回测、交易记录、版本
+// StrategyDetailView.swift — 策略详情页 v2.5
+// Tabs: 概览 / DSL 规则 / 回测 / 版本
 
 import SwiftUI
 
 struct StrategyDetailView: View {
     @Environment(PulseColors.self) private var colors
     @Environment(AppState.self) private var appState
-    let strategyId: Int
+    let strategyId: String
     let client: NetworkClientProtocol
 
-    @State private var strategy: Strategy?
+    @State private var viewModel: StrategyDetailViewModel?
     @State private var selectedTab = 0
-    private let tabs = ["画布", "回测", "交易记录", "版本"]
+    private let tabs = ["概览", "DSL 规则", "画布", "回测", "版本", "运行记录", "信号", "模拟", "风控", "增长"]
 
     var body: some View {
         Group {
-            if let strategy {
+            if let vm = viewModel {
                 VStack(spacing: 0) {
-                    navBar
+                    navBar(vm)
                     Divider().foregroundStyle(colors.border)
-                    configBar
+                    configBar(vm)
                     Divider().foregroundStyle(colors.border)
                     tabBar
                     Divider().foregroundStyle(colors.border)
-                    tabContent(strategy)
+                    tabContent(vm)
                 }
             } else {
                 LoadingView(type: .detail)
             }
         }
-        .task { await loadStrategy() }
+        .task {
+            let vm = StrategyDetailViewModel(strategyId: "\(strategyId)", client: client)
+            viewModel = vm
+            await vm.load()
+        }
     }
 
-    private func loadStrategy() async {
-        let api = APIStrategies(client: client)
-        strategy = try? await api.get(id: strategyId)
-    }
+    // MARK: - Navigation bar
 
-    // MARK: - 面包屑导航栏
-    private var navBar: some View {
+    private func navBar(_ vm: StrategyDetailViewModel) -> some View {
         HStack(spacing: PulseSpacing.xs) {
             Button {
-                appState.selectedRoute = .strategies
+                appState.selectedRoute = .strategyWorkspace
             } label: {
                 HStack(spacing: 4) {
                     Image(systemName: "chevron.left").font(.system(size: 10, weight: .semibold))
@@ -53,36 +53,39 @@ struct StrategyDetailView: View {
 
             Text("/").foregroundStyle(colors.textMuted).font(PulseFonts.caption)
 
-            Text(strategy?.name ?? "")
+            Text(vm.strategy?.name ?? "加载中...")
                 .font(PulseFonts.bodyMedium)
                 .foregroundStyle(colors.textPrimary)
                 .lineLimit(1)
 
             Spacer()
 
-            if let s = strategy {
-                ProofAlphaButton(title: s.status == .active ? "停止" : "部署") {
-                    Task {
-                        let vm = StrategiesViewModel(client: client)
-                        if s.status == .active { await vm.stop(id: s.id) }
-                        else { await vm.deploy(id: s.id) }
-                    }
-                }
+            if let s = vm.strategy {
+                Text(s.statusLabel)
+                    .font(PulseFonts.caption)
+                    .foregroundStyle(statusColor(s.status))
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(statusColor(s.status).opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
             }
         }
         .padding(.horizontal, PulseSpacing.lg)
         .padding(.vertical, PulseSpacing.sm)
     }
 
-    // MARK: - 配置栏
-    private var configBar: some View {
+    // MARK: - Config bar
+
+    private func configBar(_ vm: StrategyDetailViewModel) -> some View {
         HStack(spacing: PulseSpacing.sm) {
-            configItem(label: "名称", value: strategy?.name ?? "")
-            Text("|").foregroundStyle(colors.border).font(PulseFonts.micro)
-            configPill(label: "市场", value: strategy?.market ?? "", color: PulseColors.accent)
-            configPill(label: "交易所", value: strategy?.exchange ?? "", color: PulseColors.purple)
+            if let s = vm.strategy {
+                configItem(label: "类型", value: s.strategyType)
+                Text("|").foregroundStyle(colors.border).font(PulseFonts.micro)
+                configItem(label: "来源", value: s.sourceType)
+                Text("|").foregroundStyle(colors.border).font(PulseFonts.micro)
+                configItem(label: "版本数", value: "\(vm.versions.count)")
+            }
             Spacer()
-            Circle().fill(PulseColors.accent).frame(width: 6, height: 6)
         }
         .padding(.horizontal, PulseSpacing.lg)
         .padding(.vertical, PulseSpacing.xs)
@@ -95,19 +98,10 @@ struct StrategyDetailView: View {
         }
     }
 
-    private func configPill(label: String, value: String, color: Color) -> some View {
-        HStack(spacing: 3) {
-            Text(label).font(PulseFonts.micro).foregroundStyle(colors.textMuted)
-            Text(value).font(PulseFonts.caption).foregroundStyle(color)
-                .padding(.horizontal, 6).padding(.vertical, 2)
-                .background(color.opacity(0.1))
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-                .overlay(RoundedRectangle(cornerRadius: 8).stroke(color.opacity(0.2), lineWidth: 1))
-        }
-    }
+    // MARK: - Tab bar
 
-    // MARK: - 标签栏
     private var tabBar: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
         HStack(spacing: 0) {
             ForEach(Array(tabs.enumerated()), id: \.offset) { index, tab in
                 Button {
@@ -117,8 +111,6 @@ struct StrategyDetailView: View {
                         Text(tab)
                             .font(selectedTab == index ? PulseFonts.bodyMedium : PulseFonts.body)
                             .foregroundStyle(selectedTab == index ? colors.textPrimary : colors.textSecondary)
-
-                        // 选中下划线
                         Rectangle()
                             .fill(selectedTab == index ? PulseColors.accent : .clear)
                             .frame(height: 2)
@@ -131,29 +123,36 @@ struct StrategyDetailView: View {
                 .buttonStyle(.plain)
             }
         }
+        }
     }
 
-    // MARK: - 标签内容
+    // MARK: - Tab content
+
     @ViewBuilder
-    private func tabContent(_ strategy: Strategy) -> some View {
+    private func tabContent(_ vm: StrategyDetailViewModel) -> some View {
         switch selectedTab {
-        case 0: StrategyCanvasTab(strategy: strategy, client: client)
-        case 1: StrategyBacktestTab(strategy: strategy, client: client)
-        case 2: TradesView()
-        case 3: StrategyVersionPlaceholder()
+        case 0: StrategyOverviewTab(viewModel: vm)
+        case 1: StrategyDSLTab(viewModel: vm)
+        case 2: StrategyCanvasWebTab(viewModel: vm, client: client)
+        case 3: StrategyBacktestTab(viewModel: vm)
+        case 4: StrategyVersionsTab(viewModel: vm)
+        case 5: StrategyRunsTab(viewModel: vm, client: client)
+        case 6: StrategySignalsTab(strategyId: strategyId, client: client)
+        case 7: StrategyDryrunTab(strategyId: strategyId, client: client)
+        case 8: StrategyRiskTab(strategyId: strategyId, client: client)
+        case 9: StrategyGrowthTab(strategyId: strategyId, client: client)
         default: EmptyView()
+        }
+    }
+
+    private func statusColor(_ status: String) -> Color {
+        switch status {
+        case "draft": return colors.textMuted
+        case "active": return PulseColors.statusActive
+        case "paused": return PulseColors.statusPaused
+        case "archived": return PulseColors.statusError
+        default: return colors.textMuted
         }
     }
 }
 
-// MARK: - 版本占位
-struct StrategyVersionPlaceholder: View {
-    @Environment(PulseColors.self) private var colors
-    var body: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "clock.arrow.circlepath").font(.system(size: 32)).foregroundStyle(colors.textMuted)
-            Text("版本历史").font(PulseFonts.body).foregroundStyle(colors.textSecondary)
-            Text("即将推出").font(PulseFonts.caption).foregroundStyle(colors.textMuted)
-        }.frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-}

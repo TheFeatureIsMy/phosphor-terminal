@@ -135,6 +135,18 @@ class PulseColors {
     static let purple = Color(red: 0.659, green: 0.333, blue: 0.969) // #A855F7
     static let cyan = Color(red: 0.0, green: 0.761, blue: 1.0) // #00C2FF
     static let amber = Color(red: 1.0, green: 0.722, blue: 0.0) // #FFB800
+
+    // MARK: - 统一状态颜色
+    enum StateColors {
+        static let green = Color(red: 0.0, green: 1.0, blue: 0.616)       // #00FF9D
+        static let yellow = Color(red: 1.0, green: 0.843, blue: 0.0)      // #FFD700
+        static let orange = Color(red: 1.0, green: 0.549, blue: 0.0)      // #FF8C00
+        static let red = Color(red: 1.0, green: 0.231, blue: 0.188)       // #FF3B30
+        static let purple = Color(red: 0.749, green: 0.353, blue: 0.949)  // #BF5AF2
+        static let orangeRed = Color(red: 1.0, green: 0.271, blue: 0.0)   // #FF4500
+        static let gray = Color(red: 0.420, green: 0.451, blue: 0.498)    // #6B7280
+        static let mutedYellow = Color(red: 0.722, green: 0.525, blue: 0.043) // #B8860B
+    }
 }
 
 // MARK: - 字体系统
@@ -171,13 +183,13 @@ struct PulseSpacing {
 
 // MARK: - 圆角系统 (ProofAlpha: 锐利风格)
 struct PulseRadii {
-    static let xs: CGFloat = 2
-    static let sm: CGFloat = 3
-    static let md: CGFloat = 6
-    static let card: CGFloat = 4
-    static let lg: CGFloat = 8
-    static let badge: CGFloat = 2
-    static let button: CGFloat = 2
+    static let xs: CGFloat = 4
+    static let sm: CGFloat = 6
+    static let md: CGFloat = 10
+    static let card: CGFloat = 14
+    static let lg: CGFloat = 16
+    static let badge: CGFloat = 6
+    static let button: CGFloat = 8
     static let circle: CGFloat = 999
 }
 
@@ -187,6 +199,11 @@ struct PulseGlass {
     static let accentBorder = PulseColors.accent.opacity(0.15)
     static let accentBorderHover = PulseColors.accent.opacity(0.30)
     static let cornerRadius: CGFloat = PulseRadii.card
+
+    // 液态玻璃增强 — 更深的模糊与折射感
+    static let modalBackdrop = Color.black.opacity(0.45)
+    static let modalSurface = Color(red: 0.094, green: 0.094, blue: 0.106).opacity(0.75)
+    static let sheetRadius: CGFloat = 20
 
     // 主题相关 — 需要从 PulseColors 实例读取
     static func surfaceTint(_ colors: PulseColors) -> Color { colors.background.opacity(0.10) }

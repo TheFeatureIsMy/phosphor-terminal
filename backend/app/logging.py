@@ -1,34 +1,36 @@
-"""
-Logging configuration for PulseDesk
-"""
 import logging
+import json
 import sys
-from pathlib import Path
-from typing import Optional
+from datetime import datetime, timezone
 
 
-def setup_logging(debug: bool = False) -> None:
-    """Configure application logging"""
-    level = logging.DEBUG if debug else logging.INFO
+class JSONFormatter(logging.Formatter):
+    def format(self, record):
+        log = {
+            "ts": datetime.now(timezone.utc).isoformat(),
+            "level": record.levelname,
+            "logger": record.name,
+            "msg": record.getMessage(),
+        }
+        if record.exc_info and record.exc_info[0]:
+            log["exception"] = self.formatException(record.exc_info)
+        return json.dumps(log, ensure_ascii=False)
 
-    # Create logs directory
-    log_dir = Path("logs")
-    log_dir.mkdir(exist_ok=True)
 
-    # Configure root logger
-    logging.basicConfig(
-        level=level,
-        format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-        handlers=[
-            logging.StreamHandler(sys.stdout),
-            logging.FileHandler(log_dir / "app.log", encoding="utf-8"),
-        ],
-    )
+def setup_logging(level: str = "INFO", fmt: str = "json") -> None:
+    root = logging.getLogger()
+    root.setLevel(getattr(logging, level.upper(), logging.INFO))
+    root.handlers.clear()
 
-    # Set levels for third-party loggers
+    handler = logging.StreamHandler(sys.stdout)
+    if fmt == "json":
+        handler.setFormatter(JSONFormatter())
+    else:
+        handler.setFormatter(logging.Formatter(
+            "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        ))
+    root.addHandler(handler)
+
     logging.getLogger("uvicorn").setLevel(logging.WARNING)
     logging.getLogger("sqlalchemy").setLevel(logging.WARNING)
-
-    logger = logging.getLogger(__name__)
-    logger.info("Logging configured (level=%s)", logging.getLevelName(level))

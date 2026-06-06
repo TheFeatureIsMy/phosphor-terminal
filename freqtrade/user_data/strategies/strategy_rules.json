@@ -1,0 +1,42 @@
+{
+  "schema_version": "2.5",
+  "timeframe": "5m",
+  "symbols": ["BTC/USDT"],
+  "entry": {
+    "logic": "AND",
+    "rules": [
+      {
+        "type": "indicator_threshold",
+        "indicator": "rsi",
+        "params": {"period": 14},
+        "operator": "<",
+        "value": 30
+      }
+    ]
+  },
+  "exit": {
+    "logic": "AND",
+    "rules": [
+      {
+        "type": "indicator_threshold",
+        "indicator": "rsi",
+        "params": {"period": 14},
+        "operator": ">",
+        "value": 70
+      }
+    ]
+  },
+  "filters": [],
+  "position_sizing": {
+    "type": "fixed_pct",
+    "position_pct": 0.05
+  },
+  "risk": {
+    "stoploss": -0.05,
+    "max_open_trades": 3
+  },
+  "metadata": {
+    "name": "RSI Oversold/Overbought",
+    "description": "Minimal example: enter when RSI < 30, exit when RSI > 70"
+  }
+}

@@ -3,40 +3,6 @@
 import Foundation
 import SwiftUI
 
-// 策略类型
-@available(*, deprecated, message: "Use tags instead")
-enum StrategyType: String, Codable, CaseIterable, Identifiable {
-    case maCross = "ma_cross"
-    case breakout
-    case grid
-    case meanReversion = "mean_reversion"
-    case ragGenerated = "rag_generated"
-
-    var id: String { rawValue }
-
-    /// 中文显示名
-    var label: String {
-        switch self {
-        case .maCross: return "均线交叉"
-        case .breakout: return "突破策略"
-        case .grid: return "网格交易"
-        case .meanReversion: return "均值回归"
-        case .ragGenerated: return "AI 生成"
-        }
-    }
-
-    /// 类型颜色
-    var color: Color {
-        switch self {
-        case .maCross: return PulseColors.info // cyan
-        case .breakout: return PulseColors.warning // amber
-        case .grid: return PulseColors.purple
-        case .meanReversion: return PulseColors.accent // neon green
-        case .ragGenerated: return PulseColors.accent
-        }
-    }
-}
-
 // 策略状态
 enum StrategyStatus: String, Codable, CaseIterable {
     case draft, backtested, active, paused, retired
@@ -258,68 +224,146 @@ enum AlertLevel: String, Codable {
     }
 }
 
+// 侧边栏分组
+enum SidebarSection: String, CaseIterable {
+    case overview    // "OVERVIEW"
+    case strategy    // "STRATEGY"
+    case structure   // "STRUCTURE"
+    case execution   // "EXECUTION"
+    case risk        // "RISK"
+    case aiResearch  // "AI RESEARCH"
+    case growth      // "GROWTH"
+    case system      // "SYSTEM"
+
+    var label: String {
+        switch self {
+        case .overview: return "OVERVIEW"
+        case .strategy: return "STRATEGY"
+        case .structure: return "STRUCTURE"
+        case .execution: return "EXECUTION"
+        case .risk: return "RISK"
+        case .aiResearch: return "AI RESEARCH"
+        case .growth: return "GROWTH"
+        case .system: return "SYSTEM"
+        }
+    }
+}
+
 // 侧边栏导航路由
 enum AppRoute: String, CaseIterable, Identifiable {
-    case dashboard, strategies, backtest, trades
-    case aiStudio
-    case sentiment, attribution, aiProviders, risk
-    case settings
+    // OVERVIEW
+    case dashboard
+    case liveReadiness
+    // STRATEGY
+    case strategyWorkspace
+    case strategyCanvas
+    case backtestSimulation
+    // STRUCTURE
+    case marketStructure
+    case structureMatrix
+    case manipulationRadar
+    // EXECUTION
+    case executionCenter
+    case ordersPositions
+    case reconciliationBus
+    // RISK
+    case riskCenter
+    case stopProtection
+    case circuitBreakers
+    // AI RESEARCH
+    case aiResearchRoom
+    case agentPlatform
+    case signalCenter
+    case marketSentiment
+    // GROWTH
+    case growthReview
+    case failureClustering
+    case strategyOptimization
+    // SYSTEM
+    case serviceManagement
+    case dataSourceManagement
+    case systemSettings
+    // Internal
     case strategyDetail
 
     var id: String { rawValue }
 
     var icon: String {
         switch self {
-        case .dashboard: return "chart.line.uptrend.xyaxis"
-        case .strategies: return "cpu"
-        case .strategyDetail: return "doc.text.magnifyingglass"
-        case .backtest: return "clock.arrow.circlepath"
-        case .trades: return "list.bullet.rectangle"
-        case .aiStudio: return "brain.head.profile"
-        case .sentiment: return "waveform.path.ecg"
-        case .attribution: return "chart.bar.doc.horizontal"
-        case .aiProviders: return "server.rack"
-        case .risk: return "shield.checkered"
-        case .settings: return "gearshape"
+        case .dashboard: return "square.grid.2x2"
+        case .liveReadiness: return "checkmark.shield"
+        case .strategyWorkspace: return "cpu"
+        case .strategyCanvas: return "paintbrush.pointed"
+        case .backtestSimulation: return "clock.arrow.circlepath"
+        case .marketStructure: return "chart.bar.xaxis"
+        case .structureMatrix: return "tablecells"
+        case .manipulationRadar: return "exclamationmark.shield"
+        case .executionCenter: return "play.circle"
+        case .ordersPositions: return "list.bullet.rectangle"
+        case .reconciliationBus: return "arrow.triangle.2.circlepath"
+        case .riskCenter: return "shield.checkered"
+        case .stopProtection: return "hand.raised"
+        case .circuitBreakers: return "bolt.circle"
+        case .aiResearchRoom: return "brain.head.profile"
+        case .agentPlatform: return "person.3.sequence"
+        case .signalCenter: return "antenna.radiowaves.left.and.right"
+        case .marketSentiment: return "waveform.path.ecg"
+        case .growthReview: return "chart.line.uptrend.xyaxis.circle"
+        case .failureClustering: return "xmark.circle.fill"
+        case .strategyOptimization: return "wand.and.stars"
+        case .serviceManagement: return "server.rack"
+        case .dataSourceManagement: return "externaldrive.connected.to.line.below"
+        case .systemSettings: return "gearshape"
+        case .strategyDetail: return "doc.text"
         }
     }
 
     var label: String {
         switch self {
-        case .dashboard: return "仪表盘"
-        case .strategies: return "策略管理"
+        case .dashboard: return "总览 Dashboard"
+        case .liveReadiness: return "实盘准入"
+        case .strategyWorkspace: return "策略工作台"
+        case .strategyCanvas: return "策略画布"
+        case .backtestSimulation: return "回测 / 模拟"
+        case .marketStructure: return "市场结构"
+        case .structureMatrix: return "结构矩阵"
+        case .manipulationRadar: return "操纵雷达"
+        case .executionCenter: return "执行中心"
+        case .ordersPositions: return "订单 / 持仓"
+        case .reconciliationBus: return "对账总线"
+        case .riskCenter: return "风控中心"
+        case .stopProtection: return "止损保护"
+        case .circuitBreakers: return "熔断记录"
+        case .aiResearchRoom: return "AI 投研室"
+        case .agentPlatform: return "Agent 平台"
+        case .signalCenter: return "信号中心"
+        case .marketSentiment: return "市场情绪"
+        case .growthReview: return "复盘成长"
+        case .failureClustering: return "失败聚类"
+        case .strategyOptimization: return "策略优化"
+        case .serviceManagement: return "服务管理"
+        case .dataSourceManagement: return "数据源管理"
+        case .systemSettings: return "系统设置"
         case .strategyDetail: return "策略详情"
-        case .backtest: return "回测中心"
-        case .trades: return "交易记录"
-        case .aiStudio: return "AI 工作室"
-        case .sentiment: return "市场情绪"
-        case .attribution: return "归因分析"
-        case .aiProviders: return "AI 服务"
-        case .risk: return "风险管理"
-        case .settings: return "系统设置"
         }
     }
 
     var section: SidebarSection {
         switch self {
-        case .dashboard, .trades, .risk: return .trading
-        case .strategies, .backtest, .strategyDetail: return .strategy
-        case .aiStudio, .sentiment, .attribution, .aiProviders: return .ai
-        case .settings: return .system
+        case .dashboard, .liveReadiness: return .overview
+        case .strategyWorkspace, .strategyCanvas, .backtestSimulation: return .strategy
+        case .marketStructure, .structureMatrix, .manipulationRadar: return .structure
+        case .executionCenter, .ordersPositions, .reconciliationBus: return .execution
+        case .riskCenter, .stopProtection, .circuitBreakers: return .risk
+        case .aiResearchRoom, .agentPlatform, .signalCenter, .marketSentiment: return .aiResearch
+        case .growthReview, .failureClustering, .strategyOptimization: return .growth
+        case .serviceManagement, .dataSourceManagement, .systemSettings: return .system
+        case .strategyDetail: return .strategy
         }
     }
-}
 
-enum SidebarSection: String, CaseIterable {
-    case trading, strategy, ai, system
-
-    var label: String {
-        switch self {
-        case .trading: return "交易"
-        case .strategy: return "策略"
-        case .ai: return "AI"
-        case .system: return "系统"
-        }
+    var sidebarVisible: Bool {
+        self != .strategyDetail
     }
 }
 
@@ -382,3 +426,82 @@ enum NotificationSeverity: String, Codable {
         }
     }
 }
+
+// MARK: - 统一状态模型
+enum UnifiedState: String, Codable {
+    case healthy, warning, blocked, locked, running, stopped, failed, reconciling, stale, unknown
+
+    var label: String {
+        switch self {
+        case .healthy: return "健康"
+        case .warning: return "警告"
+        case .blocked: return "已阻断"
+        case .locked: return "已锁定"
+        case .running: return "运行中"
+        case .stopped: return "已停止"
+        case .failed: return "失败"
+        case .reconciling: return "对账中"
+        case .stale: return "过期"
+        case .unknown: return "未知"
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .healthy, .running: return PulseColors.StateColors.green
+        case .warning: return PulseColors.StateColors.yellow
+        case .blocked, .failed: return PulseColors.StateColors.red
+        case .locked: return PulseColors.StateColors.orangeRed
+        case .stopped: return PulseColors.StateColors.gray
+        case .reconciling: return PulseColors.StateColors.purple
+        case .stale, .unknown: return PulseColors.StateColors.mutedYellow
+        }
+    }
+
+    var isBlocking: Bool {
+        switch self {
+        case .blocked, .failed, .locked: return true
+        default: return false
+        }
+    }
+}
+
+// MARK: - 实盘准入状态
+enum LiveReadinessState: String, Codable {
+    case liveReady = "LIVE_READY"
+    case liveSmallReady = "LIVE_SMALL_READY"
+    case paperOnly = "PAPER_ONLY"
+    case riskLocked = "RISK_LOCKED"
+    case emergencyLocked = "EMERGENCY_LOCKED"
+    case notReady = "NOT_READY"
+
+    var label: String {
+        switch self {
+        case .liveReady: return "实盘就绪"
+        case .liveSmallReady: return "小仓就绪"
+        case .paperOnly: return "仅模拟"
+        case .riskLocked: return "风控锁定"
+        case .emergencyLocked: return "紧急锁定"
+        case .notReady: return "未就绪"
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .liveReady: return PulseColors.StateColors.green
+        case .liveSmallReady: return PulseColors.StateColors.orange
+        case .paperOnly: return PulseColors.StateColors.yellow
+        case .riskLocked, .emergencyLocked: return PulseColors.StateColors.red
+        case .notReady: return PulseColors.StateColors.gray
+        }
+    }
+
+    var canStartPaper: Bool {
+        self != .emergencyLocked
+    }
+
+    var canStartLiveSmall: Bool {
+        self == .liveReady || self == .liveSmallReady
+    }
+}
+

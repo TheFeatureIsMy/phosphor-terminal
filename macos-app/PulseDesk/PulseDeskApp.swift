@@ -9,7 +9,7 @@ struct PulseDeskApp: App {
 
     @State private var appState = AppState()
     @State private var authState = AuthState()
-    @State private var settingsState = SettingsState()
+    @State private var settingsState = SettingsState.shared
     @State private var errorHandler = ErrorHandler()
     @State private var wsManager = WebSocketManager()
     @State private var toastManager = ToastManager()
@@ -17,23 +17,36 @@ struct PulseDeskApp: App {
     private let pulseColors: PulseColors
     private let dependencyState: DependencyState
 
-    // NetworkClient 切换: 默认 Mock 模式，传入 --live 参数或设置 PULSEDESK_LIVE=1 环境变量切换到真实后端
-    private static func makeNetworkClient() -> any NetworkClientProtocol {
-        let args = ProcessInfo.processInfo.arguments
-        let env = ProcessInfo.processInfo.environment
-        if args.contains("--live") || env["PULSEDESK_LIVE"] == "1" {
-            return LiveNetworkClient()
-        }
-        return MockNetworkClient()
-    }
-
     @State private var networkClient: any NetworkClientProtocol = MockNetworkClient()
+    @State private var isDetectingBackend = true
+    @State private var isLiveMode = false
+
+    private static func resolveForceMode() -> String? {
+        let args = ProcessInfo.processInfo.arguments
+        let env  = ProcessInfo.processInfo.environment
+        if args.contains("--live")  { return "live" }
+        if args.contains("--mock")  { return "mock" }
+        if env["PULSEDESK_LIVE"] == "1" { return "live" }
+        return nil
+    }
 
     init() {
         let tm = ThemeManager()
         self.themeManager = tm
         self.pulseColors = PulseColors(themeManager: tm)
-        let client = Self.makeNetworkClient()
+
+        let forceMode = Self.resolveForceMode()
+        let client: any NetworkClientProtocol
+        if forceMode == "live" {
+            client = LiveNetworkClient()
+            self._isLiveMode = State(initialValue: true)
+            self._isDetectingBackend = State(initialValue: false)
+        } else if forceMode == "mock" {
+            client = MockNetworkClient()
+            self._isDetectingBackend = State(initialValue: false)
+        } else {
+            client = MockNetworkClient()
+        }
         self._networkClient = State(initialValue: client)
         self.dependencyState = DependencyState(client: client)
     }
@@ -55,19 +68,8 @@ struct PulseDeskApp: App {
                 .contentTransition(.opacity)
                 .animation(.easeInOut(duration: 0.35), value: themeManager.current)
                 .frame(minWidth: 900, minHeight: 600)
-                .onAppear {
-                    // Mock 模式自动登录；Live 模式显示登录页
-                    let isLive = ProcessInfo.processInfo.arguments.contains("--live")
-                        || ProcessInfo.processInfo.environment["PULSEDESK_LIVE"] == "1"
-                    if !isLive && !authState.isAuthenticated {
-                        authState.mockLogin()
-                    }
-                    // 初始化设置同步
-                    settingsState.configure(client: networkClient)
-                }
                 .task {
-                    await dependencyState.load()
-                    dependencyState.startPeriodicRefresh()
+                    await detectBackendAndConfigure()
                 }
         }
         .windowStyle(.hiddenTitleBar)
@@ -82,12 +84,45 @@ struct PulseDeskApp: App {
             }
         }
     }
+
+    private func detectBackendAndConfigure() async {
+        let forcedMode = Self.resolveForceMode()
+
+        if forcedMode == nil {
+            let reachable = await LiveNetworkClient.isBackendReachable()
+            if reachable {
+                NSLog("[PulseDesk] Backend reachable — using Live mode")
+                networkClient = LiveNetworkClient()
+                isLiveMode = true
+                appState.isLiveMode = true
+                wsManager.connectForLiveMode()
+            } else {
+                NSLog("[PulseDesk] Backend unreachable — using Mock mode")
+            }
+        } else if forcedMode == "live" {
+            appState.isLiveMode = true
+            wsManager.connectForLiveMode()
+        }
+
+        isDetectingBackend = false
+
+        // Auto-login in mock mode
+        if !isLiveMode && !authState.isAuthenticated {
+            authState.mockLogin()
+        }
+
+        // Initialize settings sync
+        settingsState.configure(client: networkClient)
+
+        // Load dependencies
+        await dependencyState.load()
+        dependencyState.startPeriodicRefresh()
+    }
 }
 
-// MARK: - App Delegate — 确保 Dock 图标和 Cmd+Tab 切换正常
+// MARK: - App Delegate
 class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // 确保应用以 regular 策略运行，显示 Dock 图标并参与 Cmd+Tab 切换
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
     }
@@ -144,14 +179,13 @@ struct LoginPlaceholderView: View {
                     .font(PulseFonts.displayTitle)
                     .foregroundStyle(colors.textPrimary)
 
-                Text("AI 驱动的加密量化交易平台")
+                Text(L10n.zh("AI 驱动的加密量化交易平台", en: "AI-Powered Crypto Quant Trading Platform"))
                     .font(PulseFonts.body)
                     .foregroundStyle(colors.textSecondary)
 
-                // 登录表单
                 VStack(spacing: PulseSpacing.md) {
-                    PulseTextField(label: "邮箱", text: $email, placeholder: "trader@pulsedesk.io")
-                    PulseSecureField(label: "密码", text: $password, placeholder: "输入密码")
+                    PulseTextField(label: L10n.Settings.email, text: $email, placeholder: "trader@pulsedesk.io")
+                    PulseSecureField(label: L10n.zh("密码", en: "Password"), text: $password, placeholder: L10n.zh("输入密码", en: "Enter password"))
 
                     if let error = authState.errorMessage {
                         Text(error)
@@ -160,7 +194,7 @@ struct LoginPlaceholderView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
 
-                    ProofAlphaButton(title: authState.isLoading ? "登录中..." : "登录") {
+                    ProofAlphaButton(title: authState.isLoading ? L10n.Common.loading : L10n.zh("登录", en: "Sign In")) {
                         Task {
                             await authState.login(email: email, password: password, client: networkClient)
                         }
@@ -174,8 +208,7 @@ struct LoginPlaceholderView: View {
                     .background(colors.border)
                     .frame(maxWidth: 200)
 
-                // Mock 登录（开发模式快捷入口）
-                Button("Mock 登录（开发模式）") {
+                Button("Mock Login (Dev Mode)") {
                     authState.mockLogin()
                 }
                 .buttonStyle(.plain)
@@ -186,7 +219,7 @@ struct LoginPlaceholderView: View {
     }
 }
 
-// MARK: - 色彩扩展 — Light/Dark 自动适配
+// MARK: - 色彩扩展
 extension Color {
     init(light: Color, dark: Color) {
         self.init(nsColor: NSColor(name: nil, dynamicProvider: { traits in

@@ -208,7 +208,7 @@ class TestGenerateStrategyLLMIntegration:
 
         with patch("app.services.rag_service._get_llm_service", return_value=mock_svc):
             import asyncio
-            result = asyncio.get_event_loop().run_until_complete(
+            result = asyncio.run(
                 generate_strategy("momentum strategy for crypto", "medium", "crypto")
             )
 
@@ -224,7 +224,7 @@ class TestGenerateStrategyLLMIntegration:
 
         with patch("app.services.rag_service._get_llm_service", return_value=None):
             import asyncio
-            result = asyncio.get_event_loop().run_until_complete(
+            result = asyncio.run(
                 generate_strategy("a simple moving average strategy", "low", "crypto")
             )
 
@@ -241,7 +241,7 @@ class TestGenerateStrategyLLMIntegration:
 
         with patch("app.services.rag_service._get_llm_service", return_value=mock_svc):
             import asyncio
-            result = asyncio.get_event_loop().run_until_complete(
+            result = asyncio.run(
                 generate_strategy("breakout strategy", "high", "crypto")
             )
 
@@ -254,7 +254,7 @@ class TestGenerateStrategyLLMIntegration:
 
         with patch("app.services.rag_service._get_llm_service", return_value=None):
             import asyncio
-            result = asyncio.get_event_loop().run_until_complete(
+            result = asyncio.run(
                 generate_strategy("breakout above resistance", "medium", "crypto")
             )
 

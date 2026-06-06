@@ -91,4 +91,12 @@ class FreqtradeClient:
         return await self._get("/api/v1/performance")
 
 
+
+    async def version(self) -> str | None:
+        """Get Freqtrade version string."""
+        result = await self._get('/api/v1/version')
+        if self.is_success(result):
+            return result.get('version', 'unknown')
+        return None
+
 freqtrade_client = FreqtradeClient()

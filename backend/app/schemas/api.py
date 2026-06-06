@@ -52,7 +52,6 @@ class StrategyResponse(BaseModel):
     status: StrategyStatus
     sharpe_ratio: Optional[float]
     max_drawdown: Optional[float]
-    freqtrade_strategy_id: Optional[str] = None
     tags: list[str] = []
     created_at: datetime
     updated_at: datetime

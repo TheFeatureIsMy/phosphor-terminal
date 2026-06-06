@@ -3,6 +3,7 @@
 // LiveNetworkClient: 真实 URLSession 请求
 
 import Foundation
+import Security
 import SwiftUI
 
 // MARK: - Environment Key for NetworkClient
@@ -26,10 +27,10 @@ enum APIError: Error, LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .invalidURL: return "无效的 URL"
+        case .invalidURL: return "Invalid URL"
         case .httpError(let code, let msg): return "HTTP \(code): \(msg)"
-        case .decodingError(let err): return "解码错误: \(err.localizedDescription)"
-        case .networkError(let err): return "网络错误: \(err.localizedDescription)"
+        case .decodingError(let err): return "Decode error: \(err.localizedDescription)"
+        case .networkError(let err): return "Network error: \(err.localizedDescription)"
         }
     }
 }
@@ -40,6 +41,7 @@ protocol NetworkClientProtocol: Sendable {
     func post<T: Decodable>(_ endpoint: String, body: (any Encodable)?, mock: @escaping @Sendable () -> T) async throws -> T
     func postForm<T: Decodable>(_ endpoint: String, formFields: [String: String], mock: @escaping @Sendable () -> T) async throws -> T
     func put<T: Decodable>(_ endpoint: String, body: (any Encodable)?, mock: @escaping @Sendable () -> T) async throws -> T
+    func patch<T: Decodable>(_ endpoint: String, body: (any Encodable)?, mock: @escaping @Sendable () -> T) async throws -> T
     func delete(_ endpoint: String, mock: @escaping @Sendable () -> Void) async throws
 }
 
@@ -65,6 +67,11 @@ final class MockNetworkClient: NetworkClientProtocol, @unchecked Sendable {
         return mock()
     }
 
+    func patch<T: Decodable>(_ endpoint: String, body: (any Encodable)?, mock: @escaping @Sendable () -> T) async throws -> T {
+        try await Task.sleep(for: .milliseconds(Int.random(in: 200...500)))
+        return mock()
+    }
+
     func delete(_ endpoint: String, mock: @escaping @Sendable () -> Void) async throws {
         try await Task.sleep(for: .milliseconds(Int.random(in: 200...500)))
         mock()
@@ -78,6 +85,23 @@ final class LiveNetworkClient: NetworkClientProtocol, @unchecked Sendable {
 
     init(baseURL: URL = URL(string: "http://localhost:8000")!) {
         self.baseURL = baseURL
+    }
+
+    /// Synchronous-ish health check — returns true if backend responds within given timeout
+    static func isBackendReachable(baseURL: URL = URL(string: "http://localhost:8000")!, timeout: TimeInterval = 2) async -> Bool {
+        let url = baseURL.appendingPathComponent("health")
+        var request = URLRequest(url: url)
+        request.timeoutInterval = timeout
+        request.httpMethod = "GET"
+        do {
+            let (_, response) = try await URLSession.shared.data(for: request)
+            if let http = response as? HTTPURLResponse, http.statusCode < 400 {
+                return true
+            }
+            return false
+        } catch {
+            return false
+        }
     }
 
     func get<T: Decodable>(_ endpoint: String, mock: @escaping @Sendable () -> T) async throws -> T {
@@ -129,6 +153,19 @@ final class LiveNetworkClient: NetworkClientProtocol, @unchecked Sendable {
         return try await performRequest(request)
     }
 
+    func patch<T: Decodable>(_ endpoint: String, body: (any Encodable)?, mock: @escaping @Sendable () -> T) async throws -> T {
+        let url = baseURL.appendingPathComponent(endpoint)
+        var request = URLRequest(url: url)
+        request.httpMethod = "PATCH"
+        request.timeoutInterval = timeout
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(KeychainService.accessToken ?? "")", forHTTPHeaderField: "Authorization")
+        if let body {
+            request.httpBody = try JSONEncoder().encode(body)
+        }
+        return try await performRequest(request)
+    }
+
     func delete(_ endpoint: String, mock: @escaping @Sendable () -> Void) async throws {
         let url = baseURL.appendingPathComponent(endpoint)
         var request = URLRequest(url: url)
@@ -136,11 +173,9 @@ final class LiveNetworkClient: NetworkClientProtocol, @unchecked Sendable {
         request.timeoutInterval = timeout
         request.setValue("Bearer \(KeychainService.accessToken ?? "")", forHTTPHeaderField: "Authorization")
 
-        // First attempt
         var (data, response) = try await URLSession.shared.data(for: request)
         var httpResponse = response as? HTTPURLResponse
 
-        // If 401, try refreshing token once
         if httpResponse?.statusCode == 401, KeychainService.refreshToken != nil {
             try await refreshTokenIfNeeded()
             request.setValue("Bearer \(KeychainService.accessToken ?? "")", forHTTPHeaderField: "Authorization")
@@ -180,17 +215,14 @@ final class LiveNetworkClient: NetworkClientProtocol, @unchecked Sendable {
     private func performRequest<T: Decodable>(_ request: URLRequest) async throws -> T {
         var currentRequest = request
 
-        // First attempt
         let (data, response) = try await URLSession.shared.data(for: currentRequest)
         guard let httpResponse = response as? HTTPURLResponse else {
             throw APIError.networkError(URLError(.badServerResponse))
         }
 
-        // If 401, try refreshing token once
         if httpResponse.statusCode == 401, KeychainService.refreshToken != nil {
             try await refreshTokenIfNeeded()
 
-            // Retry with new token
             currentRequest.setValue("Bearer \(KeychainService.accessToken ?? "")", forHTTPHeaderField: "Authorization")
             let (retryData, retryResponse) = try await URLSession.shared.data(for: currentRequest)
             guard let retryHttpResponse = retryResponse as? HTTPURLResponse, retryHttpResponse.statusCode < 400 else {
@@ -217,8 +249,49 @@ final class LiveNetworkClient: NetworkClientProtocol, @unchecked Sendable {
     }
 }
 
-// MARK: - Keychain 服务（简化版）
+// MARK: - Keychain 服务（macOS Keychain 持久化）
 enum KeychainService {
-    nonisolated(unsafe) static var accessToken: String?
-    nonisolated(unsafe) static var refreshToken: String?
+    private static let service = "com.pulsedesk.auth"
+
+    static var accessToken: String? {
+        get { load(key: "access_token") }
+        set { save(key: "access_token", value: newValue) }
+    }
+
+    static var refreshToken: String? {
+        get { load(key: "refresh_token") }
+        set { save(key: "refresh_token", value: newValue) }
+    }
+
+    private static func save(key: String, value: String?) {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: key,
+        ]
+        SecItemDelete(query as CFDictionary)
+        guard let value, let data = value.data(using: .utf8) else { return }
+        var add = query
+        add[kSecValueData as String] = data
+        SecItemAdd(add as CFDictionary, nil)
+    }
+
+    private static func load(key: String) -> String? {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: key,
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne,
+        ]
+        var result: AnyObject?
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+        guard status == errSecSuccess, let data = result as? Data else { return nil }
+        return String(data: data, encoding: .utf8)
+    }
+
+    static func clear() {
+        accessToken = nil
+        refreshToken = nil
+    }
 }

@@ -23,7 +23,6 @@ class Strategy(Base):
     status = Column(String, default="draft")
     sharpe_ratio = Column(Float, nullable=True)
     max_drawdown = Column(Float, nullable=True)
-    freqtrade_strategy_id = Column(String, nullable=True)
     tags = Column(JSON, default=[])
     created_at = Column(DateTime, default=_utcnow)
     updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
@@ -117,6 +116,10 @@ class BacktestRun(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     strategy_id = Column(Integer, nullable=False, index=True)
+    strategy_version_id = Column(String, nullable=True, index=True)
+    command_id = Column(String, nullable=True, index=True)
+    dsl_hash = Column(String, nullable=True)
+    status = Column(String, nullable=False, default="pending")
     start_date = Column(String, nullable=False)
     end_date = Column(String, nullable=False)
     initial_capital = Column(Float, nullable=False)
@@ -127,8 +130,12 @@ class BacktestRun(Base):
     max_drawdown = Column(Float, default=0)
     win_rate = Column(Float, default=0)
     total_return = Column(Float, default=0)
+    profit_factor = Column(Float, default=0)
+    total_trades = Column(Integer, default=0)
     data_source = Column(JSON, default=dict)
+    error_message = Column(String, nullable=True)
     created_at = Column(DateTime, default=_utcnow)
+    completed_at = Column(DateTime, nullable=True)
 
 
 class NotificationRecord(Base):
@@ -148,7 +155,6 @@ class CanvasWorkflow(Base):
     id = Column(String, primary_key=True, default=lambda: str(__import__('uuid').uuid4()))
     strategy_id = Column(Integer, ForeignKey("strategies.id"), nullable=False, index=True)
     graph_json = Column(Text, nullable=False)
-    code_snapshot = Column(Text, nullable=True)
     created_at = Column(DateTime, default=_utcnow)
     updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 

@@ -1,0 +1,84 @@
+{
+  "schema_version": "2.5",
+  "timeframe": "1h",
+  "symbols": ["BTC/USDT"],
+  "entry": {
+    "logic": "AND",
+    "rules": [
+      {
+        "type": "indicator_threshold",
+        "indicator": "rsi",
+        "params": {"period": 14},
+        "operator": "between",
+        "min_value": 20,
+        "max_value": 40
+      },
+      {
+        "type": "indicator_threshold",
+        "indicator": "close",
+        "params": {},
+        "operator": ">",
+        "value": 0
+      }
+    ]
+  },
+  "exit": {
+    "logic": "OR",
+    "rules": [
+      {
+        "type": "indicator_threshold",
+        "indicator": "rsi",
+        "params": {"period": 14},
+        "operator": ">",
+        "value": 80
+      }
+    ]
+  },
+  "filters": [
+    {
+      "type": "manipulation_score_filter",
+      "max_score": 0.3,
+      "missing_data_policy": "reject"
+    },
+    {
+      "type": "volume_filter",
+      "indicator": "volume",
+      "params": {},
+      "operator": ">",
+      "value": 500000
+    },
+    {
+      "type": "volatility_filter",
+      "indicator": "atr",
+      "params": {"period": 14},
+      "operator": "<",
+      "value": 500
+    },
+    {
+      "type": "cooldown_filter",
+      "candles": 5
+    },
+    {
+      "type": "portfolio_exposure_filter",
+      "max_exposure_pct": 0.5
+    },
+    {
+      "type": "signal_confirmation",
+      "min_confidence": 0.6,
+      "required_direction": "long"
+    }
+  ],
+  "position_sizing": {
+    "type": "fixed_pct",
+    "position_pct": 0.01
+  },
+  "risk": {
+    "stoploss": -0.03,
+    "max_open_trades": 2,
+    "cooldown": 10
+  },
+  "metadata": {
+    "name": "Multi-Filter Strategy",
+    "description": "Tests all filter types together"
+  }
+}

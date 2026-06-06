@@ -13,7 +13,6 @@ struct AppShellView: View {
 
     @State private var dashboardVM: DashboardViewModel?
     @State private var strategiesVM: StrategiesViewModel?
-    @State private var backtestVM: BacktestViewModel?
 
     var body: some View {
         GlassEffectContainer {
@@ -23,9 +22,12 @@ struct AppShellView: View {
 
                 // 右侧：工具栏 + 内容区
                 VStack(spacing: 0) {
-                    ConsoleToolbar(systemStatus: dashboardVM?.systemStatus)
+                    GlobalStatusBar()
                     detailContent
+                        .id(appState.selectedRoute)
+                        .contentTransition(.opacity)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .animation(PulseAnimation.easeOutMedium, value: appState.selectedRoute)
                 }
             }
         }
@@ -59,10 +61,6 @@ struct AppShellView: View {
                 strategiesVM = StrategiesViewModel(client: networkClient)
             }
             strategiesVM?.errorHandler = errorHandler
-            if backtestVM == nil {
-                backtestVM = BacktestViewModel(client: networkClient)
-            }
-            backtestVM?.errorHandler = errorHandler
         }
     }
 
@@ -75,45 +73,103 @@ struct AppShellView: View {
     @ViewBuilder
     private var detailContent: some View {
         switch appState.selectedRoute {
+        // OVERVIEW
         case .dashboard:
             if let vm = dashboardVM {
                 DashboardView(viewModel: vm)
             } else {
                 LoadingView(type: .detail)
             }
-        case .strategies:
+        case .liveReadiness:
+            LiveReadinessView()
+        // STRATEGY
+        case .strategyWorkspace:
             if let vm = strategiesVM {
                 StrategiesListView(viewModel: vm)
             } else {
                 LoadingView(type: .detail)
             }
-        case .backtest:
-            if let vm = backtestVM {
-                BacktestView(viewModel: vm)
-            } else {
-                LoadingView(type: .detail)
-            }
-        case .trades:
-            TradesView()
-        case .aiStudio:
+        case .strategyCanvas:
+            StrategyCanvasPageView()
+        case .backtestSimulation:
+            BacktestDryrunView()
+        // STRUCTURE
+        case .marketStructure:
+            MarketStructureView()
+        case .structureMatrix:
+            StructureMatrixView()
+        case .manipulationRadar:
+            ManipulationRadarView()
+        // EXECUTION
+        case .executionCenter:
+            ExecutionCenterView()
+        case .ordersPositions:
+            OrdersPositionsView()
+        case .reconciliationBus:
+            ReconciliationBusView()
+        // RISK
+        case .riskCenter:
+            RiskCenterView()
+        case .stopProtection:
+            StopProtectionView()
+        case .circuitBreakers:
+            CircuitBreakersView()
+        // AI RESEARCH
+        case .aiResearchRoom:
             AIStudioView()
-        case .sentiment:
+        case .agentPlatform:
+            AgentPlatformView()
+        case .signalCenter:
+            SignalCenterView()
+        case .marketSentiment:
             SentimentView()
-        case .attribution:
-            AttributionView()
-        case .aiProviders:
+        // GROWTH
+        case .growthReview:
+            GrowthView()
+        case .failureClustering:
+            FailureClusteringView()
+        case .strategyOptimization:
+            StrategyOptimizationView()
+        // SYSTEM
+        case .serviceManagement:
             AIProvidersView()
-        case .risk:
-            RiskView()
-        case .settings:
+        case .dataSourceManagement:
+            DataSourcesView()
+        case .systemSettings:
             SettingsView()
+        // Internal
         case .strategyDetail:
-            if let id = appState.selectedStrategyId {
-                StrategyDetailView(strategyId: id, client: networkClient)
+            if let v2Id = appState.selectedStrategyV2Id {
+                StrategyDetailView(strategyId: v2Id, client: networkClient)
+            } else if let id = appState.selectedStrategyId {
+                StrategyDetailView(strategyId: "\(id)", client: networkClient)
             } else {
                 LoadingView(type: .detail)
             }
         }
+    }
+
+    // MARK: - Placeholder View (coming soon)
+    @ViewBuilder
+    private func placeholderView(title: String, icon: String) -> some View {
+        VStack(spacing: PulseSpacing.lg) {
+            Spacer()
+            Image(systemName: icon)
+                .font(.system(size: 48, weight: .light))
+                .foregroundStyle(PulseColors.accent.opacity(0.4))
+                .shadow(color: PulseColors.accent.opacity(0.2), radius: 12)
+            Text(title)
+                .font(PulseFonts.displaySubheading)
+                .foregroundStyle(colors.textPrimary)
+            Text("Coming soon")
+                .font(PulseFonts.caption)
+                .foregroundStyle(colors.textMuted)
+                .textCase(.uppercase)
+                .tracking(1.5)
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .animation(PulseAnimation.easeOutMedium, value: appState.selectedRoute)
     }
 }
 
@@ -216,7 +272,7 @@ struct ConsoleToolbar: View {
                 if let vm = notificationViewModel {
                     NotificationPopover(viewModel: vm) {
                         showNotifications = false
-                        appState.selectedRoute = .settings
+                        appState.selectedRoute = .systemSettings
                     }
                 }
             }

@@ -11,6 +11,8 @@ struct SentimentView: View {
     @State private var analysisText = ""
     @State private var analysisResult: TextSentimentResponse?
     @State private var isAnalyzing = false
+    @State private var isPublishingSignal = false
+    @State private var publishedSignalId: String?
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
@@ -119,6 +121,28 @@ struct SentimentView: View {
                                 sentimentBar(label: "中性", value: result.neutral, color: colors.textMuted)
                                 sentimentBar(label: "负面", value: result.negative, color: PulseColors.danger)
                             }
+
+                            // Publish as Signal
+                            HStack(spacing: PulseSpacing.sm) {
+                                Spacer()
+                                if let signalId = publishedSignalId {
+                                    HStack(spacing: PulseSpacing.xxs) {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .font(.system(size: 12))
+                                            .foregroundStyle(PulseColors.success)
+                                        Text("已发布: \(String(signalId.prefix(8)))...")
+                                            .font(PulseFonts.micro)
+                                            .foregroundStyle(PulseColors.success)
+                                    }
+                                } else if isPublishingSignal {
+                                    ProgressView()
+                                        .controlSize(.small)
+                                } else {
+                                    ProofAlphaButton(title: "发布为信号", action: {
+                                        Task { await publishAsSignal(result: result) }
+                                    })
+                                }
+                            }
                         }
                     }
                     .cardStyle()
@@ -160,6 +184,32 @@ struct SentimentView: View {
                     .font(PulseFonts.monoLabel)
                     .foregroundStyle(color)
             }
+        }
+    }
+
+    private func publishAsSignal(result: TextSentimentResponse) async {
+        isPublishingSignal = true
+        defer { isPublishingSignal = false }
+
+        let direction = result.positive > result.negative ? "long" : "short"
+        let confidence = max(result.positive, result.negative)
+        // Derive symbol from market overview or default
+        let symbol = summary?.marketOverview.first?.symbol ?? "BTC/USDT"
+
+        let api = APISignalsV2(client: networkClient)
+        let body: [String: Any] = [
+            "source_type": "sentiment",
+            "symbol": symbol,
+            "direction": direction,
+            "confidence": confidence,
+            "reasoning": "Sentiment analysis: positive=\(String(format: "%.0f%%", result.positive * 100)), negative=\(String(format: "%.0f%%", result.negative * 100))"
+        ]
+
+        do {
+            let signal = try await api.createSignal(body)
+            publishedSignalId = signal.id
+        } catch {
+            // Silent failure — user can retry
         }
     }
 
