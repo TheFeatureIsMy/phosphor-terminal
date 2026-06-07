@@ -9,11 +9,11 @@ struct ProviderCardView: View {
     let onTest: () -> Void
 
     var body: some View {
-        ProofAlphaCard(emphasis: .subtle) {
+        KryptonCard(emphasis: .subtle) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
                 HStack {
                     Image(systemName: iconForProvider)
-                        .font(.system(size: 18))
+                        .font(PulseFonts.displayHeading)
                         .foregroundStyle(provider.isAvailable ? PulseColors.accent : colors.textMuted)
 
                     VStack(alignment: .leading, spacing: 1) {

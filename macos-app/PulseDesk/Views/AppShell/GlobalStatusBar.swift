@@ -1,4 +1,4 @@
-// GlobalStatusBar.swift — Krypton Pro 顶部控制甲板
+// GlobalStatusBar.swift — 跨页面顶部全局状态栏
 
 import SwiftUI
 
@@ -12,6 +12,7 @@ struct GlobalStatusBar: View {
     @State private var globalStatus: GlobalStatusBFFResponse?
     @State private var showReasonBar = false
 
+    private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     private let pollTimer = Timer.publish(every: 15, on: .main, in: .common).autoconnect()
     private let timeFormatter: DateFormatter = {
         let f = DateFormatter()
@@ -21,51 +22,50 @@ struct GlobalStatusBar: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            controlDeck
+            mainBar
             if showReasonBar, let status = globalStatus, !status.reasonCodes.isEmpty {
                 reasonBar(codes: status.reasonCodes)
             }
         }
     }
 
-    private var controlDeck: some View {
+    private var mainBar: some View {
         HStack(spacing: PulseSpacing.md) {
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: PulseSpacing.xxs) {
-                    Text("KRYPTON PRO")
-                        .font(PulseFonts.micro)
-                        .foregroundStyle(PulseColors.accent)
-                        .tracking(1.8)
-                    Text("//")
-                        .font(PulseFonts.micro)
-                        .foregroundStyle(PulseColors.accent)
-                    Text(appState.selectedRoute.label)
-                        .font(PulseFonts.monoLabel)
-                        .foregroundStyle(colors.textMuted)
-                        .textCase(.uppercase)
-                        .tracking(1.2)
-                }
-                Text(routeSubtitle)
-                    .font(PulseFonts.caption)
-                    .foregroundStyle(colors.textSecondary)
+            HStack(spacing: PulseSpacing.xxs) {
+                Text("//")
+                    .font(PulseFonts.monoLabel)
+                    .foregroundStyle(PulseColors.accent)
+                Text(appState.selectedRoute.label)
+                    .font(PulseFonts.monoLabel)
+                    .foregroundStyle(colors.textMuted)
+                    .textCase(.uppercase)
+                    .tracking(1.5)
             }
 
-            LiveModeIndicator(isLive: appState.isLiveMode, emergencyLocked: globalStatus?.emergencyLocked == true)
-            EmergencyPauseButton(isLive: appState.isLiveMode) {
-                // Pause all trading — TODO wire to backend
-                print("[Emergency] Pause all trading")
+            // Mock mode indicator
+            if !appState.isLiveMode {
+                HStack(spacing: PulseSpacing.xxs) {
+                    StatusDot(status: .warning)
+                    Text("MOCK")
+                        .font(PulseFonts.micro)
+                        .foregroundStyle(PulseColors.StateColors.yellow)
+                }
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(PulseColors.StateColors.yellow.opacity(0.12))
+                .clipShape(Capsule())
             }
 
             Spacer()
 
-            HStack(spacing: PulseSpacing.xs) {
-                KryptonStatusPill(label: "SYSTEM", value: globalStatus?.systemState ?? "—", state: systemStateColor)
-                KryptonStatusPill(label: "RISK", value: globalStatus?.riskState ?? "—", state: riskStateColor)
-                KryptonStatusPill(label: "FT", value: "\(globalStatus?.fastTrackLatencyMs ?? 0)ms", state: latencyColor)
-                KryptonStatusPill(label: "FREQTRADE", value: globalStatus?.freqtradeState ?? "—", state: freqtradeColor)
-                KryptonStatusPill(label: "REDIS", value: "\(globalStatus?.redisRttMs ?? 0)ms", state: PulseColors.StateColors.green)
-                KryptonStatusPill(label: "EXCHANGE", value: globalStatus?.exchangeState ?? "—", state: exchangeColor)
-                KryptonStatusPill(label: "POSITIONS", value: "\(globalStatus?.openPositions ?? 0)", state: PulseColors.StateColors.green)
+            HStack(spacing: PulseSpacing.sm) {
+                statusChip(label: "System", value: globalStatus?.systemState ?? "—", dotStatus: systemStatusType)
+                statusChip(label: "Risk", value: globalStatus?.riskState ?? "—", dotStatus: riskStatusType)
+                statusChip(label: "FT", value: "\(globalStatus?.fastTrackLatencyMs ?? 0)ms", dotStatus: latencyStatusType)
+                statusChip(label: "Freqtrade", value: globalStatus?.freqtradeState ?? "—", dotStatus: freqtradeStatusType)
+                statusChip(label: "Redis", value: "\(globalStatus?.redisRttMs ?? 0)ms", dotStatus: .online)
+                statusChip(label: "Exchange", value: globalStatus?.exchangeState ?? "—", dotStatus: exchangeStatusType)
+                statusChip(label: "Positions", value: "\(globalStatus?.openPositions ?? 0)", dotStatus: .online)
 
                 if globalStatus?.emergencyLocked == true {
                     emergencyBadge
@@ -75,30 +75,26 @@ struct GlobalStatusBar: View {
             Circle().fill(colors.textMuted).frame(width: 2, height: 2)
 
             Text(timeFormatter.string(from: currentTime))
-                .font(PulseFonts.monoLabel)
+                .font(PulseFonts.caption)
                 .foregroundStyle(colors.textMuted)
-                .onReceive(pollTimer) { time in currentTime = time }
+                .onReceive(timer) { time in currentTime = time }
 
-            Button {
-                appState.showCommandPalette.toggle()
-            } label: {
+            Button { appState.showCommandPalette.toggle() } label: {
                 Image(systemName: "magnifyingglass")
-                    .font(.system(size: 13))
+                    .font(PulseFonts.body)
                     .foregroundStyle(colors.textMuted)
             }
             .buttonStyle(.plain)
             .keyboardShortcut("k", modifiers: .command)
 
-            Button {
-                showNotifications.toggle()
-            } label: {
+            Button { showNotifications.toggle() } label: {
                 ZStack(alignment: .topTrailing) {
                     Image(systemName: "bell")
-                        .font(.system(size: 13))
+                        .font(PulseFonts.body)
                         .foregroundStyle(colors.textMuted)
                     if let vm = notificationViewModel, vm.unreadCount > 0 {
                         Text(vm.unreadCount > 99 ? "99+" : "\(vm.unreadCount)")
-                            .font(.system(size: 7, weight: .bold))
+                            .font(PulseFonts.micro)
                             .foregroundStyle(.white)
                             .padding(.horizontal, 3)
                             .padding(.vertical, 1)
@@ -118,9 +114,9 @@ struct GlobalStatusBar: View {
             }
         }
         .padding(.horizontal, PulseSpacing.lg)
-        .padding(.vertical, PulseSpacing.md)
+        .frame(height: 40)
         .overlay(alignment: .bottom) {
-            Rectangle().fill(colors.border).frame(height: 1)
+            Rectangle().fill(Color.white.opacity(0.05)).frame(height: 0.5)
         }
         .task {
             if notificationViewModel == nil {
@@ -133,34 +129,19 @@ struct GlobalStatusBar: View {
         }
     }
 
-    private var routeSubtitle: String {
-        switch appState.selectedRoute.section {
-        case .overview: return "AI 多 Agent 总览、风控与执行态势"
-        case .strategy: return "策略工作台、画布与模拟验证"
-        case .structure: return "市场结构、矩阵与操纵雷达"
-        case .execution: return "订单、持仓与对账总线"
-        case .risk: return "止损保护、熔断与风险拦截"
-        case .aiResearch: return "AI 投研、Agent 平台与信号中心"
-        case .growth: return "复盘成长、失败聚类与策略优化"
-        case .system: return "服务、数据源与终端设置"
-        }
-    }
-
     private func reasonBar(codes: [String]) -> some View {
         HStack(spacing: PulseSpacing.xs) {
             Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 10))
+                .font(PulseFonts.monoLabel)
                 .foregroundStyle(PulseColors.StateColors.red)
             Text(codes.joined(separator: " · "))
                 .font(PulseFonts.caption)
                 .foregroundStyle(PulseColors.StateColors.red)
             Spacer()
-            Button("Dismiss") {
-                withAnimation { showReasonBar = false }
-            }
-            .font(PulseFonts.micro)
-            .buttonStyle(.plain)
-            .foregroundStyle(colors.textMuted)
+            Button("Dismiss") { withAnimation { showReasonBar = false } }
+                .font(PulseFonts.micro)
+                .buttonStyle(.plain)
+                .foregroundStyle(colors.textMuted)
         }
         .padding(.horizontal, PulseSpacing.lg)
         .padding(.vertical, PulseSpacing.xxs)
@@ -168,9 +149,17 @@ struct GlobalStatusBar: View {
         .transition(.move(edge: .top).combined(with: .opacity))
     }
 
+    private func statusChip(label: String, value: String, dotStatus: StatusDot.StatusType) -> some View {
+        HStack(spacing: PulseSpacing.xxs) {
+            StatusDot(status: dotStatus)
+            Text(label).font(PulseFonts.micro).foregroundStyle(colors.textMuted)
+            Text(value).font(PulseFonts.micro).foregroundStyle(colors.textPrimary)
+        }
+    }
+
     private var emergencyBadge: some View {
         HStack(spacing: 3) {
-            Image(systemName: "bolt.fill").font(.system(size: 8))
+            Image(systemName: "bolt.fill").font(PulseFonts.micro)
             Text("EMERGENCY").font(PulseFonts.micro)
         }
         .foregroundStyle(PulseColors.StateColors.red)
@@ -180,43 +169,45 @@ struct GlobalStatusBar: View {
         .clipShape(Capsule())
     }
 
-    private var systemStateColor: Color {
-        guard let state = globalStatus?.systemState else { return PulseColors.StateColors.gray }
+    // MARK: - Status Types
+    private var systemStatusType: StatusDot.StatusType {
+        guard let state = globalStatus?.systemState else { return .offline }
         switch state {
-        case "LIVE_READY", "LIVE_SMALL_READY": return PulseColors.StateColors.green
-        case "PAPER_ONLY": return PulseColors.StateColors.yellow
-        case "RISK_LOCKED", "EMERGENCY_LOCKED": return PulseColors.StateColors.red
-        default: return PulseColors.StateColors.gray
+        case "LIVE_READY", "LIVE_SMALL_READY": return .online
+        case "PAPER_ONLY": return .warning
+        case "RISK_LOCKED", "EMERGENCY_LOCKED": return .offline
+        default: return .offline
         }
     }
 
-    private var riskStateColor: Color {
-        guard let state = globalStatus?.riskState else { return PulseColors.StateColors.gray }
+    private var riskStatusType: StatusDot.StatusType {
+        guard let state = globalStatus?.riskState else { return .offline }
         switch state {
-        case "normal": return PulseColors.StateColors.green
-        case "warning": return PulseColors.StateColors.yellow
-        case "blocked", "locked": return PulseColors.StateColors.red
-        default: return PulseColors.StateColors.gray
+        case "normal": return .online
+        case "warning": return .warning
+        case "blocked", "locked": return .offline
+        default: return .offline
         }
     }
 
-    private var latencyColor: Color {
-        guard let ms = globalStatus?.fastTrackLatencyMs else { return PulseColors.StateColors.gray }
-        if ms < 100 { return PulseColors.StateColors.green }
-        if ms < 200 { return PulseColors.StateColors.yellow }
-        return PulseColors.StateColors.red
+    private var latencyStatusType: StatusDot.StatusType {
+        guard let ms = globalStatus?.fastTrackLatencyMs else { return .offline }
+        if ms < 100 { return .online }
+        if ms < 200 { return .warning }
+        return .offline
     }
 
-    private var freqtradeColor: Color {
-        guard let state = globalStatus?.freqtradeState else { return PulseColors.StateColors.gray }
-        return state == "healthy" ? PulseColors.StateColors.green : PulseColors.StateColors.red
+    private var freqtradeStatusType: StatusDot.StatusType {
+        guard let state = globalStatus?.freqtradeState else { return .offline }
+        return state == "healthy" ? .online : .offline
     }
 
-    private var exchangeColor: Color {
-        guard let state = globalStatus?.exchangeState else { return PulseColors.StateColors.gray }
-        return state == "ok" ? PulseColors.StateColors.green : PulseColors.StateColors.yellow
+    private var exchangeStatusType: StatusDot.StatusType {
+        guard let state = globalStatus?.exchangeState else { return .offline }
+        return state == "ok" ? .online : .warning
     }
 
+    // MARK: - Data Loading (Real API)
     private func loadGlobalStatus() async {
         let api = APIOverview(client: networkClient)
         do {

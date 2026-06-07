@@ -98,7 +98,7 @@ struct SignalDetailSheet: View {
     // MARK: - 信号概览
 
     private var signalOverview: some View {
-        ProofAlphaCard(emphasis: .balanced) {
+        KryptonCard(emphasis: .balanced) {
             VStack(spacing: PulseSpacing.md) {
                 HStack(spacing: PulseSpacing.xl) {
                     metricItem(label: "置信度", value: "\(Int(signal.confidence * 100))%", color: confidenceColor)
@@ -245,13 +245,13 @@ struct SignalDetailSheet: View {
     private var actionButtons: some View {
         HStack(spacing: PulseSpacing.sm) {
             if signal.status == "pending" {
-                ProofAlphaButton(title: "激活", action: {
+                KryptonButton(title: "激活", action: {
                     Task { await viewModel.transition(signal.id, to: "active") }
                     onDismiss()
                 })
             }
 
-            ProofAlphaButton(title: "发布为策略", action: {
+            KryptonButton(title: "发布为策略", action: {
                 Task { await viewModel.publishToStrategy(signal.id) }
                 onDismiss()
             }, style: .ghost)
@@ -259,7 +259,7 @@ struct SignalDetailSheet: View {
             Spacer()
 
             if signal.status != "archived" {
-                ProofAlphaButton(title: "归档", action: {
+                KryptonButton(title: "归档", action: {
                     Task { await viewModel.archive(signal.id) }
                     onDismiss()
                 }, style: .ghost)

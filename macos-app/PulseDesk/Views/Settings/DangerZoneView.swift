@@ -23,7 +23,7 @@ struct DangerZoneView: View {
                             .foregroundStyle(colors.textMuted)
                     }
                     Spacer()
-                    ProofAlphaButton(title: "导出", action: {}, style: .ghost)
+                    KryptonButton(title: "导出", action: {}, style: .ghost)
                 }
                 .padding(.vertical, PulseSpacing.xs)
 
@@ -39,7 +39,7 @@ struct DangerZoneView: View {
                             .foregroundStyle(colors.textMuted)
                     }
                     Spacer()
-                    ProofAlphaButton(title: "删除", action: { showDeleteConfirm = true }, style: .ghost)
+                    KryptonButton(title: "删除", action: { showDeleteConfirm = true }, style: .ghost)
                 }
                 .padding(.vertical, PulseSpacing.xs)
             }

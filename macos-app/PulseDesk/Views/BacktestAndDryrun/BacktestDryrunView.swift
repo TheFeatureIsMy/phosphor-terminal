@@ -47,7 +47,7 @@ struct BacktestDryrunView: View {
         } label: {
             HStack(spacing: PulseSpacing.xxs) {
                 Image(systemName: icon)
-                    .font(.system(size: 12))
+                    .font(PulseFonts.label)
                 Text(title)
                     .font(selectedTab == index ? PulseFonts.bodyMedium : PulseFonts.body)
             }
@@ -93,11 +93,11 @@ struct BacktestSectionView: View {
                 // 运行按钮
                 HStack {
                     Spacer()
-                    ProofAlphaButton(
-                        title: isRunning ? "运行中..." : "启动回测",
-                        action: { Task { await runBacktest() } },
-                        style: .primary
-                    )
+                    KryptonButton(
+                            title: isRunning ? "运行中..." : "启动回测",
+                            action: { Task { await runBacktest() } },
+                            style: .primary
+                        )
                     .opacity(isRunning ? 0.5 : 1.0)
                     .allowsHitTesting(!isRunning)
                 }
@@ -123,7 +123,7 @@ struct BacktestSectionView: View {
     // MARK: - 配置区
 
     private var backtestConfigSection: some View {
-        ProofAlphaCard(emphasis: .balanced) {
+        KryptonCard(emphasis: .balanced) {
             VStack(spacing: PulseSpacing.md) {
                 HStack {
                     TerminalLabel(text: "回测配置")
@@ -143,7 +143,7 @@ struct BacktestSectionView: View {
                                 if selectedVersion > 1 { selectedVersion -= 1 }
                             } label: {
                                 Image(systemName: "minus")
-                                    .font(.system(size: 10))
+                                    .font(PulseFonts.monoLabel)
                                     .foregroundStyle(colors.textSecondary)
                             }
                             .buttonStyle(.plain)
@@ -157,7 +157,7 @@ struct BacktestSectionView: View {
                                 selectedVersion += 1
                             } label: {
                                 Image(systemName: "plus")
-                                    .font(.system(size: 10))
+                                    .font(PulseFonts.monoLabel)
                                     .foregroundStyle(colors.textSecondary)
                             }
                             .buttonStyle(.plain)
@@ -237,7 +237,7 @@ struct BacktestSectionView: View {
     }
 
     private func kpiCard(title: String, value: String, color: Color) -> some View {
-        ProofAlphaCard(emphasis: .subtle, cardPadding: PulseSpacing.sm) {
+        KryptonCard(emphasis: .subtle, cardPadding: PulseSpacing.sm) {
             VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
                 Text(title)
                     .font(PulseFonts.monoLabel)
@@ -252,7 +252,7 @@ struct BacktestSectionView: View {
     }
 
     private func equityCurveSection(_ result: BacktestDisplayResult) -> some View {
-        ProofAlphaCard(emphasis: .subtle) {
+        KryptonCard(emphasis: .subtle) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
                 HStack {
                     Text("权益曲线")
@@ -281,7 +281,7 @@ struct BacktestSectionView: View {
     }
 
     private func tradeListSection(_ result: BacktestDisplayResult) -> some View {
-        ProofAlphaCard(emphasis: .subtle, cardPadding: PulseSpacing.sm) {
+        KryptonCard(emphasis: .subtle, cardPadding: PulseSpacing.sm) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
                 HStack {
                     Text("最近交易")
@@ -346,7 +346,7 @@ struct BacktestSectionView: View {
 
             VStack(spacing: PulseSpacing.xs) {
                 ForEach(recentRuns) { run in
-                    ProofAlphaCard(emphasis: .subtle, cardPadding: PulseSpacing.sm) {
+                    KryptonCard(emphasis: .subtle, cardPadding: PulseSpacing.sm) {
                         HStack(spacing: PulseSpacing.md) {
                             // 状态
                             Circle()

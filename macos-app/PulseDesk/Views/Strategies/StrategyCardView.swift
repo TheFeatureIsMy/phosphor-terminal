@@ -1,5 +1,5 @@
 // StrategyCardView.swift — v2.5 策略卡片
-// 使用 ProofAlphaCard 保持与全局卡片风格一致
+// 使用 KryptonCard 保持与全局卡片风格一致
 
 import SwiftUI
 
@@ -11,7 +11,7 @@ struct StrategyCardView: View {
     var onDelete: (() -> Void)?
 
     var body: some View {
-        ProofAlphaCard(emphasis: .balanced) {
+        KryptonCard(emphasis: .balanced) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
                 HStack {
                     HStack(spacing: PulseSpacing.xxs) {
@@ -53,7 +53,7 @@ struct StrategyCardView: View {
                 HStack {
                     Spacer()
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 11, weight: .medium))
+                        .font(PulseFonts.captionMedium)
                         .foregroundStyle(colors.textMuted)
                 }
             }

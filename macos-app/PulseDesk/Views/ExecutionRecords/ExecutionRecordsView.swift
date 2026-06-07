@@ -94,7 +94,7 @@ struct ExecutionRecordsView: View {
                 Task { await vm.load() }
             } label: {
                 Image(systemName: "arrow.clockwise")
-                    .font(.system(size: 12))
+                    .font(PulseFonts.label)
                     .foregroundStyle(colors.textMuted)
             }
             .buttonStyle(.plain)
@@ -178,7 +178,7 @@ struct ExecutionRecordsView: View {
     // MARK: - 运行行
 
     private func runRow(_ run: StrategyRunV2, vm: ExecutionRecordsViewModel) -> some View {
-        ProofAlphaCard(emphasis: .subtle, cardPadding: PulseSpacing.sm) {
+        KryptonCard(emphasis: .subtle, cardPadding: PulseSpacing.sm) {
             HStack(spacing: PulseSpacing.sm) {
                 // 模式徽章
                 modeBadge(run.mode)

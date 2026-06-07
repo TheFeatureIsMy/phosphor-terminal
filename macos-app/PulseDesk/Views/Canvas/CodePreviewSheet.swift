@@ -66,7 +66,7 @@ struct CodePreviewSheet: View {
                             .foregroundStyle(colors.textMuted)
                     }
                 } else {
-                    ProofAlphaButton(title: "部署策略") {
+                    KryptonButton(title: "部署策略") {
                         isDeploying = true
                         onDeploy()
                     }

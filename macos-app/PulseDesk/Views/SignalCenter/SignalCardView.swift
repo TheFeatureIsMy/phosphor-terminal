@@ -8,7 +8,7 @@ struct SignalCardView: View {
     @Environment(PulseColors.self) private var colors
 
     var body: some View {
-        ProofAlphaCard(emphasis: .subtle) {
+        KryptonCard(emphasis: .subtle) {
             HStack(spacing: PulseSpacing.md) {
                 // 左侧：方向箭头
                 directionIcon

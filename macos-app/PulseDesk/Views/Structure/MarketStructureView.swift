@@ -182,7 +182,7 @@ private struct MarketStructureContentView: View {
             TerminalLabel(text: L10n.Structure.zones)
 
             if vm.zones.isEmpty {
-                ProofAlphaCard(emphasis: .subtle) {
+                KryptonCard(emphasis: .subtle) {
                     EmptyStateView(
                         icon: "square.stack.3d.up",
                         title: L10n.Common.noData,
@@ -216,7 +216,7 @@ private struct MarketStructureContentView: View {
             TerminalLabel(text: L10n.Structure.liquidityPools)
 
             if vm.pools.isEmpty {
-                ProofAlphaCard(emphasis: .subtle) {
+                KryptonCard(emphasis: .subtle) {
                     EmptyStateView(
                         icon: "drop.fill",
                         title: L10n.Common.noData,
@@ -246,7 +246,7 @@ private struct MarketStructureContentView: View {
             TerminalLabel(text: L10n.Structure.events)
 
             if vm.events.isEmpty {
-                ProofAlphaCard(emphasis: .subtle) {
+                KryptonCard(emphasis: .subtle) {
                     EmptyStateView(
                         icon: "bolt.fill",
                         title: L10n.Common.noData,
@@ -274,7 +274,7 @@ private struct ZoneCard: View {
     @State private var showPopover = false
 
     var body: some View {
-        ProofAlphaCard(emphasis: .balanced) {
+        KryptonCard(emphasis: .balanced) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
                 // Top: zone type icon + label + direction badge
                 HStack(spacing: PulseSpacing.xs) {
@@ -483,7 +483,7 @@ private struct PoolCard: View {
     @Environment(PulseColors.self) private var colors
 
     var body: some View {
-        ProofAlphaCard(emphasis: .balanced) {
+        KryptonCard(emphasis: .balanced) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
                 // Pool type icon + label
                 HStack(spacing: PulseSpacing.xs) {
@@ -590,7 +590,7 @@ private struct TimelineEventRow: View {
             .frame(width: 12)
 
             // Right side: content card
-            ProofAlphaCard(emphasis: .subtle, cardPadding: PulseSpacing.sm) {
+            KryptonCard(emphasis: .subtle, cardPadding: PulseSpacing.sm) {
                 HStack(spacing: PulseSpacing.sm) {
                     // Event type badge
                     HStack(spacing: 3) {
@@ -681,7 +681,7 @@ private struct SummaryMetricCard<Content: View>: View {
     @Environment(PulseColors.self) private var colors
 
     var body: some View {
-        ProofAlphaCard(emphasis: .subtle) {
+        KryptonCard(emphasis: .subtle) {
             VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
                 Text(label)
                     .font(PulseFonts.micro)

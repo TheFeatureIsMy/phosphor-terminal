@@ -1,5 +1,5 @@
 // GrowthReportCard.swift — 增长报告卡片
-// ProofAlphaCard(.subtle): 报告类型 badge + 时间 + 摘要 + 状态
+// KryptonCard(.subtle): 报告类型 badge + 时间 + 摘要 + 状态
 
 import SwiftUI
 
@@ -8,7 +8,7 @@ struct GrowthReportCard: View {
     let report: GrowthReport
 
     var body: some View {
-        ProofAlphaCard(emphasis: .subtle) {
+        KryptonCard(emphasis: .subtle) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
                 // Header: report_type badge + created_at
                 HStack {

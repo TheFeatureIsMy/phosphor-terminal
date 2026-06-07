@@ -87,7 +87,7 @@ struct StrategyRunsTab: View {
                 Task { await loadRuns() }
             } label: {
                 Image(systemName: "arrow.clockwise")
-                    .font(.system(size: 12))
+                    .font(PulseFonts.label)
                     .foregroundStyle(colors.textMuted)
             }
             .buttonStyle(.plain)
@@ -111,7 +111,7 @@ struct StrategyRunsTab: View {
     }
 
     private func runRow(_ run: StrategyRunV2) -> some View {
-        GlassCard {
+        KryptonCard(emphasis: .bold) {
             HStack(spacing: PulseSpacing.md) {
                 // Mode badge
                 Text(run.mode == "live" ? "实盘" : "模拟")

@@ -26,7 +26,7 @@ struct StrategyCanvasPageView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            topActionBar
+            headerBar
             Divider().overlay(colors.border)
 
             if isLoadingStrategies {
@@ -55,24 +55,57 @@ struct StrategyCanvasPageView: View {
         }
     }
 
-    // MARK: - Top Action Bar
+    // MARK: - Header Bar
 
-    private var topActionBar: some View {
-        CanvasTopActionBar(
-            strategyName: selectedStrategy?.name,
-            strategyStatus: selectedStrategy?.status,
-            strategyVersion: nil,
-            hasDSL: canvasVM?.lastDSL != nil,
-            isSaving: canvasVM?.isSaving ?? false,
-            saveSuccess: canvasVM?.saveSuccess ?? false,
-            validationValid: canvasVM?.validationValid,
-            validationErrors: canvasVM?.validationErrors ?? 0,
-            errorMessage: canvasVM?.error,
-            onCreate: { showCreatePanel = true },
-            onTemplate: { showTemplateLibrary = true },
-            onValidate: { Task { await validateCurrentDSL() } },
-            onSave: { Task { await saveCurrentVersion() } }
-        )
+    private var headerBar: some View {
+        HStack(spacing: PulseSpacing.md) {
+            TerminalLabel(text: "策略画布")
+
+            if let strategy = selectedStrategy {
+                HStack(spacing: PulseSpacing.xs) {
+                    Circle()
+                        .fill(statusColor(strategy.status))
+                        .frame(width: 6, height: 6)
+                    Text(strategy.name)
+                        .font(PulseFonts.bodyMedium)
+                        .foregroundStyle(colors.textPrimary)
+                        .lineLimit(1)
+                }
+                .padding(.horizontal, PulseSpacing.xs)
+                .padding(.vertical, PulseSpacing.xxs)
+                .background(
+                    RoundedRectangle(cornerRadius: PulseRadii.sm)
+                        .fill(colors.surface)
+                )
+            }
+
+            Spacer()
+
+            HStack(spacing: PulseSpacing.xs) {
+                KryptonButton(title: "新建策略", action: {
+                    showCreatePanel = true
+                }, style: .ghost)
+
+                KryptonButton(title: "模板库", action: {
+                    showTemplateLibrary = true
+                }, style: .ghost)
+
+                KryptonButton(title: "验证", action: {
+                    Task { await validateCurrentDSL() }
+                }, style: .ghost)
+                .disabled(canvasVM == nil || canvasVM?.lastDSL == nil)
+                .opacity(canvasVM?.lastDSL == nil ? 0.5 : 1)
+
+                KryptonButton(title: "保存", action: {
+                    Task { await saveCurrentVersion() }
+                })
+                .disabled(canvasVM == nil || canvasVM?.lastDSL == nil)
+                .opacity(canvasVM?.lastDSL == nil ? 0.5 : 1)
+            }
+        }
+        .padding(.horizontal, PulseSpacing.lg)
+        .padding(.vertical, PulseSpacing.sm)
+        .background(colors.surfaceElevated.opacity(0.5))
     }
 
     // MARK: - Main Content (Sidebar + Canvas + DSL Preview)
@@ -90,6 +123,9 @@ struct StrategyCanvasPageView: View {
                 if let vm = canvasVM {
                     CanvasWebView(viewModel: vm)
                         .clipShape(RoundedRectangle(cornerRadius: PulseRadii.xs))
+
+                    // Saving/status overlay
+                    canvasStatusOverlay(vm: vm)
                 } else {
                     canvasPlaceholder
                 }
@@ -99,15 +135,9 @@ struct StrategyCanvasPageView: View {
             // Right: DSL Preview Panel (toggleable)
             if showDSLPreview {
                 Divider().overlay(colors.border)
-                CanvasDSLPreviewPanel(
-                    dslText: dslPreviewText,
-                    onCopy: { copyDSLToClipboard() },
-                    onClose: {
-                        withAnimation(PulseAnimation.springDefault) { showDSLPreview = false }
-                    }
-                )
-                .frame(width: 320)
-                .transition(.move(edge: .trailing).combined(with: .opacity))
+                dslPreviewPanel
+                    .frame(width: 320)
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
             }
         }
         .animation(PulseAnimation.springDefault, value: showDSLPreview)
@@ -168,7 +198,7 @@ struct StrategyCanvasPageView: View {
         }) {
             HStack(spacing: PulseSpacing.xs) {
                 Circle()
-                    .fill(strategy.status == "active" ? KryptonColor.green : strategy.status == "draft" ? KryptonColor.amber : colors.textMuted)
+                    .fill(statusColor(strategy.status))
                     .frame(width: 6, height: 6)
 
                 VStack(alignment: .leading, spacing: 2) {
@@ -204,6 +234,54 @@ struct StrategyCanvasPageView: View {
         .buttonStyle(.plain)
     }
 
+    // MARK: - Canvas Status Overlay
+
+    private func canvasStatusOverlay(vm: CanvasWebViewModel) -> some View {
+        VStack {
+            HStack(spacing: PulseSpacing.sm) {
+                Spacer()
+                if vm.isSaving {
+                    HStack(spacing: 4) {
+                        ProgressView().controlSize(.small)
+                        Text("保存中...")
+                            .font(PulseFonts.caption)
+                            .foregroundStyle(colors.textSecondary)
+                    }
+                    .padding(.horizontal, 10).padding(.vertical, 5)
+                    .background(
+                        RoundedRectangle(cornerRadius: PulseRadii.sm)
+                            .fill(colors.surfaceElevated)
+                    )
+                }
+                if vm.saveSuccess {
+                    Text("✓ 已保存")
+                        .font(PulseFonts.caption)
+                        .foregroundStyle(PulseColors.accent)
+                        .padding(.horizontal, 10).padding(.vertical, 5)
+                        .background(
+                            RoundedRectangle(cornerRadius: PulseRadii.sm)
+                                .fill(PulseColors.accent.opacity(0.1))
+                        )
+                }
+                if let error = vm.error {
+                    Text(error)
+                        .font(PulseFonts.caption)
+                        .foregroundStyle(PulseColors.danger)
+                        .lineLimit(1)
+                        .padding(.horizontal, 10).padding(.vertical, 5)
+                        .background(
+                            RoundedRectangle(cornerRadius: PulseRadii.sm)
+                                .fill(PulseColors.danger.opacity(0.1))
+                        )
+                }
+            }
+            .padding(.horizontal, PulseSpacing.md)
+            .padding(.top, PulseSpacing.xs)
+
+            Spacer()
+        }
+    }
+
     // MARK: - Canvas Placeholder
 
     private var canvasPlaceholder: some View {
@@ -221,6 +299,72 @@ struct StrategyCanvasPageView: View {
                 .foregroundStyle(colors.textMuted.opacity(0.6))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    // MARK: - DSL Preview Panel
+
+    private var dslPreviewPanel: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Panel header
+            HStack {
+                HStack(spacing: PulseSpacing.xxs) {
+                    Image(systemName: "chevron.left.forwardslash.chevron.right")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(PulseColors.accent)
+                    Text("CODE PREVIEW")
+                        .font(PulseFonts.monoLabel)
+                        .foregroundStyle(colors.textMuted)
+                        .tracking(1.0)
+                }
+
+                Spacer()
+
+                Button(action: { copyDSLToClipboard() }) {
+                    Image(systemName: "doc.on.doc")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(colors.textSecondary)
+                        .frame(width: 22, height: 22)
+                        .background(
+                            RoundedRectangle(cornerRadius: PulseRadii.xs)
+                                .fill(colors.surface)
+                        )
+                }
+                .buttonStyle(.plain)
+                .help("复制 DSL")
+
+                Button(action: {
+                    withAnimation(PulseAnimation.springDefault) {
+                        showDSLPreview = false
+                    }
+                }) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 9, weight: .medium))
+                        .foregroundStyle(colors.textMuted)
+                        .frame(width: 22, height: 22)
+                        .background(
+                            RoundedRectangle(cornerRadius: PulseRadii.xs)
+                                .fill(colors.surface)
+                        )
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, PulseSpacing.sm)
+            .padding(.vertical, PulseSpacing.xs)
+
+            Divider().overlay(colors.border)
+
+            // DSL content
+            ScrollView(.vertical, showsIndicators: true) {
+                Text(dslPreviewText.isEmpty ? "// 画布变更后，DSL 代码将在此处实时预览\n// Edit the canvas to see DSL output" : dslPreviewText)
+                    .font(PulseFonts.body)
+                    .foregroundStyle(dslPreviewText.isEmpty ? colors.textMuted : colors.textSecondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(PulseSpacing.sm)
+                    .textSelection(.enabled)
+            }
+            .background(colors.background.opacity(0.5))
+        }
+        .background(colors.surface.opacity(0.3))
     }
 
     // MARK: - Validation Status Bar
@@ -517,6 +661,17 @@ struct StrategyCanvasPageView: View {
         NSPasteboard.general.setString(dslPreviewText, forType: .string)
     }
 
+    // MARK: - Helpers
+
+    private func statusColor(_ status: String) -> Color {
+        switch status {
+        case "active": return PulseColors.accent
+        case "draft": return PulseColors.amber
+        case "paused": return Color.orange
+        case "archived": return colors.textMuted
+        default: return colors.textMuted
+        }
+    }
 }
 
 // MARK: - Preview

@@ -7,7 +7,7 @@ struct ToastOverlayView: View {
 
     var body: some View {
         VStack(spacing: PulseSpacing.xs) {
-            ForEach(toastManager.toasts) { toast in
+            ForEach(Array(toastManager.toasts.enumerated()), id: \.element.id) { index, toast in
                 HStack(spacing: PulseSpacing.sm) {
                     Image(systemName: toast.type.icon)
                         .font(.system(size: 14))
@@ -24,6 +24,7 @@ struct ToastOverlayView: View {
                 .background(.ultraThinMaterial)
                 .clipShape(RoundedRectangle(cornerRadius: PulseRadii.sm))
                 .transition(.move(edge: .top).combined(with: .opacity))
+                .staggeredAppearance(index: index, baseDelay: 0.02)
             }
             Spacer()
         }

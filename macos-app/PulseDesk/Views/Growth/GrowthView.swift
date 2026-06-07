@@ -131,7 +131,7 @@ struct GrowthView: View {
             HStack {
                 TerminalLabel(text: "分析报告")
                 Spacer()
-                ProofAlphaButton(title: "运行日报", action: {
+                KryptonButton(title: "运行日报", action: {
                     Task { await vm.runDailyReview() }
                 })
             }
@@ -227,7 +227,7 @@ struct GrowthView: View {
         VStack(alignment: .leading, spacing: PulseSpacing.sm) {
             TerminalLabel(text: "SHAP 特征重要性")
 
-            ProofAlphaCard(emphasis: .subtle) {
+            KryptonCard(emphasis: .subtle) {
                 VStack(alignment: .leading, spacing: PulseSpacing.sm) {
                     Text("全局特征对交易决策的影响程度")
                         .font(PulseFonts.caption)
@@ -281,7 +281,7 @@ struct GrowthView: View {
         VStack(alignment: .leading, spacing: PulseSpacing.sm) {
             TerminalLabel(text: "Signal 有效性追踪")
 
-            ProofAlphaCard(emphasis: .subtle) {
+            KryptonCard(emphasis: .subtle) {
                 VStack(alignment: .leading, spacing: PulseSpacing.sm) {
                     Text("各来源信号预测准确率（\(selectedPeriod.rawValue)）")
                         .font(PulseFonts.caption)
@@ -324,7 +324,7 @@ struct GrowthView: View {
             }
 
             // Summary stats
-            ProofAlphaCard(emphasis: .subtle) {
+            KryptonCard(emphasis: .subtle) {
                 HStack(spacing: PulseSpacing.lg) {
                     validityStat(label: "总信号数", value: "156", color: PulseColors.info)
                     validityStat(label: "平均准确率", value: "63.2%", color: PulseColors.accent)

@@ -20,7 +20,7 @@ struct StrategyCreatePanel: View {
                 Spacer()
                 Button(action: onCancel) {
                     Image(systemName: "xmark")
-                        .font(.system(size: 11, weight: .medium))
+                        .font(PulseFonts.captionMedium)
                         .foregroundStyle(colors.textMuted)
                         .frame(width: 24, height: 24)
                         .background(colors.surface)
@@ -39,7 +39,7 @@ struct StrategyCreatePanel: View {
 
             HStack(spacing: PulseSpacing.xxs) {
                 Image(systemName: "lightbulb")
-                    .font(.system(size: 9))
+                    .font(PulseFonts.micro)
                     .foregroundStyle(PulseColors.amber)
                 Text("创建后进入详情页，在 DSL 规则中编写策略逻辑")
                     .font(PulseFonts.micro)
@@ -56,9 +56,9 @@ struct StrategyCreatePanel: View {
             )
 
             HStack {
-                ProofAlphaButton(title: "取消", action: onCancel, style: .ghost)
+                KryptonButton(title: "取消", action: onCancel, style: .ghost)
                 Spacer()
-                ProofAlphaButton(title: isCreating ? "创建中..." : "创建策略") {
+                KryptonButton(title: isCreating ? "创建中..." : "创建策略") {
                     Task { await doCreate() }
                 }
                 .opacity(name.isEmpty ? 0.5 : 1)

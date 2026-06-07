@@ -213,7 +213,7 @@ struct StopProtectionView: View {
     private func positionCard(_ position: PositionStopResponse) -> some View {
         let sideColor = position.side.lowercased() == "long" ? PulseColors.StateColors.green : PulseColors.StateColors.red
 
-        return ProofAlphaCard(emphasis: .balanced) {
+        return KryptonCard(emphasis: .balanced) {
             VStack(alignment: .leading, spacing: PulseSpacing.md) {
                 // Top: Symbol + Side + Volatility Lock
                 HStack(alignment: .center) {

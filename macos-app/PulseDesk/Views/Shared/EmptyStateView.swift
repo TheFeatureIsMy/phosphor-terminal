@@ -30,10 +30,10 @@ struct EmptyStateView: View {
 
             HStack(spacing: PulseSpacing.sm) {
                 if let primaryAction {
-                    ProofAlphaButton(title: primaryAction.title, action: primaryAction.action)
+                    KryptonButton(title: primaryAction.title, action: primaryAction.action)
                 }
                 if let secondaryAction {
-                    ProofAlphaButton(title: secondaryAction.title, action: secondaryAction.action, style: .ghost)
+                    KryptonButton(title: secondaryAction.title, action: secondaryAction.action, style: .ghost)
                 }
             }
         }

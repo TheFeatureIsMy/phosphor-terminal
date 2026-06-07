@@ -90,7 +90,7 @@ private struct SignalCenterContent: View {
 
             Spacer()
 
-            ProofAlphaButton(title: "新建信号", action: { showCreateSheet = true }, style: .ghost)
+            KryptonButton(title: "新建信号", action: { showCreateSheet = true }, style: .ghost)
         }
         .padding(.horizontal, PulseSpacing.lg)
         .padding(.vertical, PulseSpacing.sm)

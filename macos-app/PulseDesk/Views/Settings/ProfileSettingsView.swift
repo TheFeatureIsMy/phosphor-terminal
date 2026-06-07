@@ -21,7 +21,7 @@ struct ProfileSettingsView: View {
                 .frame(width: 56, height: 56)
                 .overlay(
                     Text(String((authState.user?.name ?? "T").prefix(1)).uppercased())
-                        .font(.system(size: 22, weight: .semibold, design: .rounded))
+                        .font(PulseFonts.monoLarge)
                         .foregroundStyle(PulseColors.accent)
                 )
                 .padding(.bottom, PulseSpacing.xs)
@@ -44,7 +44,7 @@ struct ProfileSettingsView: View {
             .cardStyle()
 
             if hasChanges {
-                ProofAlphaButton(title: "保存") {
+                KryptonButton(title: "保存") {
                     // stub save action
                     hasChanges = false
                 }

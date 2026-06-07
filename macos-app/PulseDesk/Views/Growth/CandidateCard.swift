@@ -1,5 +1,5 @@
 // CandidateCard.swift — 候选策略卡片
-// ProofAlphaCard(.balanced): 置信度 + 状态 + DSL 预览 + 操作按钮
+// KryptonCard(.balanced): 置信度 + 状态 + DSL 预览 + 操作按钮
 
 import SwiftUI
 
@@ -10,7 +10,7 @@ struct CandidateCard: View {
     var onConfirm: (() -> Void)?
 
     var body: some View {
-        ProofAlphaCard(emphasis: .balanced) {
+        KryptonCard(emphasis: .balanced) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
                 // Header: name + status badge
                 HStack {
@@ -65,8 +65,8 @@ struct CandidateCard: View {
                 if candidate.status != "confirmed" && candidate.status != "rejected" {
                     HStack(spacing: PulseSpacing.sm) {
                         Spacer()
-                        ProofAlphaButton(title: "回测", action: { onBacktest?() }, style: .ghost)
-                        ProofAlphaButton(title: "确认", action: { onConfirm?() })
+                        KryptonButton(title: "回测", action: { onBacktest?() }, style: .ghost)
+                        KryptonButton(title: "确认", action: { onConfirm?() })
                     }
                 }
             }

@@ -19,7 +19,7 @@ struct AgentCardView: View {
     private let maxDisplayedSignals = 2
 
     var body: some View {
-        ProofAlphaCard(emphasis: .balanced) {
+        KryptonCard(emphasis: .balanced) {
             VStack(alignment: .leading, spacing: PulseSpacing.md) {
                 // 顶部：名称 + 状态
                 HStack(spacing: PulseSpacing.sm) {
@@ -64,7 +64,7 @@ struct AgentCardView: View {
                     if weight > 0 {
                         HStack(spacing: 2) {
                             Image(systemName: "number")
-                                .font(.system(size: 8))
+                                .font(PulseFonts.micro)
                                 .foregroundStyle(colors.textMuted)
                             Text("\(weight)")
                                 .font(PulseFonts.captionMedium)
@@ -88,7 +88,7 @@ struct AgentCardView: View {
                         }
                     } label: {
                         Image(systemName: "ellipsis")
-                            .font(.system(size: 12))
+                            .font(PulseFonts.label)
                             .foregroundStyle(colors.textMuted)
                             .frame(width: 24, height: 24)
                             .background(colors.surface)
@@ -154,7 +154,7 @@ struct AgentCardView: View {
         HStack(spacing: PulseSpacing.xs) {
             // 方向指示
             Image(systemName: directionIcon(signal.direction))
-                .font(.system(size: 9))
+                .font(PulseFonts.micro)
                 .foregroundStyle(directionColor(signal.direction))
 
             Text(signal.symbol)

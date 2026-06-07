@@ -38,7 +38,7 @@ struct StrategyDSLTab: View {
             }
 
             TextEditor(text: $viewModel.dslText)
-                .font(.system(size: 12, design: .monospaced))
+                .font(PulseFonts.label)
                 .foregroundStyle(colors.textPrimary)
                 .scrollContentBackground(.hidden)
                 .padding(PulseSpacing.sm)
@@ -65,13 +65,13 @@ struct StrategyDSLTab: View {
 
     private var actionBar: some View {
         HStack(spacing: PulseSpacing.sm) {
-            ProofAlphaButton(title: viewModel.isValidating ? "验证中..." : "验证 DSL") {
+            KryptonButton(title: viewModel.isValidating ? "验证中..." : "验证 DSL") {
                 Task { await viewModel.validateDSL() }
             }
             .disabled(viewModel.isValidating || viewModel.dslText.isEmpty)
 
             if viewModel.canSaveVersion {
-                ProofAlphaButton(title: viewModel.isSavingVersion ? "保存中..." : "保存为新版本") {
+                KryptonButton(title: viewModel.isSavingVersion ? "保存中..." : "保存为新版本") {
                     Task { await viewModel.saveVersion() }
                 }
                 .disabled(viewModel.isSavingVersion)

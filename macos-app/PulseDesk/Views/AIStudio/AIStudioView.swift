@@ -63,7 +63,7 @@ struct AIStudioView: View {
     // MARK: - 研究输入区
 
     private var researchInputSection: some View {
-        ProofAlphaCard(emphasis: .balanced) {
+        KryptonCard(emphasis: .balanced) {
             VStack(spacing: PulseSpacing.md) {
                 HStack(spacing: PulseSpacing.md) {
                     // 标的选择
@@ -157,7 +157,7 @@ struct AIStudioView: View {
                 HStack {
                     Spacer()
 
-                    ProofAlphaButton(
+                    KryptonButton(
                         title: "开始研究",
                         action: { Task { await startResearch() } },
                         style: .primary
@@ -172,7 +172,7 @@ struct AIStudioView: View {
     // MARK: - 研究中指示器
 
     private var researchingIndicator: some View {
-        ProofAlphaCard(emphasis: .subtle) {
+        KryptonCard(emphasis: .subtle) {
             HStack(spacing: PulseSpacing.sm) {
                 ProgressView()
                     .controlSize(.small)
@@ -213,7 +213,7 @@ struct AIStudioView: View {
     }
 
     private func perspectiveCard(_ perspective: ResearchPerspective) -> some View {
-        ProofAlphaCard(emphasis: .subtle) {
+        KryptonCard(emphasis: .subtle) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
                 // 标题行
                 HStack {
@@ -276,7 +276,7 @@ struct AIStudioView: View {
                 TerminalLabel(text: "最终评级")
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                ProofAlphaCard(emphasis: .bold) {
+                KryptonCard(emphasis: .bold) {
                     VStack(spacing: PulseSpacing.md) {
                         HStack(spacing: PulseSpacing.lg) {
                             // 方向
@@ -340,13 +340,13 @@ struct AIStudioView: View {
         HStack(spacing: PulseSpacing.md) {
             Spacer()
 
-            ProofAlphaButton(title: creatingDraft ? "生成中..." : "生成策略草稿", action: {
+            KryptonButton(title: creatingDraft ? "生成中..." : "生成策略草稿", action: {
                 Task { await createStrategyDraft(result) }
             }, style: .ghost)
             .opacity(creatingDraft ? 0.5 : 1)
             .disabled(creatingDraft)
 
-            ProofAlphaButton(title: publishingSignal ? "发布中..." : "发布为信号", action: {
+            KryptonButton(title: publishingSignal ? "发布中..." : "发布为信号", action: {
                 Task { await publishAsSignal(result) }
             }, style: .primary)
             .opacity(publishingSignal ? 0.5 : 1)

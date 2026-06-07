@@ -30,7 +30,7 @@ struct StrategyGrowthTab: View {
     // MARK: - Performance Overview
 
     private var performanceSection: some View {
-        ProofAlphaCard(emphasis: .subtle) {
+        KryptonCard(emphasis: .subtle) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
                 TerminalLabel(text: "策略性能")
 
@@ -54,7 +54,7 @@ struct StrategyGrowthTab: View {
     // MARK: - SHAP Feature Importance
 
     private var shapSection: some View {
-        ProofAlphaCard(emphasis: .subtle) {
+        KryptonCard(emphasis: .subtle) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
                 TerminalLabel(text: "SHAP 特征重要性")
 

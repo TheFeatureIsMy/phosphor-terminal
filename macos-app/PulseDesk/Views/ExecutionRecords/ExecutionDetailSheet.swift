@@ -85,7 +85,7 @@ struct ExecutionDetailSheet: View {
     // MARK: - 运行信息头
 
     private var runInfoHeader: some View {
-        ProofAlphaCard(emphasis: .subtle, cardPadding: PulseSpacing.sm) {
+        KryptonCard(emphasis: .subtle, cardPadding: PulseSpacing.sm) {
             HStack(spacing: PulseSpacing.md) {
                 // 模式
                 VStack(alignment: .leading, spacing: 2) {
@@ -200,7 +200,7 @@ struct ExecutionDetailSheet: View {
                 )
                 .frame(height: 200)
             } else {
-                ProofAlphaCard(emphasis: .subtle, cardPadding: PulseSpacing.md) {
+                KryptonCard(emphasis: .subtle, cardPadding: PulseSpacing.md) {
                     VStack(alignment: .leading, spacing: 0) {
                         // 表头
                         ordersHeader
@@ -301,7 +301,7 @@ struct ExecutionDetailSheet: View {
         let balance = dict["balance"] as? Double ?? 0
         let createdAt = dict["created_at"] as? String ?? ""
 
-        return ProofAlphaCard(emphasis: .subtle, cardPadding: PulseSpacing.sm) {
+        return KryptonCard(emphasis: .subtle, cardPadding: PulseSpacing.sm) {
             HStack(spacing: PulseSpacing.sm) {
                 // 时间线指示器
                 VStack(spacing: 0) {
@@ -405,11 +405,11 @@ struct ExecutionDetailSheet: View {
             .frame(width: 16)
 
             // Step card
-            ProofAlphaCard(emphasis: .subtle, cardPadding: PulseSpacing.sm) {
+            KryptonCard(emphasis: .subtle, cardPadding: PulseSpacing.sm) {
                 VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
                     HStack {
                         Image(systemName: step.icon)
-                            .font(.system(size: 11))
+                            .font(PulseFonts.caption)
                             .foregroundStyle(step.color)
                         Text(step.typeName)
                             .font(PulseFonts.captionMedium)

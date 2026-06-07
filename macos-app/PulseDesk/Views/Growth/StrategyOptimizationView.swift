@@ -59,11 +59,11 @@ struct StrategyOptimizationView: View {
     // MARK: - Safety Workflow Banner
 
     private var safetyWorkflowBanner: some View {
-        ProofAlphaCard(emphasis: .balanced) {
+        KryptonCard(emphasis: .balanced) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
                 HStack(spacing: PulseSpacing.xs) {
                     Image(systemName: "shield.checkered")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(PulseFonts.headline)
                         .foregroundStyle(PulseColors.accent)
                     Text("安全工作流 — 候选策略不可直接上线")
                         .font(PulseFonts.captionMedium)
@@ -117,7 +117,7 @@ struct StrategyOptimizationView: View {
                 // Warning text
                 HStack(spacing: PulseSpacing.xxs) {
                     Image(systemName: "exclamationmark.triangle.fill")
-                        .font(.system(size: 9))
+                        .font(PulseFonts.micro)
                         .foregroundStyle(PulseColors.warning)
                     Text("候选策略必须经过完整流程审核，不可跳过任何步骤直接部署至实盘")
                         .font(PulseFonts.micro)
@@ -162,7 +162,7 @@ struct StrategyOptimizationView: View {
     }
 
     private func summaryCard(label: String, value: String, color: Color) -> some View {
-        ProofAlphaCard(emphasis: .subtle) {
+        KryptonCard(emphasis: .subtle) {
             VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
                 Text(label)
                     .font(PulseFonts.micro)
@@ -268,7 +268,7 @@ struct StrategyOptimizationView: View {
     // MARK: - Candidate Card
 
     private func candidateCard(candidate: StrategyCandidate, isPending: Bool, vm: StrategyOptimizationViewModel) -> some View {
-        ProofAlphaCard(emphasis: .subtle) {
+        KryptonCard(emphasis: .subtle) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
                 // Header: name + status badge
                 HStack {
@@ -324,7 +324,7 @@ struct StrategyOptimizationView: View {
                 if let reasoning = extractDslString(candidate.dsl, key: "reasoning"), !reasoning.isEmpty {
                     HStack(alignment: .top, spacing: PulseSpacing.xs) {
                         Image(systemName: "brain.fill")
-                            .font(.system(size: 10))
+                            .font(PulseFonts.monoLabel)
                             .foregroundStyle(PulseColors.purple)
                         Text(reasoning)
                             .font(PulseFonts.caption)
@@ -351,9 +351,9 @@ struct StrategyOptimizationView: View {
 
                     if isPending {
                         HStack(spacing: PulseSpacing.xs) {
-                            ProofAlphaButton(title: "回测", action: {}, style: .ghost)
-                            ProofAlphaButton(title: "拒绝", action: {}, style: .ghost)
-                            ProofAlphaButton(title: "确认", action: {
+                            KryptonButton(title: "回测", action: {}, style: .ghost)
+                            KryptonButton(title: "拒绝", action: {}, style: .ghost)
+                            KryptonButton(title: "确认", action: {
                                 Task { await vm.confirmCandidate(candidate.id) }
                             })
                         }
