@@ -319,6 +319,8 @@ struct KryptonCard<Content: View>: View {
                         }
                     }
                     .padding(cardPadding)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(colors.background.opacity(0.85))
                 }
             }
     }
