@@ -84,18 +84,27 @@ struct StatusDot: View {
     let status: StatusType
 
     enum StatusType {
-        case online, offline, loading
+        case online, offline, loading, warning
 
         var color: Color {
             switch self {
             case .online: return PulseColors.statusActive
             case .offline: return PulseColors.statusError
             case .loading: return PulseColors.cyan
+            case .warning: return PulseColors.warning
             }
         }
     }
 
     @State private var isPulsing = false
+
+    private var pulseDuration: Double {
+        switch status {
+        case .offline: return 0
+        case .online, .warning: return 3.6
+        case .loading: return 1.2
+        }
+    }
 
     var body: some View {
         ZStack {
@@ -106,7 +115,7 @@ struct StatusDot: View {
                 .scaleEffect(isPulsing ? 1.8 : 1.0)
                 .opacity(isPulsing ? 0 : 0.75)
                 .animation(
-                    .easeOut(duration: 1.2)
+                    .easeOut(duration: pulseDuration)
                     .repeatForever(autoreverses: false),
                     value: isPulsing
                 )
