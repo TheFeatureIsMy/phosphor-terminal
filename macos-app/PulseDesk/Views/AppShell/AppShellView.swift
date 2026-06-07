@@ -13,6 +13,7 @@ struct AppShellView: View {
 
     @State private var dashboardVM: DashboardViewModel?
     @State private var strategiesVM: StrategiesViewModel?
+    @State private var previousWorkspaceIndex: Int = 0
 
     var body: some View {
         GlassEffectContainer {
@@ -23,11 +24,16 @@ struct AppShellView: View {
                 // 右侧：工具栏 + 内容区
                 VStack(spacing: 0) {
                     GlobalStatusBar()
-                    detailContent
-                        .id(appState.selectedRoute)
-                        .contentTransition(.opacity)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .animation(PulseAnimation.easeOutMedium, value: appState.selectedRoute)
+                    ZStack {
+                        detailContent
+                            .id(appState.selectedRoute)
+                            .transition(.asymmetric(
+                                insertion: .move(edge: .trailing).combined(with: .opacity).combined(with: .scale(scale: 0.92)),
+                                removal: .scale(scale: 0.92).combined(with: .opacity)
+                            ))
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .animation(PulseAnimation.workspaceTransition, value: appState.selectedRoute)
                 }
             }
         }
