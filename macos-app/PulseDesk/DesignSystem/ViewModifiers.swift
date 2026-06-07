@@ -150,34 +150,32 @@ struct PressEffectModifier: ViewModifier {
     }
 }
 
-// MARK: - 骨架屏 Shimmer
+// MARK: - 骨架屏 Shimmer (TimelineView 驱动，离屏零开销)
 struct ShimmerModifier: ViewModifier {
     @Environment(PulseColors.self) private var colors
-    @State private var phase: CGFloat = 0
 
     func body(content: Content) -> some View {
         content
             .overlay(
                 GeometryReader { geometry in
-                    LinearGradient(
-                        stops: [
-                            .init(color: .clear, location: phase - 0.3),
-                            .init(color: colors.surfaceHover, location: phase),
-                            .init(color: .clear, location: phase + 0.3),
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                    .frame(width: geometry.size.width * 2)
-                    .offset(x: -geometry.size.width + geometry.size.width * 2 * phase)
+                    TimelineView(.animation) { timeline in
+                        let phase = timeline.date.timeIntervalSince1970
+                            .truncatingRemainder(dividingBy: 1.5) / 1.5
+                        LinearGradient(
+                            stops: [
+                                .init(color: .clear, location: max(0, phase - 0.3)),
+                                .init(color: colors.surfaceHover, location: phase),
+                                .init(color: .clear, location: min(1, phase + 0.3)),
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                        .frame(width: geometry.size.width * 2)
+                        .offset(x: -geometry.size.width + geometry.size.width * 2 * phase)
+                    }
                 }
                 .mask(content)
             )
-            .onAppear {
-                withAnimation(.linear(duration: 1.5).repeatForever(autoreverses: false)) {
-                    phase = 1.0
-                }
-            }
     }
 }
 
