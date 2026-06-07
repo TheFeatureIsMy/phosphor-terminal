@@ -16,6 +16,9 @@ struct SidebarView: View {
 
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 1) {
+                    // 顶部留白防止紧贴 Logo
+                    Spacer().frame(height: 8)
+
                     ForEach(Array(SidebarSection.allCases.enumerated()), id: \.element) { index, section in
                         let routes = AppRoute.allCases.filter { $0.section == section && $0.sidebarVisible }
                         if !routes.isEmpty {
@@ -40,7 +43,6 @@ struct SidebarView: View {
                 }
                 .padding(.horizontal, 6)
             }
-            .scrollEdgeEffectStyle(.hard, for: .vertical)
 
             Spacer(minLength: 0)
             sidebarFooter
@@ -53,39 +55,43 @@ struct SidebarView: View {
     }
 
     private var logoHeader: some View {
-        HStack(spacing: PulseSpacing.xs) {
-            Button { appState.toggleSidebar() } label: {
-                HStack(spacing: PulseSpacing.xs) {
-                    ZStack {
-                        if isLogoHovered {
-                            PulseRing(color: PulseColors.accent.opacity(0.6), size: 48)
-                        }
-                        AlphaLoopLogoView()
-                            .frame(width: 32, height: 32)
-                    }
-                    if !appState.sidebarCollapsed {
-                        L10nText("弈机", en: "AlphaLoop")
-                            .font(PulseFonts.displaySubheading)
-                            .foregroundStyle(colors.textPrimary)
-                            .transition(.opacity.combined(with: .move(edge: .leading)))
-                    }
-                }
-            }
-            .buttonStyle(.plain)
-            .onHover { hovering in
-                withAnimation(PulseAnimation.easeOutFast) { isLogoHovered = hovering }
-            }
-            Spacer()
-            if !appState.sidebarCollapsed {
+        VStack(spacing: 0) {
+            HStack(spacing: PulseSpacing.xs) {
                 Button { appState.toggleSidebar() } label: {
-                    Image(systemName: "sidebar.left").font(.system(size: 12)).foregroundStyle(colors.textMuted)
+                    HStack(spacing: PulseSpacing.xs) {
+                        ZStack {
+                            if isLogoHovered {
+                                PulseRing(color: PulseColors.accent.opacity(0.6), size: 52)
+                            }
+                            AlphaLoopLogoView()
+                                .frame(width: 36, height: 36)
+                        }
+                        if !appState.sidebarCollapsed {
+                            L10nText("弈机", en: "AlphaLoop")
+                                .font(PulseFonts.displayHeading)
+                                .foregroundStyle(colors.textPrimary)
+                                .transition(.opacity.combined(with: .move(edge: .leading)))
+                        }
+                    }
                 }
-                .buttonStyle(.plain).transition(.opacity)
+                .buttonStyle(.plain)
+                .onHover { hovering in
+                    withAnimation(PulseAnimation.easeOutFast) { isLogoHovered = hovering }
+                }
+                Spacer()
+                if !appState.sidebarCollapsed {
+                    Button { appState.toggleSidebar() } label: {
+                        Image(systemName: "sidebar.left").font(.system(size: 12)).foregroundStyle(colors.textMuted)
+                    }
+                    .buttonStyle(.plain).transition(.opacity)
+                }
             }
+            .padding(.horizontal, PulseSpacing.sm)
+            .padding(.vertical, PulseSpacing.sm)
+            .frame(height: 68)
+
+            Divider().foregroundStyle(colors.border).opacity(0.5)
         }
-        .padding(.horizontal, PulseSpacing.sm)
-        .padding(.top, 28)
-        .frame(height: 64)
         .background(colors.background)
         .zIndex(1)
     }
