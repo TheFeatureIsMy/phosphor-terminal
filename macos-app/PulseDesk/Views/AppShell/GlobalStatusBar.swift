@@ -44,8 +44,8 @@ struct GlobalStatusBar: View {
 
             // Mock mode indicator
             if !appState.isLiveMode {
-                HStack(spacing: 3) {
-                    Circle().fill(PulseColors.StateColors.yellow).frame(width: 5, height: 5)
+                HStack(spacing: PulseSpacing.xxs) {
+                    StatusDot(status: .warning)
                     Text("MOCK")
                         .font(PulseFonts.micro)
                         .foregroundStyle(PulseColors.StateColors.yellow)
@@ -59,13 +59,13 @@ struct GlobalStatusBar: View {
             Spacer()
 
             HStack(spacing: PulseSpacing.sm) {
-                statusChip(label: "System", value: globalStatus?.systemState ?? "—", state: systemStateColor)
-                statusChip(label: "Risk", value: globalStatus?.riskState ?? "—", state: riskStateColor)
-                statusChip(label: "FT", value: "\(globalStatus?.fastTrackLatencyMs ?? 0)ms", state: latencyColor)
-                statusChip(label: "Freqtrade", value: globalStatus?.freqtradeState ?? "—", state: freqtradeColor)
-                statusChip(label: "Redis", value: "\(globalStatus?.redisRttMs ?? 0)ms", state: PulseColors.StateColors.green)
-                statusChip(label: "Exchange", value: globalStatus?.exchangeState ?? "—", state: exchangeColor)
-                statusChip(label: "Positions", value: "\(globalStatus?.openPositions ?? 0)", state: PulseColors.StateColors.green)
+                statusChip(label: "System", value: globalStatus?.systemState ?? "—", dotStatus: systemStatusType)
+                statusChip(label: "Risk", value: globalStatus?.riskState ?? "—", dotStatus: riskStatusType)
+                statusChip(label: "FT", value: "\(globalStatus?.fastTrackLatencyMs ?? 0)ms", dotStatus: latencyStatusType)
+                statusChip(label: "Freqtrade", value: globalStatus?.freqtradeState ?? "—", dotStatus: freqtradeStatusType)
+                statusChip(label: "Redis", value: "\(globalStatus?.redisRttMs ?? 0)ms", dotStatus: .online)
+                statusChip(label: "Exchange", value: globalStatus?.exchangeState ?? "—", dotStatus: exchangeStatusType)
+                statusChip(label: "Positions", value: "\(globalStatus?.openPositions ?? 0)", dotStatus: .online)
 
                 if globalStatus?.emergencyLocked == true {
                     emergencyBadge
@@ -81,7 +81,7 @@ struct GlobalStatusBar: View {
 
             Button { appState.showCommandPalette.toggle() } label: {
                 Image(systemName: "magnifyingglass")
-                    .font(.system(size: 13))
+                    .font(PulseFonts.body)
                     .foregroundStyle(colors.textMuted)
             }
             .buttonStyle(.plain)
@@ -90,11 +90,11 @@ struct GlobalStatusBar: View {
             Button { showNotifications.toggle() } label: {
                 ZStack(alignment: .topTrailing) {
                     Image(systemName: "bell")
-                        .font(.system(size: 13))
+                        .font(PulseFonts.body)
                         .foregroundStyle(colors.textMuted)
                     if let vm = notificationViewModel, vm.unreadCount > 0 {
                         Text(vm.unreadCount > 99 ? "99+" : "\(vm.unreadCount)")
-                            .font(.system(size: 7, weight: .bold))
+                            .font(PulseFonts.micro)
                             .foregroundStyle(.white)
                             .padding(.horizontal, 3)
                             .padding(.vertical, 1)
@@ -132,7 +132,7 @@ struct GlobalStatusBar: View {
     private func reasonBar(codes: [String]) -> some View {
         HStack(spacing: PulseSpacing.xs) {
             Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 10))
+                .font(PulseFonts.monoLabel)
                 .foregroundStyle(PulseColors.StateColors.red)
             Text(codes.joined(separator: " · "))
                 .font(PulseFonts.caption)
@@ -149,9 +149,9 @@ struct GlobalStatusBar: View {
         .transition(.move(edge: .top).combined(with: .opacity))
     }
 
-    private func statusChip(label: String, value: String, state: Color) -> some View {
-        HStack(spacing: 3) {
-            Circle().fill(state).frame(width: 5, height: 5)
+    private func statusChip(label: String, value: String, dotStatus: StatusDot.StatusType) -> some View {
+        HStack(spacing: PulseSpacing.xxs) {
+            StatusDot(status: dotStatus)
             Text(label).font(PulseFonts.micro).foregroundStyle(colors.textMuted)
             Text(value).font(PulseFonts.micro).foregroundStyle(colors.textPrimary)
         }
@@ -159,7 +159,7 @@ struct GlobalStatusBar: View {
 
     private var emergencyBadge: some View {
         HStack(spacing: 3) {
-            Image(systemName: "bolt.fill").font(.system(size: 8))
+            Image(systemName: "bolt.fill").font(PulseFonts.micro)
             Text("EMERGENCY").font(PulseFonts.micro)
         }
         .foregroundStyle(PulseColors.StateColors.red)
@@ -169,42 +169,42 @@ struct GlobalStatusBar: View {
         .clipShape(Capsule())
     }
 
-    // MARK: - State Colors
-    private var systemStateColor: Color {
-        guard let state = globalStatus?.systemState else { return PulseColors.StateColors.gray }
+    // MARK: - Status Types
+    private var systemStatusType: StatusDot.StatusType {
+        guard let state = globalStatus?.systemState else { return .offline }
         switch state {
-        case "LIVE_READY", "LIVE_SMALL_READY": return PulseColors.StateColors.green
-        case "PAPER_ONLY": return PulseColors.StateColors.yellow
-        case "RISK_LOCKED", "EMERGENCY_LOCKED": return PulseColors.StateColors.red
-        default: return PulseColors.StateColors.gray
+        case "LIVE_READY", "LIVE_SMALL_READY": return .online
+        case "PAPER_ONLY": return .warning
+        case "RISK_LOCKED", "EMERGENCY_LOCKED": return .offline
+        default: return .offline
         }
     }
 
-    private var riskStateColor: Color {
-        guard let state = globalStatus?.riskState else { return PulseColors.StateColors.gray }
+    private var riskStatusType: StatusDot.StatusType {
+        guard let state = globalStatus?.riskState else { return .offline }
         switch state {
-        case "normal": return PulseColors.StateColors.green
-        case "warning": return PulseColors.StateColors.yellow
-        case "blocked", "locked": return PulseColors.StateColors.red
-        default: return PulseColors.StateColors.gray
+        case "normal": return .online
+        case "warning": return .warning
+        case "blocked", "locked": return .offline
+        default: return .offline
         }
     }
 
-    private var latencyColor: Color {
-        guard let ms = globalStatus?.fastTrackLatencyMs else { return PulseColors.StateColors.gray }
-        if ms < 100 { return PulseColors.StateColors.green }
-        if ms < 200 { return PulseColors.StateColors.yellow }
-        return PulseColors.StateColors.red
+    private var latencyStatusType: StatusDot.StatusType {
+        guard let ms = globalStatus?.fastTrackLatencyMs else { return .offline }
+        if ms < 100 { return .online }
+        if ms < 200 { return .warning }
+        return .offline
     }
 
-    private var freqtradeColor: Color {
-        guard let state = globalStatus?.freqtradeState else { return PulseColors.StateColors.gray }
-        return state == "healthy" ? PulseColors.StateColors.green : PulseColors.StateColors.red
+    private var freqtradeStatusType: StatusDot.StatusType {
+        guard let state = globalStatus?.freqtradeState else { return .offline }
+        return state == "healthy" ? .online : .offline
     }
 
-    private var exchangeColor: Color {
-        guard let state = globalStatus?.exchangeState else { return PulseColors.StateColors.gray }
-        return state == "ok" ? PulseColors.StateColors.green : PulseColors.StateColors.yellow
+    private var exchangeStatusType: StatusDot.StatusType {
+        guard let state = globalStatus?.exchangeState else { return .offline }
+        return state == "ok" ? .online : .warning
     }
 
     // MARK: - Data Loading (Real API)
