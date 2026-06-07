@@ -8,6 +8,7 @@ struct SidebarView: View {
     @Environment(ThemeManager.self) private var themeManager
     @Environment(PulseColors.self) private var colors
     @Namespace private var glassNamespace
+    @State private var isLogoHovered = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -56,10 +57,15 @@ struct SidebarView: View {
         HStack(spacing: PulseSpacing.xs) {
             Button { appState.toggleSidebar() } label: {
                 HStack(spacing: PulseSpacing.xs) {
-                    Image(systemName: "chart.line.uptrend.xyaxis")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(PulseColors.accent)
-                        .shadow(color: PulseColors.accent.opacity(0.4), radius: 6)
+                    ZStack {
+                        if isLogoHovered {
+                            PulseRing(color: PulseColors.accent.opacity(0.6), size: 36)
+                        }
+                        Image(systemName: "chart.line.uptrend.xyaxis")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(PulseColors.accent)
+                            .shadow(color: PulseColors.accent.opacity(0.4), radius: 6)
+                    }
                     if !appState.sidebarCollapsed {
                         Text("PulseDesk").font(PulseFonts.displaySubheading).foregroundStyle(colors.textPrimary)
                             .transition(.opacity.combined(with: .move(edge: .leading)))
@@ -67,6 +73,9 @@ struct SidebarView: View {
                 }
             }
             .buttonStyle(.plain)
+            .onHover { hovering in
+                withAnimation(PulseAnimation.easeOutFast) { isLogoHovered = hovering }
+            }
             Spacer()
             if !appState.sidebarCollapsed {
                 Button { appState.toggleSidebar() } label: {
@@ -96,7 +105,7 @@ struct SidebarView: View {
                             .font(.system(size: 11))
                             .foregroundStyle(colors.textMuted)
                             .frame(width: 24, height: 24)
-                            .glassEffect()
+                            .hoverGlassStyle(cornerRadius: PulseRadii.md)
                     }
                     .buttonStyle(.plain)
                     .help(themeManager.current == .dark ? "切换明亮模式" : "切换暗黑模式")
