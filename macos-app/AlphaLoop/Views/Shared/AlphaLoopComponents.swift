@@ -432,73 +432,89 @@ struct AlphaLoopLogoView: View {
         GeometryReader { geo in
             let dim = min(geo.size.width, geo.size.height)
             let lines: CGFloat = 5
-            let padding: CGFloat = 1.5
-            let cellSize = dim / (lines - 1 + padding * 2)
-            let offset = cellSize * padding
-            let stoneRadius = cellSize * 0.35
+            let marginRatio: CGFloat = 0.12
+            let boardSize = dim * (1 - marginRatio * 2)
+            let cellSize = boardSize / CGFloat(lines - 1)
+            let origin = dim * marginRatio
+            let stoneRadius = cellSize * 0.42
 
             ZStack {
-                // Grid lines (5x5 Go board)
+                // Board background — subtle lighter area
+                RoundedRectangle(cornerRadius: dim * 0.08)
+                    .fill(Color(hex: "#1A1C24"))
+                    .frame(width: dim, height: dim)
+
+                // Grid lines
                 Path { path in
                     for i in 0..<Int(lines) {
-                        let pos = offset + CGFloat(i) * cellSize
-                        // Horizontal
-                        path.move(to: CGPoint(x: offset, y: pos))
-                        path.addLine(to: CGPoint(x: offset + CGFloat(lines - 1) * cellSize, y: pos))
-                        // Vertical
-                        path.move(to: CGPoint(x: pos, y: offset))
-                        path.addLine(to: CGPoint(x: pos, y: offset + CGFloat(lines - 1) * cellSize))
+                        let pos = origin + CGFloat(i) * cellSize
+                        path.move(to: CGPoint(x: origin, y: pos))
+                        path.addLine(to: CGPoint(x: origin + boardSize, y: pos))
+                        path.move(to: CGPoint(x: pos, y: origin))
+                        path.addLine(to: CGPoint(x: pos, y: origin + boardSize))
                     }
                 }
-                .stroke(colors.border, lineWidth: 0.8)
+                .stroke(Color(hex: "#3A3D4A"), lineWidth: max(0.6, dim * 0.015))
 
-                // Star points (hoshi)
-                let starPoints: [(Int, Int)] = [(1, 1), (1, 3), (3, 1), (3, 3), (2, 2)]
-                ForEach(starPoints.indices, id: \.self) { idx in
-                    let (col, row) = starPoints[idx]
+                // Star points
+                let sp: [(CGFloat, CGFloat)] = [(1,1), (3,1), (2,2), (1,3), (3,3)]
+                ForEach(sp.indices, id: \.self) { i in
                     Circle()
-                        .fill(colors.border)
-                        .frame(width: cellSize * 0.15, height: cellSize * 0.15)
-                        .position(x: offset + CGFloat(col) * cellSize,
-                                  y: offset + CGFloat(row) * cellSize)
+                        .fill(Color(hex: "#5A5D6A"))
+                        .frame(width: dim * 0.04, height: dim * 0.04)
+                        .position(x: origin + sp[i].0 * cellSize,
+                                  y: origin + sp[i].1 * cellSize)
                 }
 
-                // Black stone
+                // Black stone (top-left quadrant)
                 Circle()
                     .fill(RadialGradient(
-                        colors: [Color(hex: "#2A2D35"), Color(hex: "#0D0E11")],
-                        center: .topLeading,
-                        startRadius: 0,
-                        endRadius: stoneRadius * 2
-                    ))
+                        colors: [Color(hex: "#4A4D5A"), Color(hex: "#0D0E11")],
+                        center: .topLeading, startRadius: 0, endRadius: stoneRadius * 2))
                     .frame(width: stoneRadius * 2, height: stoneRadius * 2)
-                    .position(x: offset + 1 * cellSize, y: offset + 2 * cellSize)
-                    .shadow(color: .black.opacity(0.3), radius: 1)
+                    .position(x: origin + 1 * cellSize, y: origin + 1 * cellSize)
 
-                // White stone
+                // White stone (top-right quadrant)
                 Circle()
                     .fill(RadialGradient(
-                        colors: [.white, Color(hex: "#C8C8CC")],
-                        center: .topLeading,
-                        startRadius: 0,
-                        endRadius: stoneRadius * 2
-                    ))
+                        colors: [.white, Color(hex: "#B0B0B8")],
+                        center: .topLeading, startRadius: 0, endRadius: stoneRadius * 2))
                     .frame(width: stoneRadius * 2, height: stoneRadius * 2)
-                    .position(x: offset + 3 * cellSize, y: offset + 1 * cellSize)
-                    .shadow(color: .black.opacity(0.15), radius: 0.5)
+                    .position(x: origin + 3 * cellSize, y: origin + 1 * cellSize)
 
-                // Gold accent stone (center — the decisive move)
+                // Black stone (bottom-left)
                 Circle()
-                    .fill(PulseColors.accent)
+                    .fill(RadialGradient(
+                        colors: [Color(hex: "#4A4D5A"), Color(hex: "#0D0E11")],
+                        center: .topLeading, startRadius: 0, endRadius: stoneRadius * 2))
                     .frame(width: stoneRadius * 2, height: stoneRadius * 2)
-                    .position(x: offset + 2 * cellSize, y: offset + 2 * cellSize)
-                    .shadow(color: PulseColors.accent.opacity(0.5), radius: 3)
+                    .position(x: origin + 1 * cellSize, y: origin + 3 * cellSize)
 
-                // Pulse ring around gold stone
+                // White stone (bottom-right)
                 Circle()
-                    .stroke(PulseColors.accent.opacity(0.4), lineWidth: 1.2)
-                    .frame(width: stoneRadius * 3.2, height: stoneRadius * 3.2)
-                    .position(x: offset + 2 * cellSize, y: offset + 2 * cellSize)
+                    .fill(RadialGradient(
+                        colors: [.white, Color(hex: "#B0B0B8")],
+                        center: .topLeading, startRadius: 0, endRadius: stoneRadius * 2))
+                    .frame(width: stoneRadius * 2, height: stoneRadius * 2)
+                    .position(x: origin + 3 * cellSize, y: origin + 3 * cellSize)
+
+                // Gold stone (center — the decisive α-move)
+                ZStack {
+                    Circle()
+                        .stroke(PulseColors.accent.opacity(0.5), lineWidth: dim * 0.025)
+                        .frame(width: stoneRadius * 2.5, height: stoneRadius * 2.5)
+                    Circle()
+                        .fill(RadialGradient(
+                            colors: [Color(hex: "#D4AA50"), Color(hex: "#9A7020")],
+                            center: .topLeading, startRadius: 0, endRadius: stoneRadius * 2))
+                        .frame(width: stoneRadius * 2, height: stoneRadius * 2)
+                    // α mark on gold stone
+                    Text("α")
+                        .font(.system(size: stoneRadius * 1.1, weight: .medium, design: .serif))
+                        .foregroundStyle(Color(hex: "#0A0B0E").opacity(0.7))
+                }
+                .position(x: origin + 2 * cellSize, y: origin + 2 * cellSize)
+                .shadow(color: PulseColors.accent.opacity(0.3), radius: dim * 0.06)
             }
         }
     }
