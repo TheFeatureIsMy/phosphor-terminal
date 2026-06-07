@@ -57,7 +57,7 @@ struct StrategyDryrunTab: View {
     }
 
     private func dryrunCard(_ run: StrategyRunV2) -> some View {
-        ProofAlphaCard(emphasis: .balanced) {
+        KryptonCard(emphasis: .balanced) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
                 HStack(spacing: PulseSpacing.sm) {
                     StatusDot(status: run.status == "running" ? .online : .offline)

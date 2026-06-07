@@ -10,7 +10,7 @@ struct DryrunBotCard: View {
     let onViewDetail: () -> Void
 
     var body: some View {
-        ProofAlphaCard(emphasis: .balanced, cardPadding: PulseSpacing.md) {
+        KryptonCard(emphasis: .balanced, cardPadding: PulseSpacing.md) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
                 // 第一行：状态指示 + 策略名 + 模式徽章
                 HStack(spacing: PulseSpacing.sm) {
@@ -56,7 +56,7 @@ struct DryrunBotCard: View {
                         Button(action: onStop) {
                             HStack(spacing: PulseSpacing.xxs) {
                                 Image(systemName: "stop.circle")
-                                    .font(.system(size: 11))
+                                    .font(PulseFonts.caption)
                                 Text("停止")
                                     .font(PulseFonts.monoLabel)
                             }
@@ -78,7 +78,7 @@ struct DryrunBotCard: View {
                     Button(action: onViewDetail) {
                         HStack(spacing: PulseSpacing.xxs) {
                             Image(systemName: "doc.text.magnifyingglass")
-                                .font(.system(size: 11))
+                                .font(PulseFonts.caption)
                             Text("查看详情")
                                 .font(PulseFonts.monoLabel)
                         }
@@ -105,7 +105,7 @@ struct DryrunBotCard: View {
     private func statItem(icon: String, label: String, value: String) -> some View {
         HStack(spacing: PulseSpacing.xxs) {
             Image(systemName: icon)
-                .font(.system(size: 9))
+                .font(PulseFonts.micro)
                 .foregroundStyle(colors.textMuted)
 
             Text(label)

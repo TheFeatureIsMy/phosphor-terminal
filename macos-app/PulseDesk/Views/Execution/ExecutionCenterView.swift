@@ -140,7 +140,7 @@ struct ExecutionCenterView: View {
     }
 
     private func summaryCard(title: String, value: String, icon: String, color: Color) -> some View {
-        ProofAlphaCard(emphasis: .subtle) {
+        KryptonCard(emphasis: .subtle) {
             HStack(spacing: PulseSpacing.xs) {
                 Image(systemName: icon)
                     .font(.system(size: 14))

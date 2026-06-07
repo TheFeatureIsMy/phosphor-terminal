@@ -146,7 +146,7 @@ struct StrategiesListView: View {
                 }
             }
             Spacer()
-            ProofAlphaButton(title: "新建策略") {
+            KryptonButton(title: "新建策略") {
                 withAnimation(PulseAnimation.springDefault) { showCreatePanel.toggle() }
             }
         }

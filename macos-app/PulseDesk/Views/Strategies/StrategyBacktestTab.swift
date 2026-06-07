@@ -40,7 +40,7 @@ struct StrategyBacktestTab: View {
                     Text("时间范围").font(PulseFonts.micro).foregroundStyle(colors.textMuted)
                     TextField("YYYYMMDD-YYYYMMDD", text: $viewModel.backtestTimerange)
                         .textFieldStyle(.plain)
-                        .font(.system(size: 12, design: .monospaced))
+                        .font(PulseFonts.label)
                         .foregroundStyle(colors.textPrimary)
                         .padding(PulseSpacing.xs)
                         .background(RoundedRectangle(cornerRadius: PulseRadii.sm).fill(colors.surface))
@@ -52,7 +52,7 @@ struct StrategyBacktestTab: View {
                     Text("初始资金").font(PulseFonts.micro).foregroundStyle(colors.textMuted)
                     TextField("10000", value: $viewModel.backtestCapital, format: .number)
                         .textFieldStyle(.plain)
-                        .font(.system(size: 12, design: .monospaced))
+                        .font(PulseFonts.label)
                         .foregroundStyle(colors.textPrimary)
                         .padding(PulseSpacing.xs)
                         .background(RoundedRectangle(cornerRadius: PulseRadii.sm).fill(colors.surface))
@@ -76,7 +76,7 @@ struct StrategyBacktestTab: View {
         HStack(spacing: PulseSpacing.sm) {
             let title = viewModel.isStartingBacktest ? "提交中..." :
                         viewModel.isPollingBacktest ? "回测运行中..." : "启动回测"
-            ProofAlphaButton(title: title) {
+            KryptonButton(title: title) {
                 Task { await viewModel.startBacktest() }
             }
             .disabled(!viewModel.canStartBacktest || viewModel.isStartingBacktest)
@@ -93,7 +93,7 @@ struct StrategyBacktestTab: View {
             if viewModel.latestVersion == nil {
                 HStack(spacing: PulseSpacing.xxs) {
                     Image(systemName: "info.circle")
-                        .font(.system(size: 10))
+                        .font(PulseFonts.monoLabel)
                     Text("请先在 DSL 规则中保存一个版本")
                         .font(PulseFonts.micro)
                 }

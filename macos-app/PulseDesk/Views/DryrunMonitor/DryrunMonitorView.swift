@@ -38,11 +38,11 @@ struct DryrunMonitorView: View {
                             TextField("输入策略版本 ID...", text: $dryrunStrategyId).darkTextField()
                         }
                         HStack {
-                            ProofAlphaButton(title: "取消", action: {
+                            KryptonButton(title: "取消", action: {
                                 withAnimation { showStartPanel = false }
                             }, style: .ghost)
                             Spacer()
-                            ProofAlphaButton(title: "启动", action: {
+                            KryptonButton(title: "启动", action: {
                                 Task {
                                     let api = APIDryrunV2(client: networkClient)
                                     _ = try? await api.startDryrun(["strategy_version_id": dryrunStrategyId])
@@ -188,7 +188,7 @@ struct DryrunMonitorView: View {
             .buttonStyle(.plain)
             .help("刷新")
 
-            ProofAlphaButton(title: "启动模拟", action: {
+            KryptonButton(title: "启动模拟", action: {
                 showStartPanel = true
             }, style: .primary)
         }
@@ -222,7 +222,7 @@ struct DryrunMonitorView: View {
     }
 
     private func statCard(title: String, value: String, color: Color) -> some View {
-        ProofAlphaCard(emphasis: .subtle, cardPadding: PulseSpacing.sm) {
+        KryptonCard(emphasis: .subtle, cardPadding: PulseSpacing.sm) {
             VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
                 Text(title)
                     .font(PulseFonts.monoLabel)

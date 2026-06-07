@@ -30,7 +30,7 @@ struct StrategyRiskTab: View {
     // MARK: - Risk Policy Binding
 
     private var riskPolicySection: some View {
-        ProofAlphaCard(emphasis: .subtle) {
+        KryptonCard(emphasis: .subtle) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
                 TerminalLabel(text: "风控策略绑定")
 
@@ -47,7 +47,7 @@ struct StrategyRiskTab: View {
     private func policyItem(label: String, value: String, icon: String) -> some View {
         VStack(spacing: PulseSpacing.xxs) {
             Image(systemName: icon)
-                .font(.system(size: 16))
+                .font(PulseFonts.displaySubheading)
                 .foregroundStyle(PulseColors.warning)
             Text(value)
                 .font(PulseFonts.tabular)
@@ -62,7 +62,7 @@ struct StrategyRiskTab: View {
     // MARK: - Capital Pool Config
 
     private var capitalPoolSection: some View {
-        ProofAlphaCard(emphasis: .subtle) {
+        KryptonCard(emphasis: .subtle) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
                 TerminalLabel(text: "资金池配置")
 
@@ -99,7 +99,7 @@ struct StrategyRiskTab: View {
     // MARK: - Risk Decisions History
 
     private var riskDecisionsSection: some View {
-        ProofAlphaCard(emphasis: .subtle) {
+        KryptonCard(emphasis: .subtle) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
                 HStack {
                     TerminalLabel(text: "风控决策记录")

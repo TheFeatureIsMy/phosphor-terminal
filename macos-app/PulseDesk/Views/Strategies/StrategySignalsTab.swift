@@ -42,7 +42,7 @@ struct StrategySignalsTab: View {
 
     @ViewBuilder
     private func signalSection(title: String, subtitle: String, signals: [SignalV2], emptyMessage: String) -> some View {
-        ProofAlphaCard(emphasis: .subtle) {
+        KryptonCard(emphasis: .subtle) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
@@ -72,7 +72,7 @@ struct StrategySignalsTab: View {
     private func signalRow(_ signal: SignalV2) -> some View {
         HStack(spacing: PulseSpacing.sm) {
             Image(systemName: signal.direction == "long" ? "arrow.up" : "arrow.down")
-                .font(.system(size: 10))
+                .font(PulseFonts.monoLabel)
                 .foregroundStyle(signal.direction == "long" ? PulseColors.success : PulseColors.loss)
 
             Text(signal.symbol)
