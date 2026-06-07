@@ -51,11 +51,11 @@ struct RiskView: View {
 
     @ViewBuilder
     private var emergencyStopSection: some View {
-        ProofAlphaCard(emphasis: .bold) {
+        KryptonCard(emphasis: .bold) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
                 HStack(spacing: PulseSpacing.sm) {
                     Image(systemName: "shield.lefthalf.filled.slash")
-                        .font(.system(size: 22, weight: .bold))
+                        .font(PulseFonts.monoLarge)
                         .foregroundStyle(PulseColors.danger)
                     VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
                         Text("紧急停止")
@@ -70,7 +70,7 @@ struct RiskView: View {
                         ProgressView()
                             .controlSize(.small)
                     } else {
-                        ProofAlphaButton(title: "紧急停止", action: {
+                        KryptonButton(title: "紧急停止", action: {
                             showEmergencyConfirm = true
                         }, style: .ghost)
                         .tint(PulseColors.danger)
@@ -232,7 +232,7 @@ struct RiskView: View {
     // MARK: - Severity Breakdown Bar
 
     private var severityBreakdown: some View {
-        ProofAlphaCard(emphasis: .subtle) {
+        KryptonCard(emphasis: .subtle) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
                 TerminalLabel(text: "严重性分布")
 
@@ -291,7 +291,7 @@ struct RiskView: View {
 
     @ViewBuilder
     private var riskEventsList: some View {
-        ProofAlphaCard(emphasis: .subtle) {
+        KryptonCard(emphasis: .subtle) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
                 TerminalLabel(text: "事件记录")
 
@@ -362,7 +362,7 @@ struct RiskView: View {
     @ViewBuilder
     private var topCorrelations: some View {
         if !correlation.isEmpty {
-            ProofAlphaCard(emphasis: .subtle) {
+            KryptonCard(emphasis: .subtle) {
                 VStack(alignment: .leading, spacing: PulseSpacing.sm) {
                     TerminalLabel(text: "顶级相关性")
 
@@ -415,7 +415,7 @@ struct RiskView: View {
     // MARK: - Live Small 审批
 
     private var liveSmallApprovalSection: some View {
-        ProofAlphaCard(emphasis: .balanced) {
+        KryptonCard(emphasis: .balanced) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
                 TerminalLabel(text: "实盘小资金审批")
 
@@ -428,7 +428,7 @@ struct RiskView: View {
                             .darkTextField()
                     }
 
-                    ProofAlphaButton(
+                    KryptonButton(
                         title: isEvaluatingLiveSmall ? "评估中..." : "预检评估",
                         action: { Task { await evaluateLiveSmall() } }
                     )
@@ -615,7 +615,7 @@ extension RiskView {
 
     @ViewBuilder
     var categoryMetrics: some View {
-        ProofAlphaCard(emphasis: .subtle) {
+        KryptonCard(emphasis: .subtle) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
                 HStack(spacing: PulseSpacing.xs) {
                     Image(systemName: selectedCategory.icon)
@@ -673,7 +673,7 @@ struct StatCard: View {
     let color: Color
 
     var body: some View {
-        ProofAlphaCard(emphasis: .subtle) {
+        KryptonCard(emphasis: .subtle) {
             VStack(spacing: PulseSpacing.xs) {
                 Image(systemName: icon)
                     .font(.system(size: 18))

@@ -44,9 +44,9 @@ struct DataVacuumSettingsView: View {
                 if isRunning {
                     ProgressView().controlSize(.small)
                 } else {
-                    ProofAlphaButton(title: "执行清理", action: {
-                        Task { await runVacuum() }
-                    }, style: .ghost)
+                    KryptonButton(title: "执行清理", action: {
+                            Task { await runVacuum() }
+                        }, style: .ghost)
                 }
             }
 
@@ -100,7 +100,7 @@ struct DataVacuumSettingsView: View {
                 .frame(width: 3, height: 28)
 
             Image(systemName: jobStatusIcon(job.status))
-                .font(.system(size: 10))
+                .font(PulseFonts.monoLabel)
                 .foregroundStyle(jobStatusColor(job.status))
                 .frame(width: 14)
 

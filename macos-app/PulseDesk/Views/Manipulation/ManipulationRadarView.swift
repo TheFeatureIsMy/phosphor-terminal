@@ -58,10 +58,10 @@ struct ManipulationRadarView: View {
     // MARK: - Scan Bar
 
     private func scanBar(vm: ManipulationViewModel) -> some View {
-        ProofAlphaCard(emphasis: .subtle) {
+        KryptonCard(emphasis: .subtle) {
             HStack(spacing: PulseSpacing.sm) {
                 Image(systemName: "magnifyingglass")
-                    .font(.system(size: 13))
+                    .font(PulseFonts.body)
                     .foregroundStyle(colors.textMuted)
 
                 TextField("输入交易对（如 BTC/USDT）", text: Binding(
@@ -75,7 +75,7 @@ struct ManipulationRadarView: View {
                     Task { await vm.scan() }
                 }
 
-                ProofAlphaButton(title: "扫描", action: {
+                KryptonButton(title: "扫描", action: {
                     Task { await vm.scan() }
                 })
             }

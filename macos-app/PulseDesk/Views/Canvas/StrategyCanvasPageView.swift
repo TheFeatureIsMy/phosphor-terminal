@@ -82,21 +82,21 @@ struct StrategyCanvasPageView: View {
             Spacer()
 
             HStack(spacing: PulseSpacing.xs) {
-                ProofAlphaButton(title: "新建策略", action: {
+                KryptonButton(title: "新建策略", action: {
                     showCreatePanel = true
                 }, style: .ghost)
 
-                ProofAlphaButton(title: "模板库", action: {
+                KryptonButton(title: "模板库", action: {
                     showTemplateLibrary = true
                 }, style: .ghost)
 
-                ProofAlphaButton(title: "验证", action: {
+                KryptonButton(title: "验证", action: {
                     Task { await validateCurrentDSL() }
                 }, style: .ghost)
                 .disabled(canvasVM == nil || canvasVM?.lastDSL == nil)
                 .opacity(canvasVM?.lastDSL == nil ? 0.5 : 1)
 
-                ProofAlphaButton(title: "保存", action: {
+                KryptonButton(title: "保存", action: {
                     Task { await saveCurrentVersion() }
                 })
                 .disabled(canvasVM == nil || canvasVM?.lastDSL == nil)

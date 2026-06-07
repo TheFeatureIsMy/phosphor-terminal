@@ -62,7 +62,7 @@ struct DataSourcesView: View {
         if let data = vm.data, data.state != "healthy" {
             HStack(spacing: PulseSpacing.sm) {
                 Image(systemName: data.state == "error" ? "xmark.octagon.fill" : "exclamationmark.triangle.fill")
-                    .font(.system(size: 14))
+                    .font(PulseFonts.body)
                     .foregroundStyle(data.state == "error" ? PulseColors.StateColors.red : PulseColors.StateColors.orange)
 
                 VStack(alignment: .leading, spacing: 2) {
@@ -110,7 +110,7 @@ struct DataSourcesView: View {
                 } label: {
                     HStack(spacing: PulseSpacing.xxs) {
                         Image(systemName: "antenna.radiowaves.left.and.right")
-                            .font(.system(size: 11))
+                            .font(PulseFonts.caption)
                         Text("测试所有连接")
                             .font(PulseFonts.monoLabel)
                     }
@@ -122,7 +122,7 @@ struct DataSourcesView: View {
                     Task { await vm.load() }
                 } label: {
                     Image(systemName: "arrow.clockwise")
-                        .font(.system(size: 12))
+                        .font(PulseFonts.label)
                         .foregroundStyle(colors.textMuted)
                 }
                 .buttonStyle(.plain)
@@ -150,10 +150,10 @@ struct DataSourcesView: View {
     }
 
     private func summaryCard(label: String, value: String, color: Color, icon: String) -> some View {
-        ProofAlphaCard(emphasis: .subtle) {
+        KryptonCard(emphasis: .subtle) {
             HStack(spacing: PulseSpacing.sm) {
                 Image(systemName: icon)
-                    .font(.system(size: 16))
+                    .font(PulseFonts.displaySubheading)
                     .foregroundStyle(color.opacity(0.8))
 
                 VStack(alignment: .leading, spacing: 2) {
@@ -195,7 +195,7 @@ struct DataSourcesView: View {
             HStack(spacing: PulseSpacing.xxs) {
                 if let cat = category {
                     Image(systemName: iconForCategory(cat))
-                        .font(.system(size: 10))
+                        .font(PulseFonts.monoLabel)
                 }
                 Text(label)
                     .font(PulseFonts.captionMedium)
@@ -241,12 +241,12 @@ struct DataSourcesView: View {
     private func sourceCard(_ source: DataSourceItemResponse, vm: DataSourcesViewModel) -> some View {
         let isTesting = vm.testingSourceId == source.sourceId
 
-        return ProofAlphaCard(emphasis: .subtle) {
+        return KryptonCard(emphasis: .subtle) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
                 // 头部：图标 + 名称 + 状态
                 HStack(spacing: PulseSpacing.sm) {
                     Image(systemName: iconForCategory(source.category))
-                        .font(.system(size: 18))
+                        .font(PulseFonts.displayHeading)
                         .foregroundStyle(statusColor(source.status).opacity(0.9))
                         .frame(width: 24, height: 24)
 
@@ -302,7 +302,7 @@ struct DataSourcesView: View {
                 if !source.reasonCodes.isEmpty {
                     HStack(spacing: PulseSpacing.xxs) {
                         Image(systemName: "exclamationmark.triangle")
-                            .font(.system(size: 9))
+                            .font(PulseFonts.micro)
                         Text(source.reasonCodes.joined(separator: ", "))
                             .font(PulseFonts.micro)
                             .lineLimit(1)
@@ -329,7 +329,7 @@ struct DataSourcesView: View {
                                     .scaleEffect(0.7)
                             } else {
                                 Image(systemName: "bolt.horizontal")
-                                    .font(.system(size: 10))
+                                    .font(PulseFonts.monoLabel)
                             }
                             Text("测试")
                                 .font(PulseFonts.monoLabel)
@@ -345,7 +345,7 @@ struct DataSourcesView: View {
                     } label: {
                         HStack(spacing: 3) {
                             Image(systemName: source.status == "active" ? "pause.circle" : "play.circle")
-                                .font(.system(size: 10))
+                                .font(PulseFonts.monoLabel)
                             Text(source.status == "active" ? "禁用" : "启用")
                                 .font(PulseFonts.monoLabel)
                         }

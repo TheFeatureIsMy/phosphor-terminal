@@ -1,5 +1,5 @@
 // ManipulationScoreRow.swift — 操纵评分行
-// ProofAlphaCard(.subtle): symbol + 风险等级 + 各子评分条 + 建议 badge
+// KryptonCard(.subtle): symbol + 风险等级 + 各子评分条 + 建议 badge
 
 import SwiftUI
 
@@ -9,7 +9,7 @@ struct ManipulationScoreRow: View {
     @State private var isExpanded = false
 
     var body: some View {
-        ProofAlphaCard(emphasis: .subtle) {
+        KryptonCard(emphasis: .subtle) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
                 // Top row: symbol + risk badge + suggestion badge
                 HStack(spacing: PulseSpacing.sm) {
@@ -65,7 +65,7 @@ struct ManipulationScoreRow: View {
                     } label: {
                         HStack(spacing: PulseSpacing.xxs) {
                             Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                                .font(.system(size: 9))
+                                .font(PulseFonts.micro)
                             Text(isExpanded ? "收起证据" : "展开证据")
                                 .font(PulseFonts.micro)
                         }
@@ -90,7 +90,7 @@ struct ManipulationScoreRow: View {
                         ForEach(evidenceCategories, id: \.name) { evidence in
                             HStack(spacing: PulseSpacing.sm) {
                                 Image(systemName: evidence.icon)
-                                    .font(.system(size: 12))
+                                    .font(PulseFonts.label)
                                     .foregroundStyle(evidence.severityColor)
                                     .frame(width: 20)
 

@@ -66,7 +66,7 @@ struct AIProvidersView: View {
                 Task { await loadAllData() }
             } label: {
                 Image(systemName: "arrow.clockwise")
-                    .font(.system(size: 12))
+                    .font(PulseFonts.label)
                     .foregroundStyle(colors.textMuted)
             }
             .buttonStyle(.plain)
@@ -90,7 +90,7 @@ struct AIProvidersView: View {
             if let result = testResult {
                 HStack(spacing: PulseSpacing.xs) {
                     Image(systemName: result.contains("成功") ? "checkmark.circle" : "xmark.circle")
-                        .font(.system(size: 11))
+                        .font(PulseFonts.caption)
                     Text(result)
                         .font(PulseFonts.caption)
                 }
@@ -105,12 +105,12 @@ struct AIProvidersView: View {
     }
 
     private func providerCard(_ provider: AIProviderInfo) -> some View {
-        ProofAlphaCard(emphasis: .subtle) {
+        KryptonCard(emphasis: .subtle) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
                 // 头部：名称 + 状态
                 HStack {
                     Image(systemName: iconForProvider(provider.type))
-                        .font(.system(size: 16))
+                        .font(PulseFonts.displaySubheading)
                         .foregroundStyle(provider.isAvailable ? PulseColors.accent : colors.textMuted)
 
                     VStack(alignment: .leading, spacing: 1) {
@@ -173,7 +173,7 @@ struct AIProvidersView: View {
         VStack(alignment: .leading, spacing: PulseSpacing.sm) {
             TerminalLabel(text: "任务路由矩阵")
 
-            ProofAlphaCard(emphasis: .subtle, cardPadding: PulseSpacing.sm) {
+            KryptonCard(emphasis: .subtle, cardPadding: PulseSpacing.sm) {
                 VStack(spacing: 0) {
                     // 表头
                     routingHeaderRow
@@ -242,7 +242,7 @@ struct AIProvidersView: View {
 
             VStack(spacing: PulseSpacing.xs) {
                 ForEach(modelRuntimeItems, id: \.name) { item in
-                    ProofAlphaCard(emphasis: .subtle, cardPadding: PulseSpacing.sm) {
+                    KryptonCard(emphasis: .subtle, cardPadding: PulseSpacing.sm) {
                         HStack(spacing: PulseSpacing.md) {
                             // 状态指示
                             Circle()
@@ -327,11 +327,11 @@ struct AIProvidersView: View {
     }
 
     private func inferenceJobRow(_ job: InferenceJob) -> some View {
-        ProofAlphaCard(emphasis: .subtle, cardPadding: PulseSpacing.sm) {
+        KryptonCard(emphasis: .subtle, cardPadding: PulseSpacing.sm) {
             HStack(spacing: PulseSpacing.sm) {
                 // 状态图标
                 Image(systemName: jobStatusIcon(job.status))
-                    .font(.system(size: 12))
+                    .font(PulseFonts.label)
                     .foregroundStyle(jobStatusColor(job.status))
 
                 // 任务信息
@@ -367,7 +367,7 @@ struct AIProvidersView: View {
                         Task { await cancelJob(job.id) }
                     } label: {
                         Image(systemName: "xmark.circle")
-                            .font(.system(size: 12))
+                            .font(PulseFonts.label)
                             .foregroundStyle(PulseColors.danger.opacity(0.7))
                     }
                     .buttonStyle(.plain)
@@ -394,7 +394,7 @@ struct AIProvidersView: View {
         VStack(alignment: .leading, spacing: PulseSpacing.sm) {
             TerminalLabel(text: "隐私策略")
 
-            ProofAlphaCard(emphasis: .subtle, cardPadding: PulseSpacing.sm) {
+            KryptonCard(emphasis: .subtle, cardPadding: PulseSpacing.sm) {
                 VStack(spacing: 0) {
                     // 表头
                     HStack(spacing: 0) {
@@ -443,7 +443,7 @@ struct AIProvidersView: View {
 
     private func privacyIcon(_ allowed: Bool) -> some View {
         Image(systemName: allowed ? "checkmark.circle.fill" : "xmark.circle")
-            .font(.system(size: 11))
+            .font(PulseFonts.caption)
             .foregroundStyle(allowed ? PulseColors.success : PulseColors.danger)
     }
 

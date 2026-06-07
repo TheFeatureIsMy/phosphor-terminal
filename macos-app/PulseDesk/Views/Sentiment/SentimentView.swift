@@ -138,7 +138,7 @@ struct SentimentView: View {
                                     ProgressView()
                                         .controlSize(.small)
                                 } else {
-                                    ProofAlphaButton(title: "发布为信号", action: {
+                                    KryptonButton(title: "发布为信号", action: {
                                         Task { await publishAsSignal(result: result) }
                                     })
                                 }

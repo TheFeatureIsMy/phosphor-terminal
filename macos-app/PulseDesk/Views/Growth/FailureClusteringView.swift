@@ -83,7 +83,7 @@ struct FailureClusteringView: View {
     }
 
     private func summaryCard(label: String, value: String, color: Color) -> some View {
-        ProofAlphaCard(emphasis: .subtle) {
+        KryptonCard(emphasis: .subtle) {
             VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
                 Text(label)
                     .font(PulseFonts.micro)
@@ -186,7 +186,7 @@ struct FailureClusteringView: View {
     }
 
     private func clusterCard(cluster: FailureClusterBFFResponse, maxLoss: Double) -> some View {
-        ProofAlphaCard(emphasis: .subtle) {
+        KryptonCard(emphasis: .subtle) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
                 // Header: name + severity badge
                 HStack {
@@ -230,7 +230,7 @@ struct FailureClusteringView: View {
                 // Suggested fix
                 HStack(alignment: .top, spacing: PulseSpacing.xs) {
                     Image(systemName: "lightbulb.fill")
-                        .font(.system(size: 10))
+                        .font(PulseFonts.monoLabel)
                         .foregroundStyle(PulseColors.amber)
                     Text(cluster.suggestedFix)
                         .font(PulseFonts.caption)
@@ -286,7 +286,7 @@ struct FailureClusteringView: View {
                     description: "等待足够的交易数据生成 Regime 矩阵"
                 )
             } else {
-                ProofAlphaCard(emphasis: .subtle) {
+                KryptonCard(emphasis: .subtle) {
                     VStack(alignment: .leading, spacing: PulseSpacing.sm) {
                         Text("颜色越深 = 亏损越大")
                             .font(PulseFonts.micro)
@@ -382,7 +382,7 @@ struct FailureClusteringView: View {
                 let reasons = vm.commonRejectReasons
                 let maxCount = reasons.compactMap { Int($0["count"] ?? "0") }.max() ?? 1
 
-                ProofAlphaCard(emphasis: .subtle) {
+                KryptonCard(emphasis: .subtle) {
                     VStack(alignment: .leading, spacing: PulseSpacing.sm) {
                         Text("各拒单原因发生频次")
                             .font(PulseFonts.caption)

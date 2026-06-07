@@ -194,7 +194,7 @@ struct LoginPlaceholderView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
 
-                    ProofAlphaButton(title: authState.isLoading ? L10n.Common.loading : L10n.zh("登录", en: "Sign In")) {
+                    KryptonButton(title: authState.isLoading ? L10n.Common.loading : L10n.zh("登录", en: "Sign In")) {
                         Task {
                             await authState.login(email: email, password: password, client: networkClient)
                         }

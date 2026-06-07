@@ -59,7 +59,7 @@ struct LandingView: View {
                 // CTA
                 if showCTA {
                     VStack(spacing: PulseSpacing.md) {
-                        ProofAlphaButton(title: "进入仪表盘") {
+                        KryptonButton(title: "进入仪表盘") {
                             withAnimation(PulseAnimation.springDefault) { appState.hasLaunched = true }
                         }
 

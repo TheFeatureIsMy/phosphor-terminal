@@ -99,9 +99,9 @@ struct McpServerSettingsView: View {
                 if isRotating {
                     ProgressView().controlSize(.small)
                 } else {
-                    ProofAlphaButton(title: "轮换 Token", action: {
-                        showRotateConfirm = true
-                    }, style: .ghost)
+                    KryptonButton(title: "轮换 Token", action: {
+                            showRotateConfirm = true
+                        }, style: .ghost)
                 }
             }
 
