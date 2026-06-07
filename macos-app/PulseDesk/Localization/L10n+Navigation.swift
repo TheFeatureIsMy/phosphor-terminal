@@ -13,9 +13,9 @@ extension L10n {
         static var system: String { zh("系统", en: "System") }
 
         // Routes
-        static var dashboard: String { zh("仪表盘", en: "Dashboard") }
-        static var liveReadiness: String { zh("实盘就绪", en: "Live Readiness") }
-        static var strategyWorkspace: String { zh("策略管理", en: "Strategies") }
+        static var dashboard: String { zh("总览控制台", en: "Overview Console") }
+        static var liveReadiness: String { zh("实盘准入", en: "Live Readiness") }
+        static var strategyWorkspace: String { zh("策略工作台", en: "Strategy Workbench") }
         static var strategyCanvas: String { zh("策略画布", en: "Strategy Canvas") }
         static var backtestSimulation: String { zh("回测 & 模拟", en: "Backtest & Simulation") }
         static var marketStructure: String { zh("市场结构", en: "Market Structure") }
@@ -26,12 +26,12 @@ extension L10n {
         static var reconciliationBus: String { zh("对账总线", en: "Reconciliation Bus") }
         static var riskCenter: String { zh("风控中心", en: "Risk Center") }
         static var stopProtection: String { zh("止损保护", en: "Stop Protection") }
-        static var circuitBreakers: String { zh("熔断器", en: "Circuit Breakers") }
-        static var aiStudio: String { zh("AI 研究室", en: "AI Studio") }
+        static var circuitBreakers: String { zh("熔断记录", en: "Circuit Breakers") }
+        static var aiStudio: String { zh("AI 投研室", en: "AI Research Room") }
         static var agentPlatform: String { zh("Agent 平台", en: "Agent Platform") }
         static var signalCenter: String { zh("信号中心", en: "Signal Center") }
         static var marketSentiment: String { zh("市场情绪", en: "Market Sentiment") }
-        static var growthReview: String { zh("增长复盘", en: "Growth Review") }
+        static var growthReview: String { zh("复盘成长", en: "Growth Review") }
         static var failureClustering: String { zh("失败聚类", en: "Failure Clustering") }
         static var strategyOptimization: String { zh("策略优化", en: "Strategy Optimization") }
         static var serviceManagement: String { zh("服务管理", en: "Service Management") }

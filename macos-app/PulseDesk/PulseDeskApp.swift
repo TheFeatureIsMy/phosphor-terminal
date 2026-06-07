@@ -175,11 +175,19 @@ struct LoginPlaceholderView: View {
                     .font(.system(size: 48))
                     .foregroundStyle(PulseColors.accent)
 
-                Text("PulseDesk")
+                KryptonLogoView()
+                    .frame(width: 56, height: 56)
+                    .shadow(color: PulseColors.accent.opacity(0.35), radius: 14)
+
+                Text("Krypton")
                     .font(PulseFonts.displayTitle)
                     .foregroundStyle(colors.textPrimary)
+                Text("Pro")
+                    .font(PulseFonts.monoLabel)
+                    .foregroundStyle(PulseColors.accent)
+                    .tracking(2)
 
-                Text(L10n.zh("AI 驱动的加密量化交易平台", en: "AI-Powered Crypto Quant Trading Platform"))
+                Text(L10n.zh("AI 多 Agent 加密量化交易终端", en: "AI Multi-Agent Crypto Quant Trading Terminal"))
                     .font(PulseFonts.body)
                     .foregroundStyle(colors.textSecondary)
 

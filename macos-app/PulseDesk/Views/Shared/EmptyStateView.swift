@@ -11,25 +11,13 @@ struct EmptyStateView: View {
     var primaryAction: (title: String, action: () -> Void)?
     var secondaryAction: (title: String, action: () -> Void)?
 
-    @State private var floatOffset: CGFloat = 0
     @State private var appeared = false
 
     var body: some View {
         VStack(spacing: PulseSpacing.md) {
-            Image(systemName: icon)
-                .font(.system(size: 36, weight: .regular))
-                .foregroundStyle(PulseColors.accent.opacity(0.6))
-                .offset(y: floatOffset)
-                .onAppear {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                        withAnimation(
-                            .spring(response: 2.0, dampingFraction: 0.3)
-                            .repeatForever(autoreverses: true)
-                        ) {
-                            floatOffset = -6
-                        }
-                    }
-                }
+            KryptonLogoView()
+                .frame(width: 42, height: 42)
+                .opacity(0.9)
 
             Text(title)
                 .font(PulseFonts.displaySubheading)

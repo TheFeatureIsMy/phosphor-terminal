@@ -1,46 +1,32 @@
-// AppShellView.swift — 主布局壳
-// ProofAlpha 设计：整个控制台是一块连续的玻璃面板
-// 侧边栏、工具栏、内容区是同一表面的不同区域，不是独立浮层
+// AppShellView.swift — Krypton Pro 主布局壳
+// 深色交易终端：侧边栏、状态栏、内容区是同一终端表面的功能分区
 
 import SwiftUI
 
 struct AppShellView: View {
     @Environment(AppState.self) private var appState
-    @Environment(\.networkClient) private var networkClient
     @Environment(PulseColors.self) private var colors
     @Environment(ToastManager.self) private var toastManager
-    @Environment(ErrorHandler.self) private var errorHandler
-
-    @State private var dashboardVM: DashboardViewModel?
-    @State private var strategiesVM: StrategiesViewModel?
 
     var body: some View {
-        GlassEffectContainer {
+        ZStack {
             HStack(spacing: 0) {
-                // 左侧：侧边栏
                 sidebarSection
 
-                // 右侧：工具栏 + 内容区
                 VStack(spacing: 0) {
                     GlobalStatusBar()
-                    detailContent
-                        .id(appState.selectedRoute)
-                        .contentTransition(.opacity)
+                    WorkspaceTabBar()
+                    workspaceContent
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .animation(PulseAnimation.easeOutMedium, value: appState.selectedRoute)
                 }
             }
         }
-        // 整个窗口是一块统一的玻璃面板
-        // ProofAlpha: bg-[rgba(24,24,27,0.55)] + backdrop-blur + 背景层
         .background {
             ZStack {
                 colors.background
-                BackgroundLayersView()
-                // 全局玻璃材质 — 覆盖整个窗口
-                Rectangle().fill(.ultraThinMaterial)
-                // ProofAlpha 表面色 — 统一的深色玻璃底
-                Rectangle().fill(colors.cardBackground)
+                // Phase 1 背景降级：保留静态背景层，后续 Phase 3 进一步简化
+                Rectangle().fill(KryptonColor.amberSpotlight.opacity(0.12))
+                Rectangle().fill(colors.cardBackground.opacity(0.72))
             }
             .ignoresSafeArea()
         }
@@ -52,262 +38,29 @@ struct AppShellView: View {
         .overlay {
             ToastOverlayView(toastManager: toastManager)
         }
-        .onAppear {
-            if dashboardVM == nil {
-                dashboardVM = DashboardViewModel(client: networkClient)
-            }
-            dashboardVM?.errorHandler = errorHandler
-            if strategiesVM == nil {
-                strategiesVM = StrategiesViewModel(client: networkClient)
-            }
-            strategiesVM?.errorHandler = errorHandler
+    }
+
+    // MARK: - 3 工作区保活 (ZStack, 无 .id 销毁)
+
+    @ViewBuilder
+    private var workspaceContent: some View {
+        ZStack {
+            TradingConsoleRootView()
+                .opacity(appState.primaryWorkspace == .tradingConsole ? 1 : 0)
+                .allowsHitTesting(appState.primaryWorkspace == .tradingConsole)
+
+            StrategyLabRootView()
+                .opacity(appState.primaryWorkspace == .strategyLab ? 1 : 0)
+                .allowsHitTesting(appState.primaryWorkspace == .strategyLab)
+
+            OperationsRootView()
+                .opacity(appState.primaryWorkspace == .operations ? 1 : 0)
+                .allowsHitTesting(appState.primaryWorkspace == .operations)
         }
     }
 
     // MARK: - 侧边栏区域 — 同一表面的子区域
     private var sidebarSection: some View {
         SidebarView()
-    }
-
-    // MARK: - 内容路由
-    @ViewBuilder
-    private var detailContent: some View {
-        switch appState.selectedRoute {
-        // OVERVIEW
-        case .dashboard:
-            if let vm = dashboardVM {
-                DashboardView(viewModel: vm)
-            } else {
-                LoadingView(type: .detail)
-            }
-        case .liveReadiness:
-            LiveReadinessView()
-        // STRATEGY
-        case .strategyWorkspace:
-            if let vm = strategiesVM {
-                StrategiesListView(viewModel: vm)
-            } else {
-                LoadingView(type: .detail)
-            }
-        case .strategyCanvas:
-            StrategyCanvasPageView()
-        case .backtestSimulation:
-            BacktestDryrunView()
-        // STRUCTURE
-        case .marketStructure:
-            MarketStructureView()
-        case .structureMatrix:
-            StructureMatrixView()
-        case .manipulationRadar:
-            ManipulationRadarView()
-        // EXECUTION
-        case .executionCenter:
-            ExecutionCenterView()
-        case .ordersPositions:
-            OrdersPositionsView()
-        case .reconciliationBus:
-            ReconciliationBusView()
-        // RISK
-        case .riskCenter:
-            RiskCenterView()
-        case .stopProtection:
-            StopProtectionView()
-        case .circuitBreakers:
-            CircuitBreakersView()
-        // AI RESEARCH
-        case .aiResearchRoom:
-            AIStudioView()
-        case .agentPlatform:
-            AgentPlatformView()
-        case .signalCenter:
-            SignalCenterView()
-        case .marketSentiment:
-            SentimentView()
-        // GROWTH
-        case .growthReview:
-            GrowthView()
-        case .failureClustering:
-            FailureClusteringView()
-        case .strategyOptimization:
-            StrategyOptimizationView()
-        // SYSTEM
-        case .serviceManagement:
-            AIProvidersView()
-        case .dataSourceManagement:
-            DataSourcesView()
-        case .systemSettings:
-            SettingsView()
-        // Internal
-        case .strategyDetail:
-            if let v2Id = appState.selectedStrategyV2Id {
-                StrategyDetailView(strategyId: v2Id, client: networkClient)
-            } else if let id = appState.selectedStrategyId {
-                StrategyDetailView(strategyId: "\(id)", client: networkClient)
-            } else {
-                LoadingView(type: .detail)
-            }
-        }
-    }
-
-    // MARK: - Placeholder View (coming soon)
-    @ViewBuilder
-    private func placeholderView(title: String, icon: String) -> some View {
-        VStack(spacing: PulseSpacing.lg) {
-            Spacer()
-            Image(systemName: icon)
-                .font(.system(size: 48, weight: .light))
-                .foregroundStyle(PulseColors.accent.opacity(0.4))
-                .shadow(color: PulseColors.accent.opacity(0.2), radius: 12)
-            Text(title)
-                .font(PulseFonts.displaySubheading)
-                .foregroundStyle(colors.textPrimary)
-            Text("Coming soon")
-                .font(PulseFonts.caption)
-                .foregroundStyle(colors.textMuted)
-                .textCase(.uppercase)
-                .tracking(1.5)
-            Spacer()
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .animation(PulseAnimation.easeOutMedium, value: appState.selectedRoute)
-    }
-}
-
-// MARK: - 控制台工具栏 — 同一玻璃面板的顶部区域
-struct ConsoleToolbar: View {
-    @Environment(AppState.self) private var appState
-    @Environment(PulseColors.self) private var colors
-    @Environment(\.networkClient) private var networkClient
-    @State private var currentTime = Date()
-    @State private var showNotifications = false
-    @State private var notificationViewModel: NotificationViewModel?
-    @State private var searchButtonHovered = false
-    @State private var notificationButtonHovered = false
-
-    var systemStatus: SystemStatus?
-
-    private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
-    private let timeFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "HH:mm:ss"
-        return f
-    }()
-
-    var body: some View {
-        HStack(spacing: PulseSpacing.md) {
-            // 面包屑 — 终端风格
-            HStack(spacing: PulseSpacing.xxs) {
-                Text("//")
-                    .font(PulseFonts.monoLabel)
-                    .foregroundStyle(PulseColors.accent)
-                Text(appState.selectedRoute.label)
-                    .font(PulseFonts.monoLabel)
-                    .foregroundStyle(colors.textMuted)
-                    .textCase(.uppercase)
-                    .tracking(1.5)
-            }
-
-            Spacer()
-
-            // 系统指标 — 从 SystemStatus 读取
-            HStack(spacing: PulseSpacing.lg) {
-                metricBadge(icon: "clock", value: systemStatus?.uptime ?? "—")
-                metricBadge(icon: "cpu", value: "\(systemStatus?.activeStrategies ?? 0) 策略")
-                metricBadge(icon: "point.3.connected.trianglepath.connected", value: "\(systemStatus?.openPositions ?? 0) 持仓")
-            }
-
-            // 分隔点
-            Circle()
-                .fill(colors.textMuted)
-                .frame(width: 2, height: 2)
-
-            // 时钟
-            Text(timeFormatter.string(from: currentTime))
-                .font(PulseFonts.caption)
-                .foregroundStyle(colors.textMuted)
-                .onReceive(timer) { time in currentTime = time }
-
-            // 连接状态
-            StatusDot(status: systemStatus?.apiStatus == .connected ? .online : .offline)
-
-            // 搜索
-            Button {
-                appState.showCommandPalette.toggle()
-            } label: {
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 13))
-                    .foregroundStyle(colors.textMuted)
-                    .opacity(searchButtonHovered ? 1 : 0.7)
-            }
-            .buttonStyle(.plain)
-            .keyboardShortcut("k", modifiers: .command)
-            .help("搜索 (⌘K)")
-            .onHover { searchButtonHovered = $0 }
-
-            // 通知
-            Button {
-                showNotifications.toggle()
-            } label: {
-                ZStack(alignment: .topTrailing) {
-                    Image(systemName: "bell")
-                        .font(.system(size: 13))
-                        .foregroundStyle(colors.textMuted)
-                        .opacity(notificationButtonHovered ? 1 : 0.7)
-
-                    if let vm = notificationViewModel, vm.unreadCount > 0 {
-                        Text(vm.unreadCount > 99 ? "99+" : "\(vm.unreadCount)")
-                            .font(.system(size: 7, weight: .bold))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 3)
-                            .padding(.vertical, 1)
-                            .background(Capsule().fill(PulseColors.danger))
-                            .offset(x: 5, y: -5)
-                    }
-                }
-            }
-            .buttonStyle(.plain)
-            .help("通知")
-            .onHover { notificationButtonHovered = $0 }
-            .popover(isPresented: $showNotifications) {
-                if let vm = notificationViewModel {
-                    NotificationPopover(viewModel: vm) {
-                        showNotifications = false
-                        appState.selectedRoute = .systemSettings
-                    }
-                }
-            }
-
-            // 用户
-            Circle()
-                .fill(PulseColors.accent.opacity(0.15))
-                .frame(width: 22, height: 22)
-                .overlay(
-                    Text("T")
-                        .font(PulseFonts.micro)
-                        .foregroundStyle(PulseColors.accent)
-                )
-        }
-        .padding(.horizontal, PulseSpacing.lg)
-        .frame(height: 40)
-        .overlay(alignment: .bottom) {
-            Rectangle()
-                .fill(Color.white.opacity(0.05))
-                .frame(height: 0.5)
-        }
-        .onAppear {
-            if notificationViewModel == nil {
-                notificationViewModel = NotificationViewModel(client: networkClient)
-            }
-        }
-    }
-
-    private func metricBadge(icon: String, value: String) -> some View {
-        HStack(spacing: 3) {
-            Image(systemName: icon)
-                .font(.system(size: 8))
-            Text(value)
-                .font(PulseFonts.monoLabel)
-        }
-        .foregroundStyle(colors.textMuted)
     }
 }

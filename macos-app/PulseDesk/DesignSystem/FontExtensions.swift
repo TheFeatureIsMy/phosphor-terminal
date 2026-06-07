@@ -1,4 +1,4 @@
-// FontExtensions.swift — ProofAlpha 字体便捷扩展
+// FontExtensions.swift — Krypton 字体便捷扩展
 
 import SwiftUI
 

@@ -1,11 +1,13 @@
-// ProofAlphaComponents.swift — ProofAlpha 核心交互组件
+// KryptonComponents.swift — Krypton 核心交互组件
 // SpotlightCard (光标跟随), TerminalLabel, BadgeDot
 
 import SwiftUI
 
-// MARK: - ProofAlphaCard — 统一卡片组件
+// MARK: - KryptonCard — 统一卡片组件
 
-struct ProofAlphaCard<Content: View>: View {
+typealias ProofAlphaCard = KryptonCard
+
+struct KryptonCard<Content: View>: View {
     enum Emphasis {
         case subtle    // Dashboard/Trades — 低透明度，无发光，无倾斜
         case balanced  // Strategies/Settings — 中等，悬停强调边框，聚光灯，无倾斜
@@ -158,7 +160,7 @@ struct ProofAlphaCard<Content: View>: View {
     }
 }
 
-// DEPRECATED: Use ProofAlphaCard(emphasis:) instead.
+// DEPRECATED: Use KryptonCard(emphasis:) instead.
 // Kept for source compatibility during migration; remove after Batch C.
 // MARK: - SpotlightCard — 光标跟随聚光灯 (无 3D 倾斜)
 struct SpotlightCard<Content: View>: View {
@@ -178,7 +180,7 @@ struct SpotlightCard<Content: View>: View {
                     .fill(colors.cardBackground)
                     .background(
                         RoundedRectangle(cornerRadius: PulseRadii.card)
-                            .fill(.ultraThinMaterial)
+                            .fill(colors.background.opacity(0.4))
                     )
             )
             .clipShape(RoundedRectangle(cornerRadius: PulseRadii.card))
@@ -220,7 +222,7 @@ struct SpotlightCard<Content: View>: View {
     }
 }
 
-// DEPRECATED: Use ProofAlphaCard(emphasis:) instead.
+// DEPRECATED: Use KryptonCard(emphasis:) instead.
 // Kept for source compatibility during migration; remove after Batch C.
 // MARK: - GlassCard — 统一卡片样式（3D 倾斜 + 聚光灯 + 顶部高光线）
 struct GlassCard<Content: View>: View {
@@ -246,7 +248,7 @@ struct GlassCard<Content: View>: View {
                     .fill(colors.cardBackground)
                     .background(
                         RoundedRectangle(cornerRadius: PulseRadii.card)
-                            .fill(.ultraThinMaterial)
+                            .fill(colors.background.opacity(0.4))
                     )
             )
             .clipShape(RoundedRectangle(cornerRadius: PulseRadii.card))
@@ -437,7 +439,7 @@ struct StatusDot: View {
     }
 }
 
-// MARK: - GlowText — 霓虹绿发光文字
+// MARK: - GlowText — 琥珀金发光文字
 struct GlowText: View {
     let text: String
     var font: Font = PulseFonts.displayHeading
@@ -451,7 +453,7 @@ struct GlowText: View {
     }
 }
 
-// MARK: - GradientText — 渐变文字 (绿→青)
+// MARK: - GradientText — 渐变文字 (金→绿)
 struct GradientText: View {
     let text: String
     var font: Font = PulseFonts.displayHeading
@@ -461,7 +463,7 @@ struct GradientText: View {
             .font(font)
             .foregroundStyle(
                 LinearGradient(
-                    colors: [PulseColors.accent, PulseColors.cyan],
+                    colors: [PulseColors.accent, PulseColors.success],
                     startPoint: .leading,
                     endPoint: .trailing
                 )
@@ -469,8 +471,10 @@ struct GradientText: View {
     }
 }
 
-// MARK: - ProofAlphaButton — 霓虹绿按钮 (2px 圆角, 大写)
-struct ProofAlphaButton: View {
+// MARK: - KryptonButton — 霓虹绿按钮 (2px 圆角, 大写)
+typealias ProofAlphaButton = KryptonButton
+
+struct KryptonButton: View {
     let title: String
     let action: () -> Void
     var style: ButtonStyle = .primary

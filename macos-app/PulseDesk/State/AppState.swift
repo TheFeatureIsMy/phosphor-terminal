@@ -3,13 +3,64 @@
 
 import SwiftUI
 
+// MARK: - 一级工作区
+
+enum PrimaryWorkspace: String, CaseIterable, Identifiable {
+    case tradingConsole
+    case strategyLab
+    case operations
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .tradingConsole: return "Trading Console"
+        case .strategyLab: return "Strategy Lab"
+        case .operations: return "Operations"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .tradingConsole: return "cube.transparent"
+        case .strategyLab: return "flask"
+        case .operations: return "gearshape.2"
+        }
+    }
+
+    /// 短标签（用于侧边栏紧凑模式）
+    var shortLabel: String {
+        switch self {
+        case .tradingConsole: return "Trading"
+        case .strategyLab: return "Lab"
+        case .operations: return "Ops"
+        }
+    }
+}
+
+// MARK: - AppState
+
 @Observable
 final class AppState {
     /// 是否已完成启动页
     var hasLaunched: Bool = false
 
     /// 当前选中的侧边栏路由
-    var selectedRoute: AppRoute = .dashboard
+    var selectedRoute: AppRoute = .dashboard {
+        didSet {
+            guard oldValue != selectedRoute else { return }
+            recentRoutes.removeAll { $0 == selectedRoute }
+            recentRoutes.insert(selectedRoute, at: 0)
+            if recentRoutes.count > 10 {
+                recentRoutes = Array(recentRoutes.prefix(10))
+            }
+        }
+    }
+
+    /// 当前一级工作区
+    var primaryWorkspace: PrimaryWorkspace {
+        selectedRoute.primaryWorkspace
+    }
 
     /// 侧边栏是否折叠
     var sidebarCollapsed: Bool = false
@@ -28,6 +79,9 @@ final class AppState {
 
     /// 网络模式标记
     var isLiveMode: Bool = false
+
+    /// MRU 最近访问路由 (max 10)
+    var recentRoutes: [AppRoute] = []
 
     /// 当前选中的策略 ID（用于详情页路由）
     var selectedStrategyId: Int?

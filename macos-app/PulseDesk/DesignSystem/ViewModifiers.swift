@@ -1,9 +1,9 @@
-// ViewModifiers.swift — ProofAlpha 可复用视图修饰器
+// ViewModifiers.swift — Krypton 可复用视图修饰器
 // 玻璃态卡片、悬停/按压反馈、骨架屏、交错动画
 
 import SwiftUI
 
-// MARK: - 卡片样式 (ProofAlpha 玻璃态)
+// MARK: - 卡片样式 (Krypton 玻璃态)
 struct CardModifier: ViewModifier {
     @Environment(PulseColors.self) private var colors
     var padding: CGFloat = PulseSpacing.md
@@ -16,19 +16,19 @@ struct CardModifier: ViewModifier {
                     .fill(colors.cardBackground)
                     .background(
                         RoundedRectangle(cornerRadius: PulseRadii.card)
-                            .fill(.ultraThinMaterial)
+                            .fill(colors.background.opacity(0.4))
                     )
             )
             .clipShape(RoundedRectangle(cornerRadius: PulseRadii.card))
             .overlay(
                 RoundedRectangle(cornerRadius: PulseRadii.card)
-                    .stroke(Color.white.opacity(0.05), lineWidth: 1)
+                    .stroke(colors.border, lineWidth: 1)
             )
             .applyShadow(PulseShadow.card(colors))
     }
 }
 
-// MARK: - 玻璃效果（侧边栏/顶栏面板用 — ProofAlpha 玻璃态）
+// MARK: - 玻璃效果（侧边栏/顶栏面板用 — Krypton 玻璃态）
 struct GlassModifier: ViewModifier {
     @Environment(PulseColors.self) private var colors
 
@@ -42,7 +42,7 @@ struct GlassModifier: ViewModifier {
             )
             .overlay(
                 Rectangle()
-                    .stroke(Color.white.opacity(0.05), lineWidth: 1)
+                    .stroke(colors.border, lineWidth: 1)
                     .allowsHitTesting(false)
             )
     }

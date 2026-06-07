@@ -320,7 +320,7 @@ enum AppRoute: String, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .dashboard: return "总览 Dashboard"
+        case .dashboard: return "总览控制台"
         case .liveReadiness: return "实盘准入"
         case .strategyWorkspace: return "策略工作台"
         case .strategyCanvas: return "策略画布"
@@ -364,6 +364,24 @@ enum AppRoute: String, CaseIterable, Identifiable {
 
     var sidebarVisible: Bool {
         self != .strategyDetail
+    }
+
+    var primaryWorkspace: PrimaryWorkspace {
+        switch self {
+        case .dashboard, .liveReadiness,
+             .marketStructure, .structureMatrix, .manipulationRadar,
+             .executionCenter, .ordersPositions, .reconciliationBus,
+             .riskCenter, .stopProtection, .circuitBreakers:
+            return .tradingConsole
+        case .strategyWorkspace, .strategyCanvas, .backtestSimulation,
+             .aiResearchRoom, .signalCenter, .marketSentiment,
+             .growthReview, .failureClustering, .strategyOptimization,
+             .strategyDetail:
+            return .strategyLab
+        case .agentPlatform,
+             .serviceManagement, .dataSourceManagement, .systemSettings:
+            return .operations
+        }
     }
 }
 

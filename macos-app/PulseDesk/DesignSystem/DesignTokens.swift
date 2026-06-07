@@ -1,9 +1,26 @@
-// DesignTokens.swift — ProofAlpha 设计系统
-// 双主题支持：暗黑赛博朋克 + 明亮科技风
+// DesignTokens.swift — Krypton 专业交易终端设计系统
 
 import SwiftUI
 
+extension Color {
+    init(hex: String) {
+        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        let scanner = Scanner(string: hex)
+        var value: UInt64 = 0
+        scanner.scanHexInt64(&value)
+
+        let components = (
+            r: Double((value >> 16) & 0xff) / 255.0,
+            g: Double((value >> 8) & 0xff) / 255.0,
+            b: Double(value & 0xff) / 255.0
+        )
+
+        self.init(red: components.r, green: components.g, blue: components.b)
+    }
+}
+
 // MARK: - 主题管理器
+
 @Observable
 class ThemeManager {
     enum Theme: String, CaseIterable {
@@ -30,8 +47,37 @@ class ThemeManager {
     var isDark: Bool { current == .dark }
 }
 
-// MARK: - 颜色系统（双主题）
-// @Observable 确保主题切换时 SwiftUI 自动重渲染
+// MARK: - Krypton 品牌色
+
+enum KryptonColor {
+    static let background = Color(hex: "#12151f")
+    static let surface = Color(hex: "#171b26")
+    static let surfaceHover = Color(hex: "#1e2232")
+    static let card = Color(hex: "#171b26")
+    static let cardHover = Color(hex: "#222838")
+    static let ink = Color(hex: "#0c0e17")
+
+    static let amber = Color(hex: "#f7a600")
+    static let amberActive = Color(hex: "#d48e00")
+    static let amberSoft = Color(hex: "#f7a600").opacity(0.08)
+    static let amberSpotlight = Color(hex: "#f7a600").opacity(0.10)
+    static let amberCenter = Color(hex: "#ffd000")
+
+    static let green = Color(hex: "#00c087")
+    static let greenSoft = Color(hex: "#00c087").opacity(0.08)
+
+    static let red = Color(hex: "#f6465d")
+    static let redSoft = Color(hex: "#f6465d").opacity(0.08)
+
+    static let border = Color(hex: "#202533")
+    static let borderHover = Color(hex: "#2d3546")
+
+    static let primaryText = Color.white
+    static let secondaryText = Color(hex: "#848e9c")
+}
+
+// MARK: - 兼容旧组件的 Krypton 色彩系统
+
 @Observable
 class PulseColors {
     let themeManager: ThemeManager
@@ -42,135 +88,77 @@ class PulseColors {
 
     private var isDark: Bool { themeManager.current == .dark }
 
-    // 主题色 — 柔和霓虹绿（降低饱和度，提升可读性）
-    static let accent = Color(red: 0.0, green: 0.85, blue: 0.55) // 柔和绿
-    static let accentLight = Color(red: 0.15, green: 0.95, blue: 0.65)
-    static let accentDim = Color(red: 0.0, green: 0.85, blue: 0.55).opacity(0.10)
+    static let accent = KryptonColor.amber
+    static let accentLight = KryptonColor.amberActive
+    static let accentDim = KryptonColor.amberSoft
 
-    // 盈亏色
-    var profit: Color {
-        isDark
-            ? Color(red: 0.0, green: 0.75, blue: 0.5)   // 暗黑模式：柔和绿
-            : Color(red: 0.0, green: 0.6, blue: 0.4)     // 明亮模式：更暗的绿
-    }
+    var profit: Color { isDark ? KryptonColor.green : KryptonColor.green }
+    var loss: Color { isDark ? KryptonColor.red : KryptonColor.red }
+    static let loss = KryptonColor.red
 
-    var loss: Color {
-        isDark
-            ? Color(red: 1.0, green: 0.231, blue: 0.231)  // #FF3B3B — dark
-            : Color(red: 0.85, green: 0.15, blue: 0.15)    // dimmer red for light theme
-    }
-    static let loss = Color(red: 1.0, green: 0.231, blue: 0.231) // #FF3B3B
+    var background: Color { isDark ? KryptonColor.background : KryptonColor.surface }
+    var cardBackground: Color { isDark ? KryptonColor.card : KryptonColor.surface }
+    var surface: Color { isDark ? KryptonColor.surface : KryptonColor.background }
+    var surfaceElevated: Color { isDark ? KryptonColor.cardHover : KryptonColor.surfaceHover }
+    var surfaceHover: Color { isDark ? KryptonColor.surfaceHover : KryptonColor.cardHover }
+    var surfaceActive: Color { isDark ? KryptonColor.amberSoft : KryptonColor.surfaceHover }
 
-    // 背景色
-    var background: Color {
-        isDark
-            ? Color(red: 0.039, green: 0.039, blue: 0.043)  // #0A0A0A
-            : Color(red: 0.96, green: 0.965, blue: 0.975)    // 浅灰蓝 #F5F6F9
-    }
+    var textPrimary: Color { isDark ? KryptonColor.primaryText : KryptonColor.ink }
+    var textSecondary: Color { isDark ? KryptonColor.secondaryText : KryptonColor.secondaryText }
+    var textMuted: Color { isDark ? KryptonColor.secondaryText : KryptonColor.secondaryText }
 
-    // 玻璃态卡片底色
-    var cardBackground: Color {
-        isDark
-            ? Color(red: 0.094, green: 0.094, blue: 0.106).opacity(0.55)
-            : Color.white.opacity(0.65)
-    }
+    var border: Color { isDark ? KryptonColor.border : KryptonColor.border }
+    var borderHover: Color { isDark ? KryptonColor.borderHover : KryptonColor.borderHover }
+    static let borderAccent = KryptonColor.amberSoft
 
-    // 表面色
-    var surface: Color {
-        isDark ? Color.white.opacity(0.04) : Color.black.opacity(0.03)
-    }
-    var surfaceElevated: Color {
-        isDark ? Color.white.opacity(0.06) : Color.black.opacity(0.04)
-    }
-    var surfaceHover: Color {
-        isDark ? Color.white.opacity(0.08) : Color.black.opacity(0.06)
-    }
-    var surfaceActive: Color {
-        isDark ? Color.white.opacity(0.10) : Color.black.opacity(0.08)
-    }
+    static let warning = KryptonColor.amber
+    static let danger = KryptonColor.red
+    static let info = Color(hex: "#00c2ff")
+    static let success = KryptonColor.green
 
-    // 文字色
-    var textPrimary: Color {
-        isDark
-            ? Color(red: 0.878, green: 0.878, blue: 0.878)  // #E0E0E0
-            : Color(red: 0.13, green: 0.13, blue: 0.15)      // #212126
-    }
-    var textSecondary: Color {
-        isDark
-            ? Color(red: 0.533, green: 0.533, blue: 0.533)  // #888888
-            : Color(red: 0.4, green: 0.4, blue: 0.45)        // #666673
-    }
-    var textMuted: Color {
-        isDark
-            ? Color(red: 0.333, green: 0.333, blue: 0.333)  // #555555
-            : Color(red: 0.6, green: 0.6, blue: 0.65)        // #9999A6
-    }
+    static let statusActive = KryptonColor.green
+    static let statusPaused = KryptonColor.amber
+    var statusDraft: Color { isDark ? Color(hex: "#3f4656") : Color(hex: "#848e9c") }
+    static let statusError = KryptonColor.red
 
-    // 描边色
-    var border: Color {
-        isDark ? Color.white.opacity(0.08) : Color.black.opacity(0.08)
-    }
-    var borderHover: Color {
-        isDark ? Color.white.opacity(0.16) : Color.black.opacity(0.14)
-    }
-    static let borderAccent = Color(red: 0.0, green: 1.0, blue: 0.616).opacity(0.25)
+    static let purple = Color(hex: "#a855f7")
+    static let cyan = Color(hex: "#00c2ff")
+    static let amber = KryptonColor.amber
 
-    // 语义色（双主题通用）
-    static let warning = Color(red: 1.0, green: 0.722, blue: 0.0) // #FFB800
-    static let danger = Color(red: 1.0, green: 0.231, blue: 0.231) // #FF3B3B
-    static let info = Color(red: 0.0, green: 0.761, blue: 1.0) // #00C2FF
-    static let success = Color(red: 0.0, green: 0.85, blue: 0.55)
-
-    // 状态色
-    static let statusActive = Color(red: 0.0, green: 0.85, blue: 0.55)
-    static let statusPaused = Color(red: 1.0, green: 0.722, blue: 0.0) // #FFB800
-    var statusDraft: Color {
-        isDark
-            ? Color(red: 0.333, green: 0.333, blue: 0.333)
-            : Color(red: 0.6, green: 0.6, blue: 0.65)
-    }
-    static let statusError = Color(red: 1.0, green: 0.231, blue: 0.231) // #FF3B3B
-
-    // 特殊色（双主题通用）
-    static let purple = Color(red: 0.659, green: 0.333, blue: 0.969) // #A855F7
-    static let cyan = Color(red: 0.0, green: 0.761, blue: 1.0) // #00C2FF
-    static let amber = Color(red: 1.0, green: 0.722, blue: 0.0) // #FFB800
-
-    // MARK: - 统一状态颜色
     enum StateColors {
-        static let green = Color(red: 0.0, green: 1.0, blue: 0.616)       // #00FF9D
-        static let yellow = Color(red: 1.0, green: 0.843, blue: 0.0)      // #FFD700
-        static let orange = Color(red: 1.0, green: 0.549, blue: 0.0)      // #FF8C00
-        static let red = Color(red: 1.0, green: 0.231, blue: 0.188)       // #FF3B30
-        static let purple = Color(red: 0.749, green: 0.353, blue: 0.949)  // #BF5AF2
-        static let orangeRed = Color(red: 1.0, green: 0.271, blue: 0.0)   // #FF4500
-        static let gray = Color(red: 0.420, green: 0.451, blue: 0.498)    // #6B7280
-        static let mutedYellow = Color(red: 0.722, green: 0.525, blue: 0.043) // #B8860B
+        static let green = KryptonColor.green
+        static let yellow = KryptonColor.amber
+        static let orange = KryptonColor.amberActive
+        static let red = KryptonColor.red
+        static let purple = Color(hex: "#bf5af2")
+        static let orangeRed = Color(hex: "#ff4500")
+        static let gray = Color(hex: "#6b7280")
+        static let mutedYellow = Color(hex: "#b8860b")
     }
 }
 
-// MARK: - 字体系统
-struct PulseFonts {
-    static let displayTitle = Font.system(size: 28, weight: .bold, design: .rounded)
-    static let displayHeading = Font.system(size: 20, weight: .semibold, design: .rounded)
-    static let displaySubheading = Font.system(size: 16, weight: .medium, design: .rounded)
+// MARK: - Krypton 字体系统
 
-    static let body = Font.system(size: 13, weight: .regular, design: .monospaced)
-    static let bodyMedium = Font.system(size: 13, weight: .medium, design: .monospaced)
-    static let caption = Font.system(size: 11, weight: .regular, design: .monospaced)
-    static let captionMedium = Font.system(size: 11, weight: .medium, design: .monospaced)
-    static let micro = Font.system(size: 9, weight: .medium, design: .monospaced)
+struct PulseFonts {
+    static let displayTitle = Font.system(size: 28, weight: .bold)
+    static let displayHeading = Font.system(size: 20, weight: .semibold)
+    static let displaySubheading = Font.system(size: 16, weight: .medium)
+
+    static let body = Font.system(size: 13, weight: .regular)
+    static let bodyMedium = Font.system(size: 13, weight: .medium)
+    static let caption = Font.system(size: 11, weight: .regular)
+    static let captionMedium = Font.system(size: 11, weight: .medium)
+    static let micro = Font.system(size: 9, weight: .medium)
 
     static let monoLabel = Font.system(size: 10, weight: .medium, design: .monospaced)
     static let monoLarge = Font.system(size: 22, weight: .semibold, design: .monospaced)
 
-    static let tabular = Font.system(size: 13, weight: .medium, design: .monospaced)
-        .monospacedDigit()
-    static let tabularLarge = Font.system(size: 22, weight: .semibold, design: .monospaced)
-        .monospacedDigit()
+    static let tabular = Font.system(size: 13, weight: .medium, design: .monospaced).monospacedDigit()
+    static let tabularLarge = Font.system(size: 22, weight: .semibold, design: .monospaced).monospacedDigit()
 }
 
-// MARK: - 间距系统 (4pt 栅格)
+// MARK: - Krypton 间距系统
+
 struct PulseSpacing {
     static let xxs: CGFloat = 4
     static let xs: CGFloat = 8
@@ -181,52 +169,47 @@ struct PulseSpacing {
     static let xxl: CGFloat = 48
 }
 
-// MARK: - 圆角系统 (ProofAlpha: 锐利风格)
+// MARK: - Krypton 圆角系统
+
 struct PulseRadii {
     static let xs: CGFloat = 4
     static let sm: CGFloat = 6
     static let md: CGFloat = 10
-    static let card: CGFloat = 14
-    static let lg: CGFloat = 16
-    static let badge: CGFloat = 6
-    static let button: CGFloat = 8
+    static let card: CGFloat = 10
+    static let lg: CGFloat = 10
+    static let badge: CGFloat = 4
+    static let button: CGFloat = 6
     static let circle: CGFloat = 999
 }
 
-// MARK: - Liquid Glass Tokens
+// MARK: - Krypton 玻璃与边框
+
 struct PulseGlass {
-    static let accentOverlay = PulseColors.accent.opacity(0.06)
-    static let accentBorder = PulseColors.accent.opacity(0.15)
-    static let accentBorderHover = PulseColors.accent.opacity(0.30)
+    static let accentOverlay = KryptonColor.amberSpotlight
+    static let accentBorder = KryptonColor.amberSoft
+    static let accentBorderHover = KryptonColor.borderHover
     static let cornerRadius: CGFloat = PulseRadii.card
 
-    // 液态玻璃增强 — 更深的模糊与折射感
     static let modalBackdrop = Color.black.opacity(0.45)
-    static let modalSurface = Color(red: 0.094, green: 0.094, blue: 0.106).opacity(0.75)
-    static let sheetRadius: CGFloat = 20
+    static let modalSurface = KryptonColor.surface
+    static let sheetRadius: CGFloat = 10
 
-    // 主题相关 — 需要从 PulseColors 实例读取
-    static func surfaceTint(_ colors: PulseColors) -> Color { colors.background.opacity(0.10) }
-    static func subtleBorder(_ colors: PulseColors) -> Color {
-        colors.themeManager.isDark ? Color.white.opacity(0.06) : Color.black.opacity(0.06)
-    }
+    static func surfaceTint(_ colors: PulseColors) -> Color { colors.surface.opacity(0.10) }
+    static func subtleBorder(_ colors: PulseColors) -> Color { colors.border }
 }
 
-// MARK: - 阴影系统
+// MARK: - Krypton 阴影系统
+
 struct PulseShadow {
-    // 主题相关 — 需要从 PulseColors 实例读取
     static func card(_ colors: PulseColors) -> ShadowStyle {
-        let dark = colors.themeManager.isDark
-        return ShadowStyle(color: dark ? .black.opacity(0.3) : .black.opacity(0.08), radius: 3, y: 1)
+        ShadowStyle(color: .black.opacity(0.18), radius: 3, y: 1)
     }
     static func elevated(_ colors: PulseColors) -> ShadowStyle {
-        let dark = colors.themeManager.isDark
-        return ShadowStyle(color: dark ? .black.opacity(0.4) : .black.opacity(0.12), radius: 8, y: 2)
+        ShadowStyle(color: KryptonColor.amber.opacity(0.04), radius: 10, y: 2)
     }
-    static let glow = ShadowStyle(color: PulseColors.accent.opacity(0.2), radius: 12, y: 0)
+    static let glow = ShadowStyle(color: KryptonColor.amber.opacity(0.12), radius: 12, y: 0)
     static func subtle(_ colors: PulseColors) -> ShadowStyle {
-        let dark = colors.themeManager.isDark
-        return ShadowStyle(color: dark ? .black.opacity(0.2) : .black.opacity(0.05), radius: 2, y: 1)
+        ShadowStyle(color: .black.opacity(0.12), radius: 2, y: 1)
     }
 }
 
@@ -251,6 +234,7 @@ extension View {
 }
 
 // MARK: - 动画预设
+
 struct PulseAnimation {
     static let springDefault = Animation.spring(response: 0.35, dampingFraction: 0.8)
     static let easeOutFast = Animation.easeOut(duration: 0.15)

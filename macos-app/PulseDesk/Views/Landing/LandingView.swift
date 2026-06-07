@@ -1,4 +1,4 @@
-// LandingView.swift — ProofAlpha 风格启动/落地页
+// LandingView.swift — Krypton Pro 启动页
 // 简洁设计：Logo + 标题 + 特性亮点 + CTA
 
 import SwiftUI
@@ -26,21 +26,21 @@ struct LandingView: View {
                         )
                         .frame(width: 240, height: 240).blur(radius: 40)
 
-                        PulseRing(color: PulseColors.accent, size: 72)
-
-                        Image(systemName: "chart.line.uptrend.xyaxis")
-                            .font(.system(size: 36, weight: .thin))
-                            .foregroundStyle(PulseColors.accent)
-                            .shadow(color: PulseColors.accent.opacity(0.5), radius: 15)
-                            .shadow(color: PulseColors.accent.opacity(0.2), radius: 30)
+                        KryptonLogoView()
+                            .frame(width: 72, height: 72)
+                            .shadow(color: PulseColors.accent.opacity(0.45), radius: 16)
                     }
 
                     if showContent {
                         VStack(spacing: PulseSpacing.sm) {
-                            BlurTextReveal(text: "PulseDesk", delay: 0.2, duration: 0.8)
-                                .font(.system(size: 48, weight: .bold, design: .rounded))
-                            DecryptedText(text: "AI-POWERED QUANT TRADING", triggerOnAppear: true, speed: 0.03, revealDirection: .start)
-                                .font(PulseFonts.monoLabel).foregroundStyle(colors.textMuted).tracking(3)
+                            BlurTextReveal(text: "Krypton", delay: 0.2, duration: 0.8)
+                                .font(.system(size: 48, weight: .bold))
+                            HStack(spacing: 4) {
+                                DecryptedText(text: "PRO", triggerOnAppear: true, speed: 0.03, revealDirection: .start)
+                                    .font(PulseFonts.monoLabel).foregroundStyle(PulseColors.accent).tracking(2)
+                                DecryptedText(text: "AI QUANT TRADING TERMINAL", triggerOnAppear: true, speed: 0.03, revealDirection: .start)
+                                    .font(PulseFonts.monoLabel).foregroundStyle(colors.textMuted).tracking(3)
+                            }
                         }
                     }
 
@@ -59,7 +59,7 @@ struct LandingView: View {
                 // CTA
                 if showCTA {
                     VStack(spacing: PulseSpacing.md) {
-                        ProofAlphaButton(title: "进入仪表盘") {
+                        ProofAlphaButton(title: "进入 Krypton Pro") {
                             withAnimation(PulseAnimation.springDefault) { appState.hasLaunched = true }
                         }
 
@@ -98,9 +98,8 @@ struct FeaturePill: View {
         .background(
             Capsule()
                 .fill(colors.surface.opacity(0.4))
-                .background(Capsule().fill(.ultraThinMaterial))
         )
-        .overlay(Capsule().stroke(Color.white.opacity(0.06), lineWidth: 0.5))
+        .overlay(Capsule().stroke(colors.border, lineWidth: 0.5))
         .opacity(appeared ? 1 : 0)
         .scaleEffect(appeared ? 1 : 0.9)
         .onAppear { withAnimation(PulseAnimation.springDefault.delay(0.5)) { appeared = true } }
