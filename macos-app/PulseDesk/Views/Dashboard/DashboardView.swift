@@ -64,7 +64,7 @@ struct AIStatusBar: View {
     private func statusItem(icon: String, label: String, value: String, color: Color) -> some View {
         HStack(spacing: PulseSpacing.xxs) {
             Image(systemName: icon)
-                .font(.system(size: 10))
+                .font(PulseFonts.monoLabel)
                 .foregroundStyle(color)
             VStack(alignment: .leading, spacing: 0) {
                 Text(label)
@@ -127,20 +127,20 @@ struct AIMarketJudgmentCard: View {
     @State private var appeared = false
 
     var body: some View {
-        ProofAlphaCard(emphasis: .bold) {
+        KryptonCard(emphasis: .bold) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
                 TerminalLabel(text: "今日 AI 市场判断")
 
                 HStack(alignment: .top, spacing: PulseSpacing.lg) {
                     VStack(spacing: PulseSpacing.xxs) {
                         Text(judgment.direction)
-                            .font(.system(size: 36, weight: .bold, design: .rounded))
+                            .font(PulseFonts.displayLarge)
                             .foregroundStyle(directionColor)
                             .opacity(appeared ? 1 : 0)
                             .offset(y: appeared ? 0 : 8)
 
                         Image(systemName: directionIcon)
-                            .font(.system(size: 18, weight: .bold))
+                            .font(PulseFonts.displayHeading)
                             .foregroundStyle(directionColor)
                     }
                     .frame(minWidth: 90)
@@ -174,7 +174,7 @@ struct AIMarketJudgmentCard: View {
 
                             HStack(spacing: PulseSpacing.xxs) {
                                 Image(systemName: "brain.head.profile")
-                                    .font(.system(size: 9))
+                                    .font(PulseFonts.micro)
                                     .foregroundStyle(colors.textMuted)
                                 Text(judgment.sourceAgent)
                                     .font(PulseFonts.monoLabel)
@@ -237,7 +237,7 @@ struct PositionsRiskCard: View {
     let positions: [PositionWithAI]
 
     var body: some View {
-        ProofAlphaCard(emphasis: .balanced) {
+        KryptonCard(emphasis: .balanced) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
                 HStack {
                     TerminalLabel(text: "当前持仓 + 风险状态")
@@ -380,7 +380,7 @@ struct PendingConfirmationsCard: View {
     let onReject: (String) -> Void
 
     var body: some View {
-        ProofAlphaCard(emphasis: .balanced) {
+        KryptonCard(emphasis: .balanced) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
                 HStack {
                     TerminalLabel(text: "需人工确认事项")
@@ -421,7 +421,7 @@ struct ConfirmationRow: View {
         VStack(alignment: .leading, spacing: PulseSpacing.xs) {
             HStack(spacing: PulseSpacing.xs) {
                 Image(systemName: typeIcon)
-                    .font(.system(size: 11))
+                    .font(PulseFonts.caption)
                     .foregroundStyle(typeColor)
                     .frame(width: 16)
 
@@ -503,7 +503,7 @@ struct AgentSignalDistributionView: View {
     let groups: [AgentSignalGroup]
 
     var body: some View {
-        ProofAlphaCard(emphasis: .subtle) {
+        KryptonCard(emphasis: .subtle) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
                 TerminalLabel(text: "Agent 信号分布")
 
@@ -566,7 +566,7 @@ struct StrategyStatusOverviewCard: View {
     let summary: StrategyStatusSummary
 
     var body: some View {
-        ProofAlphaCard(emphasis: .subtle) {
+        KryptonCard(emphasis: .subtle) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
                 TerminalLabel(text: "策略状态总览")
 
@@ -610,7 +610,7 @@ struct RiskInterceptionStatsCard: View {
     let summary: RiskInterceptionSummary
 
     var body: some View {
-        ProofAlphaCard(emphasis: .subtle) {
+        KryptonCard(emphasis: .subtle) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
                 TerminalLabel(text: "风险拦截统计")
 
@@ -685,7 +685,7 @@ struct PulseExpandableSection<Label: View, Content: View>: View {
                     label()
                     Spacer()
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 11, weight: .medium))
+                        .font(PulseFonts.captionMedium)
                         .foregroundStyle(colors.textMuted)
                         .rotationEffect(.degrees(isExpanded ? 90 : 0))
                 }
@@ -740,24 +740,28 @@ struct DashboardView: View {
                 todayCost: viewModel.todayAICost,
                 pendingJobs: viewModel.pendingAIJobs
             )
+            .staggeredAppearance(index: 0)
 
             if let judgment = viewModel.aiMarketJudgment {
                 AIMarketJudgmentCard(judgment: judgment)
+                    .staggeredAppearance(index: 1)
             }
 
             PositionsRiskCard(positions: viewModel.positions)
+                .staggeredAppearance(index: 2)
 
             PendingConfirmationsCard(
                 confirmations: viewModel.pendingConfirmations,
                 onApprove: { viewModel.approveConfirmation($0) },
                 onReject: { viewModel.rejectConfirmation($0) }
             )
+            .staggeredAppearance(index: 3)
 
             // 可展开分析区域 — 替代原生 DisclosureGroup
             PulseExpandableSection {
                 HStack(spacing: PulseSpacing.xs) {
                     Image(systemName: "chart.bar.doc.horizontal")
-                        .font(.system(size: 12))
+                        .font(PulseFonts.label)
                         .foregroundStyle(PulseColors.accent)
                     Text("更多分析")
                         .font(PulseFonts.bodyMedium)
@@ -780,6 +784,7 @@ struct DashboardView: View {
                     }
                 }
             }
+            .staggeredAppearance(index: 4)
 
             if viewModel.aiMarketJudgment == nil && !viewModel.isLoading {
                 EmptyStateView(
@@ -787,6 +792,7 @@ struct DashboardView: View {
                     title: "AI 总控台",
                     description: "等待 AI Agent 数据加载..."
                 )
+                .staggeredAppearance(index: 5)
             }
         }
         .padding(PulseSpacing.lg)

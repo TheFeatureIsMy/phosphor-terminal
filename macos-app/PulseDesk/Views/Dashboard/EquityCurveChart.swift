@@ -17,7 +17,7 @@ struct EquityCurveChart: View {
     }
 
     var body: some View {
-        SpotlightCard {
+        KryptonCard(emphasis: .balanced) {
             VStack(alignment: .leading, spacing: PulseSpacing.md) {
                 // 标题 + 范围选择器
                 HStack {
