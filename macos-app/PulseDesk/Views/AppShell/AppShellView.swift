@@ -13,6 +13,7 @@ struct AppShellView: View {
 
     @State private var dashboardVM: DashboardViewModel?
     @State private var strategiesVM: StrategiesViewModel?
+    @State private var previousWorkspace: PrimaryWorkspace = .tradingConsole
 
     var body: some View {
         GlassEffectContainer {
@@ -23,11 +24,8 @@ struct AppShellView: View {
                 // 右侧：工具栏 + 内容区
                 VStack(spacing: 0) {
                     GlobalStatusBar()
-                    detailContent
-                        .id(appState.selectedRoute)
-                        .contentTransition(.opacity)
+                    workspaceContent
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .animation(PulseAnimation.easeOutMedium, value: appState.selectedRoute)
                 }
             }
         }
@@ -69,11 +67,67 @@ struct AppShellView: View {
         SidebarView()
     }
 
-    // MARK: - 内容路由
-    @ViewBuilder
-    private var detailContent: some View {
+    // MARK: - 工作区切换 (scale-depth transition)
+    private enum PrimaryWorkspace: String, Equatable {
+        case tradingConsole
+        case strategyLab
+        case operations
+    }
+
+    private var primaryWorkspace: PrimaryWorkspace {
         switch appState.selectedRoute {
-        // OVERVIEW
+        case .dashboard, .liveReadiness,
+             .executionCenter, .ordersPositions, .reconciliationBus,
+             .riskCenter, .stopProtection, .circuitBreakers,
+             .marketStructure, .structureMatrix, .manipulationRadar:
+            return .tradingConsole
+        case .strategyWorkspace, .strategyCanvas, .backtestSimulation,
+             .aiResearchRoom, .agentPlatform, .signalCenter, .marketSentiment,
+             .growthReview, .failureClustering, .strategyOptimization,
+             .strategyDetail:
+            return .strategyLab
+        case .serviceManagement, .dataSourceManagement, .systemSettings:
+            return .operations
+        }
+    }
+
+    // MARK: - 工作区内容容器
+    @ViewBuilder
+    private var workspaceContent: some View {
+        ZStack {
+            switch primaryWorkspace {
+            case .tradingConsole:
+                tradingConsoleContent
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .leading).combined(with: .opacity),
+                        removal: .scale(scale: 0.92).combined(with: .opacity)
+                    ))
+            case .strategyLab:
+                strategyLabContent
+                    .transition(.asymmetric(
+                        insertion: previousWorkspace == .tradingConsole
+                            ? .move(edge: .trailing).combined(with: .opacity)
+                            : .move(edge: .leading).combined(with: .opacity),
+                        removal: .scale(scale: 0.92).combined(with: .opacity)
+                    ))
+            case .operations:
+                operationsContent
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .trailing).combined(with: .opacity),
+                        removal: .scale(scale: 0.92).combined(with: .opacity)
+                    ))
+            }
+        }
+        .animation(PulseAnimation.workspaceTransition, value: primaryWorkspace)
+        .onChange(of: primaryWorkspace) { oldValue, _ in
+            previousWorkspace = oldValue
+        }
+    }
+
+    // MARK: - 交易控制台工作区
+    @ViewBuilder
+    private var tradingConsoleContent: some View {
+        switch appState.selectedRoute {
         case .dashboard:
             if let vm = dashboardVM {
                 DashboardView(viewModel: vm)
@@ -82,7 +136,33 @@ struct AppShellView: View {
             }
         case .liveReadiness:
             LiveReadinessView()
-        // STRATEGY
+        case .executionCenter:
+            ExecutionCenterView()
+        case .ordersPositions:
+            OrdersPositionsView()
+        case .reconciliationBus:
+            ReconciliationBusView()
+        case .riskCenter:
+            RiskCenterView()
+        case .stopProtection:
+            StopProtectionView()
+        case .circuitBreakers:
+            CircuitBreakersView()
+        case .marketStructure:
+            MarketStructureView()
+        case .structureMatrix:
+            StructureMatrixView()
+        case .manipulationRadar:
+            ManipulationRadarView()
+        default:
+            EmptyView()
+        }
+    }
+
+    // MARK: - 策略实验室工作区
+    @ViewBuilder
+    private var strategyLabContent: some View {
+        switch appState.selectedRoute {
         case .strategyWorkspace:
             if let vm = strategiesVM {
                 StrategiesListView(viewModel: vm)
@@ -93,28 +173,6 @@ struct AppShellView: View {
             StrategyCanvasPageView()
         case .backtestSimulation:
             BacktestDryrunView()
-        // STRUCTURE
-        case .marketStructure:
-            MarketStructureView()
-        case .structureMatrix:
-            StructureMatrixView()
-        case .manipulationRadar:
-            ManipulationRadarView()
-        // EXECUTION
-        case .executionCenter:
-            ExecutionCenterView()
-        case .ordersPositions:
-            OrdersPositionsView()
-        case .reconciliationBus:
-            ReconciliationBusView()
-        // RISK
-        case .riskCenter:
-            RiskCenterView()
-        case .stopProtection:
-            StopProtectionView()
-        case .circuitBreakers:
-            CircuitBreakersView()
-        // AI RESEARCH
         case .aiResearchRoom:
             AIStudioView()
         case .agentPlatform:
@@ -123,21 +181,12 @@ struct AppShellView: View {
             SignalCenterView()
         case .marketSentiment:
             SentimentView()
-        // GROWTH
         case .growthReview:
             GrowthView()
         case .failureClustering:
             FailureClusteringView()
         case .strategyOptimization:
             StrategyOptimizationView()
-        // SYSTEM
-        case .serviceManagement:
-            AIProvidersView()
-        case .dataSourceManagement:
-            DataSourcesView()
-        case .systemSettings:
-            SettingsView()
-        // Internal
         case .strategyDetail:
             if let v2Id = appState.selectedStrategyV2Id {
                 StrategyDetailView(strategyId: v2Id, client: networkClient)
@@ -146,6 +195,23 @@ struct AppShellView: View {
             } else {
                 LoadingView(type: .detail)
             }
+        default:
+            EmptyView()
+        }
+    }
+
+    // MARK: - 运维工作区
+    @ViewBuilder
+    private var operationsContent: some View {
+        switch appState.selectedRoute {
+        case .serviceManagement:
+            AIProvidersView()
+        case .dataSourceManagement:
+            DataSourcesView()
+        case .systemSettings:
+            SettingsView()
+        default:
+            EmptyView()
         }
     }
 
