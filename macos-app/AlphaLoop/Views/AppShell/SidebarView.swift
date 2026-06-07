@@ -12,7 +12,6 @@ struct SidebarView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Spacer().frame(height: 30)
             logoHeader
 
             ScrollView(.vertical, showsIndicators: false) {
@@ -59,10 +58,10 @@ struct SidebarView: View {
                 HStack(spacing: PulseSpacing.xs) {
                     ZStack {
                         if isLogoHovered {
-                            PulseRing(color: PulseColors.accent.opacity(0.6), size: 36)
+                            PulseRing(color: PulseColors.accent.opacity(0.6), size: 48)
                         }
                         AlphaLoopLogoView()
-                            .frame(width: 24, height: 24)
+                            .frame(width: 32, height: 32)
                     }
                     if !appState.sidebarCollapsed {
                         L10nText("弈机", en: "AlphaLoop")
@@ -84,7 +83,11 @@ struct SidebarView: View {
                 .buttonStyle(.plain).transition(.opacity)
             }
         }
-        .padding(.horizontal, PulseSpacing.sm).frame(height: 40)
+        .padding(.horizontal, PulseSpacing.sm)
+        .padding(.top, 28)
+        .frame(height: 64)
+        .background(colors.background)
+        .zIndex(1)
     }
 
     private var sidebarFooter: some View {
