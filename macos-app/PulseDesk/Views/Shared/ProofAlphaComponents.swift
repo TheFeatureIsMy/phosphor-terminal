@@ -424,3 +424,53 @@ struct KryptonCard<Content: View>: View {
     }
 }
 
+// MARK: - KryptonLogoView — 六边形原子晶格 Logo
+struct KryptonLogoView: View {
+    var body: some View {
+        ZStack {
+            HexagonShape()
+                .stroke(PulseColors.accent, lineWidth: 2.2)
+                .frame(width: 24, height: 24)
+                .shadow(color: PulseColors.accent.opacity(0.35), radius: 4)
+
+            GeometryReader { geo in
+                let w = geo.size.width
+                let h = geo.size.height
+                let center = CGPoint(x: w / 2, y: h / 2)
+
+                Path { path in
+                    path.move(to: CGPoint(x: w / 2, y: 0))
+                    path.addLine(to: center)
+                    path.move(to: center)
+                    path.addLine(to: CGPoint(x: w, y: h * 0.75))
+                    path.move(to: center)
+                    path.addLine(to: CGPoint(x: 0, y: h * 0.75))
+                }
+                .stroke(PulseColors.accent, lineWidth: 1.2)
+            }
+            .frame(width: 24, height: 24)
+
+            Circle()
+                .fill(Color(hex: "#ffd000"))
+                .frame(width: 4, height: 4)
+                .shadow(color: Color(hex: "#ffd000").opacity(0.8), radius: 3)
+        }
+    }
+}
+
+struct HexagonShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let w = rect.width
+        let h = rect.height
+        path.move(to: CGPoint(x: w / 2, y: 0))
+        path.addLine(to: CGPoint(x: w, y: h * 0.25))
+        path.addLine(to: CGPoint(x: w, y: h * 0.75))
+        path.addLine(to: CGPoint(x: w / 2, y: h))
+        path.addLine(to: CGPoint(x: 0, y: h * 0.75))
+        path.addLine(to: CGPoint(x: 0, y: h * 0.25))
+        path.closeSubpath()
+        return path
+    }
+}
+

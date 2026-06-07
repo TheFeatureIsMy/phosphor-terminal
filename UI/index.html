@@ -1,0 +1,1202 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Krypton · Bybit Style Professional Quant Console</title>
+  <style>
+    /* ================================================================
+       Krypton — Bybit-Inspired Professional Trading Design System
+       ================================================================ */
+
+    :root {
+      /* —— Bybit Signature Dark Mode (Deep Midnight & Blue-Gray Slate) —— */
+      --bybit-bg: #12151f;
+      --bybit-surface: #171b26;
+      --bybit-surface-hover: #1e2232;
+      --bybit-card: #171b26;
+      --bybit-card-hover: #222838;
+      --bybit-ink: #0c0e17;
+
+      /* —— Bybit Brand Accents —— */
+      --bybit-amber: #f7a600; /* Signature Amber Yellow */
+      --bybit-amber-soft: rgba(247, 166, 0, 0.08);
+      --bybit-amber-spotlight: rgba(247, 166, 0, 0.1);
+      --bybit-active-amber: #d48e00;
+
+      /* —— Bybit High-Contrast Semantics —— */
+      --crypto-green: #00c087; /* Mint Green Up */
+      --crypto-green-soft: rgba(0, 192, 135, 0.08);
+      --crypto-red: #f6465d; /* Crimson Red Down */
+      --crypto-red-soft: rgba(246, 70, 93, 0.08);
+
+      /* —— Borders (Sleek TradingView-Style Thin Lines) —— */
+      --border-gild: #202533;
+      --border-gild-hover: #2d3546;
+
+      /* —— Typography —— */
+      --font-display: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-mono: "SF Mono", "IBM Plex Mono", Menlo, Monaco, monospace;
+
+      --text-xs: 11px;
+      --text-sm: 13px;
+      --text-base: 14px;
+      --text-md: 16px;
+      --text-lg: 20px;
+      --text-xl: 24px;
+
+      /* —— Spacing —— */
+      --space-xs: 4px;
+      --space-sm: 8px;
+      --space-md: 12px;
+      --space-lg: 16px;
+      --space-xl: 24px;
+      --space-xxl: 36px;
+
+      /* —— Radii (Bybit Professional Scale) —— */
+      --radius-sm: 4px;
+      --radius-md: 6px;
+      --radius-lg: 10px;
+      --radius-pill: 9999px;
+
+      /* —— Transitions (Fast & Fluid) —— */
+      --transition-base: 250ms cubic-bezier(0.16, 1, 0.3, 1);
+      --transition-fast: 120ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* —— Global Reset & Typography —— */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bybit-bg);
+      color: #ffffff;
+      font-family: var(--font-display);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+      min-height: 100vh;
+      position: relative;
+    }
+
+    /* —— Ambient Holographic Lights (Backdrop - Soft Amber Glow) —— */
+    body::before {
+      content: "";
+      position: absolute;
+      top: -10%; left: -10%;
+      width: 60%; height: 60%;
+      background: radial-gradient(circle, var(--bybit-amber-soft) 0%, transparent 70%);
+      filter: blur(80px);
+      pointer-events: none;
+      z-index: 0;
+      animation: ambientPulse 12s infinite alternate ease-in-out;
+    }
+    @keyframes ambientPulse {
+      0% { transform: scale(1); translate(0, 0); opacity: 0.8; }
+      100% { transform: scale(1.1) translate(3%, 3%); opacity: 1; }
+    }
+
+    /* —— Grid Overlay —— */
+    .grid-overlay {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-image: radial-gradient(rgba(255, 255, 255, 0.012) 1px, transparent 1px);
+      background-size: 24px 24px;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* —— Main App Layout —— */
+    .app-shell {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* —— Left Navigation (Bybit Style Flat Sidebar) —— */
+    .dock-sidebar {
+      width: 240px;
+      background: var(--bybit-bg);
+      border-right: 1px solid var(--border-gild);
+      display: flex;
+      flex-direction: column;
+      padding: var(--space-xl) var(--space-md);
+      flex-shrink: 0;
+    }
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+      margin-bottom: var(--space-xxl);
+      padding-left: var(--space-xs);
+    }
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .brand-title {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.015em;
+      color: #ffffff;
+    }
+    .brand-sub {
+      color: var(--bybit-amber);
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-left: 2px;
+    }
+    .nav-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      list-style: none;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+      padding: 10px var(--space-md);
+      border-radius: var(--radius-sm);
+      color: #848e9c;
+      font-weight: 600;
+      font-size: 13.5px;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+    .nav-item:hover {
+      color: #ffffff;
+      background: var(--bybit-surface);
+    }
+    .nav-item:hover .vector-icon {
+      stroke: #ffffff;
+    }
+    .nav-item.active {
+      color: var(--bybit-amber);
+      background: var(--bybit-amber-soft);
+      font-weight: 700;
+    }
+    .nav-item.active .vector-icon {
+      stroke: var(--bybit-amber);
+    }
+    .vector-icon {
+      width: 16px;
+      height: 16px;
+      stroke: #848e9c;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+      transition: stroke var(--transition-fast);
+    }
+
+    /* —— Main Content Canvas —— */
+    .content-canvas {
+      flex: 1;
+      padding: var(--space-xl) var(--space-xl) var(--space-xxl);
+      overflow-y: auto;
+      max-width: 1440px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* —— Top Bar —— */
+    .control-deck {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-xl);
+    }
+    .title-area h1 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.015em;
+      margin-bottom: var(--space-xs);
+    }
+    .title-area p {
+      color: #848e9c;
+      font-size: 12.5px;
+    }
+    .metrics-pills {
+      display: flex;
+      gap: var(--space-sm);
+    }
+    .status-pill {
+      background: var(--bybit-surface);
+      border: 1px solid var(--border-gild);
+      padding: 6px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      color: #848e9c;
+    }
+    .pill-glow-green {
+      width: 6px; height: 6px;
+      background: var(--crypto-green);
+      border-radius: 50%;
+      box-shadow: 0 0 6px var(--crypto-green);
+    }
+
+    /* —— Horizontal Ticker Tape —— */
+    .ticker-tape {
+      display: flex;
+      gap: var(--space-lg);
+      margin-bottom: var(--space-xl);
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+    .ticker-tape::-webkit-scrollbar { height: 0; }
+    .ticker-cell {
+      background: var(--bybit-surface);
+      border: 1px solid var(--border-gild);
+      border-radius: var(--radius-sm);
+      padding: 10px var(--space-md);
+      min-width: 195px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all var(--transition-fast);
+    }
+    .ticker-cell:hover {
+      border-color: var(--border-gild-hover);
+    }
+    .ticker-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .ticker-token {
+      font-weight: 600;
+      font-size: 11px;
+      color: #848e9c;
+    }
+    .ticker-price {
+      font-family: var(--font-mono);
+      font-size: 13.5px;
+      font-weight: 700;
+    }
+    .ticker-indicator {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: var(--space-xs);
+    }
+    .ticker-change {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 1px 4px;
+      border-radius: 2px;
+    }
+    .ticker-change.up { background: var(--crypto-green-soft); color: var(--crypto-green); }
+    .ticker-change.down { background: var(--crypto-red-soft); color: var(--crypto-red); }
+
+    /* —— BENTO GRID (OKX Style Flat Boxes) —— */
+    .bento-grid {
+      display: grid;
+      grid-template-columns: 1.6fr 1fr;
+      grid-auto-rows: minmax(180px, auto);
+      gap: var(--space-lg);
+    }
+    @media (max-width: 1024px) {
+      .bento-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* —— Bento Card Base (Interactive 3D Glass + Bybit Style) —— */
+    .bento-card {
+      position: relative;
+      background: var(--bybit-surface);
+      border: 1px solid var(--border-gild);
+      border-radius: var(--radius-lg);
+      padding: var(--space-xl);
+      overflow: hidden;
+      transform-style: preserve-3d;
+      perspective: 1000px;
+      transition: border-color var(--transition-base), box-shadow var(--transition-base);
+    }
+    .bento-card::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--bybit-amber), transparent);
+      opacity: 0;
+      transition: opacity var(--transition-base);
+      z-index: 5;
+    }
+    .bento-card:hover {
+      border-color: var(--border-gild-hover);
+      box-shadow: rgba(247, 166, 0, 0.04) 0px 8px 24px;
+    }
+    .bento-card:hover::before {
+      opacity: 0.3;
+    }
+
+    /* Bento Card Layout span overrides */
+    .span-col-2 { grid-column: span 2; }
+    @media (max-width: 1024px) {
+      .span-col-2 { grid-column: span 1; }
+    }
+    .row-span-2 { grid-row: span 2; }
+
+    /* Cursor-Following Liquid Spotlight overlay (Amber Spotlight) */
+    .spotlight-glow {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      border-radius: var(--radius-lg);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity var(--transition-base);
+      z-index: 1;
+    }
+    .bento-card:hover .spotlight-glow {
+      opacity: 1;
+    }
+
+    .card-content {
+      position: relative;
+      z-index: 10;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* —— Bento Box Headers —— */
+    .bento-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-lg);
+    }
+    .bento-title {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #848e9c;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 700;
+    }
+    .bento-title-dot {
+      width: 4px; height: 4px;
+      background: var(--bybit-amber);
+      border-radius: 50%;
+    }
+
+    /* —— Account Equity Card Layout —— */
+    .equity-stats {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: var(--space-md);
+    }
+    .equity-value-large {
+      font-family: var(--font-display);
+      font-size: 30px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+    .equity-value-large .unit {
+      font-size: 12px;
+      color: #848e9c;
+      font-weight: 500;
+      margin-left: 4px;
+    }
+    .equity-gain {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--crypto-green);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .chart-container-large {
+      height: 140px;
+      width: 100%;
+      position: relative;
+      margin-top: auto;
+    }
+
+    /* —— AI Agent Deck Card Layout —— */
+    .agents-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .agent-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px var(--space-md);
+      background: var(--bybit-bg);
+      border: 1px solid var(--border-gild);
+      border-radius: var(--radius-sm);
+      transition: all var(--transition-fast);
+    }
+    .agent-row:hover {
+      border-color: var(--border-gild-hover);
+    }
+    .agent-info {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+    }
+    .agent-avatar {
+      width: 22px; height: 24px;
+      border-radius: 2px;
+      background: var(--bybit-amber-soft);
+      display: grid;
+      place-items: center;
+      color: var(--bybit-amber);
+      font-weight: 800;
+      font-size: 10px;
+      border: 1px solid rgba(247, 166, 0, 0.2);
+    }
+    .agent-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+    .agent-name {
+      font-size: 12.5px;
+      font-weight: 700;
+    }
+    .agent-model {
+      font-size: 10px;
+      color: #848e9c;
+    }
+    .agent-signal-tag {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 2px;
+      text-transform: uppercase;
+    }
+    .signal-tag-bull { background: var(--crypto-green-soft); color: var(--crypto-green); }
+    .signal-tag-bear { background: var(--crypto-red-soft); color: var(--crypto-red); }
+
+    /* —— Order & Trade Positions Table Layout —— */
+    .table-container {
+      overflow-x: auto;
+      margin-top: var(--space-sm);
+    }
+    .luxury-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12.5px;
+    }
+    .luxury-table th {
+      text-align: left;
+      padding: 8px var(--space-md);
+      color: #848e9c;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid var(--border-gild);
+      text-transform: uppercase;
+    }
+    .luxury-table td {
+      padding: 10px var(--space-md);
+      border-bottom: 1px solid var(--border-gild);
+    }
+    .luxury-table tr:hover td {
+      background: var(--bybit-surface-hover);
+    }
+    .mono-num {
+      font-family: var(--font-mono);
+      font-weight: 500;
+    }
+    .positive-num { color: var(--crypto-green); font-weight: 700; }
+    .negative-num { color: var(--crypto-red); font-weight: 700; }
+
+    /* —— Action buttons and switches —— */
+    .primary-gold-pill {
+      background: var(--bybit-amber);
+      color: var(--bybit-ink);
+      font-weight: 700;
+      font-size: 12px;
+      padding: 6px 16px;
+      border-radius: var(--radius-sm);
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all var(--transition-base);
+    }
+    .primary-gold-pill:hover {
+      background: var(--bybit-active-amber);
+    }
+
+    .secondary-glass-pill {
+      background: var(--bybit-surface);
+      color: var(--frosted-silver);
+      font-weight: 600;
+      font-size: 12px;
+      padding: 5px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-gild);
+      cursor: pointer;
+      transition: all var(--transition-base);
+    }
+    .secondary-glass-pill:hover {
+      background: var(--bybit-surface-hover);
+      border-color: var(--border-gild-hover);
+    }
+
+    /* —— Risk Center Circular Gauge —— */
+    .gauge-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-md);
+      padding: var(--space-sm) 0;
+    }
+    .circular-gauge {
+      position: relative;
+      width: 100px; height: 100px;
+    }
+    .circular-gauge svg {
+      width: 100%; height: 100%;
+      transform: rotate(-90deg);
+    }
+    .circular-gauge circle {
+      fill: none;
+      stroke-width: 6;
+      stroke-linecap: round;
+    }
+    .gauge-bg { stroke: rgba(255, 255, 255, 0.02); }
+    .gauge-fill {
+      stroke: url(#goldGrad);
+      stroke-dasharray: 314;
+      stroke-dashoffset: 75; /* Adjust to fill percent */
+      animation: fillAnim 1.5s ease-out;
+    }
+    .gauge-value-lbl {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 22px;
+      font-weight: 800;
+      font-family: var(--font-mono);
+    }
+    .gauge-title {
+      font-weight: 700;
+      font-size: 13.5px;
+      color: var(--frosted-silver);
+    }
+    .gauge-desc {
+      font-size: 11px;
+      color: #848e9c;
+    }
+
+    /* AI Market Judgment custom components */
+    .ai-judgment-card {
+      background: var(--bybit-surface);
+      border: 1px solid var(--border-gild);
+    }
+    .ai-judgment-card::before {
+      background: var(--bybit-amber);
+      opacity: 0.15;
+    }
+    .ai-direction-text {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--bybit-amber);
+      line-height: 1.1;
+    }
+    .slider-track {
+      background: var(--border-gild);
+      height: 4px;
+      border-radius: 2px;
+      position: relative;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+    .slider-fill {
+      background: var(--bybit-amber);
+      height: 100%;
+      border-radius: 2px;
+      width: 78%;
+    }
+
+    /* Human Confirmations list */
+    .confirm-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .confirm-item {
+      background: var(--bybit-bg);
+      border: 1px solid var(--border-gild);
+      padding: var(--space-md);
+      border-radius: var(--radius-sm);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all var(--transition-fast);
+    }
+    .confirm-item:hover {
+      border-color: var(--border-gild-hover);
+    }
+    .confirm-desc {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .confirm-title {
+      font-size: 12.5px;
+      font-weight: 700;
+    }
+    .confirm-subtitle {
+      font-size: 11px;
+      color: #848e9c;
+    }
+    .confirm-actions {
+      display: flex;
+      gap: var(--space-sm);
+    }
+
+    /* Distribution bar charts */
+    .dist-bar-track {
+      background: var(--border-gild);
+      height: 10px;
+      border-radius: 2px;
+      display: flex;
+      overflow: hidden;
+      position: relative;
+    }
+    .dist-bar-fill-long {
+      background: var(--crypto-green);
+      height: 100%;
+      border-right: 1px solid var(--bybit-ink);
+    }
+    .dist-bar-fill-short {
+      background: var(--crypto-red);
+      height: 100%;
+    }
+
+    .distribution-legend {
+      display: flex;
+      gap: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-top: 6px;
+      color: #848e9c;
+    }
+    .legend-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    /* Segmented stats bar */
+    .stat-segmented-bar {
+      display: flex;
+      height: 6px;
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: var(--space-md);
+    }
+    .stat-segment {
+      height: 100%;
+      border-right: 1px solid var(--bybit-ink);
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- Cybernetic Dot Grid Background Texture (Pure flat, very subtle) -->
+  <div class="grid-overlay"></div>
+
+  <!-- MAIN APP CONTAINER -->
+  <div class="app-shell">
+
+    <!-- SIDEBAR NAVIGATION (BYBIT STYLE FLAT SIDEBAR) -->
+    <aside class="dock-sidebar">
+      <div class="brand-section">
+        <div class="brand-logo">
+          <!-- Geometric Atomic Honeycomb Lattice Logo for Krypton -->
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2L20 7V17L12 22L4 17V7L12 2Z" stroke="#f7a600" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M12 2V12" stroke="#f7a600" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M12 12L20 17" stroke="#f7a600" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M12 12L4 17" stroke="#f7a600" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="12" cy="12" r="2.5" fill="#ffd000" />
+          </svg>
+        </div>
+        <span class="brand-title">Krypton</span>
+        <span class="brand-sub">Pro</span>
+      </div>
+
+      <nav style="flex: 1;">
+        <ul class="nav-list">
+          <li>
+            <a href="#" class="nav-item active">
+              <svg class="vector-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+              总览 Dashboard
+            </a>
+          </li>
+          <li>
+            <a href="#" class="nav-item">
+              <svg class="vector-icon" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              风控中心 Risk
+            </a>
+          </li>
+          <li>
+            <a href="#" class="nav-item">
+              <svg class="vector-icon" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+              策略工坊 Strategy
+            </a>
+          </li>
+          <li>
+            <a href="#" class="nav-item">
+              <svg class="vector-icon" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+              策略画布 Canvas
+            </a>
+          </li>
+          <li>
+            <a href="#" class="nav-item">
+              <svg class="vector-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1-2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              终端设置 Settings
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <div style="border-top: 1px solid var(--border-gild); padding-top: var(--space-lg); display: flex; align-items: center; gap: var(--space-md);">
+        <div style="width: 28px; height: 28px; border-radius: 4px; background: var(--bybit-surface); display: grid; place-items: center; font-weight: 700; font-size: 11px; color: var(--bybit-amber); border: 1px solid var(--border-gild-hover);">
+          K
+        </div>
+        <div>
+          <div style="font-weight: 700; font-size: 13px;">Krypton Team</div>
+          <div style="font-size: 10.5px; color: #848e9c;">Web3 Pro Account</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- CONTENT VIEWPORT -->
+    <main class="content-canvas">
+
+      <!-- TOP CONTROL DECK -->
+      <header class="control-deck">
+        <div class="title-area">
+          <h1>智能量化总控制台</h1>
+          <p>基于 AI 投研与实时市场深度检测的多 Agent 协作平台</p>
+        </div>
+        <div class="metrics-pills">
+          <div class="status-pill">
+            <span class="pill-glow-green"></span>
+            <span>Freqtrade <span style="color: var(--crypto-green)">连接正常</span></span>
+          </div>
+          <div class="status-pill">
+            <span>延迟 15ms</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- REAL-TIME PRICE TICKER STRIP -->
+      <section class="ticker-tape">
+
+        <div class="ticker-cell">
+          <div class="ticker-info">
+            <span class="ticker-token">BTC / USDT</span>
+            <span class="ticker-price">$71,452.12</span>
+          </div>
+          <div class="ticker-indicator">
+            <span class="ticker-change up">+2.84%</span>
+            <div class="ticker-sparkline">
+              <svg width="100%" height="100%" viewBox="0 0 50 18">
+                <path d="M0,15 L10,13 L20,16 L30,8 L40,11 L50,2" fill="none" stroke="var(--crypto-green)" stroke-width="1.5" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="ticker-cell">
+          <div class="ticker-info">
+            <span class="ticker-token">ETH / USDT</span>
+            <span class="ticker-price">$3,942.50</span>
+          </div>
+          <div class="ticker-indicator">
+            <span class="ticker-change down">-1.04%</span>
+            <div class="ticker-sparkline">
+              <svg width="100%" height="100%" viewBox="0 0 50 18">
+                <path d="M0,5 L10,8 L20,3 L30,12 L40,10 L50,15" fill="none" stroke="var(--crypto-red)" stroke-width="1.5" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="ticker-cell">
+          <div class="ticker-info">
+            <span class="ticker-token">BNB / USDT</span>
+            <span class="ticker-price">$612.45</span>
+          </div>
+          <div class="ticker-indicator">
+            <span class="ticker-change up">+4.12%</span>
+            <div class="ticker-sparkline">
+              <svg width="100%" height="100%" viewBox="0 0 50 18">
+                <path d="M0,14 L10,12 L20,15 L30,9 L40,5 L50,2" fill="none" stroke="var(--crypto-green)" stroke-width="1.5" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="ticker-cell">
+          <div class="ticker-info">
+            <span class="ticker-token">SOL / USDT</span>
+            <span class="ticker-price">$154.80</span>
+          </div>
+          <div class="ticker-indicator">
+            <span class="ticker-change up">+6.21%</span>
+            <div class="ticker-sparkline">
+              <svg width="100%" height="100%" viewBox="0 0 50 18">
+                <path d="M0,16 L10,14 L20,11 L30,12 L40,6 L50,1" fill="none" stroke="var(--crypto-green)" stroke-width="1.5" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- BENTO GRID -->
+      <div class="bento-grid">
+
+        <!-- BENTO CARD 1: TODAY'S AI MARKET JUDGMENT (BENTO BOX P0) -->
+        <div class="bento-card ai-judgment-card" id="card-1">
+          <div class="spotlight-glow" id="glow-card-1"></div>
+          <div class="card-content">
+            <header class="bento-header">
+              <div class="bento-title">
+                <span class="bento-title-dot"></span>
+                <span>今日 AI 市场判断</span>
+              </div>
+            </header>
+
+            <div style="display: flex; gap: var(--space-xl); align-items: start; height: 100%;">
+              <div style="text-align: center; min-width: 80px;">
+                <span class="ai-direction-text">看多</span>
+                <div style="font-size: 11px; color: var(--crypto-green); font-weight: 700; margin-top: 4px;">强势买入</div>
+              </div>
+
+              <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+                <div>
+                  <div style="display: flex; justify-content: space-between; font-size: 11px;">
+                    <span style="color: #848e9c">置信度</span>
+                    <span style="font-weight: 700;" class="mono-num">78%</span>
+                  </div>
+                  <div class="slider-track">
+                    <div class="slider-fill"></div>
+                  </div>
+                </div>
+
+                <div style="display: flex; gap: var(--space-md); align-items: center; margin-top: 4px;">
+                  <span class="agent-signal-tag signal-tag-bull">低风险度</span>
+                  <span style="font-size: 11px; color: #848e9c; font-weight: 600;">来源: Claude-Committee</span>
+                </div>
+
+                <p style="font-size: 12px; color: #848e9c; line-height: 1.4;">
+                  多维度信号指标共振，链上持仓地址和高净值流入持续增长，主力博弈结构支撑强劲。
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BENTO CARD 2: PENDING CONFIRMATIONS (P0 ACTION FEED) -->
+        <div class="bento-card" id="card-2">
+          <div class="spotlight-glow" id="glow-card-2"></div>
+          <div class="card-content">
+            <header class="bento-header">
+              <div class="bento-title">
+                <span class="bento-title-dot"></span>
+                <span>需人工确认事项</span>
+              </div>
+              <span class="agent-signal-tag signal-tag-bear" style="background: var(--crypto-red-soft); color: var(--crypto-red);">2 待确认</span>
+            </header>
+
+            <div class="confirm-list">
+              <div class="confirm-item">
+                <div class="confirm-desc">
+                  <span class="confirm-title">部署 "SMA Cross" 策略</span>
+                  <span class="confirm-subtitle">置信度高，拟分配 2.5% 实盘仓位</span>
+                </div>
+                <div class="confirm-actions">
+                  <button class="secondary-glass-pill" style="padding: 4px 12px; font-size: 11px;">拒绝</button>
+                  <button class="primary-gold-pill" style="padding: 4px 12px; font-size: 11px; box-shadow: none;">批准</button>
+                </div>
+              </div>
+
+              <div class="confirm-item">
+                <div class="confirm-desc">
+                  <span class="confirm-title">ETH/USDT 偏高风险释放申请</span>
+                  <span class="confirm-subtitle">由于流动性波动引发，建议进行仓位平抑</span>
+                </div>
+                <div class="confirm-actions">
+                  <button class="secondary-glass-pill" style="padding: 4px 12px; font-size: 11px;">拒绝</button>
+                  <button class="primary-gold-pill" style="padding: 4px 12px; font-size: 11px;">批准</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BENTO CARD 3: ACCOUNT EQUITY (SPAN 1 COL 2) -->
+        <div class="bento-card span-col-2 row-span-2" id="card-3">
+          <div class="spotlight-glow" id="glow-card-3"></div>
+          <div class="card-content">
+            <header class="bento-header">
+              <div class="bento-title">
+                <span class="bento-title-dot"></span>
+                <span>账户总权益走势 (USDT)</span>
+              </div>
+              <div style="display: flex; gap: var(--space-sm);">
+                <button class="secondary-glass-pill" style="font-size: 11px; padding: 4px 12px;">实时</button>
+                <button class="secondary-glass-pill" style="font-size: 11px; padding: 4px 12px; background: rgba(255,255,255,0.08);">1D</button>
+              </div>
+            </header>
+
+            <div class="equity-stats">
+              <div>
+                <div class="equity-value-large">124,850.32<span class="unit">USDT</span></div>
+                <div style="font-size: 11px; color: #848e9c; margin-top: 4px;">今日净入金：+12,450.00 USDT</div>
+              </div>
+              <div class="equity-gain">
+                <span>▲ +8.42%</span>
+                <span style="font-size: 11px; color: #848e9c; font-weight: normal;">今日收益</span>
+              </div>
+            </div>
+
+            <!-- Gradient Line Chart SVG -->
+            <div class="chart-container-large">
+              <svg width="100%" height="100%" viewBox="0 0 800 150" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="eqGlowGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="var(--bybit-amber)" stop-opacity="0.1"/>
+                    <stop offset="100%" stop-color="var(--bybit-amber)" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <path d="M0,130 L80,125 L160,100 L240,108 L320,85 L400,95 L480,65 L560,55 L640,72 L720,35 L800,10" fill="none" stroke="url(#tealGradLine)" stroke-width="2.5" stroke-linecap="round" />
+                <path d="M0,130 L80,125 L160,100 L240,108 L320,85 L400,95 L480,65 L560,55 L640,72 L720,35 L800,10 L800,150 L0,160 Z" fill="url(#eqGlowGrad)" />
+
+                <linearGradient id="tealGradLine" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stop-color="#f7a600"/>
+                  <stop offset="100%" stop-color="#00c087"/>
+                </linearGradient>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- BENTO CARD 4: AI AGENT SIGNAL DISTRIBUTION (P1 EXPANDED DECK) -->
+        <div class="bento-card" id="card-4">
+          <div class="spotlight-glow" id="glow-card-4"></div>
+          <div class="card-content">
+            <header class="bento-header">
+              <div class="bento-title">
+                <span class="bento-title-dot"></span>
+                <span>Agent 信号分布</span>
+              </div>
+              <span style="font-size: 11px; color: #848e9c; font-family: var(--font-mono);">3 ACTIVE AGENTS</span>
+            </header>
+
+            <div class="agents-grid">
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
+                  <span style="font-weight: 700;">BTC 研究委员会</span>
+                  <span style="color: #848e9c">4 个信号</span>
+                </div>
+                <div class="dist-bar-track">
+                  <div class="dist-bar-fill-long" style="width: 75%;"></div>
+                  <div class="dist-bar-fill-short" style="width: 25%;"></div>
+                </div>
+              </div>
+
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
+                  <span style="font-weight: 700;">ETH 策略 Agent</span>
+                  <span style="color: #848e9c">1 个信号</span>
+                </div>
+                <div class="dist-bar-track">
+                  <div class="dist-bar-fill-long" style="width: 0%;"></div>
+                  <div class="dist-bar-fill-short" style="width: 100%;"></div>
+                </div>
+              </div>
+
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
+                  <span style="font-weight: 700;">市场情绪分析</span>
+                  <span style="color: #848e9c">中性偏多</span>
+                </div>
+                <div class="dist-bar-track">
+                  <div class="dist-bar-fill-long" style="width: 60%;"></div>
+                  <div class="dist-bar-fill-short" style="width: 40%;"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="distribution-legend">
+              <div><span class="legend-dot" style="background: var(--crypto-green)"></span> 看多 Bull</div>
+              <div><span class="legend-dot" style="background: var(--crypto-red)"></span> 看空 Bear</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BENTO CARD 5: RISK CONTROL DIAL & STATS (P1 / P2) -->
+        <div class="bento-card" id="card-5">
+          <div class="spotlight-glow" id="glow-card-5"></div>
+          <div class="card-content">
+            <header class="bento-header">
+              <div class="bento-title">
+                <span class="bento-title-dot"></span>
+                <span>风控拦截统计</span>
+              </div>
+              <span style="font-size: 11px; color: #848e9c; font-family: var(--font-mono);">12 次拦截</span>
+            </header>
+
+            <div class="gauge-wrapper" style="padding: var(--space-sm) 0 var(--space-md);">
+              <div style="display: flex; width: 100%; justify-content: space-between; font-size: 12px; margin-bottom: var(--space-xs);">
+                <div>已拦截: <span style="color: var(--crypto-red); font-weight: 700;">4</span></div>
+                <div>已减仓: <span style="color: var(--bybit-amber); font-weight: 700;">3</span></div>
+                <div>模拟中: <span style="color: #6366f1; font-weight: 700;">3</span></div>
+                <div>已放行: <span style="color: var(--crypto-green); font-weight: 700;">2</span></div>
+              </div>
+
+              <div style="width: 100%;">
+                <div class="stat-segmented-bar">
+                  <div class="stat-segment" style="background: var(--crypto-red); width: 33.3%;"></div>
+                  <div class="stat-segment" style="background: var(--bybit-amber); width: 25%;"></div>
+                  <div class="stat-segment" style="background: #6366f1; width: 25%;"></div>
+                  <div class="stat-segment" style="background: var(--crypto-green); width: 16.7%;"></div>
+                </div>
+              </div>
+            </div>
+
+            <div style="font-size: 11px; color: #848e9c; text-align: center; border-top: 1px solid var(--border-gild); padding-top: 10px;">
+              风控拦截统计包括日内强平拦截与高滑点自动防御
+            </div>
+          </div>
+        </div>
+
+        <!-- BENTO CARD 6: ACTIVE POSITIONS (P0 ACTIVE POSITIONS - SPAN COL 2) -->
+        <div class="bento-card span-col-2" id="card-6">
+          <div class="spotlight-glow" id="glow-card-6"></div>
+          <div class="card-content">
+            <header class="bento-header">
+              <div class="bento-title">
+                <span class="bento-title-dot"></span>
+                <span>当前活跃多/空持仓</span>
+              </div>
+              <button class="secondary-glass-pill" style="font-size: 11px; padding: 4px 14px;">查看完整记录</button>
+            </header>
+
+            <div class="table-container">
+              <table class="luxury-table">
+                <thead>
+                  <tr>
+                    <th>交易对</th>
+                    <th>方向</th>
+                    <th>规模</th>
+                    <th>入场均价</th>
+                    <th>当前价格</th>
+                    <th>未实现盈亏 (USDT)</th>
+                    <th>AI 操作建议</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style="font-weight: 700;">BTC/USDT</td>
+                    <td><span class="agent-signal-tag signal-tag-bull">多 Long</span></td>
+                    <td class="mono-num">1.45 BTC</td>
+                    <td class="mono-num">$68,540.00</td>
+                    <td class="mono-num">$71,452.12</td>
+                    <td class="mono-num positive-num">+4,222.57</td>
+                    <td><button class="primary-gold-pill" style="font-size: 11px; padding: 5px 12px; box-shadow: none;">继续持有</button></td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight: 700;">ETH/USDT</td>
+                    <td><span class="agent-signal-tag signal-tag-bear">空 Short</span></td>
+                    <td class="mono-num">12.40 ETH</td>
+                    <td class="mono-num">$3,990.20</td>
+                    <td class="mono-num">$3,942.50</td>
+                    <td class="mono-num negative-num">-591.48</td>
+                    <td><button class="secondary-glass-pill" style="font-size: 11px; padding: 4px 12px;">分批止盈</button></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+  </div>
+
+  <!-- INTERACTIVE JS ENGINE -->
+  <script>
+    // Cursor Spotlight & 3D Tilt Multi-card Setup
+    const setupPremiumCard = (cardId, glowId, maxTiltAngle = 6) => {
+      const card = document.getElementById(cardId);
+      const glow = document.getElementById(glowId);
+      if (!card || !glow) return;
+
+      card.addEventListener('mousemove', (e) => {
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        // Bybit Amber spotlight shine
+        glow.style.background = `radial-gradient(circle 160px at ${x}px ${y}px, var(--bybit-amber-spotlight), transparent)`;
+
+        if (maxTiltAngle > 0) {
+          const w = rect.width;
+          const h = rect.height;
+          // Normalized coordinates: from -0.5 to 0.5
+          const normX = (x / w) - 0.5;
+          const normY = (y / h) - 0.5;
+
+          // 3D rotation angles
+          const rotateY = normX * maxTiltAngle * 2;
+          const rotateX = -normY * maxTiltAngle * 2;
+
+          card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.008, 1.008, 1.008)`;
+          card.style.boxShadow = 'rgba(247, 166, 0, 0.03) 0px 8px 24px';
+        }
+      });
+
+      card.addEventListener('mouseleave', () => {
+        glow.style.background = 'none';
+        if (maxTiltAngle > 0) {
+          card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+          card.style.boxShadow = 'none';
+        }
+      });
+    };
+
+    // Apply interactive math matrix
+    setupPremiumCard('card-1', 'glow-card-1', 4); // AI market judgment
+    setupPremiumCard('card-2', 'glow-card-2', 4); // Pending confirmations
+    setupPremiumCard('card-3', 'glow-card-3', 2); // Large chart card
+    setupPremiumCard('glow-card-4', 'glow-card-4', 5); // Agent signals
+    setupPremiumCard('glow-card-5', 'glow-card-5', 5); // Risk stats
+    setupPremiumCard('card-6', 'glow-card-6', 2); // Positions table
+  </script>
+</body>
+</html>

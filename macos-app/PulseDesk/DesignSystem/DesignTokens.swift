@@ -3,6 +3,23 @@
 
 import SwiftUI
 
+extension Color {
+    init(hex: String) {
+        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        let scanner = Scanner(string: hex)
+        var value: UInt64 = 0
+        scanner.scanHexInt64(&value)
+
+        let components = (
+            r: Double((value >> 16) & 0xff) / 255.0,
+            g: Double((value >> 8) & 0xff) / 255.0,
+            b: Double(value & 0xff) / 255.0
+        )
+
+        self.init(red: components.r, green: components.g, blue: components.b)
+    }
+}
+
 // MARK: - 主题管理器
 @Observable
 class ThemeManager {
@@ -146,6 +163,14 @@ class PulseColors {
         static let orangeRed = Color(red: 1.0, green: 0.271, blue: 0.0)   // #FF4500
         static let gray = Color(red: 0.420, green: 0.451, blue: 0.498)    // #6B7280
         static let mutedYellow = Color(red: 0.722, green: 0.525, blue: 0.043) // #B8860B
+        static let amber = Color(red: 1.0, green: 0.722, blue: 0.0)       // #FFB800
+        static let amberActive = Color(red: 0.831, green: 0.557, blue: 0.0) // #d48e00
+        static let amberSpotlight = Color(red: 1.0, green: 0.722, blue: 0.0, opacity: 0.10) // #f7a600 10%
+        static let redSoft = Color(red: 1.0, green: 0.231, blue: 0.188, opacity: 0.08)
+        static let greenSoft = Color(red: 0.0, green: 1.0, blue: 0.616, opacity: 0.08)
+        static let card = Color(red: 0.090, green: 0.106, blue: 0.149)      // #171b26
+        static let background = Color(red: 0.071, green: 0.082, blue: 0.122) // #12151f
+        static let surfaceHover = Color(red: 0.118, green: 0.133, blue: 0.196) // #1e2232
     }
 }
 
