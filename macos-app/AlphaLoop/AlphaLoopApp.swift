@@ -1,4 +1,4 @@
-// PulseDeskApp.swift — AlphaLoop 应用入口点
+// AlphaLoopApp.swift — AlphaLoop 应用入口点
 // 配置窗口样式、注入全局状态、注册快捷键
 
 import SwiftUI
@@ -162,6 +162,7 @@ struct ContentView: View {
 struct LoginPlaceholderView: View {
     @Environment(AuthState.self) private var authState
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settings
     @Environment(\.networkClient) private var networkClient
     @State private var email = ""
     @State private var password = ""
@@ -179,13 +180,23 @@ struct LoginPlaceholderView: View {
                     .frame(width: 56, height: 56)
                     .shadow(color: PulseColors.accent.opacity(0.35), radius: 14)
 
-                Text("弈机")
-                    .font(PulseFonts.displayTitle)
-                    .foregroundStyle(colors.textPrimary)
-                Text("AlphaLoop")
-                    .font(PulseFonts.monoLabel)
-                    .foregroundStyle(PulseColors.accent)
-                    .tracking(2)
+                if settings.language == .zhCN {
+                    Text("弈机")
+                        .font(PulseFonts.displayTitle)
+                        .foregroundStyle(colors.textPrimary)
+                    Text("AlphaLoop")
+                        .font(PulseFonts.monoLabel)
+                        .foregroundStyle(PulseColors.accent)
+                        .tracking(2)
+                } else {
+                    Text("AlphaLoop")
+                        .font(PulseFonts.displayTitle)
+                        .foregroundStyle(colors.textPrimary)
+                    Text("弈机")
+                        .font(PulseFonts.monoLabel)
+                        .foregroundStyle(PulseColors.accent)
+                        .tracking(2)
+                }
 
                 Text(L10n.zh("AI 多 Agent 加密量化交易终端", en: "AI Multi-Agent Crypto Quant Trading Terminal"))
                     .font(PulseFonts.body)

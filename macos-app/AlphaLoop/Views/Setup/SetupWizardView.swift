@@ -16,7 +16,7 @@ struct SetupWizardView: View {
         VStack(spacing: 0) {
             // Header
             VStack(spacing: PulseSpacing.sm) {
-                Text("弈机 配置向导")
+                L10nText("弈机 配置向导", en: "AlphaLoop Setup Wizard")
                     .font(PulseFonts.displayTitle)
                     .foregroundStyle(colors.textPrimary)
 

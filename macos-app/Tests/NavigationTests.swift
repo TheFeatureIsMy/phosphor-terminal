@@ -3,7 +3,7 @@
 
 import Testing
 import Foundation
-@testable import PulseDesk
+@testable import AlphaLoop
 
 @Suite("Navigation Tests")
 struct NavigationTests {

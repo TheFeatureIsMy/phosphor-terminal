@@ -1,4 +1,4 @@
-// ProofAlphaComponents.swift — AlphaLoop 核心交互组件
+// AlphaLoopComponents.swift — AlphaLoop 核心交互组件
 // TerminalLabel, BadgeDot, StatusDot, GlowText, GradientText
 
 import SwiftUI

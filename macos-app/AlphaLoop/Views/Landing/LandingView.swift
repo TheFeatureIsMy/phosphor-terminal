@@ -6,6 +6,7 @@ import SwiftUI
 struct LandingView: View {
     @Environment(AppState.self) private var appState
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settings
     @State private var showContent = false
     @State private var showCTA = false
 
@@ -37,7 +38,7 @@ struct LandingView: View {
 
                     if showContent {
                         VStack(spacing: PulseSpacing.sm) {
-                            BlurTextReveal(text: "弈机", delay: 0.2, duration: 0.8)
+                            BlurTextReveal(text: settings.language == .zhCN ? "弈机" : "AlphaLoop", delay: 0.2, duration: 0.8)
                                 .font(.system(size: 48, weight: .bold, design: .rounded))
                             DecryptedText(text: "AI-POWERED QUANT TRADING", triggerOnAppear: true, speed: 0.03, revealDirection: .start)
                                 .font(PulseFonts.monoLabel).foregroundStyle(colors.textMuted).tracking(3)

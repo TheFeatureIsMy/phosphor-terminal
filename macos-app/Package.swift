@@ -2,20 +2,20 @@
 import PackageDescription
 
 let package = Package(
-    name: "PulseDesk",
+    name: "AlphaLoop",
     platforms: [.macOS(.v26)],
     targets: [
         .executableTarget(
-            name: "PulseDesk",
-            path: "PulseDesk",
+            name: "AlphaLoop",
+            path: "AlphaLoop",
             resources: [.process("Resources")],
             swiftSettings: [
                 .unsafeFlags(["-parse-as-library"]),
             ]
         ),
         .testTarget(
-            name: "PulseDeskTests",
-            dependencies: ["PulseDesk"],
+            name: "AlphaLoopTests",
+            dependencies: ["AlphaLoop"],
             path: "Tests"
         ),
     ]

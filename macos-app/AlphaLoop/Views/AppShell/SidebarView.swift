@@ -67,7 +67,9 @@ struct SidebarView: View {
                             .shadow(color: PulseColors.accent.opacity(0.4), radius: 6)
                     }
                     if !appState.sidebarCollapsed {
-                        Text("弈机").font(PulseFonts.displaySubheading).foregroundStyle(colors.textPrimary)
+                        L10nText("弈机", en: "AlphaLoop")
+                            .font(PulseFonts.displaySubheading)
+                            .foregroundStyle(colors.textPrimary)
                             .transition(.opacity.combined(with: .move(edge: .leading)))
                     }
                 }
