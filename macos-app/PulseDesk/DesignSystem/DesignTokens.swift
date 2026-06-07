@@ -1,4 +1,4 @@
-// DesignTokens.swift — ProofAlpha 设计系统
+// DesignTokens.swift — AlphaLoop 设计系统
 // 双主题支持：暗黑赛博朋克 + 明亮科技风
 
 import SwiftUI
@@ -209,7 +209,7 @@ struct PulseSpacing {
     static let xxl: CGFloat = 48
 }
 
-// MARK: - 圆角系统 (ProofAlpha: 锐利风格)
+// MARK: - 圆角系统 (AlphaLoop: 锐利风格)
 struct PulseRadii {
     static let xs: CGFloat = 4
     static let sm: CGFloat = 6

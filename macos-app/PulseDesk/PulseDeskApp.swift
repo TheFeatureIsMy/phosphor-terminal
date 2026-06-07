@@ -1,10 +1,10 @@
-// PulseDeskApp.swift — 应用入口点
+// PulseDeskApp.swift — AlphaLoop 应用入口点
 // 配置窗口样式、注入全局状态、注册快捷键
 
 import SwiftUI
 
 @main
-struct PulseDeskApp: App {
+struct AlphaLoopApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     @State private var appState = AppState()
@@ -91,13 +91,13 @@ struct PulseDeskApp: App {
         if forcedMode == nil {
             let reachable = await LiveNetworkClient.isBackendReachable()
             if reachable {
-                NSLog("[PulseDesk] Backend reachable — using Live mode")
+                NSLog("[AlphaLoop] Backend reachable — using Live mode")
                 networkClient = LiveNetworkClient()
                 isLiveMode = true
                 appState.isLiveMode = true
                 wsManager.connectForLiveMode()
             } else {
-                NSLog("[PulseDesk] Backend unreachable — using Mock mode")
+                NSLog("[AlphaLoop] Backend unreachable — using Mock mode")
             }
         } else if forcedMode == "live" {
             appState.isLiveMode = true
@@ -175,14 +175,14 @@ struct LoginPlaceholderView: View {
                     .font(.system(size: 48))
                     .foregroundStyle(PulseColors.accent)
 
-                KryptonLogoView()
+                AlphaLoopLogoView()
                     .frame(width: 56, height: 56)
                     .shadow(color: PulseColors.accent.opacity(0.35), radius: 14)
 
-                Text("Krypton")
+                Text("弈机")
                     .font(PulseFonts.displayTitle)
                     .foregroundStyle(colors.textPrimary)
-                Text("Pro")
+                Text("AlphaLoop")
                     .font(PulseFonts.monoLabel)
                     .foregroundStyle(PulseColors.accent)
                     .tracking(2)

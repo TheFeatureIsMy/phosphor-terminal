@@ -1,4 +1,4 @@
-// ProofAlphaComponents.swift — ProofAlpha 核心交互组件
+// ProofAlphaComponents.swift — AlphaLoop 核心交互组件
 // TerminalLabel, BadgeDot, StatusDot, GlowText, GradientText
 
 import SwiftUI
@@ -424,53 +424,83 @@ struct KryptonCard<Content: View>: View {
     }
 }
 
-// MARK: - KryptonLogoView — 六边形原子晶格 Logo
-struct KryptonLogoView: View {
+// MARK: - AlphaLoopLogoView — Go (围棋) 棋盘 Logo
+struct AlphaLoopLogoView: View {
+    @Environment(PulseColors.self) private var colors
+
     var body: some View {
-        ZStack {
-            HexagonShape()
-                .stroke(PulseColors.accent, lineWidth: 2.2)
-                .frame(width: 24, height: 24)
-                .shadow(color: PulseColors.accent.opacity(0.35), radius: 4)
+        GeometryReader { geo in
+            let dim = min(geo.size.width, geo.size.height)
+            let lines: CGFloat = 5
+            let padding: CGFloat = 1.5
+            let cellSize = dim / (lines - 1 + padding * 2)
+            let offset = cellSize * padding
+            let stoneRadius = cellSize * 0.35
 
-            GeometryReader { geo in
-                let w = geo.size.width
-                let h = geo.size.height
-                let center = CGPoint(x: w / 2, y: h / 2)
-
+            ZStack {
+                // Grid lines (5x5 Go board)
                 Path { path in
-                    path.move(to: CGPoint(x: w / 2, y: 0))
-                    path.addLine(to: center)
-                    path.move(to: center)
-                    path.addLine(to: CGPoint(x: w, y: h * 0.75))
-                    path.move(to: center)
-                    path.addLine(to: CGPoint(x: 0, y: h * 0.75))
+                    for i in 0..<Int(lines) {
+                        let pos = offset + CGFloat(i) * cellSize
+                        // Horizontal
+                        path.move(to: CGPoint(x: offset, y: pos))
+                        path.addLine(to: CGPoint(x: offset + CGFloat(lines - 1) * cellSize, y: pos))
+                        // Vertical
+                        path.move(to: CGPoint(x: pos, y: offset))
+                        path.addLine(to: CGPoint(x: pos, y: offset + CGFloat(lines - 1) * cellSize))
+                    }
                 }
-                .stroke(PulseColors.accent, lineWidth: 1.2)
+                .stroke(colors.border, lineWidth: 0.8)
+
+                // Star points (hoshi)
+                let starPoints: [(Int, Int)] = [(1, 1), (1, 3), (3, 1), (3, 3), (2, 2)]
+                ForEach(starPoints.indices, id: \.self) { idx in
+                    let (col, row) = starPoints[idx]
+                    Circle()
+                        .fill(colors.border)
+                        .frame(width: cellSize * 0.15, height: cellSize * 0.15)
+                        .position(x: offset + CGFloat(col) * cellSize,
+                                  y: offset + CGFloat(row) * cellSize)
+                }
+
+                // Black stone
+                Circle()
+                    .fill(RadialGradient(
+                        colors: [Color(hex: "#2A2D35"), Color(hex: "#0D0E11")],
+                        center: .topLeading,
+                        startRadius: 0,
+                        endRadius: stoneRadius * 2
+                    ))
+                    .frame(width: stoneRadius * 2, height: stoneRadius * 2)
+                    .position(x: offset + 1 * cellSize, y: offset + 2 * cellSize)
+                    .shadow(color: .black.opacity(0.3), radius: 1)
+
+                // White stone
+                Circle()
+                    .fill(RadialGradient(
+                        colors: [.white, Color(hex: "#C8C8CC")],
+                        center: .topLeading,
+                        startRadius: 0,
+                        endRadius: stoneRadius * 2
+                    ))
+                    .frame(width: stoneRadius * 2, height: stoneRadius * 2)
+                    .position(x: offset + 3 * cellSize, y: offset + 1 * cellSize)
+                    .shadow(color: .black.opacity(0.15), radius: 0.5)
+
+                // Gold accent stone (center — the decisive move)
+                Circle()
+                    .fill(PulseColors.accent)
+                    .frame(width: stoneRadius * 2, height: stoneRadius * 2)
+                    .position(x: offset + 2 * cellSize, y: offset + 2 * cellSize)
+                    .shadow(color: PulseColors.accent.opacity(0.5), radius: 3)
+
+                // Pulse ring around gold stone
+                Circle()
+                    .stroke(PulseColors.accent.opacity(0.4), lineWidth: 1.2)
+                    .frame(width: stoneRadius * 3.2, height: stoneRadius * 3.2)
+                    .position(x: offset + 2 * cellSize, y: offset + 2 * cellSize)
             }
-            .frame(width: 24, height: 24)
-
-            Circle()
-                .fill(Color(hex: "#ffd000"))
-                .frame(width: 4, height: 4)
-                .shadow(color: Color(hex: "#ffd000").opacity(0.8), radius: 3)
         }
-    }
-}
-
-struct HexagonShape: Shape {
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        let w = rect.width
-        let h = rect.height
-        path.move(to: CGPoint(x: w / 2, y: 0))
-        path.addLine(to: CGPoint(x: w, y: h * 0.25))
-        path.addLine(to: CGPoint(x: w, y: h * 0.75))
-        path.addLine(to: CGPoint(x: w / 2, y: h))
-        path.addLine(to: CGPoint(x: 0, y: h * 0.75))
-        path.addLine(to: CGPoint(x: 0, y: h * 0.25))
-        path.closeSubpath()
-        return path
     }
 }
 

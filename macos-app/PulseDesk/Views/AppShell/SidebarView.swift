@@ -67,7 +67,7 @@ struct SidebarView: View {
                             .shadow(color: PulseColors.accent.opacity(0.4), radius: 6)
                     }
                     if !appState.sidebarCollapsed {
-                        Text("PulseDesk").font(PulseFonts.displaySubheading).foregroundStyle(colors.textPrimary)
+                        Text("弈机").font(PulseFonts.displaySubheading).foregroundStyle(colors.textPrimary)
                             .transition(.opacity.combined(with: .move(edge: .leading)))
                     }
                 }

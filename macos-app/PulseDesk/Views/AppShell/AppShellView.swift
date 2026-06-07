@@ -1,5 +1,5 @@
 // AppShellView.swift — 主布局壳
-// ProofAlpha 设计：整个控制台是一块连续的玻璃面板
+// AlphaLoop 设计：整个控制台是一块连续的玻璃面板
 // 侧边栏、工具栏、内容区是同一表面的不同区域，不是独立浮层
 
 import SwiftUI
@@ -38,14 +38,14 @@ struct AppShellView: View {
             }
         }
         // 整个窗口是一块统一的玻璃面板
-        // ProofAlpha: bg-[rgba(24,24,27,0.55)] + backdrop-blur + 背景层
+        // AlphaLoop: bg-[rgba(24,24,27,0.55)] + backdrop-blur + 背景层
         .background {
             ZStack {
                 colors.background
                 BackgroundLayersView()
                 // 全局玻璃材质 — 覆盖整个窗口
                 Rectangle().fill(.ultraThinMaterial)
-                // ProofAlpha 表面色 — 统一的深色玻璃底
+                // AlphaLoop 表面色 — 统一的深色玻璃底
                 Rectangle().fill(colors.cardBackground)
             }
             .ignoresSafeArea()

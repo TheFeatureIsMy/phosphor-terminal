@@ -149,10 +149,10 @@ struct CommandPaletteView: View {
 
     private var searchHeader: some View {
         HStack(spacing: PulseSpacing.sm) {
-            KryptonLogoView().frame(width: 22, height: 22)
+            AlphaLoopLogoView().frame(width: 22, height: 22)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text("Krypton Pro Command")
+                Text("AlphaLoop Command")
                     .font(PulseFonts.captionMedium).foregroundStyle(colors.textPrimary)
 
                 HStack(spacing: PulseSpacing.xs) {

@@ -16,7 +16,7 @@ struct SetupWizardView: View {
         VStack(spacing: 0) {
             // Header
             VStack(spacing: PulseSpacing.sm) {
-                Text("PulseDesk 配置向导")
+                Text("弈机 配置向导")
                     .font(PulseFonts.displayTitle)
                     .foregroundStyle(colors.textPrimary)
 

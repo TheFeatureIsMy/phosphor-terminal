@@ -113,7 +113,7 @@ extension View {
     }
 }
 
-/// PulseDesk 风格的文本框 — Liquid Glass + 霓虹聚焦环
+/// AlphaLoop 风格的文本框 — Liquid Glass + 霓虹聚焦环
 struct PulseTextField: View {
     let label: String
     @Binding var text: String
@@ -150,7 +150,7 @@ struct PulseTextField: View {
     }
 }
 
-/// PulseDesk 风格的安全输入框 — Liquid Glass + 霓虹聚焦环
+/// AlphaLoop 风格的安全输入框 — Liquid Glass + 霓虹聚焦环
 struct PulseSecureField: View {
     let label: String
     @Binding var text: String
@@ -187,7 +187,7 @@ struct PulseSecureField: View {
     }
 }
 
-/// PulseDesk 风格的开关 — macOS 26 自动 Liquid Glass
+/// AlphaLoop 风格的开关 — macOS 26 自动 Liquid Glass
 struct PulseToggle: View {
     let label: String
     @Binding var isOn: Bool
@@ -205,7 +205,7 @@ struct PulseToggle: View {
     }
 }
 
-/// PulseDesk 风格的表单行 — 标签 + 控件
+/// AlphaLoop 风格的表单行 — 标签 + 控件
 struct PulseFormRow<Content: View>: View {
     @Environment(PulseColors.self) private var colors
     let label: String

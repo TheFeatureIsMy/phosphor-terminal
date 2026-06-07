@@ -15,7 +15,7 @@ struct EmptyStateView: View {
 
     var body: some View {
         VStack(spacing: PulseSpacing.md) {
-            KryptonLogoView()
+            AlphaLoopLogoView()
                 .frame(width: 42, height: 42)
                 .opacity(0.9)
 

@@ -17,13 +17,13 @@ extension WebSocketManager {
 // MARK: - Notification Names for WebSocket Events
 extension Notification.Name {
     /// Fired when a KPI update arrives. `userInfo` contains the payload dict.
-    static let wsKPIUpdate    = Notification.Name("PulseDesk.ws.kpiUpdate")
+    static let wsKPIUpdate    = Notification.Name("AlphaLoop.ws.kpiUpdate")
     /// Fired when a new signal is received. `userInfo` contains the payload dict.
-    static let wsSignalNew    = Notification.Name("PulseDesk.ws.signalNew")
+    static let wsSignalNew    = Notification.Name("AlphaLoop.ws.signalNew")
     /// Fired when dry-run status changes. `userInfo` contains the payload dict.
-    static let wsDryrunStatus = Notification.Name("PulseDesk.ws.dryrunStatus")
+    static let wsDryrunStatus = Notification.Name("AlphaLoop.ws.dryrunStatus")
     /// Fired when WebSocket connection state changes. `userInfo["state"]` is a ConnectionState raw value.
-    static let wsConnectionStateChanged = Notification.Name("PulseDesk.ws.connectionStateChanged")
+    static let wsConnectionStateChanged = Notification.Name("AlphaLoop.ws.connectionStateChanged")
 }
 
 @Observable
@@ -67,7 +67,7 @@ final class WebSocketManager: NSObject, URLSessionWebSocketDelegate {
     /// WebSocket endpoint and subscribes to all well-known channels.
     func connectForLiveMode() {
         guard connectionState == .disconnected else { return }
-        NSLog("[PulseDesk:WS] Connecting for live mode")
+        NSLog("[AlphaLoop:WS] Connecting for live mode")
         connect()
         subscribeToDefaultChannels()
     }
@@ -96,7 +96,7 @@ final class WebSocketManager: NSObject, URLSessionWebSocketDelegate {
         webSocket = nil
         isConnected = false
         connectionState = .disconnected
-        NSLog("[PulseDesk:WS] Disconnected")
+        NSLog("[AlphaLoop:WS] Disconnected")
     }
 
     func subscribe(_ channels: [String]) {
@@ -179,7 +179,7 @@ final class WebSocketManager: NSObject, URLSessionWebSocketDelegate {
     private func scheduleReconnect() {
         reconnectTimer?.invalidate()
         reconnectTimer = Timer.scheduledTimer(withTimeInterval: 5, repeats: false) { [weak self] _ in
-            NSLog("[PulseDesk:WS] Attempting reconnect")
+            NSLog("[AlphaLoop:WS] Attempting reconnect")
             self?.connect()
         }
         connectionState = .reconnecting
@@ -198,7 +198,7 @@ final class WebSocketManager: NSObject, URLSessionWebSocketDelegate {
         isConnected = true
         connectionState = .connected
         startHeartbeat()
-        NSLog("[PulseDesk:WS] Connected")
+        NSLog("[AlphaLoop:WS] Connected")
 
         if !subscribedChannels.isEmpty {
             subscribe(Array(subscribedChannels))

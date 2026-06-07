@@ -1,4 +1,4 @@
-// LandingView.swift — ProofAlpha 风格启动/落地页
+// LandingView.swift — AlphaLoop 风格启动/落地页
 // 简洁设计：Logo + 标题 + 特性亮点 + CTA
 
 import SwiftUI
@@ -37,7 +37,7 @@ struct LandingView: View {
 
                     if showContent {
                         VStack(spacing: PulseSpacing.sm) {
-                            BlurTextReveal(text: "PulseDesk", delay: 0.2, duration: 0.8)
+                            BlurTextReveal(text: "弈机", delay: 0.2, duration: 0.8)
                                 .font(.system(size: 48, weight: .bold, design: .rounded))
                             DecryptedText(text: "AI-POWERED QUANT TRADING", triggerOnAppear: true, speed: 0.03, revealDirection: .start)
                                 .font(PulseFonts.monoLabel).foregroundStyle(colors.textMuted).tracking(3)

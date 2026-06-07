@@ -1,4 +1,4 @@
-// AnimatedEffects.swift — ProofAlpha 高级动效组件
+// AnimatedEffects.swift — AlphaLoop 高级动效组件
 // DecryptedText, CountUp, BlurTextReveal, ParticleField
 
 import SwiftUI
