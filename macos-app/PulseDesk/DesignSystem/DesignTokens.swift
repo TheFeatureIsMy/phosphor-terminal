@@ -154,6 +154,9 @@ struct PulseFonts {
     static let displayTitle = Font.system(size: 28, weight: .bold, design: .rounded)
     static let displayHeading = Font.system(size: 20, weight: .semibold, design: .rounded)
     static let displaySubheading = Font.system(size: 16, weight: .medium, design: .rounded)
+    static let displayLarge = Font.system(size: 32, weight: .bold)
+    static let headline = Font.system(size: 15, weight: .semibold)
+    static let label = Font.system(size: 12, weight: .medium)
 
     static let body = Font.system(size: 13, weight: .regular, design: .monospaced)
     static let bodyMedium = Font.system(size: 13, weight: .medium, design: .monospaced)
@@ -256,4 +259,6 @@ struct PulseAnimation {
     static let easeOutFast = Animation.easeOut(duration: 0.15)
     static let easeOutMedium = Animation.easeOut(duration: 0.25)
     static let staggerDelay: Double = 0.035
+    static let workspaceTransition = Animation.spring(response: 0.25, dampingFraction: 0.8)
+    static let cardEntry = Animation.spring(response: 0.4, dampingFraction: 0.75)
 }
