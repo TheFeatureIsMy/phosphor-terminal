@@ -29,9 +29,8 @@ struct LandingView: View {
 
                         PulseRing(color: PulseColors.accent, size: 72)
 
-                        Image(systemName: "chart.line.uptrend.xyaxis")
-                            .font(.system(size: 36, weight: .thin))
-                            .foregroundStyle(PulseColors.accent)
+                        AlphaLoopLogoView()
+                            .frame(width: 56, height: 56)
                             .shadow(color: PulseColors.accent.opacity(0.5), radius: 15)
                             .shadow(color: PulseColors.accent.opacity(0.2), radius: 30)
                     }
@@ -40,7 +39,7 @@ struct LandingView: View {
                         VStack(spacing: PulseSpacing.sm) {
                             BlurTextReveal(text: settings.language == .zhCN ? "弈机" : "AlphaLoop", delay: 0.2, duration: 0.8)
                                 .font(.system(size: 48, weight: .bold, design: .rounded))
-                            DecryptedText(text: "AI-POWERED QUANT TRADING", triggerOnAppear: true, speed: 0.03, revealDirection: .start)
+                            DecryptedText(text: settings.language == .zhCN ? "落子无悔 算无遗策" : "AI-POWERED QUANT TRADING", triggerOnAppear: true, speed: 0.03, revealDirection: .start)
                                 .font(PulseFonts.monoLabel).foregroundStyle(colors.textMuted).tracking(3)
                         }
                     }

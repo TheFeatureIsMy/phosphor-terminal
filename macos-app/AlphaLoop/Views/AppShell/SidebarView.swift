@@ -61,10 +61,8 @@ struct SidebarView: View {
                         if isLogoHovered {
                             PulseRing(color: PulseColors.accent.opacity(0.6), size: 36)
                         }
-                        Image(systemName: "chart.line.uptrend.xyaxis")
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(PulseColors.accent)
-                            .shadow(color: PulseColors.accent.opacity(0.4), radius: 6)
+                        AlphaLoopLogoView()
+                            .frame(width: 24, height: 24)
                     }
                     if !appState.sidebarCollapsed {
                         L10nText("弈机", en: "AlphaLoop")

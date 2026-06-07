@@ -172,10 +172,6 @@ struct LoginPlaceholderView: View {
             colors.background.ignoresSafeArea()
 
             VStack(spacing: PulseSpacing.lg) {
-                Image(systemName: "chart.line.uptrend.xyaxis")
-                    .font(.system(size: 48))
-                    .foregroundStyle(PulseColors.accent)
-
                 AlphaLoopLogoView()
                     .frame(width: 56, height: 56)
                     .shadow(color: PulseColors.accent.opacity(0.35), radius: 14)
