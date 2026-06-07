@@ -12,13 +12,8 @@ struct SidebarView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            logoHeader
-
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 1) {
-                    // 顶部留白防止紧贴 Logo
-                    Spacer().frame(height: 8)
-
                     ForEach(Array(SidebarSection.allCases.enumerated()), id: \.element) { index, section in
                         let routes = AppRoute.allCases.filter { $0.section == section && $0.sidebarVisible }
                         if !routes.isEmpty {
@@ -43,11 +38,16 @@ struct SidebarView: View {
                 }
                 .padding(.horizontal, 6)
             }
+            .clipped()
 
             Spacer(minLength: 0)
             sidebarFooter
         }
+        .safeAreaInset(edge: .top) {
+            logoHeader
+        }
         .frame(width: appState.sidebarCollapsed ? 56 : 228)
+        .background(colors.background)
         .overlay(alignment: .trailing) {
             Rectangle().fill(colors.border).frame(width: 0.5)
         }
@@ -93,7 +93,6 @@ struct SidebarView: View {
             Divider().foregroundStyle(colors.border).opacity(0.5)
         }
         .background(colors.background)
-        .zIndex(1)
     }
 
     private var sidebarFooter: some View {
