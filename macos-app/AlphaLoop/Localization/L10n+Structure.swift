@@ -62,6 +62,73 @@ extension L10n {
         static var preEntryGuard: String { zh("多周期一致性裁判", en: "multi-timeframe consistency referee") }
         static var observe: String { zh("观察", en: "Observe") }
 
+        // Matrix · HTF Tribunal redesign
+        static var tribunalTitle: String { zh("结构审判庭", en: "The Structure Tribunal") }
+        static var tribunalSubtitle: String { zh("多周期防御之庭", en: "chamber of multi-timeframe defense") }
+        static var verdictTrustworthy: String { zh("裁决可信", en: "verdict trustworthy") }
+        static var verdictSuspect: String { zh("裁决存疑", en: "verdict suspect") }
+        static var labelLatency: String { zh("延迟", en: "latency") }
+        static var labelDataAge: String { zh("数据年龄", en: "data age") }
+        static var labelRedis: String { zh("Redis", en: "redis") }
+        static var statusOk: String { zh("正常", en: "ok") }
+        static var statusDown: String { zh("中断", en: "down") }
+        static var stateMachine: String { zh("状态机", en: "State Machine") }
+        static var stateInactive: String { zh("未激活", en: "INACTIVE") }
+        static var stateWatching: String { zh("观察中", en: "WATCHING") }
+        static var statePendingHtfClose: String { zh("等待HTF收盘", en: "PENDING HTF CLOSE") }
+        static var stateTemporaryViolation: String { zh("暂时违规", en: "TEMPORARY VIOLATION") }
+        static var stateReclaimPending: String { zh("等待夺回", en: "RECLAIM PENDING") }
+        static var stateConfirmed: String { zh("已确认", en: "CONFIRMED") }
+        static var stateInvalidated: String { zh("已无效", en: "INVALIDATED") }
+        static var stateExpired: String { zh("已过期", en: "EXPIRED") }
+        static var candleClosesIn: String { zh("收盘倒计时", en: "candle closes in") }
+        static var verdict: String { zh("裁决", en: "VERDICT") }
+        static var verdictAllow: String { zh("放行", en: "ALLOW") }
+        static var verdictObserve: String { zh("观察", en: "OBSERVE") }
+        static var verdictConfirm: String { zh("待确认", en: "CONFIRM") }
+        static var verdictReduce: String { zh("减仓", en: "REDUCE") }
+        static var verdictBlock: String { zh("阻断", en: "BLOCK") }
+        static var verdictIdle: String { zh("空闲", en: "IDLE") }
+        static var verdictSubAllow: String { zh("允许入场", en: "entry permitted") }
+        static var verdictSubObserve: String { zh("观察但不操作", en: "watch but do not act") }
+        static var verdictSubConfirm: String { zh("等待二次确认", en: "await confirmation") }
+        static var verdictSubReduce: String { zh("仓位降至 50%", en: "size to 50%") }
+        static var verdictSubBlock: String { zh("阻断新建仓", en: "block new entries") }
+        static var verdictSubIdle: String { zh("无活跃裁判", en: "no active guard") }
+        static var applyToOrderForm: String { zh("应用到下单表单", en: "Apply to Order Form") }
+        static var evidenceMatrix: String { zh("证据矩阵", en: "EVIDENCE MATRIX") }
+        static var evidenceMatrixSub: String { zh("· 4 周期 × 3 区域类型", en: "· 4 TF × 3 zone types") }
+        static var inShadow: String { zh("影子中", en: "IN SHADOW") }
+        static var filled: String { zh("已填充", en: "filled") }
+        static var shadowWindows: String { zh("影子窗口", en: "SHADOW WINDOWS") }
+        static var shadowWindowsSub: String { zh("· LTF 事件等待 HTF 收盘", en: "· LTF events awaiting HTF close") }
+        static var noActiveShadowWindows: String { zh("当前无活跃影子窗口", en: "no active shadow windows") }
+        static var statFast: String { zh("快周期", en: "FAST") }
+        static var statViol: String { zh("违规", en: "VIOL") }
+        static var statReclaim: String { zh("夺回", en: "RECLAIM") }
+        static var statFill: String { zh("填充", en: "FILL") }
+        static var chargesAndReasons: String { zh("罪状与理由", en: "CHARGES & REASONS") }
+        static var noChargesFiled: String { zh("无罪状记录", en: "no charges filed") }
+        static var hearingsAndRulings: String { zh("听证与历史裁定", en: "HEARINGS & PAST RULINGS") }
+        static var noPastHearings: String { zh("无历史听证", en: "no past hearings") }
+        static var cellDetail: String { zh("单元详情", en: "CELL DETAIL") }
+        static var detailStatus: String { zh("状态", en: "Status") }
+        static var detailStrength: String { zh("强度", en: "Strength") }
+        static var detailFilledRatio: String { zh("填充率", en: "Filled Ratio") }
+        static var detailAction: String { zh("操作", en: "Action") }
+        static var detailShadow: String { zh("影子中", en: "Shadow") }
+        static var yesLabel: String { zh("是", en: "yes") }
+        static var noLabel: String { zh("否", en: "no") }
+        static var reasonCodes: String { zh("理由码", en: "REASON CODES") }
+        static var searchSymbols: String { zh("搜索交易对…", en: "search symbols…") }
+        static var sectionRecent: String { zh("最近", en: "RECENT") }
+        static var sectionAllSymbols: String { zh("全部", en: "ALL SYMBOLS") }
+        static var loadFailed: String { zh("无法加载审判庭", en: "Failed to load tribunal") }
+        static var retry: String { zh("重试", en: "Retry") }
+        static var zoneOrderBlockShort: String { zh("订单块", en: "OrderBlock") }
+        static var zoneFvgShort: String { zh("FVG", en: "FVG") }
+        static var zoneLiquidityPoolShort: String { zh("流动性池", en: "LiquidityPool") }
+
         // States
         static var stateHealthy: String { zh("健康", en: "Healthy") }
         static var stateWarning: String { zh("警告", en: "Warning") }

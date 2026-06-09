@@ -235,9 +235,9 @@ private struct StructureMatrixContentView: View {
     private func errorState(_ error: String) -> some View {
         EmptyStateView(
             icon: "exclamationmark.triangle",
-            title: "Failed to load tribunal",
+            title: L10n.Structure.loadFailed,
             description: error,
-            primaryAction: (title: "Retry", action: { Task { await vm.refresh() } })
+            primaryAction: (title: L10n.Structure.retry, action: { Task { await vm.refresh() } })
         )
         .padding(PulseSpacing.lg)
     }
@@ -262,14 +262,14 @@ private struct FastTrackHealthMiniBar: View {
                 )
 
             HStack(spacing: PulseSpacing.lg) {
-                meta("latency", "\(h.latencyMs)ms", ok: h.latencyMs < 200)
-                meta("data age", String(format: "%.1fs", h.dataAgeSeconds), ok: h.dataAgeSeconds < 3)
-                meta("redis", h.redisOk ? "ok" : "down", ok: h.redisOk)
+                meta(L10n.Structure.labelLatency, "\(h.latencyMs)ms", ok: h.latencyMs < 200)
+                meta(L10n.Structure.labelDataAge, String(format: "%.1fs", h.dataAgeSeconds), ok: h.dataAgeSeconds < 3)
+                meta(L10n.Structure.labelRedis, h.redisOk ? L10n.Structure.statusOk : L10n.Structure.statusDown, ok: h.redisOk)
             }
 
             Spacer()
 
-            Text(h.verdictTrustworthy ? "verdict trustworthy" : "verdict suspect")
+            Text(h.verdictTrustworthy ? L10n.Structure.verdictTrustworthy : L10n.Structure.verdictSuspect)
                 .font(PulseFonts.micro)
                 .padding(.horizontal, PulseSpacing.sm).padding(.vertical, 4)
                 .background(
@@ -307,11 +307,11 @@ private struct TribunalMasthead: View {
     var body: some View {
         HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: 2) {
-                Text("THE STRUCTURE TRIBUNAL")
+                Text(L10n.Structure.tribunalTitle.uppercased())
                     .font(.system(size: 28, weight: .bold, design: .serif))
                     .tracking(2)
                     .foregroundStyle(colors.textPrimary)
-                Text("chamber of multi-timeframe defense")
+                Text(L10n.Structure.tribunalSubtitle)
                     .font(.system(size: 13, weight: .regular, design: .serif).italic())
                     .foregroundStyle(colors.textMuted)
             }
@@ -346,15 +346,15 @@ private struct TribunalCenterpiece: View {
     let countdownSeconds: Int
     @Environment(PulseColors.self) private var colors
 
-    private static let states: [(key: String, label: String)] = [
-        ("inactive",            "INACTIVE"),
-        ("watching",            "WATCHING"),
-        ("pending_htf_close",   "PENDING HTF CLOSE"),
-        ("temporary_violation", "TEMPORARY VIOLATION"),
-        ("reclaim_pending",     "RECLAIM PENDING"),
-        ("confirmed",           "CONFIRMED"),
-        ("invalidated",         "INVALIDATED"),
-        ("expired",             "EXPIRED"),
+    private static let states: [(key: String, label: () -> String)] = [
+        ("inactive",            { L10n.Structure.stateInactive }),
+        ("watching",            { L10n.Structure.stateWatching }),
+        ("pending_htf_close",   { L10n.Structure.statePendingHtfClose }),
+        ("temporary_violation", { L10n.Structure.stateTemporaryViolation }),
+        ("reclaim_pending",     { L10n.Structure.stateReclaimPending }),
+        ("confirmed",           { L10n.Structure.stateConfirmed }),
+        ("invalidated",         { L10n.Structure.stateInvalidated }),
+        ("expired",             { L10n.Structure.stateExpired }),
     ]
 
     var body: some View {
@@ -384,7 +384,7 @@ private struct TribunalCenterpiece: View {
     @ViewBuilder
     private var stateRail: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("STATE MACHINE")
+            Text(L10n.Structure.stateMachine.uppercased())
                 .font(PulseFonts.monoLabel)
                 .foregroundStyle(colors.textMuted)
                 .padding(.bottom, PulseSpacing.sm)
@@ -392,7 +392,7 @@ private struct TribunalCenterpiece: View {
             VStack(alignment: .leading, spacing: 6) {
                 ForEach(Array(Self.states.enumerated()), id: \.offset) { idx, state in
                     StateRow(
-                        label: state.label,
+                        label: state.label(),
                         isCurrent: idx == currentIndex,
                         isPast: idx < currentIndex
                     )
@@ -424,7 +424,7 @@ private struct TribunalCenterpiece: View {
                         .font(.system(size: 36, weight: .semibold, design: .monospaced))
                         .monospacedDigit()
                         .foregroundStyle(colors.textPrimary)
-                    Text(slowTfLabel + " candle closes in")
+                    Text(slowTfLabel + " " + L10n.Structure.candleClosesIn)
                         .font(PulseFonts.caption)
                         .foregroundStyle(colors.textMuted)
                 }
@@ -461,7 +461,7 @@ private struct TribunalCenterpiece: View {
     @ViewBuilder
     private var verdictPanel: some View {
         VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-            Text("VERDICT")
+            Text(L10n.Structure.verdict)
                 .font(PulseFonts.monoLabel)
                 .foregroundStyle(colors.textMuted)
 
@@ -489,7 +489,7 @@ private struct TribunalCenterpiece: View {
                 HStack(spacing: PulseSpacing.xs) {
                     Image(systemName: "arrow.forward.circle.fill")
                         .font(.system(size: 12))
-                    Text("Apply to Order Form")
+                    Text(L10n.Structure.applyToOrderForm)
                         .font(PulseFonts.captionMedium)
                 }
                 .padding(.horizontal, PulseSpacing.md).padding(.vertical, 9)
@@ -513,23 +513,23 @@ private struct TribunalCenterpiece: View {
 
     private var verdictWord: String {
         switch guard_?.action ?? "ignore" {
-        case "allow": return "ALLOW"
-        case "observe": return "OBSERVE"
-        case "require_confirmation", "require_confirm": return "CONFIRM"
-        case "reduce_size": return "REDUCE"
-        case "block_entry": return "BLOCK"
-        default: return "IDLE"
+        case "allow": return L10n.Structure.verdictAllow
+        case "observe": return L10n.Structure.verdictObserve
+        case "require_confirmation", "require_confirm": return L10n.Structure.verdictConfirm
+        case "reduce_size": return L10n.Structure.verdictReduce
+        case "block_entry": return L10n.Structure.verdictBlock
+        default: return L10n.Structure.verdictIdle
         }
     }
 
     private var verdictSub: String {
         switch guard_?.action ?? "ignore" {
-        case "allow": return "entry permitted"
-        case "observe": return "watch but do not act"
-        case "require_confirmation", "require_confirm": return "await confirmation"
-        case "reduce_size": return "size to 50%"
-        case "block_entry": return "block new entries"
-        default: return "no active guard"
+        case "allow": return L10n.Structure.verdictSubAllow
+        case "observe": return L10n.Structure.verdictSubObserve
+        case "require_confirmation", "require_confirm": return L10n.Structure.verdictSubConfirm
+        case "reduce_size": return L10n.Structure.verdictSubReduce
+        case "block_entry": return L10n.Structure.verdictSubBlock
+        default: return L10n.Structure.verdictSubIdle
         }
     }
 
@@ -593,16 +593,22 @@ private struct EvidenceMatrix: View {
     @Environment(PulseColors.self) private var colors
 
     private let zoneOrder = ["order_block", "fvg", "liquidity_pool"]
-    private let zoneLabels = ["order_block": "OrderBlock", "fvg": "FVG", "liquidity_pool": "LiquidityPool"]
+    private var zoneLabels: [String: String] {
+        [
+            "order_block": L10n.Structure.zoneOrderBlockShort,
+            "fvg": L10n.Structure.zoneFvgShort,
+            "liquidity_pool": L10n.Structure.zoneLiquidityPoolShort,
+        ]
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: PulseSpacing.sm) {
             HStack(spacing: PulseSpacing.xs) {
                 Text("§").font(.system(size: 14, weight: .semibold, design: .serif)).foregroundStyle(PulseColors.accent)
-                Text("EVIDENCE MATRIX")
+                Text(L10n.Structure.evidenceMatrix)
                     .font(PulseFonts.monoLabel)
                     .foregroundStyle(colors.textMuted)
-                Text("· 4 TF × 3 zone types")
+                Text(L10n.Structure.evidenceMatrixSub)
                     .font(PulseFonts.caption)
                     .foregroundStyle(colors.textMuted)
             }
@@ -657,7 +663,7 @@ private struct EvidenceCell: View {
                     .foregroundStyle(colors.textPrimary)
                 Spacer()
                 if isShadow {
-                    Text("IN SHADOW")
+                    Text(L10n.Structure.inShadow)
                         .font(PulseFonts.micro)
                         .foregroundStyle(PulseColors.StateColors.orange)
                         .padding(.horizontal, 4).padding(.vertical, 1)
@@ -678,7 +684,7 @@ private struct EvidenceCell: View {
             .frame(height: 4)
 
             if cell.filledRatio > 0 {
-                Text("filled \(Int(cell.filledRatio * 100))%")
+                Text("\(L10n.Structure.filled) \(Int(cell.filledRatio * 100))%")
                     .font(PulseFonts.micro)
                     .foregroundStyle(colors.textMuted)
             } else {
@@ -762,16 +768,16 @@ private struct ShadowWindowsPanel: View {
         VStack(alignment: .leading, spacing: PulseSpacing.sm) {
             HStack(spacing: PulseSpacing.xs) {
                 Text("§").font(.system(size: 14, weight: .semibold, design: .serif)).foregroundStyle(PulseColors.accent)
-                Text("SHADOW WINDOWS")
+                Text(L10n.Structure.shadowWindows)
                     .font(PulseFonts.monoLabel)
                     .foregroundStyle(colors.textMuted)
-                Text("· LTF events awaiting HTF close")
+                Text(L10n.Structure.shadowWindowsSub)
                     .font(PulseFonts.caption)
                     .foregroundStyle(colors.textMuted)
             }
 
             if windows.isEmpty {
-                Text("no active shadow windows")
+                Text(L10n.Structure.noActiveShadowWindows)
                     .font(PulseFonts.caption)
                     .foregroundStyle(colors.textMuted)
                     .padding(PulseSpacing.md)
@@ -814,10 +820,10 @@ private struct ShadowWindowCard: View {
                 .foregroundStyle(colors.textMuted)
 
             HStack(spacing: PulseSpacing.md) {
-                stat("FAST", "\(window.fastCandleCount)")
-                stat("VIOL", "\(window.violationCount)")
-                stat("RECLAIM", "\(window.reclaimCount)")
-                stat("FILL", String(format: "%.2f", window.filledRatio))
+                stat(L10n.Structure.statFast, "\(window.fastCandleCount)")
+                stat(L10n.Structure.statViol, "\(window.violationCount)")
+                stat(L10n.Structure.statReclaim, "\(window.reclaimCount)")
+                stat(L10n.Structure.statFill, String(format: "%.2f", window.filledRatio))
             }
 
             // 12-segment candle progress
@@ -878,13 +884,13 @@ private struct ChargesPanel: View {
         VStack(alignment: .leading, spacing: PulseSpacing.sm) {
             HStack(spacing: PulseSpacing.xs) {
                 Text("§").font(.system(size: 14, weight: .semibold, design: .serif)).foregroundStyle(PulseColors.accent)
-                Text("CHARGES & REASONS")
+                Text(L10n.Structure.chargesAndReasons)
                     .font(PulseFonts.monoLabel)
                     .foregroundStyle(colors.textMuted)
             }
 
             if charges.isEmpty {
-                Text("no charges filed")
+                Text(L10n.Structure.noChargesFiled)
                     .font(PulseFonts.caption)
                     .foregroundStyle(colors.textMuted)
                     .padding(PulseSpacing.md)
@@ -958,13 +964,13 @@ private struct HearingsTimeline: View {
         VStack(alignment: .leading, spacing: PulseSpacing.sm) {
             HStack(spacing: PulseSpacing.xs) {
                 Text("§").font(.system(size: 14, weight: .semibold, design: .serif)).foregroundStyle(PulseColors.accent)
-                Text("HEARINGS & PAST RULINGS")
+                Text(L10n.Structure.hearingsAndRulings)
                     .font(PulseFonts.monoLabel)
                     .foregroundStyle(colors.textMuted)
             }
 
             if events.isEmpty {
-                Text("no past hearings")
+                Text(L10n.Structure.noPastHearings)
                     .font(PulseFonts.caption)
                     .foregroundStyle(colors.textMuted)
                     .padding(PulseSpacing.md)
@@ -1057,7 +1063,7 @@ private struct StructureDetailDrawer: View {
             VStack(alignment: .leading, spacing: PulseSpacing.md) {
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("CELL DETAIL")
+                        Text(L10n.Structure.cellDetail)
                             .font(PulseFonts.monoLabel)
                             .foregroundStyle(colors.textMuted)
                         Text("\(payload.cell.zoneType.uppercased()) · \(payload.timeframe)")
@@ -1076,15 +1082,15 @@ private struct StructureDetailDrawer: View {
 
                 Divider().overlay(colors.border)
 
-                row("Status", payload.cell.status)
-                row("Strength", String(format: "%.0f%%", payload.cell.currentStrength * 100))
-                row("Filled Ratio", String(format: "%.0f%%", payload.cell.filledRatio * 100))
-                row("Action", payload.cell.action.uppercased())
-                row("Shadow", payload.isShadow ? "yes" : "no")
+                row(L10n.Structure.detailStatus, payload.cell.status)
+                row(L10n.Structure.detailStrength, String(format: "%.0f%%", payload.cell.currentStrength * 100))
+                row(L10n.Structure.detailFilledRatio, String(format: "%.0f%%", payload.cell.filledRatio * 100))
+                row(L10n.Structure.detailAction, payload.cell.action.uppercased())
+                row(L10n.Structure.detailShadow, payload.isShadow ? L10n.Structure.yesLabel : L10n.Structure.noLabel)
 
                 if !payload.cell.reasonCodes.isEmpty {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("REASON CODES")
+                        Text(L10n.Structure.reasonCodes)
                             .font(PulseFonts.monoLabel)
                             .foregroundStyle(colors.textMuted)
                         ForEach(payload.cell.reasonCodes, id: \.self) { code in
@@ -1148,7 +1154,7 @@ private struct SymbolPickerOverlay: View {
                     Image(systemName: "magnifyingglass")
                         .font(.system(size: 12))
                         .foregroundStyle(colors.textMuted)
-                    TextField("search symbols…", text: $query)
+                    TextField(L10n.Structure.searchSymbols, text: $query)
                         .textFieldStyle(.plain)
                         .font(PulseFonts.tabular)
                     Text("ESC")
@@ -1165,12 +1171,12 @@ private struct SymbolPickerOverlay: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 0) {
                         if !recents.isEmpty && query.isEmpty {
-                            sectionHeader("RECENT")
+                            sectionHeader(L10n.Structure.sectionRecent)
                             ForEach(recents, id: \.self) { s in
                                 pickerRow(s)
                             }
                         }
-                        sectionHeader("ALL SYMBOLS")
+                        sectionHeader(L10n.Structure.sectionAllSymbols)
                         ForEach(filtered, id: \.self) { s in
                             pickerRow(s)
                         }
