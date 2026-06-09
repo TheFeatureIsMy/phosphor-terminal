@@ -5,6 +5,7 @@ import SwiftUI
 
 struct NotificationPopover: View {
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
     let viewModel: NotificationViewModel
     var onViewAll: (() -> Void)?
 
@@ -38,7 +39,7 @@ struct NotificationPopover: View {
     // MARK: - 标题栏
     private var header: some View {
         HStack {
-            Text("通知中心")
+            Text(L10n.zh("通知中心", en: "Notifications"))
                 .font(PulseFonts.bodyMedium)
                 .foregroundStyle(colors.textPrimary)
 
@@ -94,7 +95,7 @@ struct NotificationPopover: View {
         VStack(spacing: PulseSpacing.sm) {
             ProgressView()
                 .tint(PulseColors.accent)
-            Text("加载中...")
+            Text(L10n.zh("加载中...", en: "Loading..."))
                 .font(PulseFonts.caption)
                 .foregroundStyle(colors.textMuted)
         }
@@ -107,7 +108,7 @@ struct NotificationPopover: View {
             Image(systemName: "bell.slash")
                 .font(.system(size: 24))
                 .foregroundStyle(colors.textMuted)
-            Text("暂无通知")
+            Text(L10n.zh("暂无通知", en: "No Notifications"))
                 .font(PulseFonts.caption)
                 .foregroundStyle(colors.textMuted)
         }
@@ -122,7 +123,7 @@ struct NotificationPopover: View {
                     await viewModel.markAllAsRead()
                 }
             } label: {
-                Text("全部已读")
+                Text(L10n.zh("全部已读", en: "Mark All Read"))
                     .font(PulseFonts.captionMedium)
                     .foregroundStyle(PulseColors.accent)
             }
@@ -133,7 +134,7 @@ struct NotificationPopover: View {
 
             if let onViewAll {
                 Button(action: onViewAll) {
-                    Text("查看全部")
+                    Text(L10n.zh("查看全部", en: "View All"))
                         .font(PulseFonts.captionMedium)
                         .foregroundStyle(colors.textSecondary)
                 }

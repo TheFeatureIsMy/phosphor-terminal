@@ -5,6 +5,7 @@ import SwiftUI
 struct McpServerSettingsView: View {
     @Environment(\.networkClient) private var networkClient
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
     @State private var status: McpStatusInfo?
     @State private var auditLogs: [McpAuditLogEntry] = []
     @State private var isLoading = true
@@ -14,7 +15,7 @@ struct McpServerSettingsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: PulseSpacing.lg) {
-            Text("MCP 服务器")
+            Text(L10n.zh("MCP 服务器", en: "MCP Server"))
                 .font(PulseFonts.displaySubheading)
                 .foregroundStyle(colors.textPrimary)
 
@@ -27,14 +28,15 @@ struct McpServerSettingsView: View {
                 auditLogSection
             }
         }
+        .id(settingsState.language)
         .task { await loadData() }
-        .alert("轮换 Token", isPresented: $showRotateConfirm) {
-            Button("取消", role: .cancel) {}
-            Button("确认轮换", role: .destructive) {
+        .alert(L10n.zh("轮换 Token", en: "Rotate Token"), isPresented: $showRotateConfirm) {
+            Button(L10n.zh("取消", en: "Cancel"), role: .cancel) {}
+            Button(L10n.zh("确认轮换", en: "Confirm Rotation"), role: .destructive) {
                 Task { await rotateToken() }
             }
         } message: {
-            Text("确定要轮换 MCP Token 吗？旧 Token 将立即失效，所有使用旧 Token 的客户端需要更新。")
+            Text(L10n.zh("确定要轮换 MCP Token 吗？旧 Token 将立即失效，所有使用旧 Token 的客户端需要更新。", en: "Are you sure you want to rotate the MCP Token? The old token will be revoked immediately and all clients using it will need to update."))
         }
     }
 
@@ -44,13 +46,13 @@ struct McpServerSettingsView: View {
         VStack(alignment: .leading, spacing: PulseSpacing.md) {
             HStack {
                 VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
-                    Text("服务状态")
+                    Text(L10n.zh("服务状态", en: "Service Status"))
                         .font(PulseFonts.bodyMedium)
                         .foregroundStyle(colors.textPrimary)
                     if let s = status {
                         HStack(spacing: PulseSpacing.xxs) {
                             StatusDot(status: s.enabled ? .online : .offline)
-                            Text(s.enabled ? "已启用" : "已禁用")
+                            Text(s.enabled ? L10n.zh("已启用", en: "Enabled") : L10n.zh("已禁用", en: "Disabled"))
                                 .font(PulseFonts.caption)
                                 .foregroundStyle(colors.textMuted)
                         }
@@ -61,9 +63,9 @@ struct McpServerSettingsView: View {
 
             if let s = status {
                 HStack(spacing: PulseSpacing.lg) {
-                    statusItem("绑定地址", s.bindAddress)
-                    statusItem("总请求数", "\(s.totalRequests)")
-                    statusItem("最近请求", s.lastRequestAt.map { String($0.prefix(16)) } ?? "无")
+                    statusItem(L10n.zh("绑定地址", en: "Bind Address"), s.bindAddress)
+                    statusItem(L10n.zh("总请求数", en: "Total Requests"), "\(s.totalRequests)")
+                    statusItem(L10n.zh("最近请求", en: "Last Request"), s.lastRequestAt.map { String($0.prefix(16)) } ?? L10n.zh("无", en: "N/A"))
                 }
             }
         }
@@ -88,10 +90,10 @@ struct McpServerSettingsView: View {
         VStack(alignment: .leading, spacing: PulseSpacing.md) {
             HStack {
                 VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
-                    Text("Token 管理")
+                    Text(L10n.zh("Token 管理", en: "Token Management"))
                         .font(PulseFonts.bodyMedium)
                         .foregroundStyle(colors.textPrimary)
-                    Text("轮换 MCP 访问 Token，旧 Token 将立即失效")
+                    Text(L10n.zh("轮换 MCP 访问 Token，旧 Token 将立即失效", en: "Rotate MCP access token. The old token will be revoked immediately."))
                         .font(PulseFonts.caption)
                         .foregroundStyle(colors.textMuted)
                 }
@@ -99,7 +101,7 @@ struct McpServerSettingsView: View {
                 if isRotating {
                     ProgressView().controlSize(.small)
                 } else {
-                    KryptonButton(title: "轮换 Token", action: {
+                    KryptonButton(title: L10n.zh("轮换 Token", en: "Rotate Token"), action: {
                             showRotateConfirm = true
                         }, style: .ghost)
                 }
@@ -109,10 +111,10 @@ struct McpServerSettingsView: View {
                 HStack(spacing: PulseSpacing.xxs) {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(PulseColors.success)
-                    Text("Token 已轮换")
+                    Text(L10n.zh("Token 已轮换", en: "Token Rotated"))
                         .font(PulseFonts.caption)
                         .foregroundStyle(PulseColors.success)
-                    Text("· 新 Token: \(String(result.newToken.prefix(12)))...")
+                    Text(L10n.zh("· 新 Token: \(String(result.newToken.prefix(12)))...", en: "· New Token: \(String(result.newToken.prefix(12)))..."))
                         .font(PulseFonts.micro)
                         .foregroundStyle(colors.textMuted)
                 }
@@ -125,12 +127,12 @@ struct McpServerSettingsView: View {
 
     private var auditLogSection: some View {
         VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-            TerminalLabel(text: "审计日志")
+            TerminalLabel(text: L10n.zh("审计日志", en: "Audit Log"))
 
             if auditLogs.isEmpty {
                 HStack(spacing: PulseSpacing.xs) {
                     StatusDot(status: .online)
-                    Text("暂无审计记录")
+                    Text(L10n.zh("暂无审计记录", en: "No audit records"))
                         .font(PulseFonts.caption)
                         .foregroundStyle(colors.textMuted)
                 }

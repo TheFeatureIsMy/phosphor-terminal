@@ -22,7 +22,7 @@ struct AIChatView: View {
     var onStrategyGenerated: (Int) -> Void = { _ in }
 
     @State private var messages: [ChatMessage] = [
-        .ai("你好！我是策略构建助手。用自然语言描述你想做的交易策略，我会自动生成对应的画布节点图。\n\n试试说：\"用 EMA 和 RSI 做比特币趋势跟踪，RSI 低于 30 买入，Binance 交易所\"")
+        .ai(L10n.zh("你好！我是策略构建助手。用自然语言描述你想做的交易策略，我会自动生成对应的画布节点图。\n\n试试说：\"用 EMA 和 RSI 做比特币趋势跟踪，RSI 低于 30 买入，Binance 交易所\"", en: "Hello! I'm the strategy builder assistant. Describe your trading strategy in natural language and I'll generate the corresponding canvas node graph.\n\nTry: \"Track Bitcoin trends using EMA and RSI, buy when RSI < 30, on Binance\""))
     ]
     @State private var inputText = ""
     @State private var isThinking = false
@@ -54,7 +54,7 @@ struct AIChatView: View {
             Divider().foregroundStyle(colors.border)
 
             HStack(spacing: 8) {
-                TextField("描述你的策略...", text: $inputText, axis: .vertical)
+                TextField(L10n.zh("描述你的策略...", en: "Describe your strategy..."), text: $inputText, axis: .vertical)
                     .textFieldStyle(.plain)
                     .font(PulseFonts.caption)
                     .foregroundStyle(colors.textPrimary)
@@ -94,12 +94,12 @@ struct AIChatView: View {
                 let result = try await generator.generate(prompt: text)
                 isThinking = false
                 messages.append(.ai(
-                    "已根据你的描述生成策略画布：",
+                    L10n.zh("已根据你的描述生成策略画布：", en: "Strategy canvas generated from your description:"),
                     graph: (result.strategy_id, result.name, result.market, result.exchange, result.graph?.nodes.count ?? 0)
                 ))
             } catch {
                 isThinking = false
-                messages.append(.ai("抱歉，生成过程遇到问题。请再试一次或换个描述试试。"))
+                messages.append(.ai(L10n.zh("抱歉，生成过程遇到问题。请再试一次或换个描述试试。", en: "Sorry, an error occurred during generation. Please try again or rephrase your description.")))
             }
         }
     }
@@ -157,21 +157,21 @@ private struct MessageBubble: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Image(systemName: "square.grid.2x2").font(.system(size: 9)).foregroundStyle(PulseColors.accent)
-                Text("策略画布预览").font(PulseFonts.captionMedium).foregroundStyle(PulseColors.accent)
+                Text(L10n.zh("策略画布预览", en: "Strategy Canvas Preview")).font(PulseFonts.captionMedium).foregroundStyle(PulseColors.accent)
             }
 
             HStack(spacing: 12) {
-                paramItem("名称", graph.name)
-                paramItem("市场", graph.market)
-                paramItem("交易所", graph.exchange)
+                paramItem(L10n.zh("名称", en: "Name"), graph.name)
+                paramItem(L10n.zh("市场", en: "Market"), graph.market)
+                paramItem(L10n.zh("交易所", en: "Exchange"), graph.exchange)
             }
 
-            Text("已自动生成 \(graph.nodeCount) 个节点并连线")
+            Text(L10n.zh("已自动生成 \(graph.nodeCount) 个节点并连线", en: "Auto-generated \(graph.nodeCount) nodes with connections"))
                 .font(PulseFonts.micro).foregroundStyle(colors.textMuted)
 
             HStack(spacing: 6) {
                 Button { onOpenGraph(graph.strategyId) } label: {
-                    Label("打开画布", systemImage: "rectangle.portrait.and.arrow.right")
+                    Label(L10n.zh("打开画布", en: "Open Canvas"), systemImage: "rectangle.portrait.and.arrow.right")
                         .font(.system(size: 9, weight: .semibold))
                         .foregroundStyle(colors.background)
                         .padding(.horizontal, 12).padding(.vertical, 5)
@@ -180,7 +180,7 @@ private struct MessageBubble: View {
                 .buttonStyle(.plain)
 
                 Button {} label: {
-                    Label("重新生成", systemImage: "arrow.triangle.2.circlepath")
+                    Label(L10n.zh("重新生成", en: "Regenerate"), systemImage: "arrow.triangle.2.circlepath")
                         .font(.system(size: 9))
                         .foregroundStyle(colors.textSecondary)
                         .padding(.horizontal, 12).padding(.vertical, 5)

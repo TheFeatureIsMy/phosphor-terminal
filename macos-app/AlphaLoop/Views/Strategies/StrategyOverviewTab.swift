@@ -5,6 +5,7 @@ import SwiftUI
 struct StrategyOverviewTab: View {
     @Environment(PulseColors.self) private var colors
     @Environment(\.networkClient) private var client
+    @Environment(SettingsState.self) private var settingsState
     @Bindable var viewModel: StrategyDetailViewModel
 
     @State private var preconditions: [LiveSmallPrecondition] = []
@@ -17,27 +18,27 @@ struct StrategyOverviewTab: View {
             VStack(alignment: .leading, spacing: PulseSpacing.lg) {
                 if let s = viewModel.strategy {
                     VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-                        TerminalLabel(text: "策略信息")
-                        infoRow("名称", value: s.name)
-                        infoRow("类型", value: s.strategyType)
-                        infoRow("来源", value: s.sourceType)
-                        infoRow("状态", value: s.statusLabel)
+                        TerminalLabel(text: L10n.zh("策略信息", en: "Strategy Info"))
+                        infoRow(L10n.zh("名称", en: "Name"), value: s.name)
+                        infoRow(L10n.zh("类型", en: "Type"), value: s.strategyType)
+                        infoRow(L10n.zh("来源", en: "Source"), value: s.sourceType)
+                        infoRow(L10n.zh("状态", en: "Status"), value: s.statusLabel)
                         if let desc = s.description {
-                            infoRow("描述", value: desc)
+                            infoRow(L10n.zh("描述", en: "Description"), value: desc)
                         }
                     }
 
                     Divider().foregroundStyle(colors.border)
 
                     VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-                        TerminalLabel(text: "最新版本")
+                        TerminalLabel(text: L10n.zh("最新版本", en: "Latest Version"))
                         if let v = viewModel.latestVersion {
-                            infoRow("版本号", value: "v\(v.versionNo)")
-                            infoRow("DSL 版本", value: v.dslVersion)
-                            infoRow("哈希", value: String(v.dslHash.prefix(16)) + "...")
-                            infoRow("创建者", value: v.createdBy)
+                            infoRow(L10n.zh("版本号", en: "Version"), value: "v\(v.versionNo)")
+                            infoRow(L10n.zh("DSL 版本", en: "DSL Version"), value: v.dslVersion)
+                            infoRow(L10n.zh("哈希", en: "Hash"), value: String(v.dslHash.prefix(16)) + "...")
+                            infoRow(L10n.zh("创建者", en: "Created By"), value: v.createdBy)
                         } else {
-                            Text("暂无版本 — 请在 DSL 规则中创建")
+                            Text(L10n.zh("暂无版本 — 请在 DSL 规则中创建", en: "No versions yet — create one in DSL Rules"))
                                 .font(PulseFonts.caption)
                                 .foregroundStyle(colors.textMuted)
                         }
@@ -51,13 +52,14 @@ struct StrategyOverviewTab: View {
             .padding(PulseSpacing.lg)
         }
         .scrollEdgeEffectStyle(.soft, for: .vertical)
+        .id(settingsState.language)
     }
 
     // MARK: - Live Small 评估
 
     private var liveSmallSection: some View {
         VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-            TerminalLabel(text: "Live Small 评估")
+            TerminalLabel(text: L10n.zh("Live Small 评估", en: "Live Small Assessment"))
 
             if !liveSmallChecked {
                 Button {
@@ -71,7 +73,7 @@ struct StrategyOverviewTab: View {
                             Image(systemName: "checkmark.shield")
                                 .font(.system(size: 12))
                         }
-                        Text("Live Small 评估")
+                        Text(L10n.zh("Live Small 评估", en: "Live Small Assessment"))
                             .font(PulseFonts.caption)
                     }
                     .foregroundStyle(PulseColors.accent)
@@ -117,7 +119,7 @@ struct StrategyOverviewTab: View {
                         HStack(spacing: 6) {
                             Image(systemName: "bolt.fill")
                                 .font(.system(size: 11))
-                            Text("申请 Live Small")
+                            Text(L10n.zh("申请 Live Small", en: "Apply for Live Small"))
                                 .font(PulseFonts.captionMedium)
                         }
                         .foregroundStyle(.white)
@@ -145,7 +147,7 @@ struct StrategyOverviewTab: View {
             preconditions = evaluation.preconditions ?? []
             liveSmallChecked = true
         } catch {
-            liveSmallError = "评估失败: \(error.localizedDescription)"
+            liveSmallError = L10n.zh("评估失败: \(error.localizedDescription)", en: "Assessment failed: \(error.localizedDescription)")
         }
         isCheckingLiveSmall = false
     }
@@ -172,10 +174,10 @@ struct StrategyOverviewTab: View {
             if evaluation.canExecute {
                 liveSmallError = nil
             } else {
-                liveSmallError = "Live Small 评估未通过"
+                liveSmallError = L10n.zh("Live Small 评估未通过", en: "Live Small assessment not passed")
             }
         } else {
-            liveSmallError = "请求失败"
+            liveSmallError = L10n.zh("请求失败", en: "Request failed")
         }
     }
 }

@@ -5,6 +5,7 @@ import SwiftUI
 
 struct CandidateCard: View {
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
     let candidate: StrategyCandidate
     var onBacktest: (() -> Void)?
     var onConfirm: (() -> Void)?
@@ -28,7 +29,7 @@ struct CandidateCard: View {
                 // Confidence bar (0-100%)
                 VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
                     HStack {
-                        Text("置信度")
+                        Text(L10n.zh("置信度", en: "Confidence"))
                             .font(PulseFonts.micro)
                             .foregroundStyle(colors.textMuted)
                         Spacer()
@@ -65,12 +66,13 @@ struct CandidateCard: View {
                 if candidate.status != "confirmed" && candidate.status != "rejected" {
                     HStack(spacing: PulseSpacing.sm) {
                         Spacer()
-                        KryptonButton(title: "回测", action: { onBacktest?() }, style: .ghost)
-                        KryptonButton(title: "确认", action: { onConfirm?() })
+                        KryptonButton(title: L10n.zh("回测", en: "Backtest"), action: { onBacktest?() }, style: .ghost)
+                        KryptonButton(title: L10n.zh("确认", en: "Confirm"), action: { onConfirm?() })
                     }
                 }
             }
         }
+        .id(settingsState.language)
     }
 
     // MARK: - Computed Properties
@@ -88,14 +90,14 @@ struct CandidateCard: View {
     private var candidateName: String {
         guard let dsl = candidate.dsl, let dict = dsl.value as? [String: Any],
               let name = dict["name"] as? String else {
-            return "未命名候选"
+            return L10n.zh("未命名候选", en: "Unnamed Candidate")
         }
         return name
     }
 
     private var dslPreview: String {
         guard let dsl = candidate.dsl, let dict = dsl.value as? [String: Any] else {
-            return "// 暂无 DSL 数据"
+            return L10n.zh("// 暂无 DSL 数据", en: "// No DSL data")
         }
         var lines: [String] = []
         if let name = dict["name"] as? String { lines.append("name: \(name)") }
@@ -109,10 +111,10 @@ struct CandidateCard: View {
 
     private var statusLabel: String {
         switch candidate.status {
-        case "pending_review": return "待审核"
-        case "confirmed": return "已确认"
-        case "rejected": return "已拒绝"
-        case "backtesting": return "回测中"
+        case "pending_review": return L10n.zh("待审核", en: "Pending Review")
+        case "confirmed": return L10n.zh("已确认", en: "Confirmed")
+        case "rejected": return L10n.zh("已拒绝", en: "Rejected")
+        case "backtesting": return L10n.zh("回测中", en: "Backtesting")
         default: return candidate.status
         }
     }

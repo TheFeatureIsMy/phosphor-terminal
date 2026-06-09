@@ -19,6 +19,7 @@ class FeatureSnapshot(Base):
 
     symbol: Mapped[str] = mapped_column(String(32), nullable=False)
     market: Mapped[str | None] = mapped_column(String(16))
+    exchange: Mapped[str | None] = mapped_column(String(32))
     timeframe: Mapped[str | None] = mapped_column(String(8))
     feature_version: Mapped[str] = mapped_column(String(16), nullable=False, server_default="2.5")
 
@@ -28,8 +29,19 @@ class FeatureSnapshot(Base):
     manipulation_features: Mapped[dict | None] = mapped_column(JSONB)
     portfolio_features: Mapped[dict | None] = mapped_column(JSONB)
 
+    structure_context: Mapped[dict | None] = mapped_column(JSONB)
+    mtf_guard_context: Mapped[dict | None] = mapped_column(JSONB)
+    ai_context: Mapped[dict | None] = mapped_column(JSONB)
+    risk_context: Mapped[dict | None] = mapped_column(JSONB)
+    liquidity_context: Mapped[dict | None] = mapped_column(JSONB)
+
     data_quality: Mapped[str | None] = mapped_column(String(16), server_default="complete")
 
+    strategy_id: Mapped[str | None] = mapped_column(String(128))
+    strategy_version_id: Mapped[uuid.UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("strategy_versions.id"),
+    )
+    runtime_snapshot_id: Mapped[str | None] = mapped_column(String(128))
     strategy_run_id: Mapped[uuid.UUID | None] = mapped_column(
         PG_UUID(as_uuid=True), ForeignKey("strategy_runs.id"),
     )
@@ -39,6 +51,8 @@ class FeatureSnapshot(Base):
 
     __table_args__ = (
         Index("idx_feature_snapshots_symbol", "symbol"),
+        Index("idx_feature_snapshots_trade_intent", "trade_intent_id"),
+        Index("idx_feature_snapshots_runtime_snapshot", "runtime_snapshot_id"),
     )
 
 

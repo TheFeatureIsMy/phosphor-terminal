@@ -1,7 +1,14 @@
 from __future__ import annotations
 
+import logging
+import uuid
 from collections import defaultdict
 from dataclasses import dataclass, field
+from typing import Optional
+
+from sqlalchemy.orm import Session
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -69,3 +76,76 @@ def cluster_failures(
 
 def generate_optimization_suggestions(clusters: list[FailureCluster]) -> list[str]:
     return [c.suggested_fix for c in clusters if c.suggested_fix]
+
+
+# ---------------------------------------------------------------------------
+# DB persistence layer — FailureClusterRecord
+# ---------------------------------------------------------------------------
+
+def save_clusters(
+    db: Session,
+    clusters: list[FailureCluster],
+    strategy_id: str | uuid.UUID | None = None,
+) -> list:
+    """Persist a batch of FailureCluster dataclass instances to
+    ``failure_clusters`` table, returning the created ORM rows.
+
+    Existing *active* rows for the same ``strategy_id`` are marked
+    ``status='archived'`` before inserting the fresh batch, so the table
+    always reflects the latest clustering run.
+    """
+    from app.domain.shadow_strategy import FailureClusterRecord
+
+    _strategy_id = uuid.UUID(str(strategy_id)) if strategy_id else None
+
+    # Archive previous active clusters for this strategy
+    if _strategy_id:
+        (
+            db.query(FailureClusterRecord)
+            .filter(
+                FailureClusterRecord.strategy_id == _strategy_id,
+                FailureClusterRecord.status == "active",
+            )
+            .update({"status": "archived"})
+        )
+
+    rows = []
+    for cluster in clusters:
+        row = FailureClusterRecord(
+            strategy_id=_strategy_id,
+            label=cluster.cluster_name,
+            sample_size=cluster.trade_count,
+            total_loss=cluster.total_loss,
+            avg_loss=cluster.avg_loss_pct,
+            common_features={
+                "suggested_fix": cluster.suggested_fix,
+            },
+            representative_trade_ids=cluster.example_trade_ids,
+            status="active",
+        )
+        db.add(row)
+        rows.append(row)
+
+    db.flush()
+    logger.info(
+        "Saved %d failure clusters for strategy=%s", len(rows), strategy_id,
+    )
+    return rows
+
+
+def load_clusters(
+    db: Session,
+    strategy_id: str | uuid.UUID | None = None,
+    status: str = "active",
+) -> list:
+    """Load FailureClusterRecord rows from DB, optionally filtered by
+    strategy and status.  Returns ORM instances."""
+    from app.domain.shadow_strategy import FailureClusterRecord
+
+    q = db.query(FailureClusterRecord)
+    if strategy_id:
+        _strategy_id = uuid.UUID(str(strategy_id)) if not isinstance(strategy_id, uuid.UUID) else strategy_id
+        q = q.filter(FailureClusterRecord.strategy_id == _strategy_id)
+    q = q.filter(FailureClusterRecord.status == status)
+    q = q.order_by(FailureClusterRecord.total_loss.asc())
+    return q.all()

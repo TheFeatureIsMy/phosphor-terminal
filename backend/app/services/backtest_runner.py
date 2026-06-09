@@ -268,3 +268,192 @@ class FreqtradeBacktestRunner:
             config_path.unlink(missing_ok=True)
         except OSError:
             pass
+
+
+# ── MTF Guard Replay Engine ──────────────────────────────────────────
+@dataclass
+class MTFGuardReplayStats:
+    """Accumulated counters from replaying MTF Guard over backtest trades."""
+    blocked_entries: int = 0
+    reduced_size: int = 0
+    temporary_violation_count: int = 0
+    reclaim_confirmed_count: int = 0
+    invalidated_count: int = 0
+    false_breakout_avoided_count: int = 0
+    pnl_delta: float = 0.0
+    max_drawdown_delta: float = 0.0
+    replay_events: list[dict[str, Any]] = field(default_factory=list)
+
+
+class MTFGuardReplayEngine:
+    """Replays MTF Guard evaluations over completed backtest trades.
+
+    For each trade in the backtest result, simulates what the guard would
+    have decided.  If guard would have blocked an entry that turned out to
+    be a losing trade, that counts as a *false breakout avoided* and the
+    pnl_delta is adjusted positively.
+    """
+
+    def __init__(self) -> None:
+        from app.services.mtf_temporal_guard import MTFTemporalGuardService
+        self._guard = MTFTemporalGuardService()
+
+    def replay(
+        self,
+        trades: list[dict[str, Any]],
+        *,
+        symbol: str = "BTC/USDT",
+        fast_timeframe: str = "5m",
+        slow_timeframe: str = "1h",
+        zone_top: float = 0.0,
+        zone_bottom: float = 0.0,
+        zone_direction: str = "bullish",
+        guard_config: dict[str, Any] | None = None,
+    ) -> MTFGuardReplayStats:
+        """Replay guard over each trade to compute what-if stats.
+
+        Parameters
+        ----------
+        trades : list[dict]
+            Trade dicts from freqtrade backtest result.
+        symbol, fast_timeframe, slow_timeframe :
+            Market context for the guard.
+        zone_top, zone_bottom, zone_direction :
+            HTF structure zone to guard. When both are 0, we derive
+            synthetic zones from trade entry prices.
+        guard_config : dict, optional
+            Extra guard config overrides.
+        """
+        import pandas as pd
+
+        stats = MTFGuardReplayStats()
+        self._guard.reset(f"backtest_replay_{symbol}")
+
+        config = {
+            "guard_id": f"backtest_replay_{symbol}",
+            "fast_timeframe": fast_timeframe,
+            "slow_timeframe": slow_timeframe,
+            **(guard_config or {}),
+        }
+
+        cumulative_pnl_with_guard = 0.0
+        cumulative_pnl_without_guard = 0.0
+        max_dd_with_guard = 0.0
+        max_dd_without_guard = 0.0
+        peak_with = 0.0
+        peak_without = 0.0
+
+        for idx, trade in enumerate(trades):
+            open_rate = trade.get("open_rate", trade.get("entry_price", 0.0))
+            close_rate = trade.get("close_rate", trade.get("exit_price", 0.0))
+            trade_pnl = trade.get("profit_abs", trade.get("profit_amount", 0.0))
+            is_loss = (trade_pnl < 0) if trade_pnl else False
+
+            # Build synthetic candle data for guard evaluation
+            fast_df = pd.DataFrame([{
+                "open": open_rate,
+                "high": max(open_rate, close_rate) * 1.001,
+                "low": min(open_rate, close_rate) * 0.999,
+                "close": open_rate,  # at entry moment, close ~ open
+                "volume": 100,
+            }])
+            slow_df = pd.DataFrame([
+                {
+                    "open": open_rate * 0.998,
+                    "high": open_rate * 1.005,
+                    "low": open_rate * 0.995,
+                    "close": open_rate * 1.001,
+                    "volume": 1000,
+                },
+                {
+                    "open": open_rate * 1.001,
+                    "high": open_rate * 1.006,
+                    "low": open_rate * 0.994,
+                    "close": open_rate,
+                    "volume": 1000,
+                },
+            ])
+
+            # Derive zone from trade price if not explicitly provided
+            effective_zone_top = zone_top if zone_top > 0 else open_rate * 1.002
+            effective_zone_bottom = zone_bottom if zone_bottom > 0 else open_rate * 0.998
+
+            source_structure = {
+                "zone_type": "order_block",
+                "direction": zone_direction,
+                "price_top": effective_zone_top,
+                "price_bottom": effective_zone_bottom,
+                "status": "active",
+            }
+
+            result = self._guard.evaluate(
+                fast_tf_data=fast_df,
+                slow_tf_data=slow_df,
+                source_structure=source_structure,
+                config=config,
+            )
+
+            guard_state = result.get("guard_state", "watching")
+            action = result.get("action", "allow")
+            reason_codes = result.get("reason_codes", [])
+
+            entry_blocked = action in ("block_entry",)
+            size_reduced = action in ("reduce_size",)
+
+            # Track state counters
+            if guard_state == "temporary_violation":
+                stats.temporary_violation_count += 1
+            elif guard_state == "confirmed":
+                stats.reclaim_confirmed_count += 1
+            elif guard_state == "invalidated":
+                stats.invalidated_count += 1
+
+            if entry_blocked:
+                stats.blocked_entries += 1
+                if is_loss:
+                    stats.false_breakout_avoided_count += 1
+
+            if size_reduced:
+                stats.reduced_size += 1
+
+            # PnL accounting: without guard, all trades count;
+            # with guard, blocked trades are skipped
+            cumulative_pnl_without_guard += trade_pnl
+            if not entry_blocked:
+                if size_reduced:
+                    cumulative_pnl_with_guard += trade_pnl * 0.5
+                else:
+                    cumulative_pnl_with_guard += trade_pnl
+            # else: blocked — no PnL contribution
+
+            # Max drawdown tracking
+            peak_without = max(peak_without, cumulative_pnl_without_guard)
+            dd_without = peak_without - cumulative_pnl_without_guard
+            max_dd_without_guard = max(max_dd_without_guard, dd_without)
+
+            peak_with = max(peak_with, cumulative_pnl_with_guard)
+            dd_with = peak_with - cumulative_pnl_with_guard
+            max_dd_with_guard = max(max_dd_with_guard, dd_with)
+
+            # Record replay event
+            timestamp = trade.get("open_date", trade.get("entry_time", ""))
+            stats.replay_events.append({
+                "candle_index": idx,
+                "timestamp": str(timestamp) if timestamp else None,
+                "symbol": symbol,
+                "fast_timeframe": fast_timeframe,
+                "slow_timeframe": slow_timeframe,
+                "guard_state": guard_state,
+                "action": action,
+                "reason_codes": reason_codes,
+                "violation": result.get("violation", {}),
+                "price_close": open_rate,
+                "trade_would_enter": True,
+                "entry_blocked": entry_blocked,
+                "size_reduced": size_reduced,
+            })
+
+        stats.pnl_delta = cumulative_pnl_with_guard - cumulative_pnl_without_guard
+        stats.max_drawdown_delta = max_dd_with_guard - max_dd_without_guard
+
+        return stats

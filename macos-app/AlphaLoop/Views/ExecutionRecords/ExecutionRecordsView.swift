@@ -6,6 +6,7 @@ import SwiftUI
 struct ExecutionRecordsView: View {
     @Environment(\.networkClient) private var networkClient
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
     @State private var viewModel: ExecutionRecordsViewModel?
     @State private var showDetailSheet = false
 
@@ -46,8 +47,8 @@ struct ExecutionRecordsView: View {
             } else if vm.filteredRuns.isEmpty {
                 EmptyStateView(
                     icon: "doc.text.magnifyingglass",
-                    title: "暂无执行记录",
-                    description: "启动回测或模拟运行后，记录将显示在此处"
+                    title: L10n.zh("暂无执行记录", en: "No Trade Logs"),
+                    description: L10n.zh("启动回测或模拟运行后，记录将显示在此处", en: "Records will appear here after running a backtest or simulation")
                 )
                 .frame(maxHeight: .infinity)
             } else {
@@ -62,6 +63,7 @@ struct ExecutionRecordsView: View {
                     .padding(.vertical, PulseSpacing.md)
                 }
                 .scrollEdgeEffectStyle(.soft, for: .vertical)
+                .id(settingsState.language)
             }
         }
         .sheet(isPresented: $showDetailSheet) {
@@ -76,7 +78,7 @@ struct ExecutionRecordsView: View {
 
     private func headerBar(_ vm: ExecutionRecordsViewModel) -> some View {
         HStack(spacing: PulseSpacing.sm) {
-            TerminalLabel(text: "执行记录")
+            TerminalLabel(text: L10n.zh("执行记录", en: "TRADE LOG"))
 
             Text("\(vm.runs.count)")
                 .font(PulseFonts.monoLabel)
@@ -98,7 +100,7 @@ struct ExecutionRecordsView: View {
                     .foregroundStyle(colors.textMuted)
             }
             .buttonStyle(.plain)
-            .help("刷新")
+            .help(L10n.zh("刷新", en: "Refresh"))
         }
         .padding(.horizontal, PulseSpacing.lg)
         .padding(.vertical, PulseSpacing.sm)
@@ -110,7 +112,7 @@ struct ExecutionRecordsView: View {
         HStack(spacing: PulseSpacing.md) {
             // 模式过滤
             HStack(spacing: 2) {
-                modePill("全部", value: nil, vm: vm)
+                modePill(L10n.zh("全部", en: "All"), value: nil, vm: vm)
                 modePill("backtest", value: "backtest", vm: vm)
                 modePill("dryrun", value: "dryrun", vm: vm)
                 modePill("live_small", value: "live_small", vm: vm)
@@ -122,7 +124,7 @@ struct ExecutionRecordsView: View {
 
             // 状态过滤
             HStack(spacing: 2) {
-                statusPill("全部", value: nil, vm: vm)
+                statusPill(L10n.zh("全部", en: "All"), value: nil, vm: vm)
                 statusPill("running", value: "running", vm: vm)
                 statusPill("completed", value: "completed", vm: vm)
                 statusPill("stopped", value: "stopped", vm: vm)
@@ -131,7 +133,7 @@ struct ExecutionRecordsView: View {
 
             Spacer()
 
-            Text("\(vm.filteredRuns.count) 条")
+            Text("\(vm.filteredRuns.count) " + L10n.zh("条", en: "records"))
                 .font(PulseFonts.caption)
                 .foregroundStyle(colors.textMuted)
         }
@@ -219,7 +221,7 @@ struct ExecutionRecordsView: View {
                     Task { await vm.loadRunDetails(run.id) }
                     showDetailSheet = true
                 } label: {
-                    Text("查看订单")
+                    Text(L10n.zh("查看订单", en: "Orders"))
                         .font(PulseFonts.monoLabel)
                         .foregroundStyle(PulseColors.accent)
                         .padding(.horizontal, PulseSpacing.xs)
@@ -236,7 +238,7 @@ struct ExecutionRecordsView: View {
                     Task { await vm.loadRunDetails(run.id) }
                     showDetailSheet = true
                 } label: {
-                    Text("查看日志")
+                    Text(L10n.zh("查看日志", en: "Logs"))
                         .font(PulseFonts.monoLabel)
                         .foregroundStyle(colors.textSecondary)
                         .padding(.horizontal, PulseSpacing.xs)
@@ -278,12 +280,12 @@ struct ExecutionRecordsView: View {
 
     private func statusLabel(_ status: String) -> String {
         switch status {
-        case "running": return "运行中"
-        case "completed": return "已完成"
-        case "stopped": return "已停止"
-        case "error": return "失败"
-        case "starting": return "启动中"
-        case "degraded": return "降级"
+        case "running": return L10n.zh("运行中", en: "Running")
+        case "completed": return L10n.zh("已完成", en: "Completed")
+        case "stopped": return L10n.zh("已停止", en: "Stopped")
+        case "error": return L10n.zh("失败", en: "Failed")
+        case "starting": return L10n.zh("启动中", en: "Starting")
+        case "degraded": return L10n.zh("降级", en: "Degraded")
         default: return status
         }
     }

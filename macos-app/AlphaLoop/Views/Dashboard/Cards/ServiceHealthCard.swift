@@ -3,6 +3,7 @@ import SwiftUI
 
 struct ServiceHealthCard: View {
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
 
     let services: [ServiceStatus]
 
@@ -36,10 +37,10 @@ struct ServiceHealthCard: View {
     var body: some View {
         KryptonCard(emphasis: .subtle) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-                TerminalLabel(text: "服务 & 数据源健康")
+                TerminalLabel(text: L10n.zh("服务 & 数据源健康", en: "Service & Data Source Health"))
 
                 if services.isEmpty {
-                    Text("等待健康检查数据...")
+                    Text(L10n.zh("等待健康检查数据...", en: "Awaiting health check data..."))
                         .font(PulseFonts.caption)
                         .foregroundStyle(colors.textMuted)
                         .padding(.vertical, PulseSpacing.sm)
@@ -53,6 +54,7 @@ struct ServiceHealthCard: View {
             }
         }
         .hoverEffect()
+        .id(settingsState.language)
     }
 
     private func serviceRow(_ svc: ServiceStatus) -> some View {

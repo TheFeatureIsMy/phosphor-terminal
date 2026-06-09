@@ -5,6 +5,7 @@ import SwiftUI
 
 struct ExecutionDetailSheet: View {
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
     @Environment(\.dismiss) private var dismiss
     let run: StrategyRunV2
     let viewModel: ExecutionRecordsViewModel
@@ -29,9 +30,9 @@ struct ExecutionDetailSheet: View {
 
             // Tab 切换
             HStack(spacing: 0) {
-                tabButton("订单", tag: 0, count: viewModel.runOrders.count)
-                tabButton("事件", tag: 1, count: viewModel.runLedger.count)
-                tabButton("追溯链", tag: 2, count: 6)
+                tabButton(L10n.zh("订单", en: "Orders"), tag: 0, count: viewModel.runOrders.count)
+                tabButton(L10n.zh("事件", en: "Events"), tag: 1, count: viewModel.runLedger.count)
+                tabButton(L10n.zh("追溯链", en: "Trace"), tag: 2, count: 6)
             }
             .padding(.horizontal, PulseSpacing.lg)
 
@@ -55,6 +56,7 @@ struct ExecutionDetailSheet: View {
                     }
                 }
                 .scrollEdgeEffectStyle(.soft, for: .vertical)
+                .id(settingsState.language)
             }
         }
         .background(colors.background)
@@ -64,7 +66,7 @@ struct ExecutionDetailSheet: View {
 
     private var sheetToolbar: some View {
         HStack {
-            TerminalLabel(text: "运行详情")
+            TerminalLabel(text: L10n.zh("运行详情", en: "RUN DETAILS"))
             Spacer()
             Button {
                 dismiss()
@@ -89,7 +91,7 @@ struct ExecutionDetailSheet: View {
             HStack(spacing: PulseSpacing.md) {
                 // 模式
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("模式")
+                    Text(L10n.zh("模式", en: "Mode"))
                         .font(PulseFonts.monoLabel)
                         .foregroundStyle(colors.textMuted)
                     modeBadge(run.mode)
@@ -101,7 +103,7 @@ struct ExecutionDetailSheet: View {
 
                 // 状态
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("状态")
+                    Text(L10n.zh("状态", en: "Status"))
                         .font(PulseFonts.monoLabel)
                         .foregroundStyle(colors.textMuted)
                     BadgeView(
@@ -117,7 +119,7 @@ struct ExecutionDetailSheet: View {
 
                 // 开始时间
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("开始")
+                    Text(L10n.zh("开始", en: "Start"))
                         .font(PulseFonts.monoLabel)
                         .foregroundStyle(colors.textMuted)
                     Text(run.startedAt.map(formatDateTime) ?? "—")
@@ -131,10 +133,10 @@ struct ExecutionDetailSheet: View {
 
                 // 结束时间
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("结束")
+                    Text(L10n.zh("结束", en: "End"))
                         .font(PulseFonts.monoLabel)
                         .foregroundStyle(colors.textMuted)
-                    Text(run.stoppedAt.map(formatDateTime) ?? "运行中")
+                    Text(run.stoppedAt.map(formatDateTime) ?? L10n.zh("运行中", en: "Running"))
                         .font(PulseFonts.caption)
                         .foregroundStyle(run.stoppedAt != nil ? colors.textPrimary : PulseColors.statusActive)
                 }
@@ -145,7 +147,7 @@ struct ExecutionDetailSheet: View {
 
                 // 策略版本
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("版本 ID")
+                    Text(L10n.zh("版本 ID", en: "Version ID"))
                         .font(PulseFonts.monoLabel)
                         .foregroundStyle(colors.textMuted)
                     Text(String(run.strategyVersionId.prefix(8)) + "...")
@@ -195,8 +197,8 @@ struct ExecutionDetailSheet: View {
             if viewModel.runOrders.isEmpty {
                 EmptyStateView(
                     icon: "arrow.left.arrow.right",
-                    title: "暂无订单",
-                    description: "该运行尚未产生交易订单"
+                    title: L10n.zh("暂无订单", en: "No Orders"),
+                    description: L10n.zh("该运行尚未产生交易订单", en: "This run has not generated any trade orders yet")
                 )
                 .frame(height: 200)
             } else {
@@ -224,11 +226,11 @@ struct ExecutionDetailSheet: View {
 
     private var ordersHeader: some View {
         HStack(spacing: PulseSpacing.xs) {
-            headerCell("交易对")
-            headerCell("方向")
-            headerCell("数量", alignment: .trailing)
-            headerCell("价格", alignment: .trailing)
-            headerCell("状态")
+            headerCell(L10n.zh("交易对", en: "Symbol"))
+            headerCell(L10n.zh("方向", en: "Side"))
+            headerCell(L10n.zh("数量", en: "Qty"), alignment: .trailing)
+            headerCell(L10n.zh("价格", en: "Price"), alignment: .trailing)
+            headerCell(L10n.zh("状态", en: "Status"))
         }
         .padding(.vertical, PulseSpacing.xs)
     }
@@ -248,7 +250,7 @@ struct ExecutionDetailSheet: View {
                 .foregroundStyle(colors.textPrimary)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            Text(order.side == .buy ? "买入" : "卖出")
+            Text(order.side == .buy ? L10n.zh("买入", en: "Buy") : L10n.zh("卖出", en: "Sell"))
                 .font(PulseFonts.monoLabel)
                 .foregroundStyle(order.side == .buy ? PulseColors.statusActive : PulseColors.loss)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -276,8 +278,8 @@ struct ExecutionDetailSheet: View {
             if viewModel.runLedger.isEmpty {
                 EmptyStateView(
                     icon: "list.bullet.rectangle",
-                    title: "暂无事件",
-                    description: "该运行尚未产生账本事件"
+                    title: L10n.zh("暂无事件", en: "No Events"),
+                    description: L10n.zh("该运行尚未产生账本事件", en: "This run has not generated any ledger events yet")
                 )
                 .frame(height: 200)
             } else {
@@ -335,7 +337,7 @@ struct ExecutionDetailSheet: View {
 
                     HStack(spacing: PulseSpacing.md) {
                         HStack(spacing: PulseSpacing.xxs) {
-                            Text("金额:")
+                            Text(L10n.zh("金额:", en: "Amount:"))
                                 .font(PulseFonts.monoLabel)
                                 .foregroundStyle(colors.textMuted)
                             Text(String(format: "%+.2f", amount))
@@ -344,7 +346,7 @@ struct ExecutionDetailSheet: View {
                         }
 
                         HStack(spacing: PulseSpacing.xxs) {
-                            Text("余额:")
+                            Text(L10n.zh("余额:", en: "Balance:"))
                                 .font(PulseFonts.monoLabel)
                                 .foregroundStyle(colors.textMuted)
                             Text(String(format: "%.2f", balance))
@@ -438,7 +440,7 @@ struct ExecutionDetailSheet: View {
                 typeName: "Signal",
                 icon: "antenna.radiowaves.left.and.right",
                 id: String(UUID().uuidString.prefix(8)),
-                status: "已确认",
+                status: L10n.zh("已确认", en: "Confirmed"),
                 statusColor: PulseColors.success,
                 color: PulseColors.cyan,
                 timestamp: formatDateTime(baseTime)
@@ -447,7 +449,7 @@ struct ExecutionDetailSheet: View {
                 typeName: "Agent",
                 icon: "cpu",
                 id: String(UUID().uuidString.prefix(8)),
-                status: "已处理",
+                status: L10n.zh("已处理", en: "Processed"),
                 statusColor: PulseColors.success,
                 color: PulseColors.purple,
                 timestamp: formatDateTime(baseTime)
@@ -456,7 +458,7 @@ struct ExecutionDetailSheet: View {
                 typeName: "Strategy",
                 icon: "gearshape.2",
                 id: String(run.strategyVersionId.prefix(8)),
-                status: "已匹配",
+                status: L10n.zh("已匹配", en: "Matched"),
                 statusColor: PulseColors.success,
                 color: PulseColors.accent,
                 timestamp: formatDateTime(baseTime)
@@ -465,7 +467,7 @@ struct ExecutionDetailSheet: View {
                 typeName: "TradeIntent",
                 icon: "arrow.right.circle",
                 id: String(UUID().uuidString.prefix(8)),
-                status: "已生成",
+                status: L10n.zh("已生成", en: "Generated"),
                 statusColor: PulseColors.info,
                 color: PulseColors.amber,
                 timestamp: formatDateTime(baseTime)
@@ -474,7 +476,7 @@ struct ExecutionDetailSheet: View {
                 typeName: "RiskDecision",
                 icon: "shield.checkered",
                 id: String(UUID().uuidString.prefix(8)),
-                status: "通过",
+                status: L10n.zh("通过", en: "Passed"),
                 statusColor: PulseColors.success,
                 color: PulseColors.warning,
                 timestamp: formatDateTime(baseTime)
@@ -483,7 +485,7 @@ struct ExecutionDetailSheet: View {
                 typeName: "Order",
                 icon: "arrow.left.arrow.right",
                 id: String(run.id.prefix(8)),
-                status: run.status == "running" ? "执行中" : "已成交",
+                status: run.status == "running" ? L10n.zh("执行中", en: "Executing") : L10n.zh("已成交", en: "Filled"),
                 statusColor: run.status == "running" ? PulseColors.statusActive : PulseColors.info,
                 color: PulseColors.success,
                 timestamp: formatDateTime(baseTime)
@@ -509,12 +511,12 @@ struct ExecutionDetailSheet: View {
 
     private func statusLabel(_ status: String) -> String {
         switch status {
-        case "running": return "运行中"
-        case "completed": return "已完成"
-        case "stopped": return "已停止"
-        case "error": return "失败"
-        case "starting": return "启动中"
-        case "degraded": return "降级"
+        case "running": return L10n.zh("运行中", en: "Running")
+        case "completed": return L10n.zh("已完成", en: "Completed")
+        case "stopped": return L10n.zh("已停止", en: "Stopped")
+        case "error": return L10n.zh("失败", en: "Failed")
+        case "starting": return L10n.zh("启动中", en: "Starting")
+        case "degraded": return L10n.zh("降级", en: "Degraded")
         default: return status
         }
     }

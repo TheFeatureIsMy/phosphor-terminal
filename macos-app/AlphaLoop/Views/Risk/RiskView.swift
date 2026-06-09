@@ -5,6 +5,7 @@ import SwiftUI
 struct RiskView: View {
     @Environment(\.networkClient) private var networkClient
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
     @State private var riskEvents: [RiskEvent] = []
     @State private var correlation: [CorrelationSnapshot] = []
     @State private var isLoading = true
@@ -33,17 +34,18 @@ struct RiskView: View {
                     liveSmallApprovalSection
                 }
                 .padding(PulseSpacing.lg)
+                .id(settingsState.language)
             }
         }
         .scrollEdgeEffectStyle(.soft, for: .vertical)
         .task { await loadData() }
-        .alert("紧急停止确认", isPresented: $showEmergencyConfirm) {
-            Button("取消", role: .cancel) {}
-            Button("确认停止", role: .destructive) {
+        .alert(L10n.zh("紧急停止确认", en: "Emergency Stop Confirmation"), isPresented: $showEmergencyConfirm) {
+            Button(L10n.zh("取消", en: "Cancel"), role: .cancel) {}
+            Button(L10n.zh("确认停止", en: "Confirm Stop"), role: .destructive) {
                 Task { await executeEmergencyStop() }
             }
         } message: {
-            Text("确定要执行全局紧急停止吗？所有策略将立即停止，所有挂单撤销，持仓市价平仓。此操作不可撤销。")
+            Text(L10n.zh("确定要执行全局紧急停止吗？所有策略将立即停止，所有挂单撤销，持仓市价平仓。此操作不可撤销。", en: "Execute global emergency stop? All strategies will halt immediately, pending orders cancelled, positions closed at market. This action is irreversible."))
         }
     }
 
@@ -58,10 +60,10 @@ struct RiskView: View {
                         .font(PulseFonts.monoLarge)
                         .foregroundStyle(PulseColors.danger)
                     VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
-                        Text("紧急停止")
+                        Text(L10n.zh("紧急停止", en: "Emergency Stop"))
                             .font(PulseFonts.displaySubheading)
                             .foregroundStyle(PulseColors.danger)
-                        Text("立即停止所有策略运行、撤销挂单、市价平仓")
+                        Text(L10n.zh("立即停止所有策略运行、撤销挂单、市价平仓", en: "Halt all strategies, cancel pending orders, close positions at market"))
                             .font(PulseFonts.caption)
                             .foregroundStyle(colors.textMuted)
                     }
@@ -70,7 +72,7 @@ struct RiskView: View {
                         ProgressView()
                             .controlSize(.small)
                     } else {
-                        KryptonButton(title: "紧急停止", action: {
+                        KryptonButton(title: L10n.zh("紧急停止", en: "Emergency Stop"), action: {
                             showEmergencyConfirm = true
                         }, style: .ghost)
                         .tint(PulseColors.danger)
@@ -89,7 +91,7 @@ struct RiskView: View {
                                 .foregroundStyle(colors.textPrimary)
                         }
                         HStack(spacing: PulseSpacing.xxs) {
-                            Text("已停止 \(result.stoppedRuns.count) 个运行")
+                            Text(L10n.zh("已停止 \(result.stoppedRuns.count) 个运行", en: "\(result.stoppedRuns.count) runs stopped"))
                                 .font(PulseFonts.micro)
                                 .foregroundStyle(colors.textMuted)
                         }
@@ -104,7 +106,7 @@ struct RiskView: View {
                                 HStack(spacing: 4) {
                                     Image(systemName: "play.fill")
                                         .font(.system(size: 9))
-                                    Text("恢复 \(String(runId.suffix(4)))")
+                                    Text(L10n.zh("恢复 \(String(runId.suffix(4)))", en: "Resume \(String(runId.suffix(4)))"))
                                         .font(PulseFonts.micro)
                                 }
                                 .foregroundStyle(PulseColors.success)
@@ -132,9 +134,9 @@ struct RiskView: View {
         defer { isEmergencyLoading = false }
         let api = APIEmergency(client: networkClient)
         do {
-            emergencyResult = try await api.emergencyStop(reason: "手动紧急停止")
+            emergencyResult = try await api.emergencyStop(reason: L10n.zh("手动紧急停止", en: "Manual emergency stop"))
         } catch {
-            emergencyResult = EmergencyStopResult(stoppedRuns: [], message: "紧急停止失败: \(error.localizedDescription)")
+            emergencyResult = EmergencyStopResult(stoppedRuns: [], message: L10n.zh("紧急停止失败: \(error.localizedDescription)", en: "Emergency stop failed: \(error.localizedDescription)"))
         }
     }
 
@@ -161,12 +163,12 @@ struct RiskView: View {
     private var pageHeader: some View {
         HStack {
             VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
-                Text("风险管理")
+                Text(L10n.zh("风险管理", en: "Risk Management"))
                     .font(PulseFonts.displayHeading)
                     .foregroundStyle(colors.textPrimary)
                 HStack(spacing: PulseSpacing.xxs) {
                     StatusDot(status: riskEvents.isEmpty ? .online : .loading)
-                    Text(riskEvents.isEmpty ? "风险可控" : "需要关注")
+                    Text(riskEvents.isEmpty ? L10n.zh("风险可控", en: "Risk Under Control") : L10n.zh("需要关注", en: "Attention Required"))
                         .font(PulseFonts.caption)
                         .foregroundStyle(colors.textMuted)
                 }
@@ -181,25 +183,25 @@ struct RiskView: View {
         HStack(spacing: PulseSpacing.md) {
             StatCard(
                 icon: "exclamationmark.triangle.fill",
-                label: "风险事件",
+                label: L10n.zh("风险事件", en: "Risk Events"),
                 value: "\(riskEvents.count)",
                 color: severityColor(.critical)
             )
             StatCard(
                 icon: "bell.badge.fill",
-                label: "活跃告警",
+                label: L10n.zh("活跃告警", en: "Active Alerts"),
                 value: "\(activeAlertsCount)",
                 color: PulseColors.warning
             )
             StatCard(
                 icon: "arrow.triangle.branch",
-                label: "相关性对",
+                label: L10n.zh("相关性对", en: "Correlated Pairs"),
                 value: "\(correlation.count)",
                 color: PulseColors.info
             )
             StatCard(
                 icon: "gauge.with.dots.needle.33percent",
-                label: "风险评分",
+                label: L10n.zh("风险评分", en: "Risk Score"),
                 value: riskScore,
                 color: riskScoreColor
             )
@@ -211,22 +213,21 @@ struct RiskView: View {
     }
 
     private var riskScore: String {
-        guard !riskEvents.isEmpty else { return "低" }
+        guard !riskEvents.isEmpty else { return L10n.zh("低", en: "Low") }
         let criticalCount = riskEvents.filter { $0.severity == .critical }.count
         let highCount = riskEvents.filter { $0.severity == .high }.count
-        if criticalCount > 0 { return "严重" }
-        if highCount > 2 { return "偏高" }
-        if highCount > 0 { return "中等" }
-        return "低"
+        if criticalCount > 0 { return L10n.zh("严重", en: "Critical") }
+        if highCount > 2 { return L10n.zh("偏高", en: "Elevated") }
+        if highCount > 0 { return L10n.zh("中等", en: "Moderate") }
+        return L10n.zh("低", en: "Low")
     }
 
     private var riskScoreColor: Color {
-        switch riskScore {
-        case "严重": return PulseColors.danger
-        case "偏高": return PulseColors.warning
-        case "中等": return PulseColors.amber
-        default: return PulseColors.success
-        }
+        let score = riskScore
+        if score == L10n.zh("严重", en: "Critical") { return PulseColors.danger }
+        if score == L10n.zh("偏高", en: "Elevated") { return PulseColors.warning }
+        if score == L10n.zh("中等", en: "Moderate") { return PulseColors.amber }
+        return PulseColors.success
     }
 
     // MARK: - Severity Breakdown Bar
@@ -234,7 +235,7 @@ struct RiskView: View {
     private var severityBreakdown: some View {
         KryptonCard(emphasis: .subtle) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-                TerminalLabel(text: "严重性分布")
+                TerminalLabel(text: L10n.zh("严重性分布", en: "SEVERITY DISTRIBUTION"))
 
                 let total = max(severityCounts.total, 1)
 
@@ -250,10 +251,10 @@ struct RiskView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 4))
 
                 HStack(spacing: PulseSpacing.lg) {
-                    severityLegend("严重", count: severityCounts.critical, color: PulseColors.danger)
-                    severityLegend("高", count: severityCounts.high, color: PulseColors.amber)
-                    severityLegend("中", count: severityCounts.medium, color: PulseColors.warning)
-                    severityLegend("低", count: severityCounts.low, color: PulseColors.success)
+                    severityLegend(L10n.zh("严重", en: "Critical"), count: severityCounts.critical, color: PulseColors.danger)
+                    severityLegend(L10n.zh("高", en: "High"), count: severityCounts.high, color: PulseColors.amber)
+                    severityLegend(L10n.zh("中", en: "Med"), count: severityCounts.medium, color: PulseColors.warning)
+                    severityLegend(L10n.zh("低", en: "Low"), count: severityCounts.low, color: PulseColors.success)
                 }
             }
         }
@@ -293,12 +294,12 @@ struct RiskView: View {
     private var riskEventsList: some View {
         KryptonCard(emphasis: .subtle) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-                TerminalLabel(text: "事件记录")
+                TerminalLabel(text: L10n.zh("事件记录", en: "EVENT LOG"))
 
                 if riskEvents.isEmpty {
                     HStack(spacing: PulseSpacing.xs) {
                         StatusDot(status: .online)
-                        Text("暂无风险事件")
+                        Text(L10n.zh("暂无风险事件", en: "No risk events"))
                             .font(PulseFonts.caption)
                             .foregroundStyle(colors.textMuted)
                     }
@@ -334,7 +335,7 @@ struct RiskView: View {
 
             // Description + meta
             VStack(alignment: .leading, spacing: 1) {
-                Text(event.description ?? "无描述")
+                Text(event.description ?? L10n.zh("无描述", en: "No description"))
                     .font(PulseFonts.body)
                     .foregroundStyle(colors.textPrimary)
                     .lineLimit(1)
@@ -364,7 +365,7 @@ struct RiskView: View {
         if !correlation.isEmpty {
             KryptonCard(emphasis: .subtle) {
                 VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-                    TerminalLabel(text: "顶级相关性")
+                    TerminalLabel(text: L10n.zh("顶级相关性", en: "TOP CORRELATIONS"))
 
                     ForEach(Array(correlation.prefix(8).enumerated()), id: \.element.id) { index, snap in
                         HStack(spacing: PulseSpacing.sm) {
@@ -417,19 +418,19 @@ struct RiskView: View {
     private var liveSmallApprovalSection: some View {
         KryptonCard(emphasis: .balanced) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-                TerminalLabel(text: "实盘小资金审批")
+                TerminalLabel(text: L10n.zh("实盘小资金审批", en: "LIVE SMALL CAPITAL APPROVAL"))
 
                 HStack(spacing: PulseSpacing.md) {
                     VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
-                        Text("策略版本 ID")
+                        Text(L10n.zh("策略版本 ID", en: "Strategy Version ID"))
                             .font(PulseFonts.captionMedium)
                             .foregroundStyle(colors.textSecondary)
-                        TextField("输入策略版本 ID...", text: $liveSmallStrategyId)
+                        TextField(L10n.zh("输入策略版本 ID...", en: "Enter strategy version ID..."), text: $liveSmallStrategyId)
                             .darkTextField()
                     }
 
                     KryptonButton(
-                        title: isEvaluatingLiveSmall ? "评估中..." : "预检评估",
+                        title: isEvaluatingLiveSmall ? L10n.zh("评估中...", en: "Evaluating...") : L10n.zh("预检评估", en: "Pre-check"),
                         action: { Task { await evaluateLiveSmall() } }
                     )
                     .opacity(liveSmallStrategyId.isEmpty || isEvaluatingLiveSmall ? 0.5 : 1)
@@ -443,12 +444,12 @@ struct RiskView: View {
                         HStack {
                             BadgeDot(
                                 color: result.canExecute ? PulseColors.success : PulseColors.danger,
-                                label: result.canExecute ? "可执行" : "不通过",
+                                label: result.canExecute ? L10n.zh("可执行", en: "Executable") : L10n.zh("不通过", en: "Rejected"),
                                 size: .medium
                             )
                             Spacer()
                             if result.requiresHumanConfirm {
-                                BadgeDot(color: PulseColors.amber, label: "需人工确认", size: .small)
+                                BadgeDot(color: PulseColors.amber, label: L10n.zh("需人工确认", en: "Manual Confirm Required"), size: .small)
                             }
                         }
 
@@ -489,16 +490,31 @@ struct RiskView: View {
 // MARK: - Risk Categories
 
 enum RiskCategory: String, CaseIterable, Identifiable {
-    case global = "全局风控"
-    case portfolio = "投资组合"
-    case correlation = "相关性"
+    case global
+    case portfolio
+    case correlation
     case agent = "AI/Agent"
-    case signalConflict = "信号冲突"
-    case manipulation = "操纵风控"
-    case connection = "连接风控"
-    case simulation = "模拟异常"
+    case signalConflict
+    case manipulation
+    case connection
+    case simulation
+
+    var displayName: String {
+        switch self {
+        case .global: return L10n.zh("全局风控", en: "Global Risk")
+        case .portfolio: return L10n.zh("投资组合", en: "Portfolio")
+        case .correlation: return L10n.zh("相关性", en: "Correlation")
+        case .agent: return L10n.zh("AI/Agent", en: "AI/Agent")
+        case .signalConflict: return L10n.zh("信号冲突", en: "Signal Conflict")
+        case .manipulation: return L10n.zh("操纵风控", en: "Manipulation")
+        case .connection: return L10n.zh("连接风控", en: "Connection")
+        case .simulation: return L10n.zh("模拟异常", en: "Simulation")
+        }
+    }
 
     var id: String { rawValue }
+
+    
 
     var icon: String {
         switch self {
@@ -543,21 +559,21 @@ enum RiskCategory: String, CaseIterable, Identifiable {
     var subMetrics: [(label: String, icon: String)] {
         switch self {
         case .global:
-            return [("综合风险评分", "gauge.with.dots.needle.33percent"), ("活跃告警数", "bell.badge"), ("风险事件趋势", "chart.line.uptrend.xyaxis")]
+            return [(L10n.zh("综合风险评分", en: "Overall Risk Score"), "gauge.with.dots.needle.33percent"), (L10n.zh("活跃告警数", en: "Active Alerts"), "bell.badge"), (L10n.zh("风险事件趋势", en: "Event Trend"), "chart.line.uptrend.xyaxis")]
         case .portfolio:
-            return [("集中度风险", "chart.pie"), ("最大敞口", "arrow.up.right"), ("行业暴露", "building.2")]
+            return [(L10n.zh("集中度风险", en: "Concentration Risk"), "chart.pie"), (L10n.zh("最大敞口", en: "Max Exposure"), "arrow.up.right"), (L10n.zh("行业暴露", en: "Sector Exposure"), "building.2")]
         case .correlation:
-            return [("高相关对数", "link"), ("最大相关系数", "arrow.up.right"), ("分散度评分", "circles.hexagongrid")]
+            return [(L10n.zh("高相关对数", en: "High Corr. Pairs"), "link"), (L10n.zh("最大相关系数", en: "Max Correlation"), "arrow.up.right"), (L10n.zh("分散度评分", en: "Diversification"), "circles.hexagongrid")]
         case .agent:
-            return [("权限异常", "lock.trianglebadge.exclamationmark"), ("越权操作", "person.badge.shield.checkmark"), ("Agent 健康度", "heart")]
+            return [(L10n.zh("权限异常", en: "Permission Anomaly"), "lock.trianglebadge.exclamationmark"), (L10n.zh("越权操作", en: "Unauthorized Ops"), "person.badge.shield.checkmark"), (L10n.zh("Agent 健康度", en: "Agent Health"), "heart")]
         case .signalConflict:
-            return [("冲突信号数", "arrow.triangle.swap"), ("多空矛盾", "arrow.up.arrow.down"), ("置信度偏离", "waveform.badge.exclamationmark")]
+            return [(L10n.zh("冲突信号数", en: "Conflicting Signals"), "arrow.triangle.swap"), (L10n.zh("多空矛盾", en: "Long/Short Conflict"), "arrow.up.arrow.down"), (L10n.zh("置信度偏离", en: "Confidence Drift"), "waveform.badge.exclamationmark")]
         case .manipulation:
-            return [("高危币种数", "exclamationmark.triangle"), ("操纵评分均值", "gauge.with.dots.needle.67percent"), ("建议限制数", "hand.raised")]
+            return [(L10n.zh("高危币种数", en: "High-Risk Assets"), "exclamationmark.triangle"), (L10n.zh("操纵评分均值", en: "Avg Manipulation Score"), "gauge.with.dots.needle.67percent"), (L10n.zh("建议限制数", en: "Suggested Restrictions"), "hand.raised")]
         case .connection:
-            return [("API 延迟", "clock.badge.exclamationmark"), ("断连次数", "wifi.slash"), ("WebSocket 状态", "antenna.radiowaves.left.and.right")]
+            return [(L10n.zh("API 延迟", en: "API Latency"), "clock.badge.exclamationmark"), (L10n.zh("断连次数", en: "Disconnections"), "wifi.slash"), (L10n.zh("WebSocket 状态", en: "WebSocket Status"), "antenna.radiowaves.left.and.right")]
         case .simulation:
-            return [("模拟偏差", "chart.line.flattrend.xyaxis"), ("异常交易数", "exclamationmark.octagon"), ("数据同步延迟", "clock.arrow.2.circlepath")]
+            return [(L10n.zh("模拟偏差", en: "Simulation Drift"), "chart.line.flattrend.xyaxis"), (L10n.zh("异常交易数", en: "Anomalous Trades"), "exclamationmark.octagon"), (L10n.zh("数据同步延迟", en: "Data Sync Lag"), "clock.arrow.2.circlepath")]
         }
     }
 }
@@ -586,7 +602,7 @@ extension RiskView {
                         HStack(spacing: PulseSpacing.xxs) {
                             Image(systemName: category.icon)
                                 .font(.system(size: 10))
-                            Text(category.rawValue)
+                            Text(category.displayName)
                                 .font(PulseFonts.captionMedium)
                         }
                         .foregroundStyle(selectedCategory == category ? colors.background : colors.textSecondary)
@@ -621,14 +637,14 @@ extension RiskView {
                     Image(systemName: selectedCategory.icon)
                         .font(.system(size: 14))
                         .foregroundStyle(selectedCategory.color)
-                    Text(selectedCategory.rawValue)
+                    Text(selectedCategory.displayName)
                         .font(PulseFonts.bodyMedium)
                         .foregroundStyle(colors.textPrimary)
                     Spacer()
                     let count = filteredEventCount
                     BadgeDot(
                         color: count > 0 ? PulseColors.warning : PulseColors.success,
-                        label: "\(count) 事件",
+                        label: L10n.zh("\(count) 事件", en: "\(count) events"),
                         size: .small
                     )
                 }

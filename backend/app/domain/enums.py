@@ -222,3 +222,74 @@ class ArchivalJobStatus(str, enum.Enum):
     RUNNING = "running"
     COMPLETED = "completed"
     FAILED = "failed"
+
+
+class WorkflowStepName(str, enum.Enum):
+    MISSION_CONTROL = "mission_control"
+    OPPORTUNITY = "opportunity"
+    STRATEGY = "strategy"
+    MTF_DEFENSE = "mtf_defense"
+    VALIDATION = "validation"
+    RISK_GATE = "risk_gate"
+    EXECUTION = "execution"
+    REVIEW = "review"
+    EVOLUTION = "evolution"
+
+
+class WorkflowStepStatus(str, enum.Enum):
+    NOT_STARTED = "not_started"
+    PENDING = "pending"
+    READY = "ready"
+    ATTENTION = "attention"
+    BLOCKED = "blocked"
+    RUNNING = "running"
+    PASSED = "passed"
+    FAILED = "failed"
+    NEEDS_HUMAN_CONFIRMATION = "needs_human_confirmation"
+    ARCHIVED = "archived"
+
+
+class WorkflowGlobalState(str, enum.Enum):
+    NOT_STARTED = "not_started"
+    READY = "ready"
+    ATTENTION = "attention"
+    BLOCKED = "blocked"
+    COMPLETED = "completed"
+
+
+class MTFGuardState(str, enum.Enum):
+    INACTIVE = "inactive"
+    WATCHING = "watching"
+    PENDING_HTF_CLOSE = "pending_htf_close"
+    TEMPORARY_VIOLATION = "temporary_violation"
+    RECLAIM_PENDING = "reclaim_pending"
+    CONFIRMED = "confirmed"
+    INVALIDATED = "invalidated"
+    EXPIRED = "expired"
+
+
+class MTFGuardAction(str, enum.Enum):
+    ALLOW = "allow"
+    OBSERVE = "observe"
+    REQUIRE_CONFIRM = "require_confirm"
+    BLOCK_ENTRY = "block_entry"
+    REDUCE_SIZE = "reduce_size"
+    IGNORE = "ignore"
+
+
+class ShadowStrategyStatus(str, enum.Enum):
+    GENERATED = "generated"
+    VALIDATED = "validated"
+    BACKTESTED = "backtested"
+    DRYRUN_PENDING = "dryrun_pending"
+    DRYRUN_PASSED = "dryrun_passed"
+    HUMAN_REVIEW = "human_review"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    MERGED = "merged_to_strategy_version"
+
+
+class UpgradeApprovalStatus(str, enum.Enum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"

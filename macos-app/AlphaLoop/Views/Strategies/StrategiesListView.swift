@@ -6,6 +6,7 @@ import SwiftUI
 struct StrategiesListView: View {
     @Environment(PulseColors.self) private var colors
     @Environment(AppState.self) private var appState
+    @Environment(SettingsState.self) private var settingsState
     @Bindable var viewModel: StrategiesViewModel
     @State private var showCreatePanel = false
 
@@ -20,9 +21,9 @@ struct StrategiesListView: View {
                     } else if viewModel.strategies.isEmpty {
                         EmptyStateView(
                             icon: "cpu",
-                            title: "暂无策略",
-                            description: "创建你的第一个量化交易策略",
-                            primaryAction: (title: "新建策略", action: { withAnimation(PulseAnimation.springDefault) { showCreatePanel = true } })
+                            title: L10n.zh("暂无策略", en: "No Strategies"),
+                            description: L10n.zh("创建你的第一个量化交易策略", en: "Create your first quantitative trading strategy"),
+                            primaryAction: (title: L10n.zh("新建策略", en: "New Strategy"), action: { withAnimation(PulseAnimation.springDefault) { showCreatePanel = true } })
                         )
                         .frame(height: 300)
                     } else {
@@ -52,6 +53,7 @@ struct StrategiesListView: View {
                 .padding(PulseSpacing.lg)
             }
             .scrollEdgeEffectStyle(.soft, for: .vertical)
+        .id(settingsState.language)
 
             // 创建面板 — 覆层方式，不影响下方列表布局
             if showCreatePanel {
@@ -135,18 +137,18 @@ struct StrategiesListView: View {
     private var header: some View {
         HStack {
             VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
-                Text("策略管理")
+                Text(L10n.zh("策略管理", en: "Strategy Manager"))
                     .font(PulseFonts.displayHeading)
                     .foregroundStyle(colors.textPrimary)
 
                 HStack(spacing: PulseSpacing.md) {
-                    statBadge("总计", value: "\(viewModel.strategies.count)")
-                    statBadge("草稿", value: "\(viewModel.draftCount)", color: PulseColors.info)
-                    statBadge("运行中", value: "\(viewModel.activeCount)", color: PulseColors.statusActive)
+                    statBadge(L10n.zh("总计", en: "Total"), value: "\(viewModel.strategies.count)")
+                    statBadge(L10n.zh("草稿", en: "Draft"), value: "\(viewModel.draftCount)", color: PulseColors.info)
+                    statBadge(L10n.zh("运行中", en: "Active"), value: "\(viewModel.activeCount)", color: PulseColors.statusActive)
                 }
             }
             Spacer()
-            KryptonButton(title: "新建策略") {
+            KryptonButton(title: L10n.zh("新建策略", en: "New Strategy")) {
                 withAnimation(PulseAnimation.springDefault) { showCreatePanel.toggle() }
             }
         }

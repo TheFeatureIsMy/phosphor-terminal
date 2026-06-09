@@ -6,6 +6,7 @@ import SwiftUI
 struct AIProvidersView: View {
     @Environment(\.networkClient) private var networkClient
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
     @State private var api: APIAIProviders?
     @State private var inferenceApi: APIInference?
     @State private var providers: [AIProviderInfo] = []
@@ -41,6 +42,7 @@ struct AIProvidersView: View {
             }
             .padding(PulseSpacing.lg)
         }
+        .id(settingsState.language)
         .scrollEdgeEffectStyle(.soft, for: .vertical)
         .task {
             api = APIAIProviders(client: networkClient)
@@ -54,8 +56,8 @@ struct AIProvidersView: View {
     private var headerSection: some View {
         HStack {
             VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
-                TerminalLabel(text: "AI 服务管理")
-                Text("推理引擎 · 模型调度 · 隐私合规")
+                TerminalLabel(text: L10n.zh("AI 服务管理", en: "AI Services"))
+                Text(L10n.zh("推理引擎 · 模型调度 · 隐私合规", en: "Inference Engine · Model Routing · Privacy Compliance"))
                     .font(PulseFonts.caption)
                     .foregroundStyle(colors.textMuted)
             }
@@ -70,7 +72,7 @@ struct AIProvidersView: View {
                     .foregroundStyle(colors.textMuted)
             }
             .buttonStyle(.plain)
-            .help("刷新")
+            .help(L10n.zh("刷新", en: "Refresh"))
         }
     }
 
@@ -78,7 +80,7 @@ struct AIProvidersView: View {
 
     private var providerOverviewSection: some View {
         VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-            TerminalLabel(text: "Provider 总览")
+            TerminalLabel(text: L10n.zh("Provider 总览", en: "Provider Overview"))
 
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 280))], spacing: PulseSpacing.sm) {
                 ForEach(providers) { provider in
@@ -89,15 +91,15 @@ struct AIProvidersView: View {
             // 测试结果
             if let result = testResult {
                 HStack(spacing: PulseSpacing.xs) {
-                    Image(systemName: result.contains("成功") ? "checkmark.circle" : "xmark.circle")
+                    Image(systemName: result.contains("✓") ? "checkmark.circle" : "xmark.circle")
                         .font(PulseFonts.caption)
                     Text(result)
                         .font(PulseFonts.caption)
                 }
-                .foregroundStyle(result.contains("成功") ? PulseColors.success : PulseColors.danger)
+                .foregroundStyle(result.contains("✓") ? PulseColors.success : PulseColors.danger)
                 .padding(PulseSpacing.xs)
                 .background(
-                    (result.contains("成功") ? PulseColors.success : PulseColors.danger).opacity(0.08)
+                    (result.contains("✓") ? PulseColors.success : PulseColors.danger).opacity(0.08)
                 )
                 .clipShape(RoundedRectangle(cornerRadius: PulseRadii.xs))
             }
@@ -129,9 +131,9 @@ struct AIProvidersView: View {
 
                 // 指标行
                 HStack(spacing: PulseSpacing.md) {
-                    metricItem(label: "延迟", value: provider.isAvailable ? "\(Int.random(in: 45...320))ms" : "—")
-                    metricItem(label: "模型数", value: "\(provider.modelCount ?? 0)")
-                    metricItem(label: "失败率", value: provider.isAvailable ? "\(String(format: "%.1f", Double.random(in: 0.1...2.5)))%" : "—")
+                    metricItem(label: L10n.zh("延迟", en: "Latency"), value: provider.isAvailable ? "\(Int.random(in: 45...320))ms" : "—")
+                    metricItem(label: L10n.zh("模型数", en: "Models"), value: "\(provider.modelCount ?? 0)")
+                    metricItem(label: L10n.zh("失败率", en: "Fail Rate"), value: provider.isAvailable ? "\(String(format: "%.1f", Double.random(in: 0.1...2.5)))%" : "—")
                 }
 
                 // URL + 操作
@@ -145,7 +147,7 @@ struct AIProvidersView: View {
 
                     Spacer()
 
-                    Button("测试") {
+                    Button(L10n.zh("测试", en: "Test")) {
                         Task { await testProvider(provider.name) }
                     }
                     .buttonStyle(.plain)
@@ -171,7 +173,7 @@ struct AIProvidersView: View {
 
     private var routingMatrixSection: some View {
         VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-            TerminalLabel(text: "任务路由矩阵")
+            TerminalLabel(text: L10n.zh("任务路由矩阵", en: "Task Routing Matrix"))
 
             KryptonCard(emphasis: .subtle, cardPadding: PulseSpacing.sm) {
                 VStack(spacing: 0) {
@@ -194,15 +196,15 @@ struct AIProvidersView: View {
 
     private var routingHeaderRow: some View {
         HStack(spacing: 0) {
-            Text("任务类型")
+            Text(L10n.zh("任务类型", en: "Task Type"))
                 .frame(width: 100, alignment: .leading)
-            Text("主路由")
+            Text(L10n.zh("主路由", en: "Primary"))
                 .frame(width: 100, alignment: .leading)
-            Text("备用路由")
+            Text(L10n.zh("备用路由", en: "Fallback"))
                 .frame(width: 100, alignment: .leading)
-            Text("超时")
+            Text(L10n.zh("超时", en: "Timeout"))
                 .frame(width: 60, alignment: .leading)
-            Text("策略")
+            Text(L10n.zh("策略", en: "Strategy"))
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .font(PulseFonts.monoLabel)
@@ -238,7 +240,7 @@ struct AIProvidersView: View {
 
     private var modelRuntimeSection: some View {
         VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-            TerminalLabel(text: "模型运行状态")
+            TerminalLabel(text: L10n.zh("模型运行状态", en: "Model Runtime Status"))
 
             VStack(spacing: PulseSpacing.xs) {
                 ForEach(modelRuntimeItems, id: \.name) { item in
@@ -287,24 +289,24 @@ struct AIProvidersView: View {
     private var inferenceQueueSection: some View {
         VStack(alignment: .leading, spacing: PulseSpacing.sm) {
             HStack {
-                TerminalLabel(text: "推理队列")
+                TerminalLabel(text: L10n.zh("推理队列", en: "Inference Queue"))
 
                 Spacer()
 
                 HStack(spacing: PulseSpacing.xs) {
                     queueStatBadge(
                         count: inferenceJobs.filter { $0.status == "running" }.count,
-                        label: "运行中",
+                        label: L10n.zh("运行中", en: "Running"),
                         color: PulseColors.statusActive
                     )
                     queueStatBadge(
                         count: inferenceJobs.filter { $0.status == "pending" }.count,
-                        label: "排队中",
+                        label: L10n.zh("排队中", en: "Queued"),
                         color: PulseColors.warning
                     )
                     queueStatBadge(
                         count: inferenceJobs.filter { $0.status == "failed" }.count,
-                        label: "失败",
+                        label: L10n.zh("失败", en: "Failed"),
                         color: PulseColors.danger
                     )
                 }
@@ -313,8 +315,8 @@ struct AIProvidersView: View {
             if inferenceJobs.isEmpty {
                 EmptyStateView(
                     icon: "tray",
-                    title: "队列为空",
-                    description: "暂无推理任务"
+                    title: L10n.zh("队列为空", en: "Queue Empty"),
+                    description: L10n.zh("暂无推理任务", en: "No inference jobs")
                 )
             } else {
                 VStack(spacing: PulseSpacing.xs) {
@@ -371,7 +373,7 @@ struct AIProvidersView: View {
                             .foregroundStyle(PulseColors.danger.opacity(0.7))
                     }
                     .buttonStyle(.plain)
-                    .help("取消任务")
+                    .help(L10n.zh("取消任务", en: "Cancel Job"))
                 }
             }
         }
@@ -392,19 +394,19 @@ struct AIProvidersView: View {
 
     private var privacySettingsSection: some View {
         VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-            TerminalLabel(text: "隐私策略")
+            TerminalLabel(text: L10n.zh("隐私策略", en: "Privacy Policy"))
 
             KryptonCard(emphasis: .subtle, cardPadding: PulseSpacing.sm) {
                 VStack(spacing: 0) {
                     // 表头
                     HStack(spacing: 0) {
-                        Text("数据类型")
+                        Text(L10n.zh("数据类型", en: "Data Type"))
                             .frame(width: 140, alignment: .leading)
-                        Text("本地推理")
+                        Text(L10n.zh("本地推理", en: "Local"))
                             .frame(width: 80, alignment: .center)
-                        Text("云端 API")
+                        Text(L10n.zh("云端 API", en: "Cloud API"))
                             .frame(width: 80, alignment: .center)
-                        Text("说明")
+                        Text(L10n.zh("说明", en: "Notes"))
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .font(PulseFonts.monoLabel)
@@ -501,11 +503,11 @@ struct AIProvidersView: View {
 
     private func jobStatusLabel(_ status: String) -> String {
         switch status {
-        case "running": return "运行中"
-        case "pending": return "排队中"
-        case "completed": return "已完成"
-        case "failed": return "失败"
-        case "cancelled": return "已取消"
+        case "running": return L10n.zh("运行中", en: "Running")
+        case "pending": return L10n.zh("排队中", en: "Queued")
+        case "completed": return L10n.zh("已完成", en: "Completed")
+        case "failed": return L10n.zh("失败", en: "Failed")
+        case "cancelled": return L10n.zh("已取消", en: "Cancelled")
         default: return status
         }
     }
@@ -538,10 +540,10 @@ struct AIProvidersView: View {
         do {
             let resp = try await api?.testProvider(name: name)
             testResult = resp?.success == true
-                ? "\(name): 连接成功 ✓"
-                : "\(name): \(resp?.message ?? "连接失败")"
+                ? "\(name): \(L10n.zh("连接成功", en: "Connected")) ✓"
+                : "\(name): \(resp?.message ?? L10n.zh("连接失败", en: "Connection Failed"))"
         } catch {
-            testResult = "\(name): 测试失败"
+            testResult = "\(name): \(L10n.zh("测试失败", en: "Test Failed"))"
         }
     }
 
@@ -556,11 +558,11 @@ struct AIProvidersView: View {
 
 private func modelStateLabel(_ state: String) -> String {
     switch state {
-    case "running": return "运行中"
-    case "loaded": return "已加载"
-    case "available": return "可用"
-    case "idle": return "空闲"
-    case "unavailable": return "不可用"
+    case "running": return L10n.zh("运行中", en: "Running")
+    case "loaded": return L10n.zh("已加载", en: "Loaded")
+    case "available": return L10n.zh("可用", en: "Available")
+    case "idle": return L10n.zh("空闲", en: "Idle")
+    case "unavailable": return L10n.zh("不可用", en: "Unavailable")
     case "oom": return "OOM"
     default: return state
     }

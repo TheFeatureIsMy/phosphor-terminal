@@ -108,3 +108,34 @@ def aggregate_signals(body: SignalAggregateRequest, db: Session = Depends(get_db
     svc = SignalService(db)
     result = svc.aggregate(symbols=body.symbols, group_by=body.group_by)
     return result
+
+
+@router.get("/{signal_id}/next-actions")
+def get_signal_next_actions(signal_id: uuid.UUID, db: Session = Depends(get_db)):
+    """Return available next actions for a signal based on its current status."""
+    svc = SignalService(db)
+    detail = svc.get_signal_detail(signal_id)
+    if not detail:
+        raise HTTPException(status_code=404, detail="Signal not found")
+
+    status = detail.get("status", "") if isinstance(detail, dict) else getattr(detail, "status", "")
+
+    actions = []
+    if status == "pending":
+        actions = [
+            {"type": "transition_active", "enabled": True, "label": "激活"},
+            {"type": "reject", "enabled": True, "label": "拒绝"},
+        ]
+    elif status == "active":
+        actions = [
+            {"type": "create_strategy_draft", "enabled": True, "label": "生成策略草稿"},
+            {"type": "observe_in_dryrun", "enabled": True, "label": "加入 dry-run 观察"},
+            {"type": "publish_to_strategy", "enabled": True, "label": "发布到策略"},
+            {"type": "reject", "enabled": True, "label": "拒绝"},
+        ]
+    elif status in ("used_in_strategy", "executed"):
+        actions = [
+            {"type": "archive", "enabled": True, "label": "归档"},
+        ]
+
+    return {"signal_id": str(signal_id), "status": status, "next_actions": actions}

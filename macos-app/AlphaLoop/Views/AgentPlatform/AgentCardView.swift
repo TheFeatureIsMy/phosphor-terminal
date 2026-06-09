@@ -14,6 +14,7 @@ struct AgentCardView: View {
     var onDemote: (() -> Void)? = nil
     var onDisable: (() -> Void)? = nil
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
 
     /// Max signals displayed on card
     private let maxDisplayedSignals = 2
@@ -52,7 +53,7 @@ struct AgentCardView: View {
 
                     // Win rate
                     HStack(spacing: 3) {
-                        Text("胜率")
+                        Text(L10n.zh("胜率", en: "Win Rate"))
                             .font(PulseFonts.micro)
                             .foregroundStyle(colors.textMuted)
                         Text(String(format: "%.0f%%", winRate * 100))
@@ -79,12 +80,12 @@ struct AgentCardView: View {
                         Button(role: .none) {
                             onDemote?()
                         } label: {
-                            Label("降级", systemImage: "arrow.down.circle")
+                            Label(L10n.zh("降级", en: "Demote"), systemImage: "arrow.down.circle")
                         }
                         Button(role: .destructive) {
                             onDisable?()
                         } label: {
-                            Label("禁用", systemImage: "xmark.circle")
+                            Label(L10n.zh("禁用", en: "Disable"), systemImage: "xmark.circle")
                         }
                     } label: {
                         Image(systemName: "ellipsis")
@@ -100,19 +101,19 @@ struct AgentCardView: View {
 
                 // 性能指标行
                 HStack(spacing: PulseSpacing.lg) {
-                    metricColumn(label: "信号数", value: "\(signalCount)", color: PulseColors.cyan)
-                    metricColumn(label: "平均评分", value: avgScore, color: PulseColors.warning)
-                    metricColumn(label: "状态", value: statusLabel, color: statusColor)
+                    metricColumn(label: L10n.zh("信号数", en: "Signals"), value: "\(signalCount)", color: PulseColors.cyan)
+                    metricColumn(label: L10n.zh("平均评分", en: "Avg Score"), value: avgScore, color: PulseColors.warning)
+                    metricColumn(label: L10n.zh("状态", en: "Status"), value: statusLabel, color: statusColor)
                 }
 
                 Divider().foregroundStyle(colors.border)
 
                 // 最近信号
                 VStack(alignment: .leading, spacing: PulseSpacing.xs) {
-                    TerminalLabel(text: "最近信号")
+                    TerminalLabel(text: L10n.zh("最近信号", en: "Recent Signals"))
 
                     if recentSignals.isEmpty {
-                        Text("暂无信号")
+                        Text(L10n.zh("暂无信号", en: "No signals"))
                             .font(PulseFonts.caption)
                             .foregroundStyle(colors.textMuted)
                     } else {
@@ -197,7 +198,7 @@ struct AgentCardView: View {
     }
 
     private var statusLabel: String {
-        agent.status == "active" ? "运行中" : "离线"
+        agent.status == "active" ? L10n.zh("运行中", en: "Running") : L10n.zh("离线", en: "Offline")
     }
 
     private var statusColor: Color {
@@ -230,10 +231,10 @@ struct AgentCardView: View {
 
     private var permissionLabel: String {
         switch permissionLevel {
-        case "observe_only": return "仅观察"
-        case "signal_only": return "仅信号"
-        case "paper_trade": return "模拟交易"
-        case "live_requires_confirm": return "实盘确认"
+        case "observe_only": return L10n.zh("仅观察", en: "Observe Only")
+        case "signal_only": return L10n.zh("仅信号", en: "Signal Only")
+        case "paper_trade": return L10n.zh("模拟交易", en: "Paper Trading")
+        case "live_requires_confirm": return L10n.zh("实盘确认", en: "Live (Confirm Required)")
         default: return permissionLevel
         }
     }

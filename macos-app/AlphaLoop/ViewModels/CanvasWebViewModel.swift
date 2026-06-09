@@ -90,6 +90,19 @@ final class CanvasWebViewModel {
         }
     }
 
+    func sendMTFGuardStateUpdate(guardId: String, state: String, action: String, reasonCodes: [String]) {
+        let msg: [String: Any] = [
+            "type": "mtfGuardStateUpdate",
+            "payload": [
+                "guardId": guardId,
+                "state": state,
+                "action": action,
+                "reasonCodes": reasonCodes,
+            ],
+        ]
+        sendMessageToCanvas(msg)
+    }
+
     func loadDSL(_ dsl: [String: Any]) {
         if isReady {
             sendDSLToCanvas(dsl)

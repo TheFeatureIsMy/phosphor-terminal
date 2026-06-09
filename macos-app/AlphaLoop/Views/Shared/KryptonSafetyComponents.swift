@@ -56,7 +56,7 @@ struct KryptonConfirmDialog: View {
                 // Buttons
                 HStack(spacing: PulseSpacing.sm) {
                     Button(action: onCancel) {
-                        Text("取消")
+                        Text(L10n.zh("取消", en: "Cancel"))
                             .font(PulseFonts.captionMedium)
                             .foregroundStyle(colors.textSecondary)
                             .frame(width: 100, height: 32)
@@ -160,7 +160,7 @@ struct EmergencyPauseButton: View {
             HStack(spacing: 5) {
                 Image(systemName: "hand.raised.fill")
                     .font(.system(size: 11))
-                Text("暂停交易")
+                Text(L10n.zh("暂停交易", en: "Halt Trading"))
                     .font(.system(size: 10, weight: .bold))
             }
             .foregroundStyle(isLive ? KryptonColor.red : colors.textMuted)
@@ -180,9 +180,9 @@ struct EmergencyPauseButton: View {
         .onHover { isHovered = $0 }
         .sheet(isPresented: $showConfirm) {
             KryptonConfirmDialog(
-                title: "暂停所有自动交易",
-                message: "这将立即停止所有策略的自动执行。已提交的订单不受影响。暂停后需要人工恢复。",
-                confirmLabel: "确认暂停",
+                title: L10n.zh("暂停所有自动交易", en: "Halt All Automated Trading"),
+                message: L10n.zh("这将立即停止所有策略的自动执行。已提交的订单不受影响。暂停后需要人工恢复。", en: "This will immediately stop all strategy auto-execution. Submitted orders are unaffected. Manual restart required after halt."),
+                confirmLabel: L10n.zh("确认暂停", en: "Confirm Halt"),
                 confirmStyle: .danger,
                 onConfirm: {
                     onPause()

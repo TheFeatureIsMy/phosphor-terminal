@@ -25,21 +25,21 @@ struct AIStatusBar: View {
             statusDivider
             statusItem(
                 icon: "cpu.fill",
-                label: "本地 GPU",
+                label: L10n.Dashboard.localGPU,
                 value: gpuStatusLabel,
                 color: gpuStatusColor
             )
             statusDivider
             statusItem(
                 icon: "dollarsign.circle.fill",
-                label: "今日 AI 成本",
+                label: L10n.Dashboard.todayAICost,
                 value: String(format: "$%.2f", todayCost),
                 color: PulseColors.cyan
             )
             statusDivider
             statusItem(
                 icon: "gearshape.2.fill",
-                label: "待处理任务",
+                label: L10n.Dashboard.pendingTasks,
                 value: "\(pendingJobs)",
                 color: pendingJobs > 0 ? PulseColors.amber : PulseColors.accent
             )
@@ -87,9 +87,9 @@ struct AIStatusBar: View {
 
     private var providerStatusLabel: String {
         switch providerStatus {
-        case "degraded": return "降级"
-        case "cloud_unavailable": return "不可用"
-        default: return "正常"
+        case "degraded": return L10n.Dashboard.providerDegraded
+        case "cloud_unavailable": return L10n.Dashboard.providerUnavailable
+        default: return L10n.Dashboard.providerNormal
         }
     }
 
@@ -103,9 +103,9 @@ struct AIStatusBar: View {
 
     private var gpuStatusLabel: String {
         switch gpuStatus {
-        case "active": return "运行中"
-        case "unavailable": return "不可用"
-        default: return "空闲"
+        case "active": return L10n.Dashboard.gpuRunning
+        case "unavailable": return L10n.Dashboard.gpuUnavailable
+        default: return L10n.Dashboard.gpuIdle
         }
     }
 
@@ -129,7 +129,7 @@ struct AIMarketJudgmentCard: View {
     var body: some View {
         KryptonCard(emphasis: .bold) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-                TerminalLabel(text: "今日 AI 市场判断")
+                TerminalLabel(text: L10n.Dashboard.aiMarketJudgment)
 
                 HStack(alignment: .top, spacing: PulseSpacing.lg) {
                     VStack(spacing: PulseSpacing.xxs) {
@@ -148,7 +148,7 @@ struct AIMarketJudgmentCard: View {
                     VStack(alignment: .leading, spacing: PulseSpacing.sm) {
                         VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
                             HStack {
-                                Text("置信度")
+                                Text(L10n.Dashboard.confidence)
                                     .font(PulseFonts.caption)
                                     .foregroundStyle(colors.textMuted)
                                 Spacer()
@@ -197,8 +197,8 @@ struct AIMarketJudgmentCard: View {
 
     private var directionColor: Color {
         switch judgment.direction {
-        case "看多": return colors.profit
-        case "看空": return colors.loss
+        case "看多", "Bullish": return colors.profit
+        case "看空", "Bearish": return colors.loss
         default: return PulseColors.amber
         }
     }
@@ -222,10 +222,10 @@ struct AIMarketJudgmentCard: View {
 
     private var riskLabel: String {
         switch judgment.riskLevel {
-        case "low": return "低风险"
-        case "high": return "高风险"
-        case "critical": return "极高风险"
-        default: return "中风险"
+        case "low": return L10n.Dashboard.riskLow
+        case "high": return L10n.Dashboard.riskHigh
+        case "critical": return L10n.Dashboard.riskCritical
+        default: return L10n.Dashboard.riskMedium
         }
     }
 }
@@ -240,9 +240,9 @@ struct PositionsRiskCard: View {
         KryptonCard(emphasis: .balanced) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
                 HStack {
-                    TerminalLabel(text: "当前持仓 + 风险状态")
+                    TerminalLabel(text: L10n.Dashboard.positionsAndRisk)
                     Spacer()
-                    Text("\(positions.count) 个持仓")
+                    Text(L10n.Dashboard.positionCount(positions.count))
                         .font(PulseFonts.caption)
                         .foregroundStyle(colors.textMuted)
                 }
@@ -250,18 +250,18 @@ struct PositionsRiskCard: View {
                 if positions.isEmpty {
                     HStack(spacing: PulseSpacing.xs) {
                         StatusDot(status: .online)
-                        Text("无活跃持仓")
+                        Text(L10n.Dashboard.noActivePositions)
                             .font(PulseFonts.caption)
                             .foregroundStyle(colors.textMuted)
                     }
                     .padding(.vertical, PulseSpacing.sm)
                 } else {
                     HStack(spacing: 0) {
-                        Text("品种").frame(width: 100, alignment: .leading)
-                        Text("方向").frame(width: 50, alignment: .center)
-                        Text("盈亏").frame(width: 100, alignment: .trailing)
-                        Text("AI 建议").frame(width: 90, alignment: .center)
-                        Text("风险").frame(width: 70, alignment: .center)
+                        Text(L10n.Dashboard.symbol).frame(width: 100, alignment: .leading)
+                        Text(L10n.Dashboard.direction).frame(width: 50, alignment: .center)
+                        Text(L10n.Dashboard.pnl).frame(width: 100, alignment: .trailing)
+                        Text(L10n.Dashboard.aiSuggestion).frame(width: 90, alignment: .center)
+                        Text(L10n.Dashboard.risk).frame(width: 70, alignment: .center)
                     }
                     .font(PulseFonts.micro)
                     .foregroundStyle(colors.textMuted)
@@ -297,7 +297,7 @@ struct PositionAIRow: View {
             }
             .frame(width: 100, alignment: .leading)
 
-            Text(position.direction == "long" ? "多" : "空")
+            Text(position.direction == "long" ? L10n.Dashboard.long : L10n.Dashboard.short)
                 .font(PulseFonts.captionMedium)
                 .foregroundStyle(position.direction == "long" ? colors.profit : colors.loss)
                 .frame(width: 50, alignment: .center)
@@ -336,10 +336,10 @@ struct PositionAIRow: View {
 
     private var recommendationLabel: String {
         switch position.aiRecommendation {
-        case "hold": return "持有"
-        case "reduce": return "减仓"
-        case "take-profit": return "止盈"
-        case "close": return "平仓"
+        case "hold": return L10n.Dashboard.hold
+        case "reduce": return L10n.Dashboard.reduce
+        case "take-profit": return L10n.Dashboard.takeProfit
+        case "close": return L10n.Dashboard.closePosition
         default: return position.aiRecommendation
         }
     }
@@ -364,9 +364,9 @@ struct PositionAIRow: View {
 
     private var riskLabel: String {
         switch position.riskLevel {
-        case "low": return "低"
-        case "high": return "高"
-        default: return "中"
+        case "low": return L10n.Dashboard.riskLevelLow
+        case "high": return L10n.Dashboard.riskLevelHigh
+        default: return L10n.Dashboard.riskLevelMedium
         }
     }
 }
@@ -383,7 +383,7 @@ struct PendingConfirmationsCard: View {
         KryptonCard(emphasis: .balanced) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
                 HStack {
-                    TerminalLabel(text: "需人工确认事项")
+                    TerminalLabel(text: L10n.Dashboard.pendingConfirmations)
                     Spacer()
                     if !confirmations.isEmpty {
                         BadgeDot(color: PulseColors.amber, label: "\(confirmations.count)", size: .small)
@@ -393,7 +393,7 @@ struct PendingConfirmationsCard: View {
                 if confirmations.isEmpty {
                     HStack(spacing: PulseSpacing.xs) {
                         StatusDot(status: .online)
-                        Text("无待处理事项")
+                        Text(L10n.Dashboard.noPendingItems)
                             .font(PulseFonts.caption)
                             .foregroundStyle(colors.textMuted)
                     }
@@ -441,7 +441,7 @@ struct ConfirmationRow: View {
                     Button {
                         onReject(item.id)
                     } label: {
-                        Text("拒绝")
+                        Text(L10n.Dashboard.reject)
                             .font(PulseFonts.micro)
                             .foregroundStyle(colors.textMuted)
                             .padding(.horizontal, PulseSpacing.xs)
@@ -456,7 +456,7 @@ struct ConfirmationRow: View {
                     Button {
                         onApprove(item.id)
                     } label: {
-                        Text("批准")
+                        Text(L10n.Dashboard.approve)
                             .font(PulseFonts.micro)
                             .foregroundStyle(colors.background)
                             .padding(.horizontal, PulseSpacing.xs)
@@ -505,10 +505,10 @@ struct AgentSignalDistributionView: View {
     var body: some View {
         KryptonCard(emphasis: .subtle) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-                TerminalLabel(text: "Agent 信号分布")
+                TerminalLabel(text: L10n.Dashboard.agentSignalDist)
 
                 if groups.isEmpty {
-                    Text("暂无信号数据")
+                    Text(L10n.Dashboard.noSignalData)
                         .font(PulseFonts.caption)
                         .foregroundStyle(colors.textMuted)
                 } else {
@@ -545,11 +545,11 @@ struct AgentSignalDistributionView: View {
                     HStack(spacing: PulseSpacing.md) {
                         HStack(spacing: PulseSpacing.xxs) {
                             Circle().fill(colors.profit).frame(width: 6, height: 6)
-                            Text("看多").font(PulseFonts.micro).foregroundStyle(colors.textMuted)
+                            Text(L10n.Dashboard.bullish).font(PulseFonts.micro).foregroundStyle(colors.textMuted)
                         }
                         HStack(spacing: PulseSpacing.xxs) {
                             Circle().fill(colors.loss).frame(width: 6, height: 6)
-                            Text("看空").font(PulseFonts.micro).foregroundStyle(colors.textMuted)
+                            Text(L10n.Dashboard.bearish).font(PulseFonts.micro).foregroundStyle(colors.textMuted)
                         }
                     }
                     .padding(.top, PulseSpacing.xxs)
@@ -568,16 +568,16 @@ struct StrategyStatusOverviewCard: View {
     var body: some View {
         KryptonCard(emphasis: .subtle) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-                TerminalLabel(text: "策略状态总览")
+                TerminalLabel(text: L10n.Dashboard.strategyOverview)
 
                 HStack(spacing: 0) {
-                    statusCell(label: "草稿", count: summary.draft, color: colors.textMuted)
+                    statusCell(label: L10n.Dashboard.draft, count: summary.draft, color: colors.textMuted)
                     cellDivider
-                    statusCell(label: "运行中", count: summary.active, color: PulseColors.accent)
+                    statusCell(label: L10n.Dashboard.running, count: summary.active, color: PulseColors.accent)
                     cellDivider
-                    statusCell(label: "模拟盘", count: summary.dryRunning, color: PulseColors.cyan)
+                    statusCell(label: L10n.Dashboard.dryRun, count: summary.dryRunning, color: PulseColors.cyan)
                     cellDivider
-                    statusCell(label: "已暂停", count: summary.paused, color: PulseColors.amber)
+                    statusCell(label: L10n.Dashboard.paused, count: summary.paused, color: PulseColors.amber)
                 }
             }
         }
@@ -612,17 +612,17 @@ struct RiskInterceptionStatsCard: View {
     var body: some View {
         KryptonCard(emphasis: .subtle) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-                TerminalLabel(text: "风险拦截统计")
+                TerminalLabel(text: L10n.Dashboard.riskInterception)
 
                 let total = summary.rejected + summary.reduced + summary.paperOnly + summary.allowed
                 HStack(spacing: 0) {
-                    statCell(label: "已拒绝", count: summary.rejected, color: PulseColors.danger, total: total)
+                    statCell(label: L10n.Dashboard.rejected, count: summary.rejected, color: PulseColors.danger, total: total)
                     cellDivider
-                    statCell(label: "已减仓", count: summary.reduced, color: PulseColors.amber, total: total)
+                    statCell(label: L10n.Dashboard.reduced, count: summary.reduced, color: PulseColors.amber, total: total)
                     cellDivider
-                    statCell(label: "仅模拟", count: summary.paperOnly, color: PulseColors.cyan, total: total)
+                    statCell(label: L10n.Dashboard.paperOnly, count: summary.paperOnly, color: PulseColors.cyan, total: total)
                     cellDivider
-                    statCell(label: "已放行", count: summary.allowed, color: PulseColors.accent, total: total)
+                    statCell(label: L10n.Dashboard.allowed, count: summary.allowed, color: PulseColors.accent, total: total)
                 }
 
                 GeometryReader { geo in
@@ -710,6 +710,7 @@ struct PulseExpandableSection<Label: View, Content: View>: View {
 
 struct DashboardView: View {
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
     @Bindable var viewModel: DashboardViewModel
 
     var body: some View {
@@ -734,6 +735,9 @@ struct DashboardView: View {
 
     private var mainContent: some View {
         VStack(spacing: PulseSpacing.lg) {
+            TradingWorkflowRailView(workflow: viewModel.dailyWorkflow)
+                .staggeredAppearance(index: 0)
+
             AIStatusBar(
                 providerStatus: viewModel.aiProviderStatus,
                 gpuStatus: viewModel.gpuStatus,
@@ -763,7 +767,7 @@ struct DashboardView: View {
                     Image(systemName: "chart.bar.doc.horizontal")
                         .font(PulseFonts.label)
                         .foregroundStyle(PulseColors.accent)
-                    Text("更多分析")
+                    Text(L10n.Dashboard.moreAnalysis)
                         .font(PulseFonts.bodyMedium)
                         .foregroundStyle(colors.textPrimary)
                 }
@@ -789,13 +793,14 @@ struct DashboardView: View {
             if viewModel.aiMarketJudgment == nil && !viewModel.isLoading {
                 EmptyStateView(
                     icon: "brain.head.profile",
-                    title: "AI 总控台",
-                    description: "等待 AI Agent 数据加载..."
+                    title: L10n.Dashboard.aiControlTower,
+                    description: L10n.Dashboard.waitingForData
                 )
                 .staggeredAppearance(index: 5)
             }
         }
         .padding(PulseSpacing.lg)
+        .id(settingsState.language)
     }
 
     // MARK: - Loading Skeleton

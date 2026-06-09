@@ -5,6 +5,7 @@ import SwiftUI
 struct StopProtectionView: View {
     @Environment(\.networkClient) private var networkClient
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
     @State private var viewModel: RiskCenterViewModel?
     @State private var pulsePhase: CGFloat = 0
 
@@ -44,6 +45,7 @@ struct StopProtectionView: View {
                                 }
                             }
                             .padding(PulseSpacing.xl)
+                            .id(settingsState.language)
                         }
                         .scrollEdgeEffectStyle(.soft, for: .vertical)
                     } else if let error = vm.error {

@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import json
 import logging
+import uuid
 from dataclasses import dataclass, field
 from typing import Optional
+
+from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 
@@ -114,3 +117,55 @@ class TradeReviewer:
                 ai_assessment="review_unavailable",
                 confidence=0.0,
             )
+
+    # ------------------------------------------------------------------
+    # Label persistence — TradeReviewLabel (shadow_strategy domain)
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def add_label(
+        db: Session,
+        trade_id: str | uuid.UUID,
+        label: str,
+        label_source: str = "human",
+        confidence: float | None = None,
+        notes: str | None = None,
+        runtime_snapshot_id: uuid.UUID | str | None = None,
+        feature_snapshot_id: uuid.UUID | str | None = None,
+    ):
+        """Persist a single TradeReviewLabel row and return it."""
+        from app.domain.shadow_strategy import TradeReviewLabel
+
+        _trade_id = uuid.UUID(str(trade_id)) if not isinstance(trade_id, uuid.UUID) else trade_id
+        _snap_id = uuid.UUID(str(runtime_snapshot_id)) if runtime_snapshot_id else None
+        _feat_id = uuid.UUID(str(feature_snapshot_id)) if feature_snapshot_id else None
+
+        row = TradeReviewLabel(
+            trade_id=_trade_id,
+            runtime_snapshot_id=_snap_id,
+            feature_snapshot_id=_feat_id,
+            label=label,
+            label_source=label_source,
+            confidence=confidence,
+            notes=notes,
+        )
+        db.add(row)
+        db.flush()
+        logger.info("TradeReviewLabel added: trade=%s label=%s source=%s", trade_id, label, label_source)
+        return row
+
+    @staticmethod
+    def get_labels(
+        db: Session,
+        trade_id: str | uuid.UUID,
+    ) -> list:
+        """Return all TradeReviewLabel rows for a given trade."""
+        from app.domain.shadow_strategy import TradeReviewLabel
+
+        _trade_id = uuid.UUID(str(trade_id)) if not isinstance(trade_id, uuid.UUID) else trade_id
+        return (
+            db.query(TradeReviewLabel)
+            .filter(TradeReviewLabel.trade_id == _trade_id)
+            .order_by(TradeReviewLabel.created_at.desc())
+            .all()
+        )

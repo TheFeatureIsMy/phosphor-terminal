@@ -3,15 +3,16 @@ import SwiftUI
 
 struct AgentSignalDistributionCard: View {
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
     let groups: [AgentSignalGroup]
 
     var body: some View {
         KryptonCard(emphasis: .subtle) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-                TerminalLabel(text: "Agent 信号分布")
+                TerminalLabel(text: L10n.zh("Agent 信号分布", en: "Agent Signal Distribution"))
 
                 if groups.isEmpty {
-                    Text("暂无信号数据")
+                    Text(L10n.zh("暂无信号数据", en: "No Signal Data"))
                         .font(PulseFonts.caption)
                         .foregroundStyle(colors.textMuted)
                         .padding(.vertical, PulseSpacing.sm)
@@ -25,11 +26,11 @@ struct AgentSignalDistributionCard: View {
                     HStack(spacing: PulseSpacing.md) {
                         HStack(spacing: 4) {
                             Circle().fill(KryptonColor.green).frame(width: 5, height: 5)
-                            Text("BULLISH 多").font(PulseFonts.micro).foregroundStyle(colors.textMuted)
+                            Text(L10n.zh("BULLISH 多", en: "BULLISH Long")).font(PulseFonts.micro).foregroundStyle(colors.textMuted)
                         }
                         HStack(spacing: 4) {
                             Circle().fill(KryptonColor.red).frame(width: 5, height: 5)
-                            Text("BEARISH 空").font(PulseFonts.micro).foregroundStyle(colors.textMuted)
+                            Text(L10n.zh("BEARISH 空", en: "BEARISH Short")).font(PulseFonts.micro).foregroundStyle(colors.textMuted)
                         }
                     }
                     .padding(.top, 4)
@@ -37,6 +38,7 @@ struct AgentSignalDistributionCard: View {
             }
         }
         .hoverEffect()
+        .id(settingsState.language)
     }
 
     private func agentSignalRow(_ group: AgentSignalGroup) -> some View {
@@ -69,9 +71,9 @@ struct AgentSignalDistributionCard: View {
             .frame(height: 10)
 
             HStack(spacing: 4) {
-                Text("\(group.longCount)多").font(PulseFonts.micro).foregroundStyle(KryptonColor.green)
+                Text("\(group.longCount)" + L10n.zh("多", en: "L")).font(PulseFonts.micro).foregroundStyle(KryptonColor.green)
                 Text("/").font(PulseFonts.micro).foregroundStyle(colors.textMuted)
-                Text("\(group.shortCount)空").font(PulseFonts.micro).foregroundStyle(KryptonColor.red)
+                Text("\(group.shortCount)" + L10n.zh("空", en: "S")).font(PulseFonts.micro).foregroundStyle(KryptonColor.red)
             }
             .frame(width: 60, alignment: .trailing)
         }

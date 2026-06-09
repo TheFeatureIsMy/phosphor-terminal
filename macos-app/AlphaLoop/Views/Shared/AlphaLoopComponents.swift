@@ -324,7 +324,7 @@ struct KryptonCard<Content: View>: View {
                                 .foregroundStyle(KryptonColor.red)
                         }
                         if let onRetry {
-                            KryptonButton(title: "重试", action: onRetry, style: .ghost)
+                            KryptonButton(title: L10n.zh("重试", en: "Retry"), action: onRetry, style: .ghost)
                         }
                     }
                     .padding(cardPadding)
@@ -424,99 +424,131 @@ struct KryptonCard<Content: View>: View {
     }
 }
 
-// MARK: - AlphaLoopLogoView — Go (围棋) 棋盘 Logo
+// MARK: - AlphaLoopLogoView — α + Dual Orbital Rings
 struct AlphaLoopLogoView: View {
-    @Environment(PulseColors.self) private var colors
-
     var body: some View {
         GeometryReader { geo in
             let dim = min(geo.size.width, geo.size.height)
-            let lines: CGFloat = 5
-            let marginRatio: CGFloat = 0.12
-            let boardSize = dim * (1 - marginRatio * 2)
-            let cellSize = boardSize / CGFloat(lines - 1)
-            let origin = dim * marginRatio
-            let stoneRadius = cellSize * 0.42
+            let cx = dim / 2
+            let cy = dim / 2
+            let accent = PulseColors.accent
 
             ZStack {
-                // Board background — subtle lighter area
-                RoundedRectangle(cornerRadius: dim * 0.08)
-                    .fill(Color(hex: "#1A1C24"))
-                    .frame(width: dim, height: dim)
+                // Background radial glow
+                RadialGradient(
+                    colors: [accent.opacity(0.08), Color.clear],
+                    center: .center,
+                    startRadius: dim * 0.05,
+                    endRadius: dim * 0.45
+                )
+                .frame(width: dim, height: dim)
 
-                // Grid lines
-                Path { path in
-                    for i in 0..<Int(lines) {
-                        let pos = origin + CGFloat(i) * cellSize
-                        path.move(to: CGPoint(x: origin, y: pos))
-                        path.addLine(to: CGPoint(x: origin + boardSize, y: pos))
-                        path.move(to: CGPoint(x: pos, y: origin))
-                        path.addLine(to: CGPoint(x: pos, y: origin + boardSize))
-                    }
-                }
-                .stroke(Color(hex: "#3A3D4A"), lineWidth: max(0.6, dim * 0.015))
+                // Outer orbit ring — primary, tilted
+                orbitRing(dim: dim, rx: dim * 0.44, ry: dim * 0.26, angle: -30, accent: accent, lineWidth: dim * 0.022, glowRadius: dim * 0.025)
 
-                // Star points
-                let sp: [(CGFloat, CGFloat)] = [(1,1), (3,1), (2,2), (1,3), (3,3)]
-                ForEach(sp.indices, id: \.self) { i in
-                    Circle()
-                        .fill(Color(hex: "#5A5D6A"))
-                        .frame(width: dim * 0.04, height: dim * 0.04)
-                        .position(x: origin + sp[i].0 * cellSize,
-                                  y: origin + sp[i].1 * cellSize)
-                }
+                // Inner orbit ring — secondary, counter-tilted
+                orbitRing(dim: dim, rx: dim * 0.38, ry: dim * 0.20, angle: 35, accent: accent, lineWidth: dim * 0.016, glowRadius: dim * 0.02)
 
-                // Black stone (top-left quadrant)
+                // Center core ring
                 Circle()
-                    .fill(RadialGradient(
-                        colors: [Color(hex: "#4A4D5A"), Color(hex: "#0D0E11")],
-                        center: .topLeading, startRadius: 0, endRadius: stoneRadius * 2))
-                    .frame(width: stoneRadius * 2, height: stoneRadius * 2)
-                    .position(x: origin + 1 * cellSize, y: origin + 1 * cellSize)
+                    .stroke(accent.opacity(0.25), lineWidth: dim * 0.012)
+                    .frame(width: dim * 0.30, height: dim * 0.30)
+                    .position(x: cx, y: cy)
 
-                // White stone (top-right quadrant)
-                Circle()
-                    .fill(RadialGradient(
-                        colors: [.white, Color(hex: "#B0B0B8")],
-                        center: .topLeading, startRadius: 0, endRadius: stoneRadius * 2))
-                    .frame(width: stoneRadius * 2, height: stoneRadius * 2)
-                    .position(x: origin + 3 * cellSize, y: origin + 1 * cellSize)
+                // Center glow disc
+                RadialGradient(
+                    colors: [accent.opacity(0.12), Color.clear],
+                    center: .center,
+                    startRadius: 0,
+                    endRadius: dim * 0.16
+                )
+                .frame(width: dim * 0.32, height: dim * 0.32)
+                .position(x: cx, y: cy)
 
-                // Black stone (bottom-left)
-                Circle()
-                    .fill(RadialGradient(
-                        colors: [Color(hex: "#4A4D5A"), Color(hex: "#0D0E11")],
-                        center: .topLeading, startRadius: 0, endRadius: stoneRadius * 2))
-                    .frame(width: stoneRadius * 2, height: stoneRadius * 2)
-                    .position(x: origin + 1 * cellSize, y: origin + 3 * cellSize)
+                // α — bold, dominant, single layer
+                Text("α")
+                    .font(.system(size: dim * 0.50, weight: .bold, design: .serif))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [.white, accent],
+                            startPoint: .topLeading, endPoint: .bottomTrailing
+                        )
+                    )
+                    .shadow(color: accent.opacity(0.5), radius: dim * 0.06)
+                    .position(x: cx, y: cy + dim * 0.015)
 
-                // White stone (bottom-right)
-                Circle()
-                    .fill(RadialGradient(
-                        colors: [.white, Color(hex: "#B0B0B8")],
-                        center: .topLeading, startRadius: 0, endRadius: stoneRadius * 2))
-                    .frame(width: stoneRadius * 2, height: stoneRadius * 2)
-                    .position(x: origin + 3 * cellSize, y: origin + 3 * cellSize)
+                // Primary node on outer orbit (top-right)
+                orbitNode(dim: dim, cx: cx, cy: cy, rx: dim * 0.44, ry: dim * 0.26,
+                         orbitAngle: -30, nodeAngle: 45, size: dim * 0.09, accent: accent)
 
-                // Gold stone (center — the decisive α-move)
-                ZStack {
-                    Circle()
-                        .stroke(PulseColors.accent.opacity(0.5), lineWidth: dim * 0.025)
-                        .frame(width: stoneRadius * 2.5, height: stoneRadius * 2.5)
-                    Circle()
-                        .fill(RadialGradient(
-                            colors: [Color(hex: "#D4AA50"), Color(hex: "#9A7020")],
-                            center: .topLeading, startRadius: 0, endRadius: stoneRadius * 2))
-                        .frame(width: stoneRadius * 2, height: stoneRadius * 2)
-                    // α mark on gold stone
-                    Text("α")
-                        .font(.system(size: stoneRadius * 1.1, weight: .medium, design: .serif))
-                        .foregroundStyle(Color(hex: "#0A0B0E").opacity(0.7))
-                }
-                .position(x: origin + 2 * cellSize, y: origin + 2 * cellSize)
-                .shadow(color: PulseColors.accent.opacity(0.3), radius: dim * 0.06)
+                // Secondary node on inner orbit (bottom-left)
+                orbitNode(dim: dim, cx: cx, cy: cy, rx: dim * 0.38, ry: dim * 0.20,
+                         orbitAngle: 35, nodeAngle: 210, size: dim * 0.06, accent: accent)
+
+                // Accent node on outer orbit (bottom)
+                orbitNode(dim: dim, cx: cx, cy: cy, rx: dim * 0.44, ry: dim * 0.26,
+                         orbitAngle: -30, nodeAngle: 195, size: dim * 0.045, accent: accent)
             }
         }
+    }
+
+    private func orbitRing(dim: CGFloat, rx: CGFloat, ry: CGFloat, angle: Double, accent: Color, lineWidth: CGFloat, glowRadius: CGFloat) -> some View {
+        let cx = dim / 2
+        let cy = dim / 2
+        return ZStack {
+            // Glow layer
+            Ellipse()
+                .stroke(accent.opacity(0.12), lineWidth: lineWidth * 2.5)
+                .frame(width: rx * 2, height: ry * 2)
+                .rotationEffect(.degrees(angle))
+                .blur(radius: glowRadius)
+                .position(x: cx, y: cy)
+
+            // Main ring with angular gradient
+            Ellipse()
+                .stroke(
+                    AngularGradient(
+                        stops: [
+                            .init(color: accent.opacity(0.03), location: 0.0),
+                            .init(color: accent.opacity(0.5), location: 0.25),
+                            .init(color: accent, location: 0.4),
+                            .init(color: accent.opacity(0.7), location: 0.55),
+                            .init(color: accent.opacity(0.15), location: 0.75),
+                            .init(color: accent.opacity(0.03), location: 1.0),
+                        ],
+                        center: .center
+                    ),
+                    lineWidth: lineWidth
+                )
+                .frame(width: rx * 2, height: ry * 2)
+                .rotationEffect(.degrees(angle))
+                .position(x: cx, y: cy)
+        }
+    }
+
+    private func orbitNode(dim: CGFloat, cx: CGFloat, cy: CGFloat, rx: CGFloat, ry: CGFloat, orbitAngle: Double, nodeAngle: Double, size: CGFloat, accent: Color) -> some View {
+        let rad = nodeAngle * .pi / 180
+        let orbRad = orbitAngle * .pi / 180
+        let px = cx + rx * cos(rad) * cos(orbRad) - ry * sin(rad) * sin(orbRad)
+        let py = cy + rx * cos(rad) * sin(orbRad) + ry * sin(rad) * cos(orbRad)
+
+        return ZStack {
+            Circle()
+                .fill(accent.opacity(0.3))
+                .frame(width: size * 2, height: size * 2)
+                .blur(radius: size * 0.6)
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [.white, accent],
+                        center: .center,
+                        startRadius: 0,
+                        endRadius: size * 0.6
+                    )
+                )
+                .frame(width: size, height: size)
+        }
+        .position(x: px, y: py)
     }
 }
 

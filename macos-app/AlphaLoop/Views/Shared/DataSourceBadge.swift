@@ -8,9 +8,9 @@ struct DataSourceBadge: View {
     let status: DataSourceStatus?
 
     private var label: String {
-        guard let status = status else { return "无数据" }
-        if !status.available { return "无数据" }
-        return status.simulated ? "模拟数据" : "真实数据"
+        guard let status = status else { return L10n.zh("无数据", en: "No Data") }
+        if !status.available { return L10n.zh("无数据", en: "No Data") }
+        return status.simulated ? L10n.zh("模拟数据", en: "Simulated") : L10n.zh("真实数据", en: "Live Data")
     }
 
     private var icon: String {

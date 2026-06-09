@@ -7,6 +7,7 @@ struct AgentDetailView: View {
     let agent: AgentProfile
     let signals: [AgentSignal]
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -29,6 +30,7 @@ struct AgentDetailView: View {
                 }
                 .padding(PulseSpacing.lg)
             }
+            .id(settingsState.language)
         }
         .frame(width: 520, height: 600)
         .background(colors.cardBackground)
@@ -167,7 +169,7 @@ struct AgentDetailView: View {
             TerminalLabel(text: L10n.Agent.signalHistory)
 
             if signals.isEmpty {
-                Text("暂无信号记录")
+                Text(L10n.zh("暂无信号记录", en: "No signal records"))
                     .font(PulseFonts.caption)
                     .foregroundStyle(colors.textMuted)
                     .padding(.vertical, PulseSpacing.md)

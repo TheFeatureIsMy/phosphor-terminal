@@ -4,6 +4,7 @@ import logging
 import time
 import uuid
 from datetime import datetime, timezone, timedelta
+from typing import Callable, Optional
 
 import pandas as pd
 
@@ -25,6 +26,31 @@ TIMEFRAME_SECONDS = {
     "1m": 60, "3m": 180, "5m": 300, "15m": 900, "30m": 1800,
     "1h": 3600, "2h": 7200, "4h": 14400, "1d": 86400,
 }
+
+# Type alias for the optional feature-snapshot persistence callback.
+# The callback receives a dict of kwargs matching FeatureSnapshotService.create_snapshot.
+FeatureSnapshotCallback = Callable[..., None]
+
+
+def build_feature_snapshot_callback(db_session) -> FeatureSnapshotCallback:
+    """Factory that returns a callback wired to a DB session.
+
+    Usage (at the caller / orchestration layer)::
+
+        from app.services.feature_snapshot_service import FeatureSnapshotService
+        cb = build_feature_snapshot_callback(db)
+        snapshot = await engine.evaluate(..., feature_snapshot_callback=cb)
+    """
+    def _callback(**kwargs) -> None:
+        try:
+            from app.services.feature_snapshot_service import FeatureSnapshotService
+            svc = FeatureSnapshotService(db_session)
+            svc.create_snapshot(**kwargs)
+            db_session.commit()
+        except Exception:
+            logger.exception("feature_snapshot_callback failed")
+            db_session.rollback()
+    return _callback
 
 
 class DecisionEngine:
@@ -48,10 +74,14 @@ class DecisionEngine:
         exchange: str,
         symbol: str,
         timeframe: str,
+        *,
+        strategy_version_id: str | None = None,
+        trade_intent_id: str | None = None,
+        feature_snapshot_callback: Optional[FeatureSnapshotCallback] = None,
     ) -> RuntimeDecisionSnapshot | None:
         t0 = time.monotonic()
 
-        entry_fired, reason_codes = self._evaluate_entry(dsl, dataframe)
+        entry_fired, reason_codes, indicator_cache = self._evaluate_entry(dsl, dataframe)
         if not entry_fired:
             return None
 
@@ -74,7 +104,7 @@ class DecisionEngine:
             order_block=self._ob_to_dict(struct_snapshot.order_blocks),
         )
 
-        indicator_ctx = self._build_indicator_context(dsl, dataframe)
+        indicator_ctx = self._build_indicator_context(dsl, dataframe, indicator_cache)
         ai_ctx = await self._read_ai_cache(symbol)
         risk_state = await self._firewall.check(account_id)
 
@@ -151,9 +181,44 @@ class DecisionEngine:
             snapshot.model_dump(mode="json"), ttl=ttl,
         )
 
+        # --- FeatureSnapshot persistence (fire-and-forget) ---
+        if feature_snapshot_callback and exec_plan.decision in ("allow_trade", "reduce_size"):
+            try:
+                feature_snapshot_callback(
+                    trade_intent_id=trade_intent_id,
+                    runtime_snapshot_id=snapshot.snapshot_id,
+                    strategy_id=strategy_id,
+                    strategy_version_id=strategy_version_id,
+                    symbol=symbol,
+                    exchange=exchange,
+                    timeframe=timeframe,
+                    features=indicator_ctx.model_dump(),
+                    structure_context=structure_ctx.model_dump(),
+                    mtf_guard_context=(
+                        snapshot.mtf_guard_context.model_dump()
+                        if snapshot.mtf_guard_context else None
+                    ),
+                    ai_context=ai_ctx.model_dump(mode="json"),
+                    risk_context=snapshot.risk_context.model_dump(),
+                    liquidity_context=(
+                        snapshot.liquidity_execution_context.model_dump()
+                        if snapshot.liquidity_execution_context else None
+                    ),
+                )
+            except Exception:
+                logger.exception(
+                    "FeatureSnapshot write failed for snapshot %s — non-fatal",
+                    snapshot.snapshot_id,
+                )
+
         return snapshot
 
-    def _evaluate_entry(self, dsl: dict, dataframe) -> tuple[bool, list[str]]:
+    def _evaluate_entry(self, dsl: dict, dataframe) -> tuple[bool, list[str], dict | None]:
+        """Evaluate entry rules and return (fired, reasons, indicator_cache).
+
+        The indicator_cache is returned so callers can reuse it without
+        recomputing indicators.
+        """
         try:
             from app.services.dsl_interpreter import (
                 compute_all_indicators, evaluate_group, evaluate_filters,
@@ -173,19 +238,22 @@ class DecisionEngine:
                 for rule in entry_group.get("rules", []):
                     indicator = rule.get("indicator", rule.get("type", "unknown"))
                     reasons.append(f"{indicator}_triggered")
-                return True, reasons
+                return True, reasons, cache
 
-            return False, []
+            return False, [], cache
         except Exception:
             logger.exception("entry evaluation failed")
-            return False, []
+            return False, [], None
 
-    def _build_indicator_context(self, dsl: dict, dataframe) -> IndicatorContext:
+    def _build_indicator_context(
+        self, dsl: dict, dataframe, indicator_cache: dict | None = None,
+    ) -> IndicatorContext:
         try:
-            from app.services.dsl_interpreter import compute_all_indicators
-            cache = compute_all_indicators(dataframe, dsl)
+            if indicator_cache is None:
+                from app.services.dsl_interpreter import compute_all_indicators
+                indicator_cache = compute_all_indicators(dataframe, dsl)
             values = {}
-            for key, series in cache.items():
+            for key, series in indicator_cache.items():
                 if len(series) > 0:
                     val = series.iloc[-1]
                     if val is not None and val == val:

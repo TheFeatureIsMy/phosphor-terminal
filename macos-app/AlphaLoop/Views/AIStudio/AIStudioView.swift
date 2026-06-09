@@ -6,6 +6,7 @@ import SwiftUI
 struct AIStudioView: View {
     @Environment(\.networkClient) private var networkClient
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
     @State private var symbol = "BTC/USDT"
     @State private var depth: ResearchDepth = .standard
     @State private var isResearching = false
@@ -44,6 +45,7 @@ struct AIStudioView: View {
             .padding(PulseSpacing.lg)
         }
         .scrollEdgeEffectStyle(.soft, for: .vertical)
+        .id(settingsState.language)
     }
 
     // MARK: - 标题区
@@ -51,8 +53,8 @@ struct AIStudioView: View {
     private var headerSection: some View {
         HStack {
             VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
-                TerminalLabel(text: "AI 投研室")
-                Text("多智能体协同研究 · TradingAgents")
+                TerminalLabel(text: L10n.AIStudio.title)
+                Text(L10n.AIStudio.subtitle)
                     .font(PulseFonts.caption)
                     .foregroundStyle(colors.textMuted)
             }
@@ -68,7 +70,7 @@ struct AIStudioView: View {
                 HStack(spacing: PulseSpacing.md) {
                     // 标的选择
                     VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
-                        Text("研究标的")
+                        Text(L10n.AIStudio.researchTarget)
                             .font(PulseFonts.monoLabel)
                             .foregroundStyle(colors.textMuted)
                             .textCase(.uppercase)
@@ -78,7 +80,7 @@ struct AIStudioView: View {
                                 .font(.system(size: 11))
                                 .foregroundStyle(colors.textMuted)
 
-                            TextField("输入交易对...", text: $symbol)
+                            TextField(L10n.AIStudio.enterSymbol, text: $symbol)
                                 .font(PulseFonts.body)
                                 .foregroundStyle(colors.textPrimary)
                                 .textFieldStyle(.plain)
@@ -96,7 +98,7 @@ struct AIStudioView: View {
 
                     // 研究深度
                     VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
-                        Text("研究深度")
+                        Text(L10n.AIStudio.researchDepth)
                             .font(PulseFonts.monoLabel)
                             .foregroundStyle(colors.textMuted)
                             .textCase(.uppercase)
@@ -131,7 +133,7 @@ struct AIStudioView: View {
 
                 // 快捷标的
                 HStack(spacing: PulseSpacing.xs) {
-                    Text("热门:")
+                    Text(L10n.AIStudio.popular)
                         .font(PulseFonts.micro)
                         .foregroundStyle(colors.textMuted)
 
@@ -158,7 +160,7 @@ struct AIStudioView: View {
                     Spacer()
 
                     KryptonButton(
-                        title: "开始研究",
+                        title: L10n.AIStudio.startResearch,
                         action: { Task { await startResearch() } },
                         style: .primary
                     )
@@ -179,10 +181,10 @@ struct AIStudioView: View {
                     .tint(PulseColors.accent)
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("多智能体分析中...")
+                    Text(L10n.AIStudio.analyzing)
                         .font(PulseFonts.bodyMedium)
                         .foregroundStyle(colors.textPrimary)
-                    Text("正在调用 Bull / Bear / Technical / Sentiment / On-chain / Risk 智能体")
+                    Text(L10n.AIStudio.analyzingDesc)
                         .font(PulseFonts.caption)
                         .foregroundStyle(colors.textMuted)
                 }
@@ -200,7 +202,7 @@ struct AIStudioView: View {
 
     private func perspectivePanels(_ result: ResearchResult) -> some View {
         VStack(spacing: PulseSpacing.sm) {
-            TerminalLabel(text: "多视角分析")
+            TerminalLabel(text: L10n.AIStudio.multiPerspective)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 300))], spacing: PulseSpacing.sm) {
@@ -273,7 +275,7 @@ struct AIStudioView: View {
     private func finalRatingPanel(_ result: ResearchResult) -> some View {
         if let rating = result.finalRating {
             VStack(spacing: PulseSpacing.sm) {
-                TerminalLabel(text: "最终评级")
+                TerminalLabel(text: L10n.AIStudio.finalRating)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                 KryptonCard(emphasis: .bold) {
@@ -281,7 +283,7 @@ struct AIStudioView: View {
                         HStack(spacing: PulseSpacing.lg) {
                             // 方向
                             VStack(spacing: PulseSpacing.xxs) {
-                                Text("方向")
+                                Text(L10n.AIStudio.direction)
                                     .font(PulseFonts.monoLabel)
                                     .foregroundStyle(colors.textMuted)
                                     .textCase(.uppercase)
@@ -292,7 +294,7 @@ struct AIStudioView: View {
 
                             // 置信度
                             VStack(spacing: PulseSpacing.xxs) {
-                                Text("置信度")
+                                Text(L10n.AIStudio.confidence)
                                     .font(PulseFonts.monoLabel)
                                     .foregroundStyle(colors.textMuted)
                                     .textCase(.uppercase)
@@ -303,7 +305,7 @@ struct AIStudioView: View {
 
                             // 风险等级
                             VStack(spacing: PulseSpacing.xxs) {
-                                Text("风险等级")
+                                Text(L10n.AIStudio.riskLevel)
                                     .font(PulseFonts.monoLabel)
                                     .foregroundStyle(colors.textMuted)
                                     .textCase(.uppercase)
@@ -319,7 +321,7 @@ struct AIStudioView: View {
 
                         // 建议
                         VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
-                            Text("综合建议")
+                            Text(L10n.AIStudio.recommendation)
                                 .font(PulseFonts.monoLabel)
                                 .foregroundStyle(colors.textMuted)
                                 .textCase(.uppercase)
@@ -340,13 +342,13 @@ struct AIStudioView: View {
         HStack(spacing: PulseSpacing.md) {
             Spacer()
 
-            KryptonButton(title: creatingDraft ? "生成中..." : "生成策略草稿", action: {
+            KryptonButton(title: creatingDraft ? L10n.AIStudio.generatingDraft : L10n.AIStudio.generateDraft, action: {
                 Task { await createStrategyDraft(result) }
             }, style: .ghost)
             .opacity(creatingDraft ? 0.5 : 1)
             .disabled(creatingDraft)
 
-            KryptonButton(title: publishingSignal ? "发布中..." : "发布为信号", action: {
+            KryptonButton(title: publishingSignal ? L10n.AIStudio.publishing : L10n.AIStudio.publishAsSignal, action: {
                 Task { await publishAsSignal(result) }
             }, style: .primary)
             .opacity(publishingSignal ? 0.5 : 1)
@@ -358,7 +360,7 @@ struct AIStudioView: View {
 
     private func startResearch() async {
         guard !symbol.isEmpty else {
-            error = "请输入研究标的"
+            error = L10n.AIStudio.enterTarget
             return
         }
 
@@ -387,10 +389,10 @@ struct AIStudioView: View {
             if current.status == "completed" {
                 result = mapRunToResult(current)
             } else if current.status == "failed" {
-                error = current.errorMessage ?? "研究失败"
+                error = current.errorMessage ?? L10n.AIStudio.researchFailed
             }
         } catch {
-            self.error = "研究请求失败: \(error.localizedDescription)"
+            self.error = L10n.AIStudio.requestFailed(error.localizedDescription)
         }
 
         isResearching = false
@@ -415,7 +417,7 @@ struct AIStudioView: View {
         do {
             _ = try await signalsAPI.createSignal(body)
         } catch {
-            self.error = "发布信号失败: \(error.localizedDescription)"
+            self.error = L10n.AIStudio.publishFailed(error.localizedDescription)
         }
         publishingSignal = false
     }
@@ -428,7 +430,7 @@ struct AIStudioView: View {
             let run = try await networkClient.createResearchRun(symbol: result.symbol, assetType: "crypto")
             _ = run
         } catch {
-            self.error = "生成策略草稿失败: \(error.localizedDescription)"
+            self.error = L10n.AIStudio.draftFailed(error.localizedDescription)
         }
         creatingDraft = false
     }
@@ -440,25 +442,25 @@ struct AIStudioView: View {
 
         if let market = run.marketReport {
             perspectives.append(ResearchPerspective(
-                id: "technical", role: "technical", title: "技术分析", icon: "📊",
+                id: "technical", role: "technical", title: L10n.AIStudio.technicalAnalysis, icon: "📊",
                 content: market, confidence: 0.72
             ))
         }
         if let sentiment = run.sentimentReport {
             perspectives.append(ResearchPerspective(
-                id: "sentiment", role: "sentiment", title: "情绪分析", icon: "🧠",
+                id: "sentiment", role: "sentiment", title: L10n.AIStudio.sentimentAnalysis, icon: "🧠",
                 content: sentiment, confidence: 0.65
             ))
         }
         if let news = run.newsReport {
             perspectives.append(ResearchPerspective(
-                id: "news", role: "news", title: "新闻分析", icon: "📰",
+                id: "news", role: "news", title: L10n.AIStudio.newsAnalysis, icon: "📰",
                 content: news, confidence: 0.60
             ))
         }
         if let fundamentals = run.fundamentalsReport {
             perspectives.append(ResearchPerspective(
-                id: "fundamentals", role: "fundamentals", title: "基本面", icon: "🏦",
+                id: "fundamentals", role: "fundamentals", title: L10n.AIStudio.fundamentals, icon: "🏦",
                 content: fundamentals, confidence: 0.68
             ))
         }
@@ -545,9 +547,9 @@ enum ResearchDepth: String, CaseIterable {
 
     var label: String {
         switch self {
-        case .quick: return "快速"
-        case .standard: return "标准"
-        case .deep: return "深度"
+        case .quick: return L10n.AIStudio.depthQuick
+        case .standard: return L10n.AIStudio.depthStandard
+        case .deep: return L10n.AIStudio.depthDeep
         }
     }
 

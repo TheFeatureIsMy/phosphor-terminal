@@ -5,6 +5,7 @@ import SwiftUI
 
 struct ManipulationScoreRow: View {
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
     let score: ManipulationScoreV2
     @State private var isExpanded = false
 
@@ -33,7 +34,7 @@ struct ManipulationScoreRow: View {
                 // Overall manipulation score (prominent)
                 VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
                     HStack {
-                        Text("操纵评分")
+                        Text(L10n.zh("操纵评分", en: "Manipulation Score"))
                             .font(PulseFonts.captionMedium)
                             .foregroundStyle(colors.textMuted)
                         Spacer()
@@ -47,12 +48,12 @@ struct ManipulationScoreRow: View {
                 // Sub-scores grid
                 HStack(spacing: PulseSpacing.md) {
                     VStack(spacing: PulseSpacing.xs) {
-                        subScoreRow(label: "止损猎杀", value: score.stopHuntScore ?? 0)
-                        subScoreRow(label: "持仓集中", value: score.holderConcentrationScore ?? 0)
+                        subScoreRow(label: L10n.zh("止损猎杀", en: "Stop Hunt"), value: score.stopHuntScore ?? 0)
+                        subScoreRow(label: L10n.zh("持仓集中", en: "Holder Concentration"), value: score.holderConcentrationScore ?? 0)
                     }
                     VStack(spacing: PulseSpacing.xs) {
-                        subScoreRow(label: "拉盘砸盘", value: score.pumpDumpScore ?? 0)
-                        subScoreRow(label: "流动性陷阱", value: score.liquidityTrapScore ?? 0)
+                        subScoreRow(label: L10n.zh("拉盘砸盘", en: "Pump & Dump"), value: score.pumpDumpScore ?? 0)
+                        subScoreRow(label: L10n.zh("流动性陷阱", en: "Liquidity Trap"), value: score.liquidityTrapScore ?? 0)
                     }
                 }
 
@@ -66,7 +67,7 @@ struct ManipulationScoreRow: View {
                         HStack(spacing: PulseSpacing.xxs) {
                             Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
                                 .font(PulseFonts.micro)
-                            Text(isExpanded ? "收起证据" : "展开证据")
+                            Text(isExpanded ? L10n.zh("收起证据", en: "Collapse Evidence") : L10n.zh("展开证据", en: "Expand Evidence"))
                                 .font(PulseFonts.micro)
                         }
                         .foregroundStyle(colors.textMuted)
@@ -84,7 +85,7 @@ struct ManipulationScoreRow: View {
                     Divider().foregroundStyle(colors.border)
 
                     VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-                        TerminalLabel(text: "证据详情")
+                        TerminalLabel(text: L10n.zh("证据详情", en: "Evidence Details"))
 
                         // Evidence categories
                         ForEach(evidenceCategories, id: \.name) { evidence in
@@ -122,10 +123,10 @@ struct ManipulationScoreRow: View {
 
                         // Action buttons
                         HStack(spacing: PulseSpacing.xs) {
-                            actionButton(label: "允许交易", color: PulseColors.success)
-                            actionButton(label: "减仓", color: PulseColors.amber)
-                            actionButton(label: "仅模拟", color: PulseColors.warning)
-                            actionButton(label: "拒绝", color: PulseColors.danger)
+                            actionButton(label: L10n.zh("允许交易", en: "Allow Trading"), color: PulseColors.success)
+                            actionButton(label: L10n.zh("减仓", en: "Reduce Position"), color: PulseColors.amber)
+                            actionButton(label: L10n.zh("仅模拟", en: "Paper Only"), color: PulseColors.warning)
+                            actionButton(label: L10n.zh("拒绝", en: "Reject"), color: PulseColors.danger)
                         }
                     }
                 }
@@ -183,34 +184,34 @@ struct ManipulationScoreRow: View {
     private var suggestionInfo: (String, Color) {
         let text = score.suggestion.lowercased()
         if text.contains("do not trade") || text.contains("block") {
-            return ("禁止交易", PulseColors.danger)
+            return (L10n.zh("禁止交易", en: "Blocked"), PulseColors.danger)
         }
         if text.contains("critical") || text.contains("extreme") {
-            return ("禁止交易", PulseColors.danger)
+            return (L10n.zh("禁止交易", en: "Blocked"), PulseColors.danger)
         }
         if text.contains("avoid") {
-            return ("仅模拟", .orange)
+            return (L10n.zh("仅模拟", en: "Paper Only"), .orange)
         }
         if text.contains("high") {
-            return ("减仓", PulseColors.amber)
+            return (L10n.zh("减仓", en: "Reduce"), PulseColors.amber)
         }
         if text.contains("caution") || text.contains("moderate") {
-            return ("谨慎", PulseColors.amber)
+            return (L10n.zh("谨慎", en: "Caution"), PulseColors.amber)
         }
         if text.contains("clean") || text.contains("normal") {
-            return ("允许", PulseColors.success)
+            return (L10n.zh("允许", en: "Allowed"), PulseColors.success)
         }
-        return ("待评估", PulseColors.info)
+        return (L10n.zh("待评估", en: "Pending"), PulseColors.info)
     }
 
     // MARK: - Risk Level
 
     private var riskLevelLabel: String {
         switch score.riskLevel {
-        case "critical": return "严重"
-        case "high": return "高危"
-        case "medium": return "中等"
-        case "low": return "低风险"
+        case "critical": return L10n.zh("严重", en: "Critical")
+        case "high": return L10n.zh("高危", en: "High")
+        case "medium": return L10n.zh("中等", en: "Medium")
+        case "low": return L10n.zh("低风险", en: "Low")
         default: return score.riskLevel
         }
     }
@@ -234,33 +235,33 @@ struct ManipulationScoreRow: View {
     private var evidenceCategories: [EvidenceItem] {
         [
             EvidenceItem(
-                name: "K线异常",
+                name: L10n.zh("K线异常", en: "Candlestick Anomaly"),
                 icon: "chart.bar.xaxis",
-                description: "异常影线/吞没形态频率偏高",
+                description: L10n.zh("异常影线/吞没形态频率偏高", en: "Abnormal wick/engulfing pattern frequency"),
                 severity: severityLevel(score.pumpDumpScore ?? 0)
             ),
             EvidenceItem(
-                name: "成交量异常",
+                name: L10n.zh("成交量异常", en: "Volume Anomaly"),
                 icon: "waveform.path.ecg",
-                description: "成交量突增/清洗交易特征",
+                description: L10n.zh("成交量突增/清洗交易特征", en: "Volume spikes / wash trading patterns"),
                 severity: severityLevel(score.stopHuntScore ?? 0)
             ),
             EvidenceItem(
                 name: "Funding/OI",
                 icon: "chart.line.uptrend.xyaxis",
-                description: "资金费率与持仓量异常偏离",
+                description: L10n.zh("资金费率与持仓量异常偏离", en: "Funding rate & OI abnormal divergence"),
                 severity: severityLevel(score.fundingSqueezeScore ?? 0)
             ),
             EvidenceItem(
-                name: "链上/钱包",
+                name: L10n.zh("链上/钱包", en: "On-Chain/Wallet"),
                 icon: "link.circle",
-                description: "大额转账/巨鲸钱包异动",
+                description: L10n.zh("大额转账/巨鲸钱包异动", en: "Large transfers / whale wallet activity"),
                 severity: severityLevel(score.holderConcentrationScore ?? 0)
             ),
             EvidenceItem(
-                name: "新闻/KOL",
+                name: L10n.zh("新闻/KOL", en: "News/KOL"),
                 icon: "megaphone",
-                description: "KOL 协调喊单/FUD 传播",
+                description: L10n.zh("KOL 协调喊单/FUD 传播", en: "Coordinated KOL shilling / FUD campaigns"),
                 severity: severityLevel(score.liquidityTrapScore ?? 0)
             ),
         ]

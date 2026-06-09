@@ -5,6 +5,7 @@ import SwiftUI
 struct CircuitBreakersView: View {
     @Environment(\.networkClient) private var networkClient
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
     @State private var viewModel: RiskCenterViewModel?
     @State private var selectedType: String? = nil
     @State private var pulsePhase: CGFloat = 0
@@ -51,7 +52,9 @@ struct CircuitBreakersView: View {
                                 timelineLayout(filtered)
                                     .padding(PulseSpacing.xl)
                             }
+
                         }
+                        .id(settingsState.language)
                         .scrollEdgeEffectStyle(.soft, for: .vertical)
                     } else if let error = vm.error {
                         EmptyStateView(
@@ -267,7 +270,7 @@ struct CircuitBreakersView: View {
                     .tracking(3)
 
                 Text(L10n.zh(
-                    selectedType != nil ? "当前筛选条件下无熔断记录" : "系统未触发过熔断，运行正常",
+                    selectedType != nil ? L10n.zh("当前筛选条件下无熔断记录", en: "No circuit breaker records for this filter") : L10n.zh("系统未触发过熔断，运行正常", en: "No circuit breakers triggered — system running normally"),
                     en: selectedType != nil ? "No breakers match current filter" : "No circuit breakers fired — system nominal"
                 ))
                 .font(PulseFonts.caption)

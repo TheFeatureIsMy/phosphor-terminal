@@ -6,6 +6,7 @@ import SwiftUI
 struct BacktestDryrunView: View {
     @Environment(\.networkClient) private var networkClient
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
     @State private var selectedTab = 0  // 0=回测, 1=模拟
 
     var body: some View {
@@ -32,8 +33,8 @@ struct BacktestDryrunView: View {
 
     private var tabBar: some View {
         HStack(spacing: 0) {
-            tabButton(index: 0, icon: "chart.line.uptrend.xyaxis", title: "回测引擎")
-            tabButton(index: 1, icon: "play.circle", title: "模拟监控")
+            tabButton(index: 0, icon: "chart.line.uptrend.xyaxis", title: L10n.zh("回测引擎", en: "Backtest Engine"))
+            tabButton(index: 1, icon: "play.circle", title: L10n.zh("模拟监控", en: "Paper Trading Monitor"))
 
             Spacer()
         }
@@ -74,6 +75,7 @@ struct BacktestDryrunView: View {
 struct BacktestSectionView: View {
     @Environment(\.networkClient) private var networkClient
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
     @State private var selectedStrategyId: String = ""
     @State private var selectedVersion: Int = 1
     @State private var startDate = "2025-01-01"
@@ -94,7 +96,7 @@ struct BacktestSectionView: View {
                 HStack {
                     Spacer()
                     KryptonButton(
-                            title: isRunning ? "运行中..." : "启动回测",
+                            title: isRunning ? L10n.zh("运行中...", en: "Running...") : L10n.zh("启动回测", en: "Start Backtest"),
                             action: { Task { await runBacktest() } },
                             style: .primary
                         )
@@ -114,6 +116,7 @@ struct BacktestSectionView: View {
             }
             .padding(PulseSpacing.lg)
         }
+        .id(settingsState.language)
         .scrollEdgeEffectStyle(.soft, for: .vertical)
         .task {
             await loadRecentRuns()
@@ -126,15 +129,15 @@ struct BacktestSectionView: View {
         KryptonCard(emphasis: .balanced) {
             VStack(spacing: PulseSpacing.md) {
                 HStack {
-                    TerminalLabel(text: "回测配置")
+                    TerminalLabel(text: L10n.zh("回测配置", en: "Backtest Configuration"))
                     Spacer()
                 }
 
                 // 策略 + 版本
                 HStack(spacing: PulseSpacing.md) {
-                    configField(label: "策略版本", placeholder: "策略 ID", text: $selectedStrategyId)
+                    configField(label: L10n.zh("策略版本", en: "Strategy Version"), placeholder: L10n.zh("策略 ID", en: "Strategy ID"), text: $selectedStrategyId)
                     VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
-                        Text("版本号")
+                        Text(L10n.zh("版本号", en: "Version"))
                             .font(PulseFonts.monoLabel)
                             .foregroundStyle(colors.textMuted)
                             .textCase(.uppercase)
@@ -175,14 +178,14 @@ struct BacktestSectionView: View {
 
                 // 时间范围
                 HStack(spacing: PulseSpacing.md) {
-                    configField(label: "开始日期", placeholder: "2025-01-01", text: $startDate)
-                    configField(label: "结束日期", placeholder: "2026-06-01", text: $endDate)
+                    configField(label: L10n.zh("开始日期", en: "Start Date"), placeholder: "2025-01-01", text: $startDate)
+                    configField(label: L10n.zh("结束日期", en: "End Date"), placeholder: "2026-06-01", text: $endDate)
                 }
 
                 // 资金 + 标的
                 HStack(spacing: PulseSpacing.md) {
-                    configField(label: "初始资金 (USDT)", placeholder: "100000", text: $initialCapital)
-                    configField(label: "交易标的", placeholder: "BTC/USDT, ETH/USDT", text: $symbols)
+                    configField(label: L10n.zh("初始资金 (USDT)", en: "Initial Capital (USDT)"), placeholder: "100000", text: $initialCapital)
+                    configField(label: L10n.zh("交易标的", en: "Trading Pairs"), placeholder: "BTC/USDT, ETH/USDT", text: $symbols)
                 }
             }
         }
@@ -215,17 +218,17 @@ struct BacktestSectionView: View {
 
     private func backtestResultsSection(_ result: BacktestDisplayResult) -> some View {
         VStack(spacing: PulseSpacing.md) {
-            TerminalLabel(text: "回测结果")
+            TerminalLabel(text: L10n.zh("回测结果", en: "Backtest Results"))
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             // KPI 网格
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 140))], spacing: PulseSpacing.sm) {
-                kpiCard(title: "总收益率", value: "\(String(format: "%.2f", result.totalReturn))%", color: result.totalReturn >= 0 ? PulseColors.success : PulseColors.danger)
-                kpiCard(title: "Sharpe 比率", value: "\(String(format: "%.2f", result.sharpeRatio))", color: result.sharpeRatio >= 1.5 ? PulseColors.success : PulseColors.warning)
-                kpiCard(title: "最大回撤", value: "\(String(format: "%.2f", result.maxDrawdown))%", color: PulseColors.danger)
-                kpiCard(title: "胜率", value: "\(String(format: "%.1f", result.winRate))%", color: result.winRate >= 50 ? PulseColors.success : PulseColors.warning)
-                kpiCard(title: "盈亏比", value: "\(String(format: "%.2f", result.profitFactor))", color: result.profitFactor >= 1.5 ? PulseColors.success : colors.textSecondary)
-                kpiCard(title: "总交易数", value: "\(result.totalTrades)", color: PulseColors.info)
+                kpiCard(title: L10n.zh("总收益率", en: "Total Return"), value: "\(String(format: "%.2f", result.totalReturn))%", color: result.totalReturn >= 0 ? PulseColors.success : PulseColors.danger)
+                kpiCard(title: L10n.zh("Sharpe 比率", en: "Sharpe Ratio"), value: "\(String(format: "%.2f", result.sharpeRatio))", color: result.sharpeRatio >= 1.5 ? PulseColors.success : PulseColors.warning)
+                kpiCard(title: L10n.zh("最大回撤", en: "Max Drawdown"), value: "\(String(format: "%.2f", result.maxDrawdown))%", color: PulseColors.danger)
+                kpiCard(title: L10n.zh("胜率", en: "Win Rate"), value: "\(String(format: "%.1f", result.winRate))%", color: result.winRate >= 50 ? PulseColors.success : PulseColors.warning)
+                kpiCard(title: L10n.zh("盈亏比", en: "Profit Factor"), value: "\(String(format: "%.2f", result.profitFactor))", color: result.profitFactor >= 1.5 ? PulseColors.success : colors.textSecondary)
+                kpiCard(title: L10n.zh("总交易数", en: "Total Trades"), value: "\(result.totalTrades)", color: PulseColors.info)
             }
 
             // 权益曲线（简化表示）
@@ -255,11 +258,11 @@ struct BacktestSectionView: View {
         KryptonCard(emphasis: .subtle) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
                 HStack {
-                    Text("权益曲线")
+                    Text(L10n.zh("权益曲线", en: "Equity Curve"))
                         .font(PulseFonts.captionMedium)
                         .foregroundStyle(colors.textPrimary)
                     Spacer()
-                    Text("初始: \(String(format: "%.0f", result.initialCapital)) → 终值: \(String(format: "%.0f", result.finalEquity)) USDT")
+                    Text(L10n.zh("初始", en: "Initial") + ": \(String(format: "%.0f", result.initialCapital)) → " + L10n.zh("终值", en: "Final") + ": \(String(format: "%.0f", result.finalEquity)) USDT")
                         .font(PulseFonts.micro)
                         .foregroundStyle(colors.textMuted)
                 }
@@ -284,26 +287,26 @@ struct BacktestSectionView: View {
         KryptonCard(emphasis: .subtle, cardPadding: PulseSpacing.sm) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
                 HStack {
-                    Text("最近交易")
+                    Text(L10n.zh("最近交易", en: "Recent Trades"))
                         .font(PulseFonts.captionMedium)
                         .foregroundStyle(colors.textPrimary)
                     Spacer()
-                    Text("共 \(result.totalTrades) 笔")
+                    Text("\(result.totalTrades) \(L10n.zh("笔", en: "trades"))")
                         .font(PulseFonts.micro)
                         .foregroundStyle(colors.textMuted)
                 }
 
                 // 表头
                 HStack(spacing: 0) {
-                    Text("时间")
+                    Text(L10n.zh("时间", en: "Time"))
                         .frame(width: 100, alignment: .leading)
-                    Text("方向")
+                    Text(L10n.zh("方向", en: "Side"))
                         .frame(width: 50, alignment: .center)
-                    Text("价格")
+                    Text(L10n.zh("价格", en: "Price"))
                         .frame(width: 80, alignment: .trailing)
-                    Text("数量")
+                    Text(L10n.zh("数量", en: "Qty"))
                         .frame(width: 70, alignment: .trailing)
-                    Text("盈亏")
+                    Text(L10n.zh("盈亏", en: "P&L"))
                         .frame(maxWidth: .infinity, alignment: .trailing)
                 }
                 .font(PulseFonts.monoLabel)
@@ -342,7 +345,7 @@ struct BacktestSectionView: View {
 
     private var recentRunsSection: some View {
         VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-            TerminalLabel(text: "历史回测")
+            TerminalLabel(text: L10n.zh("历史回测", en: "Backtest History"))
 
             VStack(spacing: PulseSpacing.xs) {
                 ForEach(recentRuns) { run in
@@ -368,7 +371,7 @@ struct BacktestSectionView: View {
                             // 指标
                             HStack(spacing: PulseSpacing.md) {
                                 VStack(alignment: .trailing, spacing: 1) {
-                                    Text("收益")
+                                    Text(L10n.zh("收益", en: "Return"))
                                         .font(PulseFonts.micro)
                                         .foregroundStyle(colors.textMuted)
                                     Text("\(String(format: "%.1f", run.totalReturn))%")

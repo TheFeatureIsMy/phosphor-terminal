@@ -8,6 +8,7 @@ struct SetupWizardView: View {
     @Environment(PulseColors.self) private var colors
     @Environment(\.dismiss) private var dismiss
 
+    @Environment(SettingsState.self) private var settingsState
     @State private var currentStep = 0
 
     private let totalSteps = 3
@@ -20,7 +21,7 @@ struct SetupWizardView: View {
                     .font(PulseFonts.displayTitle)
                     .foregroundStyle(colors.textPrimary)
 
-                Text("完成以下步骤以启用全部功能")
+                Text(L10n.zh("完成以下步骤以启用全部功能", en: "Complete the following steps to enable all features"))
                     .font(PulseFonts.body)
                     .foregroundStyle(colors.textMuted)
 
@@ -51,7 +52,7 @@ struct SetupWizardView: View {
             // Navigation
             HStack {
                 if currentStep > 0 {
-                    Button("上一步") { currentStep -= 1 }
+                    Button(L10n.zh("上一步", en: "Back")) { currentStep -= 1 }
                         .buttonStyle(.plain)
                         .foregroundStyle(colors.textSecondary)
                 }
@@ -63,7 +64,7 @@ struct SetupWizardView: View {
                         .controlSize(.small)
                 }
 
-                Button(currentStep < totalSteps - 1 ? "下一步" : "完成配置") {
+                Button(currentStep < totalSteps - 1 ? L10n.zh("下一步", en: "Next") : L10n.zh("完成配置", en: "Finish Setup")) {
                     if currentStep < totalSteps - 1 {
                         currentStep += 1
                     } else {
@@ -82,20 +83,20 @@ struct SetupWizardView: View {
     // MARK: - Step 1: Core Dependencies
     private var step1CoreDeps: some View {
         VStack(alignment: .leading, spacing: PulseSpacing.md) {
-            Text("核心依赖")
+            Text(L10n.zh("核心依赖", en: "Core Dependencies"))
                 .font(PulseFonts.displayHeading)
                 .foregroundStyle(colors.textPrimary)
 
-            Text("以下 Python 包影响核心功能。缺失的包会自动降级，但建议安装以获得完整体验。")
+            Text(L10n.zh("以下 Python 包影响核心功能。缺失的包会自动降级，但建议安装以获得完整体验。", en: "The following Python packages affect core functionality. Missing packages will gracefully degrade, but installation is recommended for the full experience."))
                 .font(PulseFonts.body)
                 .foregroundStyle(colors.textMuted)
 
             ScrollView {
                 VStack(spacing: PulseSpacing.sm) {
-                    dependencyRow(name: "ccxt", group: "core_optional", desc: "实时市场数据")
-                    dependencyRow(name: "lightgbm", group: "core_optional", desc: "FreqAI 模型训练")
-                    dependencyRow(name: "transformers", group: "core_optional", desc: "FinBERT 情绪分析")
-                    dependencyRow(name: "torch", group: "core_optional", desc: "ML 推理引擎")
+                    dependencyRow(name: "ccxt", group: "core_optional", desc: L10n.zh("实时市场数据", en: "Real-time market data"))
+                    dependencyRow(name: "lightgbm", group: "core_optional", desc: L10n.zh("FreqAI 模型训练", en: "FreqAI model training"))
+                    dependencyRow(name: "transformers", group: "core_optional", desc: L10n.zh("FinBERT 情绪分析", en: "FinBERT sentiment analysis"))
+                    dependencyRow(name: "torch", group: "core_optional", desc: L10n.zh("ML 推理引擎", en: "ML inference engine"))
                 }
             }
 
@@ -107,19 +108,19 @@ struct SetupWizardView: View {
     // MARK: - Step 2: AI Services
     private var step2AIServices: some View {
         VStack(alignment: .leading, spacing: PulseSpacing.md) {
-            Text("AI 服务")
+            Text(L10n.zh("AI 服务", en: "AI Services"))
                 .font(PulseFonts.displayHeading)
                 .foregroundStyle(colors.textPrimary)
 
-            Text("配置 LLM Provider 以启用 RAG 策略生成、AI 研究等功能。Ollama 本地运行无需 Key。")
+            Text(L10n.zh("配置 LLM Provider 以启用 RAG 策略生成、AI 研究等功能。Ollama 本地运行无需 Key。", en: "Configure LLM providers to enable RAG strategy generation, AI research, and more. Ollama runs locally and requires no API key."))
                 .font(PulseFonts.body)
                 .foregroundStyle(colors.textMuted)
 
             ScrollView {
                 VStack(spacing: PulseSpacing.sm) {
-                    dependencyRow(name: "ollama", group: "external_services", desc: "本地 LLM (默认启用)")
+                    dependencyRow(name: "ollama", group: "external_services", desc: L10n.zh("本地 LLM (默认启用)", en: "Local LLM (enabled by default)"))
                     dependencyRow(name: "openai", group: "external_services", desc: "GPT-4o")
-                    dependencyRow(name: "deepseek", group: "external_services", desc: "国内主力")
+                    dependencyRow(name: "deepseek", group: "external_services", desc: L10n.zh("国内主力", en: "DeepSeek API"))
                     dependencyRow(name: "anthropic", group: "external_services", desc: "Claude")
                 }
             }
@@ -132,18 +133,18 @@ struct SetupWizardView: View {
     // MARK: - Step 3: Trading Services
     private var step3TradingServices: some View {
         VStack(alignment: .leading, spacing: PulseSpacing.md) {
-            Text("交易服务")
+            Text(L10n.zh("交易服务", en: "Trading Services"))
                 .font(PulseFonts.displayHeading)
                 .foregroundStyle(colors.textPrimary)
 
-            Text("Freqtrade 提供实盘交易数据。Telegram 用于推送通知。两者均为可选。")
+            Text(L10n.zh("Freqtrade 提供实盘交易数据。Telegram 用于推送通知。两者均为可选。", en: "Freqtrade provides live trading data. Telegram is used for push notifications. Both are optional."))
                 .font(PulseFonts.body)
                 .foregroundStyle(colors.textMuted)
 
             ScrollView {
                 VStack(spacing: PulseSpacing.sm) {
-                    dependencyRow(name: "freqtrade_api", group: "external_services", desc: "交易引擎")
-                    dependencyRow(name: "telegram", group: "external_services", desc: "消息推送")
+                    dependencyRow(name: "freqtrade_api", group: "external_services", desc: L10n.zh("交易引擎", en: "Trading engine"))
+                    dependencyRow(name: "telegram", group: "external_services", desc: L10n.zh("消息推送", en: "Push notifications"))
                 }
             }
 

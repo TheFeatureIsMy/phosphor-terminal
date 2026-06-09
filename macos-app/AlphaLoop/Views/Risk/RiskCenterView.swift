@@ -5,6 +5,7 @@ import SwiftUI
 struct RiskCenterView: View {
     @Environment(\.networkClient) private var networkClient
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
     @State private var viewModel: RiskCenterViewModel?
     @State private var pulsePhase: CGFloat = 0
 
@@ -45,6 +46,7 @@ struct RiskCenterView: View {
                     }
                 }
                 .padding(PulseSpacing.xl)
+                .id(settingsState.language)
             }
             .scrollEdgeEffectStyle(.soft, for: .vertical)
         }

@@ -5,6 +5,7 @@ import SwiftUI
 
 struct ProviderCardView: View {
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
     let provider: AIProviderInfo
     let onTest: () -> Void
 
@@ -39,14 +40,14 @@ struct ProviderCardView: View {
 
                 HStack {
                     if let count = provider.modelCount {
-                        Text("\(count) 模型")
+                        Text("\(count) \(L10n.zh("模型", en: "models"))")
                             .font(PulseFonts.caption)
                             .foregroundStyle(PulseColors.accent)
                     }
 
                     Spacer()
 
-                    Button("测试连接") { onTest() }
+                    Button(L10n.zh("测试连接", en: "Test Connection")) { onTest() }
                         .buttonStyle(.plain)
                         .font(PulseFonts.monoLabel)
                         .foregroundStyle(PulseColors.accent)

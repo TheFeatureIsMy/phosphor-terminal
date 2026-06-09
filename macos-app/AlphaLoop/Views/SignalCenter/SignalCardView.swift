@@ -6,6 +6,7 @@ import SwiftUI
 struct SignalCardView: View {
     let signal: SignalV2
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
 
     var body: some View {
         KryptonCard(emphasis: .subtle) {
@@ -77,6 +78,7 @@ struct SignalCardView: View {
             }
         }
         .contentShape(Rectangle())
+        .id(settingsState.language)
     }
 
     // MARK: - 方向图标
@@ -142,9 +144,9 @@ struct SignalCardView: View {
 
     private var sourceLabel: String {
         switch signal.sourceType {
-        case "ai_research": return "AI研究"
+        case "ai_research": return L10n.zh("AI研究", en: "AI Research")
         case "tradingagents": return "TA"
-        case "manual": return "手动"
+        case "manual": return L10n.zh("手动", en: "Manual")
         case "canvas": return "Canvas"
         default: return signal.sourceType
         }
@@ -164,11 +166,11 @@ struct SignalCardView: View {
 
     private var statusLabel: String {
         switch signal.status {
-        case "pending": return "待处理"
-        case "active": return "已激活"
-        case "expired": return "已过期"
-        case "archived": return "已归档"
-        case "rejected": return "已拒绝"
+        case "pending": return L10n.zh("待处理", en: "Pending")
+        case "active": return L10n.zh("已激活", en: "Active")
+        case "expired": return L10n.zh("已过期", en: "Expired")
+        case "archived": return L10n.zh("已归档", en: "Archived")
+        case "rejected": return L10n.zh("已拒绝", en: "Rejected")
         default: return signal.status
         }
     }
@@ -188,10 +190,10 @@ struct SignalCardView: View {
 
     private var riskLabel: String {
         switch signal.riskLevel {
-        case "low": return "低"
-        case "medium": return "中"
-        case "high": return "高"
-        case "critical": return "极高"
+        case "low": return L10n.zh("低", en: "Low")
+        case "medium": return L10n.zh("中", en: "Medium")
+        case "high": return L10n.zh("高", en: "High")
+        case "critical": return L10n.zh("极高", en: "Critical")
         default: return signal.riskLevel
         }
     }
@@ -221,10 +223,10 @@ struct SignalCardView: View {
             return signal.expiresAt
         }
         let delta = date.timeIntervalSinceNow
-        if delta <= 0 { return "已到期" }
+        if delta <= 0 { return L10n.zh("已到期", en: "Expired") }
         let hours = Int(delta / 3600)
-        if hours < 1 { return "\(Int(delta / 60))分钟后到期" }
-        if hours < 24 { return "\(hours)小时后到期" }
-        return "\(hours / 24)天后到期"
+        if hours < 1 { return L10n.zh("\(Int(delta / 60))分钟后到期", en: "\(Int(delta / 60))m left") }
+        if hours < 24 { return L10n.zh("\(hours)小时后到期", en: "\(hours)h left") }
+        return L10n.zh("\(hours / 24)天后到期", en: "\(hours / 24)d left")
     }
 }

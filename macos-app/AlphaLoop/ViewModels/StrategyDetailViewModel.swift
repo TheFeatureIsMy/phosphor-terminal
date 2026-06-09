@@ -7,6 +7,7 @@ import SwiftUI
 final class StrategyDetailViewModel {
     // Strategy
     var strategy: StrategyV2?
+    var mtfGuards: [MTFGuardInfo] = []
     var versions: [StrategyVersionV2] = []
     var isLoading = true
     var error: String?
@@ -33,12 +34,14 @@ final class StrategyDetailViewModel {
     var errorHandler: ErrorHandler?
 
     private let api: APIStrategiesV2
+    private let mtfGuardAPI: APIMTFGuard
     nonisolated(unsafe) private var pollTimer: Timer?
     let strategyId: String
 
     init(strategyId: String, client: NetworkClientProtocol) {
         self.strategyId = strategyId
         self.api = APIStrategiesV2(client: client)
+        self.mtfGuardAPI = APIMTFGuard(client: client)
     }
 
     deinit {
@@ -56,6 +59,7 @@ final class StrategyDetailViewModel {
             strategy = try await s
             versions = try await v
 
+            mtfGuards = (try? await mtfGuardAPI.getGuardState(strategyId: strategyId, symbol: "BTC/USDT"))?.guards ?? []
             if let latest = versions.first {
                 loadDSLFromVersion(latest)
             } else {

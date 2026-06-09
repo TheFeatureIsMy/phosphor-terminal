@@ -9,11 +9,11 @@ enum StrategyStatus: String, Codable, CaseIterable {
 
     var label: String {
         switch self {
-        case .draft: return "草稿"
-        case .backtested: return "已回测"
-        case .active: return "运行中"
-        case .paused: return "已暂停"
-        case .retired: return "已退役"
+        case .draft: return L10n.zh("草稿", en: "Draft")
+        case .backtested: return L10n.zh("已回测", en: "Backtested")
+        case .active: return L10n.zh("运行中", en: "Live")
+        case .paused: return L10n.zh("已暂停", en: "Paused")
+        case .retired: return L10n.zh("已退役", en: "Retired")
         }
     }
 
@@ -38,7 +38,7 @@ enum OrderSide: String, Codable {
     case buy = "BUY"
     case sell = "SELL"
 
-    var label: String { self == .buy ? "买入" : "卖出" }
+    var label: String { self == .buy ? L10n.zh("买入", en: "Buy") : L10n.zh("卖出", en: "Sell") }
     func color(_ colors: PulseColors) -> Color { self == .buy ? colors.profit : PulseColors.loss }
 }
 
@@ -46,7 +46,7 @@ enum OrderSide: String, Codable {
 enum OrderType: String, Codable {
     case market, limit
 
-    var label: String { self == .market ? "市价" : "限价" }
+    var label: String { self == .market ? L10n.zh("市价", en: "Market") : L10n.zh("限价", en: "Limit") }
 }
 
 // 订单状态
@@ -55,10 +55,10 @@ enum OrderStatus: String, Codable {
 
     var label: String {
         switch self {
-        case .pending: return "待成交"
-        case .filled: return "已成交"
-        case .cancelled: return "已取消"
-        case .failed: return "失败"
+        case .pending: return L10n.zh("待成交", en: "Pending")
+        case .filled: return L10n.zh("已成交", en: "Filled")
+        case .cancelled: return L10n.zh("已取消", en: "Cancelled")
+        case .failed: return L10n.zh("失败", en: "Failed")
         }
     }
 
@@ -76,7 +76,7 @@ enum OrderStatus: String, Codable {
 enum PositionSide: String, Codable {
     case long, short
 
-    var label: String { self == .long ? "多" : "空" }
+    var label: String { self == .long ? L10n.zh("多", en: "Long") : L10n.zh("空", en: "Short") }
     func color(_ colors: PulseColors) -> Color { self == .long ? colors.profit : PulseColors.loss }
 }
 
@@ -157,7 +157,7 @@ enum Exchange: String, Codable, CaseIterable, Identifiable {
         case .alpaca: return "Alpaca"
         case .ibkr: return "Interactive Brokers"
         case .joinquant: return "JoinQuant"
-        case .eastmoney: return "东方财富"
+        case .eastmoney: return L10n.zh("东方财富", en: "East Money")
         }
     }
 }
@@ -172,9 +172,9 @@ enum MarketType: String, Codable, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .crypto: return "加密货币"
-        case .usStock: return "美股"
-        case .aShare: return "A股"
+        case .crypto: return L10n.zh("加密货币", en: "Crypto")
+        case .usStock: return L10n.zh("美股", en: "US Equities")
+        case .aShare: return L10n.zh("A股", en: "A-Shares")
         }
     }
 
@@ -188,9 +188,9 @@ enum MarketType: String, Codable, CaseIterable, Identifiable {
 
     var constraintNote: String {
         switch self {
-        case .crypto: return "加密货币: 24/7 交易, 最低 $10"
-        case .usStock: return "美股: 美东时间 9:30-16:00, 最低 $1"
-        case .aShare: return "A股: 北京时间 9:30-15:00, 最低 100股"
+        case .crypto: return L10n.zh("加密货币: 24/7 交易, 最低 $10", en: "Crypto: 24/7 trading, min $10")
+        case .usStock: return L10n.zh("美股: 美东时间 9:30-16:00, 最低 $1", en: "US Equities: 9:30-16:00 ET, min $1")
+        case .aShare: return L10n.zh("A股: 北京时间 9:30-15:00, 最低 100股", en: "A-Shares: 9:30-15:00 CST, min 100 shares")
         }
     }
 }
@@ -203,9 +203,9 @@ enum TradingMode: String, Codable, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .spot: return "现货"
-        case .futures: return "合约"
-        case .margin: return "杠杆"
+        case .spot: return L10n.zh("现货", en: "Spot")
+        case .futures: return L10n.zh("合约", en: "Futures")
+        case .margin: return L10n.zh("杠杆", en: "Margin")
         }
     }
 }
@@ -237,14 +237,14 @@ enum SidebarSection: String, CaseIterable {
 
     var label: String {
         switch self {
-        case .overview: return "OVERVIEW"
-        case .strategy: return "STRATEGY"
-        case .structure: return "STRUCTURE"
-        case .execution: return "EXECUTION"
-        case .risk: return "RISK"
-        case .aiResearch: return "AI RESEARCH"
-        case .growth: return "GROWTH"
-        case .system: return "SYSTEM"
+        case .overview: return L10n.Nav.overview
+        case .strategy: return L10n.Nav.strategy
+        case .structure: return L10n.Nav.structure
+        case .execution: return L10n.Nav.execution
+        case .risk: return L10n.Nav.risk
+        case .aiResearch: return L10n.Nav.aiResearch
+        case .growth: return L10n.Nav.growth
+        case .system: return L10n.Nav.system
         }
     }
 }
@@ -320,31 +320,31 @@ enum AppRoute: String, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .dashboard: return "总览控制台"
-        case .liveReadiness: return "实盘准入"
-        case .strategyWorkspace: return "策略工作台"
-        case .strategyCanvas: return "策略画布"
-        case .backtestSimulation: return "回测 / 模拟"
-        case .marketStructure: return "市场结构"
-        case .structureMatrix: return "结构矩阵"
-        case .manipulationRadar: return "操纵雷达"
-        case .executionCenter: return "执行中心"
-        case .ordersPositions: return "订单 / 持仓"
-        case .reconciliationBus: return "对账总线"
-        case .riskCenter: return "风控中心"
-        case .stopProtection: return "止损保护"
-        case .circuitBreakers: return "熔断记录"
-        case .aiResearchRoom: return "AI 投研室"
-        case .agentPlatform: return "Agent 平台"
-        case .signalCenter: return "信号中心"
-        case .marketSentiment: return "市场情绪"
-        case .growthReview: return "复盘成长"
-        case .failureClustering: return "失败聚类"
-        case .strategyOptimization: return "策略优化"
-        case .serviceManagement: return "服务管理"
-        case .dataSourceManagement: return "数据源管理"
-        case .systemSettings: return "系统设置"
-        case .strategyDetail: return "策略详情"
+        case .dashboard: return L10n.Nav.dashboard
+        case .liveReadiness: return L10n.Nav.liveReadiness
+        case .strategyWorkspace: return L10n.Nav.strategyWorkspace
+        case .strategyCanvas: return L10n.Nav.strategyCanvas
+        case .backtestSimulation: return L10n.Nav.backtestSimulation
+        case .marketStructure: return L10n.Nav.marketStructure
+        case .structureMatrix: return L10n.Nav.structureMatrix
+        case .manipulationRadar: return L10n.Nav.manipulationRadar
+        case .executionCenter: return L10n.Nav.executionCenter
+        case .ordersPositions: return L10n.Nav.ordersPositions
+        case .reconciliationBus: return L10n.Nav.reconciliationBus
+        case .riskCenter: return L10n.Nav.riskCenter
+        case .stopProtection: return L10n.Nav.stopProtection
+        case .circuitBreakers: return L10n.Nav.circuitBreakers
+        case .aiResearchRoom: return L10n.Nav.aiStudio
+        case .agentPlatform: return L10n.Nav.agentPlatform
+        case .signalCenter: return L10n.Nav.signalCenter
+        case .marketSentiment: return L10n.Nav.marketSentiment
+        case .growthReview: return L10n.Nav.growthReview
+        case .failureClustering: return L10n.Nav.failureClustering
+        case .strategyOptimization: return L10n.Nav.strategyOptimization
+        case .serviceManagement: return L10n.Nav.serviceManagement
+        case .dataSourceManagement: return L10n.Nav.dataSourceManagement
+        case .systemSettings: return L10n.Nav.systemSettings
+        case .strategyDetail: return L10n.zh("策略详情", en: "Strategy Detail")
         }
     }
 
@@ -395,11 +395,11 @@ enum NotificationType: String, Codable, CaseIterable {
 
     var label: String {
         switch self {
-        case .riskAlert: return "风险告警"
-        case .tradeExecuted: return "交易执行"
-        case .strategyUpdate: return "策略更新"
-        case .systemAlert: return "系统告警"
-        case .aiInsight: return "AI 洞察"
+        case .riskAlert: return L10n.zh("风险告警", en: "Risk Alert")
+        case .tradeExecuted: return L10n.zh("交易执行", en: "Trade Executed")
+        case .strategyUpdate: return L10n.zh("策略更新", en: "Strategy Update")
+        case .systemAlert: return L10n.zh("系统告警", en: "System Alert")
+        case .aiInsight: return L10n.zh("AI 洞察", en: "AI Insight")
         }
     }
 
@@ -430,9 +430,9 @@ enum NotificationSeverity: String, Codable {
 
     var label: String {
         switch self {
-        case .info: return "信息"
-        case .warning: return "警告"
-        case .critical: return "严重"
+        case .info: return L10n.zh("信息", en: "Info")
+        case .warning: return L10n.zh("警告", en: "Warning")
+        case .critical: return L10n.zh("严重", en: "Critical")
         }
     }
 
@@ -451,16 +451,16 @@ enum UnifiedState: String, Codable {
 
     var label: String {
         switch self {
-        case .healthy: return "健康"
-        case .warning: return "警告"
-        case .blocked: return "已阻断"
-        case .locked: return "已锁定"
-        case .running: return "运行中"
-        case .stopped: return "已停止"
-        case .failed: return "失败"
-        case .reconciling: return "对账中"
-        case .stale: return "过期"
-        case .unknown: return "未知"
+        case .healthy: return L10n.zh("健康", en: "Healthy")
+        case .warning: return L10n.zh("警告", en: "Warning")
+        case .blocked: return L10n.zh("已阻断", en: "Blocked")
+        case .locked: return L10n.zh("已锁定", en: "Locked")
+        case .running: return L10n.zh("运行中", en: "Running")
+        case .stopped: return L10n.zh("已停止", en: "Stopped")
+        case .failed: return L10n.zh("失败", en: "Failed")
+        case .reconciling: return L10n.zh("对账中", en: "Reconciling")
+        case .stale: return L10n.zh("过期", en: "Stale")
+        case .unknown: return L10n.zh("未知", en: "Unknown")
         }
     }
 
@@ -495,12 +495,12 @@ enum LiveReadinessState: String, Codable {
 
     var label: String {
         switch self {
-        case .liveReady: return "实盘就绪"
-        case .liveSmallReady: return "小仓就绪"
-        case .paperOnly: return "仅模拟"
-        case .riskLocked: return "风控锁定"
-        case .emergencyLocked: return "紧急锁定"
-        case .notReady: return "未就绪"
+        case .liveReady: return L10n.zh("实盘就绪", en: "Live Ready")
+        case .liveSmallReady: return L10n.zh("小仓就绪", en: "Small-Size Ready")
+        case .paperOnly: return L10n.zh("仅模拟", en: "Paper Only")
+        case .riskLocked: return L10n.zh("风控锁定", en: "Risk Locked")
+        case .emergencyLocked: return L10n.zh("紧急锁定", en: "Emergency Locked")
+        case .notReady: return L10n.zh("未就绪", en: "Not Ready")
         }
     }
 

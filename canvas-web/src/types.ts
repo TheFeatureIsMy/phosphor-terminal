@@ -7,6 +7,7 @@ export type NodeType =
   | 'executionOutput'
   | 'structureDefense'
   | 'accountRisk'
+  | 'mtfGuard'
 
 // --- Node data types (index signature required by React Flow v12) ---
 
@@ -64,7 +65,40 @@ export interface ExecutionOutputData {
   [key: string]: unknown
   entryLogic: 'AND' | 'OR'
   exitLogic: 'AND' | 'OR'
-  schemaVersion: '2.5'
+  schemaVersion: '2.5' | '3.0'
+}
+
+
+export interface MTFGuardNodeData {
+  [key: string]: unknown
+  guardId: string
+  name: string
+  fastTimeframe: string
+  slowTimeframe: string
+  sourceNode: string
+  targetNode: string
+  structureType: string
+  shadowWindow: {
+    mode: string
+    maxFastCandles: number
+    allowLowTfTouch: boolean
+    allowLowTfUpdateFilledRatio: boolean
+  }
+  violationPolicy: {
+    temporaryViolation: string
+    reclaimPending: string
+    confirmedReclaim: string
+    confirmedBreak: string
+  }
+}
+
+export interface MTFGuardEdgeData {
+  [key: string]: unknown
+  guardState: 'confirmed' | 'watching' | 'pending_htf_close' | 'temporary_violation' | 'reclaim_pending' | 'invalidated' | 'expired' | 'inactive'
+  guardId: string
+  fastTimeframe: string
+  slowTimeframe: string
+  reasonCodes: string[]
 }
 
 export type CanvasNodeData =
@@ -74,6 +108,7 @@ export type CanvasNodeData =
   | PositionSizingData
   | RiskPolicyData
   | ExecutionOutputData
+  | MTFGuardNodeData
 
 // --- DSL types ---
 
@@ -141,14 +176,15 @@ export interface RulePackageDSL {
 
 export type SwiftToReactMessage =
   | { type: 'loadGraph'; payload: { nodes: unknown[]; edges: unknown[] } }
-  | { type: 'loadDSL'; payload: { dsl: RulePackageDSL } }
+  | { type: 'loadDSL'; payload: { dsl: AnyRulePackageDSL } }
   | { type: 'validationResult'; payload: ValidationReport }
+  | { type: 'mtfGuardStateUpdate'; payload: { guardId: string; state: string; action: string; reasonCodes: string[] } }
 
 export type ReactToSwiftMessage =
   | { type: 'canvasReady' }
-  | { type: 'graphChanged'; payload: { dsl: RulePackageDSL | null; graphState: string } }
-  | { type: 'requestValidation'; payload: { dsl: RulePackageDSL } }
-  | { type: 'requestSaveVersion'; payload: { dsl: RulePackageDSL } }
+  | { type: 'graphChanged'; payload: { dsl: AnyRulePackageDSL | null; graphState: string } }
+  | { type: 'requestValidation'; payload: { dsl: AnyRulePackageDSL } }
+  | { type: 'requestSaveVersion'; payload: { dsl: AnyRulePackageDSL } }
 
 export interface NodeValidationState {
   errors: DSLError[]
@@ -203,6 +239,29 @@ export interface DisconnectProtectionDSL {
   emergency_action: string
 }
 
+
+export interface MTFGuardRuleDSL {
+  guard_id: string
+  name: string
+  fast_timeframe: string
+  slow_timeframe: string
+  source_node: string
+  target_node: string
+  structure_type: string
+  shadow_window: {
+    mode: string
+    max_fast_candles: number
+    allow_low_tf_touch: boolean
+    allow_low_tf_update_filled_ratio: boolean
+  }
+  violation_policy: {
+    temporary_violation: string
+    reclaim_pending: string
+    confirmed_reclaim: string
+    confirmed_break: string
+  }
+}
+
 export interface RulePackageDSLV3 {
   schema_version: '3.0'
   strategy: StrategyMetaDSL
@@ -213,6 +272,7 @@ export interface RulePackageDSLV3 {
   position_policy: { risk_per_trade: number; max_position_pct: number }
   account_risk_policy: AccountRiskPolicyDSL
   disconnect_protection: DisconnectProtectionDSL
+  mtf_guards?: MTFGuardRuleDSL[]
   metadata: Record<string, unknown>
 }
 

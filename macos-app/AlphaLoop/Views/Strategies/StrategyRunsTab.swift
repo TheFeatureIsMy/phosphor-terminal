@@ -4,6 +4,7 @@ import SwiftUI
 
 struct StrategyRunsTab: View {
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
     @Bindable var viewModel: StrategyDetailViewModel
     let client: NetworkClientProtocol
 
@@ -13,11 +14,11 @@ struct StrategyRunsTab: View {
     @State private var filterStatus: String? = nil
 
     private let modeOptions: [(String?, String)] = [
-        (nil, "全部"), ("dryrun", "模拟"), ("live", "实盘"),
+        (nil, L10n.zh("全部", en: "All")), ("dryrun", L10n.zh("模拟", en: "Paper")), ("live", L10n.zh("实盘", en: "Live")),
     ]
 
     private let statusOptions: [(String?, String)] = [
-        (nil, "全部"), ("running", "运行中"), ("stopped", "已停止"), ("error", "异常"),
+        (nil, L10n.zh("全部", en: "All")), ("running", L10n.zh("运行中", en: "Running")), ("stopped", L10n.zh("已停止", en: "Stopped")), ("error", L10n.zh("异常", en: "Error")),
     ]
 
     var body: some View {
@@ -30,8 +31,8 @@ struct StrategyRunsTab: View {
             } else if runs.isEmpty {
                 EmptyStateView(
                     icon: "play.circle",
-                    title: "暂无运行记录",
-                    description: "启动策略后将在此显示运行记录"
+                    title: L10n.zh("暂无运行记录", en: "No Run History"),
+                    description: L10n.zh("启动策略后将在此显示运行记录", en: "Run history will appear here after launching a strategy")
                 )
             } else {
                 runsList
@@ -45,7 +46,7 @@ struct StrategyRunsTab: View {
 
     private var filterBar: some View {
         HStack(spacing: PulseSpacing.md) {
-            Text("模式").font(PulseFonts.micro).foregroundStyle(colors.textMuted)
+            Text(L10n.zh("模式", en: "Mode")).font(PulseFonts.micro).foregroundStyle(colors.textMuted)
             ForEach(modeOptions, id: \.1) { value, label in
                 Button {
                     filterMode = value
@@ -64,7 +65,7 @@ struct StrategyRunsTab: View {
 
             Text("|").foregroundStyle(colors.border).font(PulseFonts.micro)
 
-            Text("状态").font(PulseFonts.micro).foregroundStyle(colors.textMuted)
+            Text(L10n.zh("状态", en: "Status")).font(PulseFonts.micro).foregroundStyle(colors.textMuted)
             ForEach(statusOptions, id: \.1) { value, label in
                 Button {
                     filterStatus = value
@@ -108,13 +109,14 @@ struct StrategyRunsTab: View {
             .padding(PulseSpacing.lg)
         }
         .scrollEdgeEffectStyle(.soft, for: .vertical)
+        .id(settingsState.language)
     }
 
     private func runRow(_ run: StrategyRunV2) -> some View {
         KryptonCard(emphasis: .bold) {
             HStack(spacing: PulseSpacing.md) {
                 // Mode badge
-                Text(run.mode == "live" ? "实盘" : "模拟")
+                Text(run.mode == "live" ? L10n.zh("实盘", en: "Live") : L10n.zh("模拟", en: "Paper"))
                     .font(PulseFonts.micro)
                     .foregroundStyle(run.mode == "live" ? PulseColors.loss : PulseColors.accent)
                     .padding(.horizontal, 6)
@@ -203,9 +205,9 @@ struct StrategyRunsTab: View {
 
     private func runStatusLabel(_ status: String) -> String {
         switch status {
-        case "running": return "运行中"
-        case "stopped": return "已停止"
-        case "error": return "异常"
+        case "running": return L10n.zh("运行中", en: "Running")
+        case "stopped": return L10n.zh("已停止", en: "Stopped")
+        case "error": return L10n.zh("异常", en: "Error")
         default: return status
         }
     }

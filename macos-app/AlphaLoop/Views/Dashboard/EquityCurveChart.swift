@@ -21,7 +21,7 @@ struct EquityCurveChart: View {
             VStack(alignment: .leading, spacing: PulseSpacing.md) {
                 // 标题 + 范围选择器
                 HStack {
-                    Text("权益曲线")
+                    Text(L10n.Dashboard.equityCurve)
                         .font(PulseFonts.displaySubheading)
                         .foregroundStyle(colors.textPrimary)
 
@@ -52,8 +52,8 @@ struct EquityCurveChart: View {
                 Chart {
                     ForEach(filteredPoints) { point in
                         AreaMark(
-                            x: .value("日期", point.date),
-                            y: .value("价值", point.value)
+                            x: .value(L10n.zh("日期", en: "Date"), point.date),
+                            y: .value(L10n.zh("价值", en: "Value"), point.value)
                         )
                         .foregroundStyle(
                             LinearGradient(
@@ -65,8 +65,8 @@ struct EquityCurveChart: View {
                         .interpolationMethod(.catmullRom)
 
                         LineMark(
-                            x: .value("日期", point.date),
-                            y: .value("价值", point.value)
+                            x: .value(L10n.zh("日期", en: "Date"), point.date),
+                            y: .value(L10n.zh("价值", en: "Value"), point.value)
                         )
                         .foregroundStyle(colors.profit)
                         .lineStyle(StrokeStyle(lineWidth: 1.5))
@@ -75,13 +75,13 @@ struct EquityCurveChart: View {
 
                     // 悬停指示线
                     if let hoveredPoint {
-                        RuleMark(x: .value("日期", hoveredPoint.date))
+                        RuleMark(x: .value(L10n.zh("日期", en: "Date"), hoveredPoint.date))
                             .foregroundStyle(colors.textMuted.opacity(0.3))
                             .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
 
                         PointMark(
-                            x: .value("日期", hoveredPoint.date),
-                            y: .value("价值", hoveredPoint.value)
+                            x: .value(L10n.zh("日期", en: "Date"), hoveredPoint.date),
+                            y: .value(L10n.zh("价值", en: "Value"), hoveredPoint.value)
                         )
                         .foregroundStyle(colors.profit)
                         .symbolSize(60)

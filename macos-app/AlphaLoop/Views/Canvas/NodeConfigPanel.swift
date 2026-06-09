@@ -3,6 +3,7 @@ import UniformTypeIdentifiers
 
 struct NodeConfigPanel: View {
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
     let node: CanvasNode
     let definition: NodeDefinition?
     var onDelete: (() -> Void)?
@@ -29,7 +30,7 @@ struct NodeConfigPanel: View {
                 VStack(alignment: .leading, spacing: PulseSpacing.md) {
                     // Layer 1: Core parameters
                     if let definition, !definition.configSchema.isEmpty {
-                        sectionLabel("核心参数")
+                        sectionLabel(L10n.zh("核心参数", en: "Core Parameters"))
                         ForEach(definition.configSchema) { field in
                             VStack(alignment: .leading, spacing: 2) {
                                 configFieldView(field)
@@ -44,7 +45,7 @@ struct NodeConfigPanel: View {
 
                     // Layer 2: Port connection status
                     if hasPorts {
-                        sectionLabel("端口连线")
+                        sectionLabel(L10n.zh("端口连线", en: "Port Connections"))
                         portConnectionSection
 
                         Divider().foregroundStyle(colors.border)
@@ -53,23 +54,24 @@ struct NodeConfigPanel: View {
                     // Layer 3: Advanced options (collapsed by default)
                     DisclosureGroup(isExpanded: $showAdvanced) {
                         VStack(alignment: .leading, spacing: PulseSpacing.xs) {
-                            sectionLabel("名称")
+                            sectionLabel(L10n.zh("名称", en: "Name"))
                             configTextField(text: $nameText, placeholder: definition?.name ?? "")
-                            sectionLabel("备注")
-                            configTextField(text: $notesText, placeholder: "添加备注...")
-                            sectionLabel("输出变量名")
-                            configTextField(text: .constant(""), placeholder: "自动生成")
-                            sectionLabel("执行条件")
-                            configTextField(text: .constant(""), placeholder: "始终执行")
+                            sectionLabel(L10n.zh("备注", en: "Notes"))
+                            configTextField(text: $notesText, placeholder: L10n.zh("添加备注...", en: "Add notes..."))
+                            sectionLabel(L10n.zh("输出变量名", en: "Output Variable"))
+                            configTextField(text: .constant(""), placeholder: L10n.zh("自动生成", en: "Auto-generated"))
+                            sectionLabel(L10n.zh("执行条件", en: "Execution Condition"))
+                            configTextField(text: .constant(""), placeholder: L10n.zh("始终执行", en: "Always execute"))
                         }.padding(.top, PulseSpacing.xs)
                     } label: {
-                        Text("高级选项").font(PulseFonts.captionMedium).foregroundStyle(colors.textMuted)
+                        Text(L10n.zh("高级选项", en: "Advanced Options")).font(PulseFonts.captionMedium).foregroundStyle(colors.textMuted)
                     }
                 }
                 .padding(PulseSpacing.md)
             }
         }
         .frame(width: 280)
+        .id(settingsState.language)
         .task { reloadNodeData() }
         .onChange(of: node.id) { _, _ in reloadNodeData() }
         .onChange(of: nameText) { _, new in onConfigChange?("name", AnyCodable(new)) }
@@ -101,15 +103,15 @@ struct NodeConfigPanel: View {
             Button { onClose?() } label: {
                 Image(systemName: "xmark").font(.system(size: 10)).foregroundStyle(colors.textSecondary)
             }
-            .buttonStyle(.plain).help("关闭面板")
+            .buttonStyle(.plain).help(L10n.zh("关闭面板", en: "Close Panel"))
             Button { showDeleteConfirm = true } label: {
                 Image(systemName: "trash").font(.system(size: 12)).foregroundStyle(PulseColors.danger)
             }
-            .buttonStyle(.plain).help("删除节点")
-            .confirmationDialog("确认删除", isPresented: $showDeleteConfirm) {
-                Button("删除", role: .destructive) { onDelete?() }
-                Button("取消", role: .cancel) {}
-            } message: { Text("确定要删除节点 \"\(definition?.name ?? node.nodeType)\" 吗？") }
+            .buttonStyle(.plain).help(L10n.zh("删除节点", en: "Delete Node"))
+            .confirmationDialog(L10n.zh("确认删除", en: "Confirm Delete"), isPresented: $showDeleteConfirm) {
+                Button(L10n.zh("删除", en: "Delete"), role: .destructive) { onDelete?() }
+                Button(L10n.zh("取消", en: "Cancel"), role: .cancel) {}
+            } message: { Text(L10n.zh("确定要删除节点 \"\(definition?.name ?? node.nodeType)\" 吗？", en: "Are you sure you want to delete node \"\(definition?.name ?? node.nodeType)\"?")) }
         }
         .padding(PulseSpacing.sm)
     }
@@ -121,7 +123,7 @@ struct NodeConfigPanel: View {
         if let def = definition {
             if !def.inputPorts.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
-                    sectionLabel("输入")
+                    sectionLabel(L10n.zh("输入", en: "Inputs"))
                     ForEach(def.inputPorts) { port in
                         let conn = connectedInputPorts[port.key]
                         inputPortRow(
@@ -134,7 +136,7 @@ struct NodeConfigPanel: View {
             }
             if !def.outputPorts.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
-                    sectionLabel("输出")
+                    sectionLabel(L10n.zh("输出", en: "Outputs"))
                     ForEach(def.outputPorts) { port in
                         let conn = connectedOutputPorts[port.key]
                         outputPortRow(
@@ -164,7 +166,7 @@ struct NodeConfigPanel: View {
                 Text("→ \(name)")
                     .font(PulseFonts.caption).foregroundStyle(PulseColors.accent)
             } else {
-                Text("→ 可选")
+                Text(L10n.zh("→ 可选", en: "→ Optional"))
                     .font(PulseFonts.caption).foregroundStyle(colors.textMuted)
             }
         }
@@ -185,7 +187,7 @@ struct NodeConfigPanel: View {
                 Text("→ \(name)")
                     .font(PulseFonts.caption).foregroundStyle(PulseColors.accent)
             } else {
-                Text("未连接")
+                Text(L10n.zh("未连接", en: "Disconnected"))
                     .font(PulseFonts.caption).foregroundStyle(colors.textMuted)
             }
         }
@@ -236,7 +238,7 @@ struct NodeConfigPanel: View {
             case .filePicker:
                 let path = node.config[field.key]?.value as? String
                 HStack(spacing: 4) {
-                    Text(path.map { URL(fileURLWithPath: $0).lastPathComponent } ?? "选择文件...")
+                    Text(path.map { URL(fileURLWithPath: $0).lastPathComponent } ?? L10n.zh("选择文件...", en: "Select file..."))
                         .font(PulseFonts.caption).foregroundStyle(path != nil ? colors.textPrimary : colors.textMuted).lineLimit(1)
                     Button { showFilePicker = true } label: {
                         Image(systemName: "folder").font(.system(size: 12)).foregroundStyle(PulseColors.accent)
@@ -246,7 +248,7 @@ struct NodeConfigPanel: View {
                 configTextField(
                     text: Binding(get: { node.config[field.key]?.value as? String ?? "" },
                                   set: { onConfigChange?(field.key, AnyCodable($0)) }),
-                    placeholder: "选择..."
+                    placeholder: L10n.zh("选择...", en: "Select...")
                 )
             }
         }
@@ -272,9 +274,9 @@ struct NodeConfigPanel: View {
     private func validateField(_ field: ConfigField, value: Any) {
         if let d = value as? Double {
             if let min = field.min, d < min {
-                fieldErrors[field.key] = "最小 \(Int(min))"
+                fieldErrors[field.key] = L10n.zh("最小 \(Int(min))", en: "Min \(Int(min))")
             } else if let max = field.max, d > max {
-                fieldErrors[field.key] = "最大 \(Int(max))"
+                fieldErrors[field.key] = L10n.zh("最大 \(Int(max))", en: "Max \(Int(max))")
             } else {
                 fieldErrors.removeValue(forKey: field.key)
             }

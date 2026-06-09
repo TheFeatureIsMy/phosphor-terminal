@@ -5,6 +5,7 @@ import SwiftUI
 struct ExecutionCenterView: View {
     @Environment(\.networkClient) private var networkClient
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
     @State private var viewModel: ExecutionCenterViewModel?
     @State private var showEmergencyConfirm = false
     @State private var emergencyInProgress = false
@@ -22,20 +23,21 @@ struct ExecutionCenterView: View {
                     } else if let error = vm.error {
                         EmptyStateView(
                             icon: "exclamationmark.triangle",
-                            title: "加载失败",
+                            title: L10n.Execution.loadFailed,
                             description: error,
-                            primaryAction: (title: "重试", action: { Task { await vm.loadCenter() } })
+                            primaryAction: (title: L10n.Common.retry, action: { Task { await vm.loadCenter() } })
                         )
                     } else {
                         EmptyStateView(
                             icon: "play.circle",
-                            title: "暂无执行会话",
-                            description: "尚未启动任何策略会话"
+                            title: L10n.Execution.noSessions,
+                            description: L10n.Execution.noSessionsDesc
                         )
                     }
                 }
             }
             .padding(PulseSpacing.lg)
+            .id(settingsState.language)
         }
         .scrollEdgeEffectStyle(.soft, for: .vertical)
         .task {
@@ -43,13 +45,13 @@ struct ExecutionCenterView: View {
             viewModel = vm
             await vm.loadCenter()
         }
-        .alert("确认紧急停止", isPresented: $showEmergencyConfirm) {
-            Button("取消", role: .cancel) {}
-            Button("确认停止", role: .destructive) {
+        .alert(L10n.Execution.confirmEmergencyStop, isPresented: $showEmergencyConfirm) {
+            Button(L10n.Common.cancel, role: .cancel) {}
+            Button(L10n.Execution.confirmStop, role: .destructive) {
                 Task { await performEmergencyStop() }
             }
         } message: {
-            Text("将立即停止所有运行中的策略会话并取消所有挂单。此操作不可撤销。")
+            Text(L10n.Execution.emergencyStopWarning)
         }
     }
 
@@ -64,7 +66,7 @@ struct ExecutionCenterView: View {
                     .foregroundStyle(data.state == "error" ? PulseColors.StateColors.red : PulseColors.StateColors.orange)
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(data.state == "error" ? "系统异常" : "执行引擎异常")
+                    Text(data.state == "error" ? L10n.Execution.systemError : L10n.Execution.engineError)
                         .font(PulseFonts.captionMedium)
                         .foregroundStyle(colors.textPrimary)
 
@@ -94,7 +96,7 @@ struct ExecutionCenterView: View {
     private func summaryCardsRow(_ data: ExecutionCenterBFFResponse) -> some View {
         HStack(spacing: PulseSpacing.md) {
             summaryCard(
-                title: "运行会话",
+                title: L10n.Execution.runningSessions,
                 value: "\(data.totalRunning)",
                 icon: "play.circle.fill",
                 color: PulseColors.StateColors.green
@@ -102,7 +104,7 @@ struct ExecutionCenterView: View {
             .staggeredAppearance(index: 0)
 
             summaryCard(
-                title: "持仓",
+                title: L10n.Execution.positions,
                 value: "\(data.totalOpenPositions)",
                 icon: "chart.bar.fill",
                 color: PulseColors.StateColors.orange
@@ -110,7 +112,7 @@ struct ExecutionCenterView: View {
             .staggeredAppearance(index: 1)
 
             summaryCard(
-                title: "挂单",
+                title: L10n.Execution.pendingOrders,
                 value: "\(data.totalPendingOrders)",
                 icon: "clock.fill",
                 color: PulseColors.StateColors.yellow
@@ -126,7 +128,7 @@ struct ExecutionCenterView: View {
             .staggeredAppearance(index: 3)
 
             summaryCard(
-                title: "延迟",
+                title: L10n.Execution.latency,
                 value: "\(data.executionLatencyMs)ms",
                 icon: "timer",
                 color: latencyColor(data.executionLatencyMs)
@@ -170,7 +172,7 @@ struct ExecutionCenterView: View {
                     Image(systemName: "bolt.fill")
                         .font(.system(size: 11))
                 }
-                Text("紧急停止")
+                Text(L10n.Execution.emergencyStop)
                     .font(PulseFonts.captionMedium)
             }
             .foregroundStyle(.white)
@@ -187,13 +189,13 @@ struct ExecutionCenterView: View {
 
     private func sessionTableSection(_ data: ExecutionCenterBFFResponse) -> some View {
         VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-            TerminalLabel(text: "执行会话")
+            TerminalLabel(text: L10n.Execution.executionSessions)
 
             if data.sessions.isEmpty {
                 EmptyStateView(
                     icon: "play.slash",
-                    title: "暂无会话",
-                    description: "当前没有运行中的策略会话"
+                    title: L10n.Execution.noSessionsEmpty,
+                    description: L10n.Execution.noSessionsEmptyDesc
                 )
             } else {
                 LazyVStack(spacing: PulseSpacing.xs) {
@@ -232,10 +234,10 @@ struct ExecutionCenterView: View {
                 .clipShape(Capsule())
 
             VStack(alignment: .trailing, spacing: 2) {
-                Text("\(session.openPositions) 持仓")
+                Text(L10n.Execution.positionsCount(session.openPositions))
                     .font(PulseFonts.caption)
                     .foregroundStyle(colors.textSecondary)
-                Text("\(session.pendingOrders) 挂单")
+                Text(L10n.Execution.pendingCount(session.pendingOrders))
                     .font(PulseFonts.caption)
                     .foregroundStyle(colors.textMuted)
             }

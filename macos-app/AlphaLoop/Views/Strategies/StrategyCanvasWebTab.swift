@@ -4,6 +4,7 @@ import SwiftUI
 
 struct StrategyCanvasWebTab: View {
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
     let viewModel: StrategyDetailViewModel
     let client: NetworkClientProtocol
 
@@ -21,13 +22,13 @@ struct StrategyCanvasWebTab: View {
                         if vm.isSaving {
                             HStack(spacing: 4) {
                                 ProgressView().controlSize(.small)
-                                Text("保存中...").font(PulseFonts.caption).foregroundStyle(colors.textSecondary)
+                                Text(L10n.zh("保存中...", en: "Saving...")).font(PulseFonts.caption).foregroundStyle(colors.textSecondary)
                             }
                             .padding(.horizontal, 10).padding(.vertical, 5)
                             .background(RoundedRectangle(cornerRadius: 6).fill(colors.surfaceElevated))
                         }
                         if vm.saveSuccess {
-                            Text("✓ 已保存")
+                            Text(L10n.zh("✓ 已保存", en: "Saved"))
                                 .font(PulseFonts.caption).foregroundStyle(PulseColors.accent)
                                 .padding(.horizontal, 10).padding(.vertical, 5)
                                 .background(RoundedRectangle(cornerRadius: 6).fill(PulseColors.accent.opacity(0.1)))
@@ -58,7 +59,7 @@ struct StrategyCanvasWebTab: View {
                                 } label: {
                                     HStack(spacing: 4) {
                                         Image(systemName: "clock.arrow.circlepath")
-                                        Text("加载版本")
+                                        Text(L10n.zh("加载版本", en: "Load Version"))
                                     }
                                     .font(PulseFonts.caption)
                                     .foregroundStyle(colors.textSecondary)
@@ -77,12 +78,13 @@ struct StrategyCanvasWebTab: View {
             } else {
                 VStack(spacing: PulseSpacing.md) {
                     ProgressView().controlSize(.regular)
-                    Text("加载画布...")
+                    Text(L10n.zh("加载画布...", en: "Loading canvas..."))
                         .font(PulseFonts.body).foregroundStyle(colors.textSecondary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
+        .id(settingsState.language)
         .task {
             let vm = CanvasWebViewModel(strategyId: viewModel.strategyId, client: client)
             vm.errorHandler = viewModel.errorHandler

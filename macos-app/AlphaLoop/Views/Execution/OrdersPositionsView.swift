@@ -5,6 +5,7 @@ import SwiftUI
 struct OrdersPositionsView: View {
     @Environment(\.networkClient) private var networkClient
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
     @State private var viewModel: ExecutionCenterViewModel?
     @State private var selectedTab = 0
 
@@ -33,19 +34,20 @@ struct OrdersPositionsView: View {
                 } else if let error = vm.error {
                     EmptyStateView(
                         icon: "exclamationmark.triangle",
-                        title: "加载失败",
+                        title: L10n.Execution.loadFailed,
                         description: error,
-                        primaryAction: (title: "重试", action: { Task { await vm.loadOrdersPositions() } })
+                        primaryAction: (title: L10n.Common.retry, action: { Task { await vm.loadOrdersPositions() } })
                     )
                 } else {
                     EmptyStateView(
                         icon: "tray",
-                        title: "暂无数据",
-                        description: "当前没有订单或持仓数据"
+                        title: L10n.Execution.noData,
+                        description: L10n.Execution.noDataDesc
                     )
                 }
             }
         }
+        .id(settingsState.language)
         .task {
             let vm = ExecutionCenterViewModel(client: networkClient)
             viewModel = vm
@@ -64,7 +66,7 @@ struct OrdersPositionsView: View {
                     .foregroundStyle(data.state == "error" ? PulseColors.StateColors.red : PulseColors.StateColors.orange)
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(data.state == "error" ? "连接异常" : "状态异常")
+                    Text(data.state == "error" ? L10n.Execution.connectionError : L10n.Execution.statusError)
                         .font(PulseFonts.captionMedium)
                         .foregroundStyle(colors.textPrimary)
 
@@ -89,8 +91,8 @@ struct OrdersPositionsView: View {
 
     private func tabHeader(_ data: OrdersPositionsBFFResponse) -> some View {
         HStack(spacing: PulseSpacing.md) {
-            tabButton("订单", index: 0, count: data.orders.count)
-            tabButton("持仓", index: 1, count: data.positions.count)
+            tabButton(L10n.Execution.orders, index: 0, count: data.orders.count)
+            tabButton(L10n.Execution.positionsTab, index: 1, count: data.positions.count)
 
             Spacer()
 
@@ -145,8 +147,8 @@ struct OrdersPositionsView: View {
             if orders.isEmpty {
                 EmptyStateView(
                     icon: "doc.text",
-                    title: "暂无订单",
-                    description: "当前没有活跃订单"
+                    title: L10n.Execution.noOrders,
+                    description: L10n.Execution.noOrdersDesc
                 )
                 .padding(.top, PulseSpacing.lg)
             } else {
@@ -214,8 +216,8 @@ struct OrdersPositionsView: View {
             if positions.isEmpty {
                 EmptyStateView(
                     icon: "chart.bar",
-                    title: "暂无持仓",
-                    description: "当前没有未平仓头寸"
+                    title: L10n.Execution.noPositions,
+                    description: L10n.Execution.noPositionsDesc
                 )
                 .padding(.top, PulseSpacing.lg)
             } else {

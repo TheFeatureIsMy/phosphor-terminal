@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useMemo } from 'react'
 import {
   ReactFlow, Controls, MiniMap, Background, BackgroundVariant,
   addEdge, useNodesState, useEdgesState,
-  type Connection, type Node, type Edge, type NodeTypes,
+  type Connection, type Node, type Edge, type NodeTypes, type EdgeTypes,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 
@@ -14,6 +14,8 @@ import { RiskPolicyNode } from './nodes/RiskPolicyNode'
 import { ExecutionOutputNode } from './nodes/ExecutionOutputNode'
 import StructureDefenseNode from './nodes/StructureDefenseNode'
 import AccountRiskNode from './nodes/AccountRiskNode'
+import MTFGuardNode from './nodes/MTFGuardNode'
+import MTFGuardEdge from './edges/MTFGuardEdge'
 import { NodeConfigPanel } from './panels/NodeConfigPanel'
 import { useCanvasBridge } from './hooks/useCanvasBridge'
 import { mapErrorsToNodes } from './hooks/useValidation'
@@ -29,6 +31,11 @@ const nodeTypes: NodeTypes = {
   executionOutput: ExecutionOutputNode,
   structureDefense: StructureDefenseNode,
   accountRisk: AccountRiskNode,
+  mtfGuard: MTFGuardNode,
+}
+
+const edgeTypes: EdgeTypes = {
+  mtfGuard: MTFGuardEdge,
 }
 
 interface PaletteEntry {
@@ -47,6 +54,7 @@ const PALETTE: PaletteEntry[] = [
   { type: 'executionOutput', label: '执行输出', icon: '🚀', defaultData: { entryLogic: 'AND', exitLogic: 'OR', schemaVersion: '2.5' } },
   { type: 'structureDefense', label: 'Structure Defense', icon: '🛡', defaultData: { structures: ['liquidity_pool', 'fvg'], minStructureScore: 70 } },
   { type: 'accountRisk', label: 'Account Risk', icon: '🔥', defaultData: { maxDailyLoss: 0.03, maxWeeklyLoss: 0.08, maxConsecutiveLosses: 4, killSwitchEnabled: true } },
+  { type: 'mtfGuard', label: 'MTF Guard', icon: '🔀', defaultData: { guardId: '', name: 'MTF Guard', fastTimeframe: '5m', slowTimeframe: '1h', sourceNode: '', targetNode: '', structureType: 'order_block', shadowWindow: { mode: 'strict', maxFastCandles: 12, allowLowTfTouch: false, allowLowTfUpdateFilledRatio: false }, violationPolicy: { temporaryViolation: 'hold', reclaimPending: 'reduce', confirmedReclaim: 'resume', confirmedBreak: 'exit' } } },
 ]
 
 let nodeIdCounter = 100
@@ -177,6 +185,7 @@ export default function App() {
           onNodeClick={onNodeClick}
           onPaneClick={onPaneClick}
           nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
           fitView
           deleteKeyCode="Delete"
           multiSelectionKeyCode="Meta"
@@ -194,6 +203,7 @@ export default function App() {
                 signalInput: '#64D2FF', indicatorCondition: '#BF5AF2',
                 filter: '#FF9F0A', positionSizing: '#30D158',
                 riskPolicy: '#FF453A', executionOutput: '#5E5CE6',
+                structureDefense: '#30D158', accountRisk: '#FF9F0A', mtfGuard: '#64D2FF',
               }
               return colors[n.type ?? ''] ?? '#636366'
             }}

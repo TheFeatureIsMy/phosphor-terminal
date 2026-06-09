@@ -4,6 +4,7 @@ import SwiftUI
 
 struct CanvasSearchOverlay: View {
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
     @Binding var isPresented: Bool
     @Binding var searchText: String
     let matchCount: Int
@@ -19,7 +20,7 @@ struct CanvasSearchOverlay: View {
                     .font(.system(size: 12))
                     .foregroundStyle(colors.textMuted)
 
-                TextField("搜索节点...", text: $searchText)
+                TextField(L10n.zh("搜索节点...", en: "Search nodes..."), text: $searchText)
                     .textFieldStyle(.plain)
                     .font(PulseFonts.caption)
                     .foregroundStyle(colors.textPrimary)
@@ -55,6 +56,7 @@ struct CanvasSearchOverlay: View {
             .padding(.vertical, 8)
         }
         .frame(width: 320)
+        .id(settingsState.language)
         .background(
             RoundedRectangle(cornerRadius: 8)
                 .fill(colors.surfaceElevated)

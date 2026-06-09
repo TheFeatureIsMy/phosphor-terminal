@@ -6,12 +6,13 @@ import SwiftUI
 struct StrategyDetailView: View {
     @Environment(PulseColors.self) private var colors
     @Environment(AppState.self) private var appState
+    @Environment(SettingsState.self) private var settingsState
     let strategyId: String
     let client: NetworkClientProtocol
 
     @State private var viewModel: StrategyDetailViewModel?
     @State private var selectedTab = 0
-    private let tabs = ["概览", "DSL 规则", "画布", "回测", "版本", "运行记录", "信号", "模拟", "风控", "增长"]
+    private let tabs = [L10n.zh("概览", en: "Overview"), L10n.zh("DSL 规则", en: "DSL Rules"), L10n.zh("画布", en: "Canvas"), L10n.zh("回测", en: "Backtest"), L10n.zh("版本", en: "Versions"), L10n.zh("运行记录", en: "Runs"), L10n.zh("信号", en: "Signals"), L10n.zh("模拟", en: "Paper Trading"), L10n.zh("风控", en: "Risk"), L10n.zh("增长", en: "Growth")]
 
     var body: some View {
         Group {
@@ -20,6 +21,13 @@ struct StrategyDetailView: View {
                     navBar(vm)
                     Divider().foregroundStyle(colors.border)
                     configBar(vm)
+                    StrategyLifecycleRailView(currentStatus: vm.strategy?.status ?? "draft")
+                        .padding(.horizontal, PulseSpacing.sm)
+                        .padding(.top, PulseSpacing.xs)
+                    if !vm.mtfGuards.isEmpty {
+                        MTFGuardSummaryCard(guards: vm.mtfGuards)
+                            .padding(.horizontal, PulseSpacing.sm)
+                    }
                     Divider().foregroundStyle(colors.border)
                     tabBar
                     Divider().foregroundStyle(colors.border)
@@ -29,6 +37,7 @@ struct StrategyDetailView: View {
                 LoadingView(type: .detail)
             }
         }
+        .id(settingsState.language)
         .task {
             let vm = StrategyDetailViewModel(strategyId: "\(strategyId)", client: client)
             viewModel = vm
@@ -45,7 +54,7 @@ struct StrategyDetailView: View {
             } label: {
                 HStack(spacing: 4) {
                     Image(systemName: "chevron.left").font(.system(size: 10, weight: .semibold))
-                    Text("策略列表").font(PulseFonts.caption)
+                    Text(L10n.zh("策略列表", en: "Strategies")).font(PulseFonts.caption)
                 }
                 .foregroundStyle(colors.textMuted)
             }
@@ -53,7 +62,7 @@ struct StrategyDetailView: View {
 
             Text("/").foregroundStyle(colors.textMuted).font(PulseFonts.caption)
 
-            Text(vm.strategy?.name ?? "加载中...")
+            Text(vm.strategy?.name ?? L10n.zh("加载中...", en: "Loading..."))
                 .font(PulseFonts.bodyMedium)
                 .foregroundStyle(colors.textPrimary)
                 .lineLimit(1)
@@ -79,11 +88,11 @@ struct StrategyDetailView: View {
     private func configBar(_ vm: StrategyDetailViewModel) -> some View {
         HStack(spacing: PulseSpacing.sm) {
             if let s = vm.strategy {
-                configItem(label: "类型", value: s.strategyType)
+                configItem(label: L10n.zh("类型", en: "Type"), value: s.strategyType)
                 Text("|").foregroundStyle(colors.border).font(PulseFonts.micro)
-                configItem(label: "来源", value: s.sourceType)
+                configItem(label: L10n.zh("来源", en: "Source"), value: s.sourceType)
                 Text("|").foregroundStyle(colors.border).font(PulseFonts.micro)
-                configItem(label: "版本数", value: "\(vm.versions.count)")
+                configItem(label: L10n.zh("版本数", en: "Versions"), value: "\(vm.versions.count)")
             }
             Spacer()
         }

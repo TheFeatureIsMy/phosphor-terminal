@@ -4,6 +4,7 @@ import SwiftUI
 
 struct StrategyDSLTab: View {
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
     @Bindable var viewModel: StrategyDetailViewModel
 
     var body: some View {
@@ -21,6 +22,7 @@ struct StrategyDSLTab: View {
             .padding(PulseSpacing.lg)
         }
         .scrollEdgeEffectStyle(.soft, for: .vertical)
+        .id(settingsState.language)
     }
 
     // MARK: - Editor
@@ -31,7 +33,7 @@ struct StrategyDSLTab: View {
                 TerminalLabel(text: "StrategyRuleDSL v2.5")
                 Spacer()
                 if let v = viewModel.latestVersion {
-                    Text("当前版本: v\(v.versionNo)")
+                    Text(L10n.zh("当前版本: v\(v.versionNo)", en: "Current version: v\(v.versionNo)"))
                         .font(PulseFonts.caption)
                         .foregroundStyle(colors.textMuted)
                 }
@@ -65,13 +67,13 @@ struct StrategyDSLTab: View {
 
     private var actionBar: some View {
         HStack(spacing: PulseSpacing.sm) {
-            KryptonButton(title: viewModel.isValidating ? "验证中..." : "验证 DSL") {
+            KryptonButton(title: viewModel.isValidating ? L10n.zh("验证中...", en: "Validating...") : L10n.zh("验证 DSL", en: "Validate DSL")) {
                 Task { await viewModel.validateDSL() }
             }
             .disabled(viewModel.isValidating || viewModel.dslText.isEmpty)
 
             if viewModel.canSaveVersion {
-                KryptonButton(title: viewModel.isSavingVersion ? "保存中..." : "保存为新版本") {
+                KryptonButton(title: viewModel.isSavingVersion ? L10n.zh("保存中...", en: "Saving...") : L10n.zh("保存为新版本", en: "Save as New Version")) {
                     Task { await viewModel.saveVersion() }
                 }
                 .disabled(viewModel.isSavingVersion)
@@ -79,7 +81,7 @@ struct StrategyDSLTab: View {
 
             Spacer()
 
-            Text("仅支持白名单指标 / 操作符 / 规则类型")
+            Text(L10n.zh("仅支持白名单指标 / 操作符 / 规则类型", en: "Only whitelisted indicators / operators / rule types supported"))
                 .font(PulseFonts.micro)
                 .foregroundStyle(colors.textMuted)
         }
@@ -91,7 +93,7 @@ struct StrategyDSLTab: View {
         HStack(spacing: PulseSpacing.xs) {
             Image(systemName: "checkmark.circle.fill")
                 .foregroundStyle(PulseColors.success)
-            Text("版本已保存 — v\(viewModel.versions.first?.versionNo ?? 0)")
+            Text(L10n.zh("版本已保存 — v\(viewModel.versions.first?.versionNo ?? 0)", en: "Version saved — v\(viewModel.versions.first?.versionNo ?? 0)"))
                 .font(PulseFonts.bodyMedium)
                 .foregroundStyle(PulseColors.success)
         }

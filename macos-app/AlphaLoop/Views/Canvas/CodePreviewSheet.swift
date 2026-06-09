@@ -4,6 +4,7 @@ import SwiftUI
 
 struct CodePreviewSheet: View {
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
     @Environment(\.dismiss) private var dismiss
     let code: String
     let onDeploy: () -> Void
@@ -23,11 +24,11 @@ struct CodePreviewSheet: View {
         VStack(spacing: 0) {
             // Header
             HStack {
-                Text("策略代码预览")
+                Text(L10n.zh("策略代码预览", en: "Strategy Code Preview"))
                     .font(PulseFonts.bodyMedium)
                     .foregroundStyle(colors.textPrimary)
                 Spacer()
-                BadgeDot(color: PulseColors.accent, label: "可编辑", size: .small)
+                BadgeDot(color: PulseColors.accent, label: L10n.zh("可编辑", en: "Editable"), size: .small)
             }
             .padding(PulseSpacing.md)
 
@@ -48,7 +49,7 @@ struct CodePreviewSheet: View {
 
             // Actions
             HStack(spacing: PulseSpacing.md) {
-                Button("取消") {
+                Button(L10n.zh("取消", en: "Cancel")) {
                     onCancel()
                     dismiss()
                 }
@@ -61,12 +62,12 @@ struct CodePreviewSheet: View {
                     HStack(spacing: PulseSpacing.xs) {
                         ProgressView()
                             .controlSize(.small)
-                        Text("部署中...")
+                        Text(L10n.zh("部署中...", en: "Deploying..."))
                             .font(PulseFonts.caption)
                             .foregroundStyle(colors.textMuted)
                     }
                 } else {
-                    KryptonButton(title: "部署策略") {
+                    KryptonButton(title: L10n.zh("部署策略", en: "Deploy Strategy")) {
                         isDeploying = true
                         onDeploy()
                     }
@@ -75,6 +76,7 @@ struct CodePreviewSheet: View {
             .padding(PulseSpacing.md)
         }
         .frame(width: 600, height: 500)
+        .id(settingsState.language)
         .background(colors.background)
     }
 }

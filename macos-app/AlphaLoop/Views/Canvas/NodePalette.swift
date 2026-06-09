@@ -2,6 +2,7 @@ import SwiftUI
 
 struct NodePalette: View {
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
     @Binding var isPresented: Bool
     var onAddNode: (NodeDefinition) -> Void
     var onLoadTemplate: ((CanvasTemplate) -> Void)?
@@ -44,7 +45,7 @@ struct NodePalette: View {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 10))
                     .foregroundStyle(PulseColors.accent)
-                TextField("搜索节点...", text: $searchText)
+                TextField(L10n.zh("搜索节点...", en: "Search nodes..."), text: $searchText)
                     .textFieldStyle(.plain)
                     .font(PulseFonts.caption)
                     .foregroundStyle(colors.textPrimary)
@@ -69,7 +70,7 @@ struct NodePalette: View {
             // Category filter chips
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 4) {
-                    CategoryChip(label: "全部", color: PulseColors.accent, isSelected: selectedCategory == nil) {
+                    CategoryChip(label: L10n.zh("全部", en: "All"), color: PulseColors.accent, isSelected: selectedCategory == nil) {
                         selectedCategory = nil
                     }
                     ForEach(NodeCategory.allCases, id: \.self) { cat in
@@ -90,18 +91,18 @@ struct NodePalette: View {
                     if searchText.isEmpty && selectedCategory == nil {
                         // Templates section
                         if !templates.isEmpty {
-                            sectionHeader("模板", onClear: nil)
+                            sectionHeader(L10n.zh("模板", en: "Templates"), onClear: nil)
                             ForEach(templates) { template in
                                 templateRow(template)
                             }
                         }
 
                         if !favoriteDefs.isEmpty {
-                            sectionHeader("⭐ 收藏", onClear: { clearFavorites() })
+                            sectionHeader(L10n.zh("⭐ 收藏", en: "Favorites"), onClear: { clearFavorites() })
                             ForEach(favoriteDefs) { def in nodeRow(def) }
                         }
                         if !recentDefs.isEmpty {
-                            sectionHeader("🕐 最近使用", onClear: { clearRecents() })
+                            sectionHeader(L10n.zh("🕐 最近使用", en: "Recently Used"), onClear: { clearRecents() })
                             ForEach(recentDefs) { def in nodeRow(def) }
                         }
                     }
@@ -121,6 +122,7 @@ struct NodePalette: View {
             }
         }
         .frame(width: 220)
+        .id(settingsState.language)
         .background(colors.background)
         .overlay(Rectangle().frame(width: 1).foregroundStyle(colors.border), alignment: .trailing)
         .onAppear {
@@ -136,7 +138,7 @@ struct NodePalette: View {
             Text(title).font(PulseFonts.micro).foregroundStyle(colors.textMuted)
             Spacer()
             if let onClear {
-                Button("清除") { onClear() }
+                Button(L10n.zh("清除", en: "Clear")) { onClear() }
                     .font(PulseFonts.micro).foregroundStyle(PulseColors.accent).buttonStyle(.plain)
             }
         }
@@ -155,7 +157,7 @@ struct NodePalette: View {
                 Text(template.name)
                     .font(PulseFonts.caption)
                     .foregroundStyle(colors.textPrimary)
-                Text("\(template.nodeCount) 个节点")
+                Text(L10n.zh("\(template.nodeCount) 个节点", en: "\(template.nodeCount) nodes"))
                     .font(.system(size: 9))
                     .foregroundStyle(colors.textMuted)
             }
@@ -179,7 +181,7 @@ struct NodePalette: View {
                     .font(PulseFonts.caption)
                     .foregroundStyle(colors.textPrimary)
                     .lineLimit(1)
-                Text("\(def.inputPorts.count) 入 · \(def.outputPorts.count) 出")
+                Text(L10n.zh("\(def.inputPorts.count) 入 · \(def.outputPorts.count) 出", en: "\(def.inputPorts.count) in · \(def.outputPorts.count) out"))
                     .font(.system(size: 9))
                     .foregroundStyle(colors.textMuted)
             }

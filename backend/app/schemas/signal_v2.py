@@ -123,3 +123,13 @@ class SignalAggregateRequest(BaseModel):
 class SignalAggregateResponse(BaseModel):
     groups: list[dict[str, Any]]
     total_count: int
+
+
+class SignalNextAction(BaseModel):
+    type: str
+    enabled: bool = True
+    label: str
+
+
+class SignalDetailWithActions(SignalView):
+    next_actions: list[SignalNextAction] = []

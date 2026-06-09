@@ -4,6 +4,7 @@ import SwiftUI
 
 struct StrategyVersionsTab: View {
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
     @Bindable var viewModel: StrategyDetailViewModel
 
     var body: some View {
@@ -12,8 +13,8 @@ struct StrategyVersionsTab: View {
                 if viewModel.versions.isEmpty {
                     EmptyStateView(
                         icon: "clock.arrow.circlepath",
-                        title: "暂无版本",
-                        description: "在 DSL 规则标签页中保存版本"
+                        title: L10n.zh("暂无版本", en: "No Versions"),
+                        description: L10n.zh("在 DSL 规则标签页中保存版本", en: "Save a version in the DSL Rules tab")
                     )
                     .frame(height: 200)
                 } else {
@@ -25,6 +26,7 @@ struct StrategyVersionsTab: View {
             .padding(PulseSpacing.lg)
         }
         .scrollEdgeEffectStyle(.soft, for: .vertical)
+        .id(settingsState.language)
     }
 
     private func versionRow(_ version: StrategyVersionV2, isLatest: Bool) -> some View {
@@ -43,7 +45,7 @@ struct StrategyVersionsTab: View {
                         .foregroundStyle(colors.textPrimary)
 
                     if isLatest {
-                        Text("最新")
+                        Text(L10n.zh("最新", en: "Latest"))
                             .font(PulseFonts.micro)
                             .foregroundStyle(PulseColors.accent)
                             .padding(.horizontal, 4)
@@ -76,7 +78,7 @@ struct StrategyVersionsTab: View {
             Button {
                 viewModel.loadDSLFromVersion(version)
             } label: {
-                Text("加载")
+                Text(L10n.zh("加载", en: "Load"))
                     .font(PulseFonts.caption)
                     .foregroundStyle(PulseColors.accent)
             }
@@ -97,9 +99,9 @@ struct StrategyVersionsTab: View {
         let label: String
         let color: Color
         switch status {
-        case "draft": label = "草稿"; color = colors.textMuted
-        case "validated": label = "已验证"; color = PulseColors.info
-        case "backtested": label = "已回测"; color = PulseColors.success
+        case "draft": label = L10n.zh("草稿", en: "Draft"); color = colors.textMuted
+        case "validated": label = L10n.zh("已验证", en: "Validated"); color = PulseColors.info
+        case "backtested": label = L10n.zh("已回测", en: "Backtested"); color = PulseColors.success
         default: label = status; color = colors.textMuted
         }
         return Text(label)

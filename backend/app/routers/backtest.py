@@ -2,17 +2,24 @@
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.domain.enums import CommandType
+from app.domain.mtf_guard import MTFGuardBacktestStats
 from app.models.strategy import BacktestRun
 from app.schemas.backtest_v2 import (
     StartBacktestRequest,
     StartBacktestResponse,
     BacktestRunResponse,
     BacktestStatusResponse,
+)
+from app.schemas.mtf_guard_backtest import (
+    MTFGuardBacktestStatsResponse,
+    MTFGuardReplayEvent,
+    MTFGuardReplayResponse,
+    MTFGuardReplaySummary,
 )
 from app.services.command_bus import CommandBusService
 from app.services.dsl_hasher import compute_dsl_hash
@@ -24,7 +31,14 @@ _risk_engine = RiskEngine()
 
 
 @router.post("", response_model=StartBacktestResponse, status_code=202)
-def start_backtest(req: StartBacktestRequest, db: Session = Depends(get_db)):
+def start_backtest(
+    req: StartBacktestRequest,
+    db: Session = Depends(get_db),
+    include_mtf_guard: bool = Query(
+        default=False,
+        description="Enable MTF Guard replay analysis on backtest trades",
+    ),
+):
     risk_result = _risk_engine.pre_backtest_check(
         dsl=req.dsl,
         timerange=req.timerange,
@@ -43,24 +57,27 @@ def start_backtest(req: StartBacktestRequest, db: Session = Depends(get_db)):
         f":{dsl_hash}:backtest:{today}"
     )
 
+    payload = {
+        "dsl": req.dsl,
+        "dsl_hash": dsl_hash,
+        "timerange": req.timerange,
+        "symbols": req.symbols,
+        "initial_capital": req.initial_capital,
+        "stake_amount": req.stake_amount,
+        "max_open_trades": req.max_open_trades,
+        "exchange": req.exchange,
+        "fee": req.fee,
+        "strategy_id": req.strategy_id,
+        "strategy_version_id": req.strategy_version_id,
+        "include_mtf_guard": include_mtf_guard,
+    }
+
     svc = CommandBusService(db)
     cmd, created = svc.enqueue(
         command_type=CommandType.START_BACKTEST.value,
         aggregate_type="strategy_version",
         aggregate_id=uuid.UUID(req.strategy_version_id) if req.strategy_version_id else None,
-        payload={
-            "dsl": req.dsl,
-            "dsl_hash": dsl_hash,
-            "timerange": req.timerange,
-            "symbols": req.symbols,
-            "initial_capital": req.initial_capital,
-            "stake_amount": req.stake_amount,
-            "max_open_trades": req.max_open_trades,
-            "exchange": req.exchange,
-            "fee": req.fee,
-            "strategy_id": req.strategy_id,
-            "strategy_version_id": req.strategy_version_id,
-        },
+        payload=payload,
         idempotency_key=idempotency_key,
         requested_by="api",
         timeout_sec=600,
@@ -124,3 +141,82 @@ def get_backtest(backtest_id: int, db: Session = Depends(get_db)):
     if not run:
         raise HTTPException(status_code=404, detail="Backtest not found")
     return BacktestRunResponse.model_validate(run)
+
+
+# ── MTF Guard Replay Endpoints ───────────────────────────────────────
+
+
+@router.get(
+    "/{backtest_id}/mtf-guard-replay",
+    response_model=MTFGuardReplayResponse,
+)
+def get_mtf_guard_replay(backtest_id: int, db: Session = Depends(get_db)):
+    """Return the full list of MTF Guard replay events for a backtest run.
+
+    Events are stored in the backtest result JSON under the key
+    ``mtf_guard_replay.events`` by the handler when ``include_mtf_guard``
+    is enabled.
+    """
+    run = db.query(BacktestRun).filter(BacktestRun.id == backtest_id).first()
+    if not run:
+        raise HTTPException(status_code=404, detail="Backtest not found")
+
+    result_data = run.result or {}
+    replay_data = result_data.get("mtf_guard_replay")
+
+    if replay_data is None:
+        raise HTTPException(
+            status_code=404,
+            detail="MTF Guard replay not available — backtest was not run with include_mtf_guard=true",
+        )
+
+    raw_events = replay_data.get("events", [])
+    events = [MTFGuardReplayEvent(**evt) for evt in raw_events]
+
+    raw_summary = replay_data.get("summary", {})
+    summary = MTFGuardReplaySummary(**raw_summary) if raw_summary else None
+
+    return MTFGuardReplayResponse(
+        backtest_id=backtest_id,
+        total_events=len(events),
+        events=events,
+        summary=summary,
+    )
+
+
+@router.get(
+    "/{backtest_id}/mtf-guard-stats",
+    response_model=MTFGuardBacktestStatsResponse,
+)
+def get_mtf_guard_stats(backtest_id: int, db: Session = Depends(get_db)):
+    """Return the persisted MTFGuardBacktestStats for a backtest run.
+
+    The stats row is created during backtest execution when
+    ``include_mtf_guard`` is enabled.
+    """
+    run = db.query(BacktestRun).filter(BacktestRun.id == backtest_id).first()
+    if not run:
+        raise HTTPException(status_code=404, detail="Backtest not found")
+
+    # Recover the stats_id that was stored during replay
+    result_data = run.result or {}
+    replay_data = result_data.get("mtf_guard_replay")
+    if replay_data is None:
+        raise HTTPException(
+            status_code=404,
+            detail="MTF Guard stats not available — backtest was not run with include_mtf_guard=true",
+        )
+
+    stats_id = replay_data.get("stats_id")
+    if not stats_id:
+        raise HTTPException(status_code=404, detail="MTF Guard stats_id not found in result")
+
+    stats = (
+        db.query(MTFGuardBacktestStats)
+        .filter(MTFGuardBacktestStats.id == uuid.UUID(stats_id))
+        .first()
+    )
+    if not stats:
+        raise HTTPException(status_code=404, detail="MTF Guard stats row not found")
+
+    return MTFGuardBacktestStatsResponse.model_validate(stats)

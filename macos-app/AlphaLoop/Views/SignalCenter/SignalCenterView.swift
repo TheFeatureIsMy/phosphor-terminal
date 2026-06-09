@@ -32,6 +32,7 @@ struct SignalCenterView: View {
 private struct SignalCenterContent: View {
     @Bindable var viewModel: SignalCenterViewModel
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
     @State private var showCreateSheet = false
 
     var body: some View {
@@ -47,9 +48,9 @@ private struct SignalCenterContent: View {
                 } else if viewModel.filteredSignals.isEmpty {
                     EmptyStateView(
                         icon: "antenna.radiowaves.left.and.right",
-                        title: "暂无信号",
-                        description: "运行 AI 研究或手动创建信号后，将在此处显示",
-                        primaryAction: (title: "新建信号", action: { showCreateSheet = true })
+                        title: L10n.Signals.noSignals,
+                        description: L10n.Signals.noSignalsDesc,
+                        primaryAction: (title: L10n.Signals.createSignal, action: { showCreateSheet = true })
                     )
                 } else {
                     signalList
@@ -68,6 +69,7 @@ private struct SignalCenterContent: View {
                 .transition(.opacity.combined(with: .scale(scale: 0.96)))
             }
         }
+        .id(settingsState.language)
         .animation(PulseAnimation.springDefault, value: viewModel.selectedSignal != nil)
         .task { await viewModel.load() }
     }
@@ -76,7 +78,7 @@ private struct SignalCenterContent: View {
 
     private var headerBar: some View {
         HStack(spacing: PulseSpacing.md) {
-            Text("信号中心")
+            Text(L10n.Signals.title)
                 .font(PulseFonts.displayHeading)
                 .foregroundStyle(colors.textPrimary)
 
@@ -90,7 +92,7 @@ private struct SignalCenterContent: View {
 
             Spacer()
 
-            KryptonButton(title: "新建信号", action: { showCreateSheet = true }, style: .ghost)
+            KryptonButton(title: L10n.Signals.createSignal, action: { showCreateSheet = true }, style: .ghost)
         }
         .padding(.horizontal, PulseSpacing.lg)
         .padding(.vertical, PulseSpacing.sm)
@@ -101,31 +103,31 @@ private struct SignalCenterContent: View {
     private var filterBar: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: PulseSpacing.md) {
-                TerminalLabel(text: "来源")
+                TerminalLabel(text: L10n.Signals.source)
                 filterPills(
-                    options: ["全部", "AI研究", "TradingAgents", "手动", "Canvas"],
-                    selected: viewModel.filterSource ?? "全部"
-                ) { viewModel.filterSource = $0 == "全部" ? nil : $0 }
+                    options: [L10n.Signals.sourceAll, L10n.Signals.sourceAIResearch, L10n.Signals.sourceTradingAgents, L10n.Signals.sourceManual, L10n.Signals.sourceCanvas],
+                    selected: viewModel.filterSource ?? L10n.Signals.sourceAll
+                ) { viewModel.filterSource = $0 == L10n.Signals.sourceAll ? nil : $0 }
 
                 Rectangle()
                     .fill(colors.border)
                     .frame(width: 1, height: 16)
 
-                TerminalLabel(text: "方向")
+                TerminalLabel(text: L10n.Signals.direction)
                 filterPills(
-                    options: ["全部", "Long", "Short", "Hold"],
-                    selected: viewModel.filterDirection ?? "全部"
-                ) { viewModel.filterDirection = $0 == "全部" ? nil : $0 }
+                    options: [L10n.Signals.directionAll, "Long", "Short", "Hold"],
+                    selected: viewModel.filterDirection ?? L10n.Signals.directionAll
+                ) { viewModel.filterDirection = $0 == L10n.Signals.directionAll ? nil : $0 }
 
                 Rectangle()
                     .fill(colors.border)
                     .frame(width: 1, height: 16)
 
-                TerminalLabel(text: "风险")
+                TerminalLabel(text: L10n.Signals.risk)
                 filterPills(
-                    options: ["全部", "低", "中", "高", "极高"],
-                    selected: viewModel.filterRisk ?? "全部"
-                ) { viewModel.filterRisk = $0 == "全部" ? nil : $0 }
+                    options: [L10n.Signals.riskAll, L10n.Signals.riskLow, L10n.Signals.riskMedium, L10n.Signals.riskHigh, L10n.Signals.riskCritical],
+                    selected: viewModel.filterRisk ?? L10n.Signals.riskAll
+                ) { viewModel.filterRisk = $0 == L10n.Signals.riskAll ? nil : $0 }
             }
             .padding(.horizontal, PulseSpacing.lg)
             .padding(.vertical, PulseSpacing.xs)

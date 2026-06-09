@@ -4,15 +4,21 @@ from __future__ import annotations
 import logging
 import uuid
 from datetime import datetime, timezone
+from decimal import Decimal
 from typing import Any
 
 from sqlalchemy.orm import Session
 
 from app.domain.command import CommandBusCommand
 from app.domain.ledger import ExecutionLedgerEvent
+from app.domain.mtf_guard import MTFGuardBacktestStats
 from app.models.strategy import BacktestRun
 from app.repositories.ledger_repository import LedgerRepository
-from app.services.backtest_runner import FreqtradeBacktestRunner, BacktestResult
+from app.services.backtest_runner import (
+    FreqtradeBacktestRunner,
+    BacktestResult,
+    MTFGuardReplayEngine,
+)
 from app.workers.handlers import CommandHandler
 
 logger = logging.getLogger(__name__)
@@ -34,6 +40,7 @@ class StartBacktestHandler(CommandHandler):
         exchange = payload.get("exchange", "binance")
         fee = payload.get("fee")
         timeout_sec = command.timeout_sec or 600
+        include_mtf_guard = payload.get("include_mtf_guard", False)
 
         run_id = str(command.id).replace("-", "")[:16]
 
@@ -57,6 +64,7 @@ class StartBacktestHandler(CommandHandler):
                 "max_open_trades": max_open_trades,
                 "exchange": exchange,
                 "fee": fee,
+                "include_mtf_guard": include_mtf_guard,
             },
         )
         session.add(backtest_run)
@@ -88,13 +96,130 @@ class StartBacktestHandler(CommandHandler):
             self._handle_failure(session, ledger, command, backtest_run, result)
             raise RuntimeError(result.error_message or "backtest failed")
 
-        return {
+        response = {
             "backtest_run_id": backtest_run.id,
             "total_trades": result.metrics.total_trades,
             "total_return_pct": result.metrics.total_return_pct,
             "sharpe_ratio": result.metrics.sharpe_ratio,
             "max_drawdown_pct": result.metrics.max_drawdown_pct,
             "win_rate": result.metrics.win_rate,
+        }
+
+        # ── MTF Guard Replay ──
+        if include_mtf_guard and result.success and result.trades:
+            try:
+                mtf_guard_config = payload.get("mtf_guard_config", {})
+                guard_stats = self._run_mtf_guard_replay(
+                    session=session,
+                    backtest_run=backtest_run,
+                    trades=result.trades,
+                    symbols=symbols,
+                    mtf_guard_config=mtf_guard_config,
+                )
+                response["mtf_guard_stats"] = guard_stats
+            except Exception:
+                logger.exception(
+                    "MTF Guard replay failed for backtest_run_id=%s",
+                    backtest_run.id,
+                )
+                # Non-fatal: backtest itself succeeded
+
+        return response
+
+    def _run_mtf_guard_replay(
+        self,
+        session: Session,
+        backtest_run: BacktestRun,
+        trades: list[dict[str, Any]],
+        symbols: list[str],
+        mtf_guard_config: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Run MTF Guard replay over trades and persist stats."""
+        engine = MTFGuardReplayEngine()
+        primary_symbol = symbols[0] if symbols else "BTC/USDT"
+
+        fast_tf = mtf_guard_config.get("fast_timeframe", "5m")
+        slow_tf = mtf_guard_config.get("slow_timeframe", "1h")
+        zone_top = mtf_guard_config.get("zone_top", 0.0)
+        zone_bottom = mtf_guard_config.get("zone_bottom", 0.0)
+        zone_direction = mtf_guard_config.get("zone_direction", "bullish")
+
+        replay = engine.replay(
+            trades=trades,
+            symbol=primary_symbol,
+            fast_timeframe=fast_tf,
+            slow_timeframe=slow_tf,
+            zone_top=zone_top,
+            zone_bottom=zone_bottom,
+            zone_direction=zone_direction,
+            guard_config=mtf_guard_config.get("guard_config"),
+        )
+
+        # Convert backtest_run.id (int) to a deterministic UUID for the FK
+        backtest_uuid = uuid.uuid5(
+            uuid.NAMESPACE_URL,
+            f"backtest_run:{backtest_run.id}",
+        )
+        strategy_uuid = uuid.uuid5(
+            uuid.NAMESPACE_URL,
+            f"strategy:{backtest_run.strategy_id}",
+        )
+
+        stats_row = MTFGuardBacktestStats(
+            id=uuid.uuid4(),
+            backtest_id=backtest_uuid,
+            strategy_id=strategy_uuid,
+            symbol=primary_symbol,
+            blocked_entries_count=replay.blocked_entries,
+            reduced_size_count=replay.reduced_size,
+            temporary_violation_count=replay.temporary_violation_count,
+            reclaim_confirmed_count=replay.reclaim_confirmed_count,
+            invalidated_count=replay.invalidated_count,
+            pnl_delta=Decimal(str(round(replay.pnl_delta, 6))),
+            max_drawdown_delta=Decimal(str(round(replay.max_drawdown_delta, 6))),
+            false_breakout_avoided_count=replay.false_breakout_avoided_count,
+        )
+        session.add(stats_row)
+        session.flush()
+
+        # Store replay events in the backtest result JSON for retrieval
+        existing_result = backtest_run.result or {}
+        existing_result["mtf_guard_replay"] = {
+            "stats_id": str(stats_row.id),
+            "events": replay.replay_events,
+            "summary": {
+                "total_candles_evaluated": len(replay.replay_events),
+                "violations_detected": replay.temporary_violation_count,
+                "entries_blocked": replay.blocked_entries,
+                "sizes_reduced": replay.reduced_size,
+                "reclaims_confirmed": replay.reclaim_confirmed_count,
+                "structures_invalidated": replay.invalidated_count,
+                "false_breakouts_avoided": replay.false_breakout_avoided_count,
+                "pnl_delta": replay.pnl_delta,
+                "max_drawdown_delta": replay.max_drawdown_delta,
+            },
+        }
+        backtest_run.result = existing_result
+        session.flush()
+
+        logger.info(
+            "MTF Guard replay complete: backtest=%s blocked=%d avoided=%d pnl_delta=%.4f",
+            backtest_run.id,
+            replay.blocked_entries,
+            replay.false_breakout_avoided_count,
+            replay.pnl_delta,
+        )
+
+        return {
+            "stats_id": str(stats_row.id),
+            "blocked_entries": replay.blocked_entries,
+            "reduced_size": replay.reduced_size,
+            "temporary_violation_count": replay.temporary_violation_count,
+            "reclaim_confirmed_count": replay.reclaim_confirmed_count,
+            "invalidated_count": replay.invalidated_count,
+            "false_breakout_avoided_count": replay.false_breakout_avoided_count,
+            "pnl_delta": replay.pnl_delta,
+            "max_drawdown_delta": replay.max_drawdown_delta,
         }
 
     def _handle_success(

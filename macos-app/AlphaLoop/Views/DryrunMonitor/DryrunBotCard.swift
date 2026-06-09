@@ -5,6 +5,7 @@ import SwiftUI
 
 struct DryrunBotCard: View {
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
     let run: StrategyRunV2
     let onStop: (() -> Void)?
     let onViewDetail: () -> Void
@@ -43,9 +44,9 @@ struct DryrunBotCard: View {
 
                 // 第二行：统计信息
                 HStack(spacing: PulseSpacing.lg) {
-                    statItem(icon: "heart.fill", label: "心跳", value: heartbeatDisplay)
-                    statItem(icon: "folder", label: "配置", value: configDisplay)
-                    statItem(icon: "clock", label: "运行时长", value: uptimeDisplay)
+                    statItem(icon: "heart.fill", label: L10n.zh("心跳", en: "Heartbeat"), value: heartbeatDisplay)
+                    statItem(icon: "folder", label: L10n.zh("配置", en: "Config"), value: configDisplay)
+                    statItem(icon: "clock", label: L10n.zh("运行时长", en: "Uptime"), value: uptimeDisplay)
                 }
 
                 // 第三行：操作按钮
@@ -57,7 +58,7 @@ struct DryrunBotCard: View {
                             HStack(spacing: PulseSpacing.xxs) {
                                 Image(systemName: "stop.circle")
                                     .font(PulseFonts.caption)
-                                Text("停止")
+                                Text(L10n.zh("停止", en: "Stop"))
                                     .font(PulseFonts.monoLabel)
                             }
                             .foregroundStyle(PulseColors.danger)
@@ -79,7 +80,7 @@ struct DryrunBotCard: View {
                         HStack(spacing: PulseSpacing.xxs) {
                             Image(systemName: "doc.text.magnifyingglass")
                                 .font(PulseFonts.caption)
-                            Text("查看详情")
+                            Text(L10n.zh("查看详情", en: "View Details"))
                                 .font(PulseFonts.monoLabel)
                         }
                         .foregroundStyle(PulseColors.accent)
@@ -142,13 +143,13 @@ struct DryrunBotCard: View {
            let symbol = config["symbol"] as? String {
             return symbol
         }
-        return "策略 \(String(run.strategyVersionId.prefix(6)))"
+        return "\(L10n.zh("策略", en: "Strategy")) \(String(run.strategyVersionId.prefix(6)))"
     }
 
     private var heartbeatDisplay: String {
         // 对于运行中的，显示相对时间
         if isRunning {
-            return "刚刚"
+            return L10n.zh("刚刚", en: "Just now")
         }
         return "—"
     }
@@ -201,12 +202,12 @@ struct DryrunBotCard: View {
 
     private func statusLabel(_ status: String) -> String {
         switch status {
-        case "running": return "运行中"
-        case "completed": return "已完成"
-        case "stopped": return "已停止"
-        case "error": return "失败"
-        case "starting": return "启动中"
-        case "degraded": return "降级"
+        case "running": return L10n.zh("运行中", en: "Running")
+        case "completed": return L10n.zh("已完成", en: "Completed")
+        case "stopped": return L10n.zh("已停止", en: "Stopped")
+        case "error": return L10n.zh("失败", en: "Failed")
+        case "starting": return L10n.zh("启动中", en: "Starting")
+        case "degraded": return L10n.zh("降级", en: "Degraded")
         default: return status
         }
     }

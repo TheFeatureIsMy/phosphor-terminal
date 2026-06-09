@@ -6,6 +6,7 @@ import SwiftUI
 struct FailureClusteringView: View {
     @Environment(\.networkClient) private var networkClient
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
     @State private var viewModel: FailureClusteringViewModel?
 
     var body: some View {
@@ -21,6 +22,7 @@ struct FailureClusteringView: View {
                         tabContent(vm: vm)
                     }
                     .padding(PulseSpacing.lg)
+                    .id(settingsState.language)
                 }
             } else {
                 LoadingView(type: .detail).padding(PulseSpacing.lg)
@@ -41,12 +43,12 @@ struct FailureClusteringView: View {
     private var pageHeader: some View {
         HStack {
             VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
-                Text("失败聚类")
+                Text(L10n.zh("失败聚类", en: "Loss Patterns"))
                     .font(PulseFonts.displayHeading)
                     .foregroundStyle(colors.textPrimary)
                 HStack(spacing: PulseSpacing.xxs) {
                     StatusDot(status: .online)
-                    Text("发现策略失败模式，精准优化")
+                    Text(L10n.zh("发现策略失败模式，精准优化", en: "Identify failure patterns for targeted optimization"))
                         .font(PulseFonts.caption)
                         .foregroundStyle(colors.textMuted)
                 }
@@ -60,22 +62,22 @@ struct FailureClusteringView: View {
     private func summaryCards(vm: FailureClusteringViewModel) -> some View {
         HStack(spacing: PulseSpacing.sm) {
             summaryCard(
-                label: "总亏损交易",
+                label: L10n.zh("总亏损交易", en: "Total Losing Trades"),
                 value: "\(vm.totalLossTrades)",
                 color: PulseColors.warning
             )
             summaryCard(
-                label: "总亏损金额",
+                label: L10n.zh("总亏损金额", en: "Total Loss"),
                 value: String(format: "$%.2f", vm.totalLossAmount),
                 color: PulseColors.danger
             )
             summaryCard(
-                label: "Top 聚类",
+                label: L10n.zh("Top 聚类", en: "Top Cluster"),
                 value: vm.clusters.first?.label ?? "—",
                 color: PulseColors.amber
             )
             summaryCard(
-                label: "聚类数量",
+                label: L10n.zh("聚类数量", en: "Cluster Count"),
                 value: "\(vm.clusters.count)",
                 color: PulseColors.info
             )
@@ -102,9 +104,9 @@ struct FailureClusteringView: View {
 
     private func tabSelector(vm: FailureClusteringViewModel) -> some View {
         HStack(spacing: PulseSpacing.xs) {
-            tabButton(label: "失败聚类", index: 0, count: vm.clusters.count, vm: vm)
-            tabButton(label: "Regime 矩阵", index: 1, count: vm.regimeMatrix.count, vm: vm)
-            tabButton(label: "拒单原因", index: 2, count: vm.commonRejectReasons.count, vm: vm)
+            tabButton(label: L10n.zh("失败聚类", en: "Loss Patterns"), index: 0, count: vm.clusters.count, vm: vm)
+            tabButton(label: L10n.zh("Regime 矩阵", en: "Regime Matrix"), index: 1, count: vm.regimeMatrix.count, vm: vm)
+            tabButton(label: L10n.zh("拒单原因", en: "Rejection Reasons"), index: 2, count: vm.commonRejectReasons.count, vm: vm)
             Spacer()
         }
     }
@@ -166,13 +168,13 @@ struct FailureClusteringView: View {
 
     private func clustersTab(vm: FailureClusteringViewModel) -> some View {
         VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-            TerminalLabel(text: "失败模式聚类")
+            TerminalLabel(text: L10n.zh("失败模式聚类", en: "Failure Pattern Clusters"))
 
             if vm.clusters.isEmpty {
                 EmptyStateView(
                     icon: "checkmark.shield",
-                    title: "暂无失败聚类",
-                    description: "当前无显著失败模式，策略运行良好"
+                    title: L10n.zh("暂无失败聚类", en: "No Loss Patterns"),
+                    description: L10n.zh("当前无显著失败模式，策略运行良好", en: "No significant failure patterns detected; strategies are performing well")
                 )
             } else {
                 LazyVStack(spacing: PulseSpacing.sm) {
@@ -202,9 +204,9 @@ struct FailureClusteringView: View {
 
                 // Stats row
                 HStack(spacing: PulseSpacing.lg) {
-                    statPill(label: "交易数", value: "\(cluster.tradeCount)", color: PulseColors.info)
-                    statPill(label: "总亏损", value: String(format: "$%.2f", cluster.totalLoss), color: PulseColors.danger)
-                    statPill(label: "平均亏损", value: String(format: "%.2f%%", cluster.avgLossPct * 100), color: PulseColors.warning)
+                    statPill(label: L10n.zh("交易数", en: "Trades"), value: "\(cluster.tradeCount)", color: PulseColors.info)
+                    statPill(label: L10n.zh("总亏损", en: "Total Loss"), value: String(format: "$%.2f", cluster.totalLoss), color: PulseColors.danger)
+                    statPill(label: L10n.zh("平均亏损", en: "Avg Loss"), value: String(format: "%.2f%%", cluster.avgLossPct * 100), color: PulseColors.warning)
                 }
 
                 // Loss magnitude bar
@@ -249,7 +251,7 @@ struct FailureClusteringView: View {
                 // Example trade IDs
                 if !cluster.exampleTradeIds.isEmpty {
                     HStack(spacing: PulseSpacing.xxs) {
-                        Text("示例:")
+                        Text(L10n.zh("示例:", en: "Examples:"))
                             .font(PulseFonts.micro)
                             .foregroundStyle(colors.textMuted)
                         ForEach(cluster.exampleTradeIds, id: \.self) { tradeId in
@@ -277,18 +279,18 @@ struct FailureClusteringView: View {
 
     private func regimeMatrixTab(vm: FailureClusteringViewModel) -> some View {
         VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-            TerminalLabel(text: "REGIME × 失败类型 矩阵")
+            TerminalLabel(text: L10n.zh("REGIME × 失败类型 矩阵", en: "REGIME x Failure Type Matrix"))
 
             if vm.regimeMatrix.isEmpty {
                 EmptyStateView(
                     icon: "square.grid.3x3",
-                    title: "暂无数据",
-                    description: "等待足够的交易数据生成 Regime 矩阵"
+                    title: L10n.zh("暂无数据", en: "No Data"),
+                    description: L10n.zh("等待足够的交易数据生成 Regime 矩阵", en: "Awaiting sufficient trade data to generate the Regime matrix")
                 )
             } else {
                 KryptonCard(emphasis: .subtle) {
                     VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-                        Text("颜色越深 = 亏损越大")
+                        Text(L10n.zh("颜色越深 = 亏损越大", en: "Darker = Larger Loss"))
                             .font(PulseFonts.micro)
                             .foregroundStyle(colors.textMuted)
 
@@ -370,13 +372,13 @@ struct FailureClusteringView: View {
 
     private func rejectReasonsTab(vm: FailureClusteringViewModel) -> some View {
         VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-            TerminalLabel(text: "拒单原因统计")
+            TerminalLabel(text: L10n.zh("拒单原因统计", en: "Rejection Reason Statistics"))
 
             if vm.commonRejectReasons.isEmpty {
                 EmptyStateView(
                     icon: "xmark.octagon",
-                    title: "暂无拒单",
-                    description: "当前无交易被拒绝"
+                    title: L10n.zh("暂无拒单", en: "No Rejections"),
+                    description: L10n.zh("当前无交易被拒绝", en: "No trades have been rejected")
                 )
             } else {
                 let reasons = vm.commonRejectReasons
@@ -384,7 +386,7 @@ struct FailureClusteringView: View {
 
                 KryptonCard(emphasis: .subtle) {
                     VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-                        Text("各拒单原因发生频次")
+                        Text(L10n.zh("各拒单原因发生频次", en: "Rejection reason frequency"))
                             .font(PulseFonts.caption)
                             .foregroundStyle(colors.textMuted)
 
@@ -417,7 +419,7 @@ struct FailureClusteringView: View {
                                 }
                                 .frame(height: 12)
 
-                                Text("\(count) 次")
+                                Text(L10n.zh("\(count) 次", en: "\(count)x"))
                                     .font(PulseFonts.monoLabel)
                                     .foregroundStyle(colors.textSecondary)
                                     .frame(width: 40, alignment: .trailing)
@@ -444,10 +446,10 @@ struct FailureClusteringView: View {
 
     private func severityLabel(_ severity: String) -> String {
         switch severity {
-        case "critical": return "严重"
-        case "high": return "高"
-        case "medium": return "中"
-        case "low": return "低"
+        case "critical": return L10n.zh("严重", en: "Critical")
+        case "high": return L10n.zh("高", en: "High")
+        case "medium": return L10n.zh("中", en: "Medium")
+        case "low": return L10n.zh("低", en: "Low")
         default: return severity
         }
     }
@@ -462,11 +464,11 @@ struct FailureClusteringView: View {
 
     private func rejectReasonLabel(_ code: String) -> String {
         switch code {
-        case "daily_loss_limit_reached": return "日亏损上限"
-        case "snapshot_stale": return "快照过期"
-        case "ai_cache_expired": return "AI 缓存过期"
-        case "max_position_reached": return "持仓上限"
-        case "volatility_too_high": return "波动率过高"
+        case "daily_loss_limit_reached": return L10n.zh("日亏损上限", en: "Daily Loss Limit")
+        case "snapshot_stale": return L10n.zh("快照过期", en: "Stale Snapshot")
+        case "ai_cache_expired": return L10n.zh("AI 缓存过期", en: "AI Cache Expired")
+        case "max_position_reached": return L10n.zh("持仓上限", en: "Max Position Reached")
+        case "volatility_too_high": return L10n.zh("波动率过高", en: "Volatility Too High")
         default: return code.replacingOccurrences(of: "_", with: " ")
         }
     }

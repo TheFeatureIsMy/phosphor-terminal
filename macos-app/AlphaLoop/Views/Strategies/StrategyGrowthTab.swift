@@ -5,6 +5,7 @@ import SwiftUI
 
 struct StrategyGrowthTab: View {
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
     let strategyId: String
     let client: NetworkClientProtocol
 
@@ -24,6 +25,7 @@ struct StrategyGrowthTab: View {
                 .padding(PulseSpacing.lg)
             }
         }
+        .id(settingsState.language)
         .task { await loadGrowthData() }
     }
 
@@ -32,7 +34,7 @@ struct StrategyGrowthTab: View {
     private var performanceSection: some View {
         KryptonCard(emphasis: .subtle) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-                TerminalLabel(text: "策略性能")
+                TerminalLabel(text: L10n.zh("策略性能", en: "Strategy Performance"))
 
                 HStack(spacing: PulseSpacing.md) {
                     ForEach(Array(performanceMetrics.enumerated()), id: \.offset) { _, metric in
@@ -56,10 +58,10 @@ struct StrategyGrowthTab: View {
     private var shapSection: some View {
         KryptonCard(emphasis: .subtle) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-                TerminalLabel(text: "SHAP 特征重要性")
+                TerminalLabel(text: L10n.zh("SHAP 特征重要性", en: "SHAP Feature Importance"))
 
                 if shapFeatures.isEmpty {
-                    Text("暂无 SHAP 分析数据")
+                    Text(L10n.zh("暂无 SHAP 分析数据", en: "No SHAP analysis data available"))
                         .font(PulseFonts.caption)
                         .foregroundStyle(colors.textMuted)
                         .frame(maxWidth: .infinity, minHeight: 40)
@@ -118,19 +120,19 @@ struct StrategyGrowthTab: View {
         if let backtests = try? await strategiesAPI.listBacktests(strategyId: Int(strategyId), limit: 1),
            let latest = backtests.first {
             performanceMetrics = [
-                ("胜率", String(format: "%.1f%%", latest.winRate), PulseColors.success),
-                ("盈亏比", String(format: "%.2f", latest.profitFactor), PulseColors.accent),
+                (L10n.zh("胜率", en: "Win Rate"), String(format: "%.1f%%", latest.winRate), PulseColors.success),
+                (L10n.zh("盈亏比", en: "Profit Factor"), String(format: "%.2f", latest.profitFactor), PulseColors.accent),
                 ("Sharpe", String(format: "%.2f", latest.sharpeRatio), PulseColors.cyan),
-                ("最大回撤", String(format: "%.1f%%", latest.maxDrawdown), PulseColors.warning),
-                ("总收益", String(format: "%+.1f%%", latest.totalReturn), latest.totalReturn >= 0 ? PulseColors.success : PulseColors.danger)
+                (L10n.zh("最大回撤", en: "Max Drawdown"), String(format: "%.1f%%", latest.maxDrawdown), PulseColors.warning),
+                (L10n.zh("总收益", en: "Total Return"), String(format: "%+.1f%%", latest.totalReturn), latest.totalReturn >= 0 ? PulseColors.success : PulseColors.danger)
             ]
         } else {
             performanceMetrics = [
-                ("胜率", "—", colors.textMuted),
-                ("盈亏比", "—", colors.textMuted),
+                (L10n.zh("胜率", en: "Win Rate"), "—", colors.textMuted),
+                (L10n.zh("盈亏比", en: "Profit Factor"), "—", colors.textMuted),
                 ("Sharpe", "—", colors.textMuted),
-                ("最大回撤", "—", colors.textMuted),
-                ("总收益", "—", colors.textMuted)
+                (L10n.zh("最大回撤", en: "Max Drawdown"), "—", colors.textMuted),
+                (L10n.zh("总收益", en: "Total Return"), "—", colors.textMuted)
             ]
         }
     }

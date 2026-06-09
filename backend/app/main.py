@@ -17,8 +17,10 @@ from app.routers import (
     signals_v2, strategy_runs, inference, mcp, admin,
     decision,
 )
+from app.routers import shadow_strategy
 from app.routers import overview, execution_bff, reconciliation_bff, risk_bff, structure_bff
 from app.routers import market_structure_bff, failure_clustering_bff, data_source_bff
+from app.routers import workflow
 
 
 @asynccontextmanager
@@ -95,3 +97,9 @@ app.include_router(structure_bff.router)
 app.include_router(market_structure_bff.router)
 app.include_router(failure_clustering_bff.router)
 app.include_router(data_source_bff.router)
+
+# Shadow Strategy
+app.include_router(shadow_strategy.router)
+
+# Workflow layer
+app.include_router(workflow.router)

@@ -32,6 +32,7 @@ struct AgentPlatformView: View {
 private struct AgentPlatformContent: View {
     @Bindable var viewModel: AgentPlatformViewModel
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
     @State private var selectedAgent: AgentProfile?
 
     private let columns = [
@@ -51,8 +52,8 @@ private struct AgentPlatformContent: View {
             } else if viewModel.agents.isEmpty {
                 EmptyStateView(
                     icon: "person.3.sequence",
-                    title: "暂无 Agent",
-                    description: "配置并启动 AI 代理后，将在此处显示其状态和信号"
+                    title: L10n.zh("暂无 Agent", en: "No Agents"),
+                    description: L10n.zh("配置并启动 AI 代理后，将在此处显示其状态和信号", en: "Agent status and signals will appear here once configured and started")
                 )
             } else {
                 agentGrid
@@ -71,7 +72,7 @@ private struct AgentPlatformContent: View {
 
     private var headerBar: some View {
         HStack(spacing: PulseSpacing.md) {
-            Text("Agent 平台")
+            Text(L10n.zh("Agent 平台", en: "Agent Platform"))
                 .font(PulseFonts.displayHeading)
                 .foregroundStyle(colors.textPrimary)
 
@@ -110,6 +111,7 @@ private struct AgentPlatformContent: View {
             }
             .padding(PulseSpacing.lg)
         }
+        .id(settingsState.language)
     }
 
     // MARK: - 加载骨架屏

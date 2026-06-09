@@ -5,6 +5,7 @@ import SwiftUI
 struct SentimentView: View {
     @Environment(\.networkClient) private var networkClient
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
     @State private var api: APISentiment?
     @State private var summary: SentimentSummaryResponse?
     @State private var isLoading = true
@@ -19,7 +20,7 @@ struct SentimentView: View {
             VStack(spacing: PulseSpacing.lg) {
                 // Header
                 HStack {
-                    Text("市场情绪")
+                    Text(L10n.Sentiment.title)
                         .font(PulseFonts.displayHeading)
                         .foregroundStyle(colors.textPrimary)
                     Spacer()
@@ -40,7 +41,7 @@ struct SentimentView: View {
 
                             // Symbol sentiments
                             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-                                Text("市场概览")
+                                Text(L10n.Sentiment.marketOverview)
                                     .font(PulseFonts.bodyMedium)
                                     .foregroundStyle(colors.textPrimary)
 
@@ -76,7 +77,7 @@ struct SentimentView: View {
 
                     // Text Analysis
                     VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-                        Text("文本情绪分析")
+                        Text(L10n.Sentiment.textAnalysis)
                             .font(PulseFonts.bodyMedium)
                             .foregroundStyle(colors.textPrimary)
 
@@ -99,7 +100,7 @@ struct SentimentView: View {
                                             .scaleEffect(0.7)
                                             .controlSize(.small)
                                     } else {
-                                        Text("分析")
+                                        Text(L10n.Sentiment.analyze)
                                     }
                                 }
                                 .font(PulseFonts.monoLabel)
@@ -117,9 +118,9 @@ struct SentimentView: View {
 
                         if let result = analysisResult {
                             HStack(spacing: PulseSpacing.lg) {
-                                sentimentBar(label: "正面", value: result.positive, color: PulseColors.success)
-                                sentimentBar(label: "中性", value: result.neutral, color: colors.textMuted)
-                                sentimentBar(label: "负面", value: result.negative, color: PulseColors.danger)
+                                sentimentBar(label: L10n.Sentiment.positive, value: result.positive, color: PulseColors.success)
+                                sentimentBar(label: L10n.Sentiment.neutral, value: result.neutral, color: colors.textMuted)
+                                sentimentBar(label: L10n.Sentiment.negative, value: result.negative, color: PulseColors.danger)
                             }
 
                             // Publish as Signal
@@ -130,7 +131,7 @@ struct SentimentView: View {
                                         Image(systemName: "checkmark.circle.fill")
                                             .font(.system(size: 12))
                                             .foregroundStyle(PulseColors.success)
-                                        Text("已发布: \(String(signalId.prefix(8)))...")
+                                        Text(L10n.Sentiment.published(String(signalId.prefix(8))))
                                             .font(PulseFonts.micro)
                                             .foregroundStyle(PulseColors.success)
                                     }
@@ -138,7 +139,7 @@ struct SentimentView: View {
                                     ProgressView()
                                         .controlSize(.small)
                                 } else {
-                                    KryptonButton(title: "发布为信号", action: {
+                                    KryptonButton(title: L10n.Sentiment.publishAsSignal, action: {
                                         Task { await publishAsSignal(result: result) }
                                     })
                                 }
@@ -150,6 +151,7 @@ struct SentimentView: View {
             }
             .padding(PulseSpacing.lg)
         }
+        .id(settingsState.language)
         .task {
             api = APISentiment(client: networkClient)
             await loadData()

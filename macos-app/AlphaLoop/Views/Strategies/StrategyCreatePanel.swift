@@ -7,6 +7,7 @@ struct StrategyCreatePanel: View {
     @Environment(PulseColors.self) private var colors
     @Environment(AppState.self) private var appState
     @Environment(\.networkClient) private var networkClient
+    @Environment(SettingsState.self) private var settingsState
 
     @State private var name = ""
     @State private var isCreating = false
@@ -16,7 +17,7 @@ struct StrategyCreatePanel: View {
     var body: some View {
         VStack(alignment: .leading, spacing: PulseSpacing.md) {
             HStack {
-                TerminalLabel(text: "新建策略")
+                TerminalLabel(text: L10n.zh("新建策略", en: "New Strategy"))
                 Spacer()
                 Button(action: onCancel) {
                     Image(systemName: "xmark")
@@ -30,10 +31,10 @@ struct StrategyCreatePanel: View {
             }
 
             VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
-                Text("策略名称")
+                Text(L10n.zh("策略名称", en: "Strategy Name"))
                     .font(PulseFonts.captionMedium)
                     .foregroundStyle(colors.textSecondary)
-                TextField("输入策略名称...", text: $name)
+                TextField(L10n.zh("输入策略名称...", en: "Enter strategy name..."), text: $name)
                     .darkTextField()
             }
 
@@ -41,7 +42,7 @@ struct StrategyCreatePanel: View {
                 Image(systemName: "lightbulb")
                     .font(PulseFonts.micro)
                     .foregroundStyle(PulseColors.amber)
-                Text("创建后进入详情页，在 DSL 规则中编写策略逻辑")
+                Text(L10n.zh("创建后进入详情页，在 DSL 规则中编写策略逻辑", en: "After creation, define strategy logic in the DSL Rules tab"))
                     .font(PulseFonts.micro)
                     .foregroundStyle(colors.textMuted)
             }
@@ -56,9 +57,9 @@ struct StrategyCreatePanel: View {
             )
 
             HStack {
-                KryptonButton(title: "取消", action: onCancel, style: .ghost)
+                KryptonButton(title: L10n.zh("取消", en: "Cancel"), action: onCancel, style: .ghost)
                 Spacer()
-                KryptonButton(title: isCreating ? "创建中..." : "创建策略") {
+                KryptonButton(title: isCreating ? L10n.zh("创建中...", en: "Creating...") : L10n.zh("创建策略", en: "Create Strategy")) {
                     Task { await doCreate() }
                 }
                 .opacity(name.isEmpty ? 0.5 : 1)

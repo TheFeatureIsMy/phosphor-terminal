@@ -5,6 +5,7 @@ import SwiftUI
 
 struct StrategyDryrunTab: View {
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
     let strategyId: String
     let client: NetworkClientProtocol
 
@@ -19,11 +20,11 @@ struct StrategyDryrunTab: View {
                 VStack(spacing: PulseSpacing.md) {
                     // Header
                     HStack {
-                        TerminalLabel(text: "模拟运行")
+                        TerminalLabel(text: L10n.zh("模拟运行", en: "Paper Trading"))
                         Spacer()
                         BadgeDot(
                             color: activeCount > 0 ? PulseColors.statusActive : colors.textMuted,
-                            label: "\(activeCount) 运行中",
+                            label: "\(activeCount) \(L10n.zh("运行中", en: "active"))",
                             size: .small
                         )
                     }
@@ -32,8 +33,8 @@ struct StrategyDryrunTab: View {
                     if dryrunRuns.isEmpty {
                         EmptyStateView(
                             icon: "testtube.2",
-                            title: "暂无模拟运行",
-                            description: "当前策略没有活跃的 Dryrun 运行"
+                            title: L10n.zh("暂无模拟运行", en: "No Paper Trading Runs"),
+                            description: L10n.zh("当前策略没有活跃的 Dryrun 运行", en: "No active dryrun sessions for this strategy")
                         )
                         .padding(PulseSpacing.lg)
                     } else {
@@ -49,6 +50,7 @@ struct StrategyDryrunTab: View {
                 .padding(.vertical, PulseSpacing.md)
             }
         }
+        .id(settingsState.language)
         .task { await loadDryrunRuns() }
     }
 
@@ -73,9 +75,9 @@ struct StrategyDryrunTab: View {
                 }
 
                 HStack(spacing: PulseSpacing.lg) {
-                    metricItem(label: "模式", value: run.mode)
-                    metricItem(label: "状态", value: statusLabel(run.status))
-                    metricItem(label: "开始", value: run.startedAt.map { String($0.prefix(10)) } ?? "—")
+                    metricItem(label: L10n.zh("模式", en: "Mode"), value: run.mode)
+                    metricItem(label: L10n.zh("状态", en: "Status"), value: statusLabel(run.status))
+                    metricItem(label: L10n.zh("开始", en: "Started"), value: run.startedAt.map { String($0.prefix(10)) } ?? "—")
                 }
             }
         }
@@ -104,10 +106,10 @@ struct StrategyDryrunTab: View {
 
     private func statusLabel(_ status: String) -> String {
         switch status {
-        case "running": return "运行中"
-        case "completed": return "已完成"
-        case "stopped": return "已停止"
-        case "error": return "失败"
+        case "running": return L10n.zh("运行中", en: "Running")
+        case "completed": return L10n.zh("已完成", en: "Completed")
+        case "stopped": return L10n.zh("已停止", en: "Stopped")
+        case "error": return L10n.zh("失败", en: "Failed")
         default: return status
         }
     }

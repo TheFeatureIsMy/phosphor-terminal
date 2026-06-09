@@ -5,6 +5,7 @@ import SwiftUI
 struct DataVacuumSettingsView: View {
     @Environment(\.networkClient) private var networkClient
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
     @State private var vacuumJobs: [DataVacuumJob] = []
     @State private var isLoading = true
     @State private var isRunning = false
@@ -12,7 +13,7 @@ struct DataVacuumSettingsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: PulseSpacing.lg) {
-            Text("数据清理")
+            Text(L10n.zh("数据清理", en: "Data Vacuum"))
                 .font(PulseFonts.displaySubheading)
                 .foregroundStyle(colors.textPrimary)
 
@@ -24,6 +25,7 @@ struct DataVacuumSettingsView: View {
                 jobHistorySection
             }
         }
+        .id(settingsState.language)
         .task { await loadData() }
     }
 
@@ -33,10 +35,10 @@ struct DataVacuumSettingsView: View {
         VStack(alignment: .leading, spacing: PulseSpacing.md) {
             HStack {
                 VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
-                    Text("执行清理")
+                    Text(L10n.zh("执行清理", en: "Run Vacuum"))
                         .font(PulseFonts.bodyMedium)
                         .foregroundStyle(colors.textPrimary)
-                    Text("扫描并归档过期信号数据，释放存储空间")
+                    Text(L10n.zh("扫描并归档过期信号数据，释放存储空间", en: "Scan and archive expired signal data to free up storage"))
                         .font(PulseFonts.caption)
                         .foregroundStyle(colors.textMuted)
                 }
@@ -44,7 +46,7 @@ struct DataVacuumSettingsView: View {
                 if isRunning {
                     ProgressView().controlSize(.small)
                 } else {
-                    KryptonButton(title: "执行清理", action: {
+                    KryptonButton(title: L10n.zh("执行清理", en: "Run Vacuum"), action: {
                             Task { await runVacuum() }
                         }, style: .ghost)
                 }
@@ -54,7 +56,7 @@ struct DataVacuumSettingsView: View {
                 HStack(spacing: PulseSpacing.sm) {
                     Image(systemName: job.status == "running" ? "arrow.triangle.2.circlepath" : "checkmark.circle.fill")
                         .foregroundStyle(job.status == "running" ? PulseColors.warning : PulseColors.success)
-                    Text(job.status == "running" ? "清理进行中..." : "清理已启动")
+                    Text(job.status == "running" ? L10n.zh("清理进行中...", en: "Vacuum in progress...") : L10n.zh("清理已启动", en: "Vacuum started"))
                         .font(PulseFonts.caption)
                         .foregroundStyle(colors.textPrimary)
                     Text("ID: \(String(job.id.prefix(8)))")
@@ -70,12 +72,12 @@ struct DataVacuumSettingsView: View {
 
     private var jobHistorySection: some View {
         VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-            TerminalLabel(text: "清理历史")
+            TerminalLabel(text: L10n.zh("清理历史", en: "Vacuum History"))
 
             if vacuumJobs.isEmpty {
                 HStack(spacing: PulseSpacing.xs) {
                     StatusDot(status: .online)
-                    Text("暂无清理记录")
+                    Text(L10n.zh("暂无清理记录", en: "No vacuum records"))
                         .font(PulseFonts.caption)
                         .foregroundStyle(colors.textMuted)
                 }
@@ -118,7 +120,7 @@ struct DataVacuumSettingsView: View {
                     Text("\(scanned)")
                         .font(PulseFonts.monoLabel)
                         .foregroundStyle(colors.textPrimary)
-                    Text("已扫描")
+                    Text(L10n.zh("已扫描", en: "Scanned"))
                         .font(PulseFonts.micro)
                         .foregroundStyle(colors.textMuted)
                 }
@@ -131,7 +133,7 @@ struct DataVacuumSettingsView: View {
                     Text("\(archived)")
                         .font(PulseFonts.monoLabel)
                         .foregroundStyle(PulseColors.accent)
-                    Text("已归档")
+                    Text(L10n.zh("已归档", en: "Archived"))
                         .font(PulseFonts.micro)
                         .foregroundStyle(colors.textMuted)
                 }
@@ -168,9 +170,9 @@ struct DataVacuumSettingsView: View {
 
     private func jobStatusLabel(_ status: String) -> String {
         switch status {
-        case "completed": return "完成"
-        case "running": return "运行中"
-        case "failed": return "失败"
+        case "completed": return L10n.zh("完成", en: "Done")
+        case "running": return L10n.zh("运行中", en: "Running")
+        case "failed": return L10n.zh("失败", en: "Failed")
         default: return status
         }
     }

@@ -10,7 +10,7 @@ struct NotificationSettingsView: View {
         @Bindable var s = settings
 
         VStack(alignment: .leading, spacing: PulseSpacing.lg) {
-            Text("通知设置")
+            Text(L10n.zh("通知设置", en: "Notification Settings"))
                 .font(PulseFonts.displaySubheading)
                 .foregroundStyle(colors.textPrimary)
 
@@ -18,13 +18,14 @@ struct NotificationSettingsView: View {
                 row("Bot Token") { SecureField("Telegram Bot Token", text: $s.telegramBotToken).darkTextField() }
                 row("Chat ID") { TextField("Telegram Chat ID", text: $s.telegramChatId).darkTextField() }
                 Divider()
-                toggleRow("风险事件通知", isOn: $s.notifyRiskEvents)
-                toggleRow("交易执行通知", isOn: $s.notifyTradeExecuted)
-                toggleRow("每日摘要", isOn: $s.notifyDailySummary)
-                toggleRow("系统告警", isOn: $s.notifySystemAlerts)
+                toggleRow(L10n.zh("风险事件通知", en: "Risk Event Alerts"), isOn: $s.notifyRiskEvents)
+                toggleRow(L10n.zh("交易执行通知", en: "Trade Execution Alerts"), isOn: $s.notifyTradeExecuted)
+                toggleRow(L10n.zh("每日摘要", en: "Daily Summary"), isOn: $s.notifyDailySummary)
+                toggleRow(L10n.zh("系统告警", en: "System Alerts"), isOn: $s.notifySystemAlerts)
             }
             .cardStyle()
         }
+        .id(settings.language)
     }
 
     private func row<Content: View>(_ label: String, @ViewBuilder content: () -> Content) -> some View {

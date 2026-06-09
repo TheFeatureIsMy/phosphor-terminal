@@ -47,9 +47,9 @@ struct LandingView: View {
                     // 特性亮点 — 简洁 pill
                     if showContent {
                         HStack(spacing: PulseSpacing.sm) {
-                            FeaturePill(icon: "brain.head.profile", label: "多智能体", color: PulseColors.cyan)
-                            FeaturePill(icon: "chart.bar.fill", label: "量化策略", color: PulseColors.accent)
-                            FeaturePill(icon: "shield.checkered", label: "实时风控", color: PulseColors.purple)
+                            FeaturePill(icon: "brain.head.profile", label: L10n.zh("多智能体", en: "Multi-Agent"), color: PulseColors.cyan)
+                            FeaturePill(icon: "chart.bar.fill", label: L10n.zh("量化策略", en: "Quant Strategies"), color: PulseColors.accent)
+                            FeaturePill(icon: "shield.checkered", label: L10n.zh("实时风控", en: "Real-Time Risk Control"), color: PulseColors.purple)
                         }
                     }
                 }
@@ -59,7 +59,7 @@ struct LandingView: View {
                 // CTA
                 if showCTA {
                     VStack(spacing: PulseSpacing.md) {
-                        KryptonButton(title: "进入仪表盘") {
+                        KryptonButton(title: L10n.zh("进入仪表盘", en: "Enter Dashboard")) {
                             withAnimation(PulseAnimation.springDefault) { appState.hasLaunched = true }
                         }
 

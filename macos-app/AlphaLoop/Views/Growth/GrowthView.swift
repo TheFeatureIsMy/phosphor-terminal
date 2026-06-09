@@ -6,6 +6,7 @@ import SwiftUI
 struct GrowthView: View {
     @Environment(\.networkClient) private var networkClient
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
     @State private var viewModel: GrowthViewModel?
     @State private var selectedPeriod: GrowthPeriod = .week
 
@@ -28,6 +29,7 @@ struct GrowthView: View {
             }
         }
         .scrollEdgeEffectStyle(.soft, for: .vertical)
+        .id(settingsState.language)
         .task {
             if viewModel == nil {
                 let vm = GrowthViewModel(client: networkClient)
@@ -42,12 +44,12 @@ struct GrowthView: View {
     private func pageHeader(vm: GrowthViewModel) -> some View {
         HStack {
             VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
-                Text("增长引擎")
+                Text(L10n.Growth.title)
                     .font(PulseFonts.displayHeading)
                     .foregroundStyle(colors.textPrimary)
                 HStack(spacing: PulseSpacing.xxs) {
                     StatusDot(status: .online)
-                    Text("自动发现 · 回测验证 · 策略进化")
+                    Text(L10n.Growth.subtitle)
                         .font(PulseFonts.caption)
                         .foregroundStyle(colors.textMuted)
                 }
@@ -60,10 +62,10 @@ struct GrowthView: View {
 
     private func tabSelector(vm: GrowthViewModel) -> some View {
         HStack(spacing: PulseSpacing.xs) {
-            tabButton(label: "分析报告", index: 0, count: vm.reports.count, vm: vm)
-            tabButton(label: "候选策略", index: 1, count: vm.candidates.count, vm: vm)
-            tabButton(label: "SHAP 分析", index: 2, count: vm.shapFeatures.count, vm: vm)
-            tabButton(label: "Signal 有效性", index: 3, count: vm.signalSources.count, vm: vm)
+            tabButton(label: L10n.Growth.reports, index: 0, count: vm.reports.count, vm: vm)
+            tabButton(label: L10n.Growth.candidates, index: 1, count: vm.candidates.count, vm: vm)
+            tabButton(label: L10n.Growth.shapAnalysis, index: 2, count: vm.shapFeatures.count, vm: vm)
+            tabButton(label: L10n.Growth.signalValidity, index: 3, count: vm.signalSources.count, vm: vm)
             Spacer()
         }
     }
@@ -129,9 +131,9 @@ struct GrowthView: View {
         VStack(alignment: .leading, spacing: PulseSpacing.sm) {
             // 运行日报 button
             HStack {
-                TerminalLabel(text: "分析报告")
+                TerminalLabel(text: L10n.Growth.analysisReports)
                 Spacer()
-                KryptonButton(title: "运行日报", action: {
+                KryptonButton(title: L10n.Growth.runDailyReview, action: {
                     Task { await vm.runDailyReview() }
                 })
             }
@@ -139,9 +141,9 @@ struct GrowthView: View {
             if vm.reports.isEmpty {
                 EmptyStateView(
                     icon: "doc.text.magnifyingglass",
-                    title: "暂无报告",
-                    description: "点击「运行日报」生成第一份增长分析报告",
-                    primaryAction: (title: "运行日报", action: {
+                    title: L10n.Growth.noReports,
+                    description: L10n.Growth.noReportsDesc,
+                    primaryAction: (title: L10n.Growth.runDailyReview, action: {
                         Task { await vm.runDailyReview() }
                     })
                 )
@@ -160,13 +162,13 @@ struct GrowthView: View {
 
     private func candidatesTab(vm: GrowthViewModel) -> some View {
         VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-            TerminalLabel(text: "候选策略")
+            TerminalLabel(text: L10n.Growth.candidateStrategies)
 
             if vm.candidates.isEmpty {
                 EmptyStateView(
                     icon: "sparkles",
-                    title: "暂无候选策略",
-                    description: "增长引擎将自动发现并推荐有潜力的交易策略"
+                    title: L10n.Growth.noCandidates,
+                    description: L10n.Growth.noCandidatesDesc
                 )
             } else {
                 LazyVStack(spacing: PulseSpacing.sm) {
@@ -205,7 +207,7 @@ struct GrowthView: View {
                         selectedPeriod = period
                     }
                 } label: {
-                    Text(period.rawValue)
+                    Text(period.displayName)
                         .font(PulseFonts.captionMedium)
                         .foregroundStyle(selectedPeriod == period ? colors.background : colors.textSecondary)
                         .padding(.horizontal, PulseSpacing.sm)
@@ -225,11 +227,11 @@ struct GrowthView: View {
 
     private var shapAnalysisTab: some View {
         VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-            TerminalLabel(text: "SHAP 特征重要性")
+            TerminalLabel(text: L10n.Growth.shapFeatureImportance)
 
             KryptonCard(emphasis: .subtle) {
                 VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-                    Text("全局特征对交易决策的影响程度")
+                    Text(L10n.Growth.shapDescription)
                         .font(PulseFonts.caption)
                         .foregroundStyle(colors.textMuted)
 
@@ -279,11 +281,11 @@ struct GrowthView: View {
 
     private var signalValidityTab: some View {
         VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-            TerminalLabel(text: "Signal 有效性追踪")
+            TerminalLabel(text: L10n.Growth.signalValidityTracking)
 
             KryptonCard(emphasis: .subtle) {
                 VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-                    Text("各来源信号预测准确率（\(selectedPeriod.rawValue)）")
+                    Text(L10n.Growth.signalAccuracyBySource(selectedPeriod.displayName))
                         .font(PulseFonts.caption)
                         .foregroundStyle(colors.textMuted)
 
@@ -313,7 +315,7 @@ struct GrowthView: View {
                                 .foregroundStyle(accuracyColor(source.accuracy))
                                 .frame(width: 40, alignment: .trailing)
 
-                            Text("\(source.total)次")
+                            Text(L10n.Growth.times(source.total))
                                 .font(PulseFonts.micro)
                                 .foregroundStyle(colors.textMuted)
                                 .frame(width: 35, alignment: .trailing)
@@ -326,10 +328,10 @@ struct GrowthView: View {
             // Summary stats
             KryptonCard(emphasis: .subtle) {
                 HStack(spacing: PulseSpacing.lg) {
-                    validityStat(label: "总信号数", value: "156", color: PulseColors.info)
-                    validityStat(label: "平均准确率", value: "63.2%", color: PulseColors.accent)
-                    validityStat(label: "最佳来源", value: "AI Research", color: PulseColors.success)
-                    validityStat(label: "最差来源", value: "KOL", color: PulseColors.danger)
+                    validityStat(label: L10n.Growth.totalSignals, value: "156", color: PulseColors.info)
+                    validityStat(label: L10n.Growth.avgAccuracy, value: "63.2%", color: PulseColors.accent)
+                    validityStat(label: L10n.Growth.bestSource, value: "AI Research", color: PulseColors.success)
+                    validityStat(label: L10n.Growth.worstSource, value: "KOL", color: PulseColors.danger)
                 }
             }
         }
@@ -359,9 +361,17 @@ struct GrowthView: View {
 // MARK: - Growth Period Enum
 
 enum GrowthPeriod: String, CaseIterable, Identifiable {
-    case day = "日"
-    case week = "周"
-    case month = "月"
+    case day = "day"
+    case week = "week"
+    case month = "month"
 
     var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .day: return L10n.Growth.day
+        case .week: return L10n.Growth.week
+        case .month: return L10n.Growth.month
+        }
+    }
 }

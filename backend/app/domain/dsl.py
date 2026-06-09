@@ -347,3 +347,37 @@ class RulePackageV3(BaseModel):
     liquidity_execution_safety: LiquidityExecutionSafety = Field(default_factory=LiquidityExecutionSafety)
     timeframe_integrity_policy: TimeframeIntegrityPolicy = Field(default_factory=TimeframeIntegrityPolicy)
     metadata: DSLMetadata = Field(default_factory=DSLMetadata)
+
+
+# ── DSL v3.0 MTF Guard Models ──────────────────────────────────────
+
+
+class ShadowWindowConfig(BaseModel):
+    """Configuration for the shadow observation window."""
+    mode: str = "until_slow_candle_close"
+    max_fast_candles: int = 12
+    allow_low_tf_touch: bool = True
+    allow_low_tf_update_filled_ratio: bool = True
+
+
+class ViolationPolicy(BaseModel):
+    """Policy mapping guard states to entry actions."""
+    temporary_violation: str = "block_entry"
+    reclaim_pending: str = "require_confirmation"
+    confirmed_reclaim: str = "allow"
+    confirmed_break: str = "invalidate"
+
+
+class MTFGuardRule(BaseModel):
+    """MTF Temporal Guard rule — cross-timeframe structure defense node."""
+    type: Literal["mtf_guard"] = "mtf_guard"
+    guard_id: str
+    name: str
+    fast_timeframe: str
+    slow_timeframe: str
+    source_node: str
+    target_node: str
+    structure_type: str
+    shadow_window: ShadowWindowConfig = Field(default_factory=ShadowWindowConfig)
+    violation_policy: ViolationPolicy = Field(default_factory=ViolationPolicy)
+    reason_codes: dict[str, str] = Field(default_factory=dict)

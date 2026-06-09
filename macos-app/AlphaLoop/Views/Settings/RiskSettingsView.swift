@@ -10,31 +10,31 @@ struct RiskSettingsView: View {
         @Bindable var s = settings
 
         VStack(alignment: .leading, spacing: PulseSpacing.lg) {
-            Text("风控参数")
+            Text(L10n.zh("风控参数", en: "Risk Parameters"))
                 .font(PulseFonts.displaySubheading)
                 .foregroundStyle(colors.textPrimary)
 
             VStack(alignment: .leading, spacing: PulseSpacing.md) {
                 // Group 1: Loss
-                percentRow("单笔最大亏损 (%)", value: $s.maxSingleLoss)
-                percentRow("最大回撤 (%)", value: $s.maxDrawdown)
-                percentRow("日回撤上限 (%)", value: $s.dailyDrawdown)
+                percentRow(L10n.zh("单笔最大亏损 (%)", en: "Max Single Loss (%)"), value: $s.maxSingleLoss)
+                percentRow(L10n.zh("最大回撤 (%)", en: "Max Drawdown (%)"), value: $s.maxDrawdown)
+                percentRow(L10n.zh("日回撤上限 (%)", en: "Daily Drawdown Limit (%)"), value: $s.dailyDrawdown)
 
                 Divider().foregroundStyle(colors.border)
 
                 // Group 2: Position
-                percentRow("最大持仓比例 (%)", value: $s.maxPositionSize)
+                percentRow(L10n.zh("最大持仓比例 (%)", en: "Max Position Size (%)"), value: $s.maxPositionSize)
 
                 Divider().foregroundStyle(colors.border)
 
                 // Group 3: Correlation
-                intRow("关联组上限", value: $s.correlatedGroupLimit)
-                numRow("相关性阈值", value: $s.correlationThreshold)
+                intRow(L10n.zh("关联组上限", en: "Correlated Group Limit"), value: $s.correlatedGroupLimit)
+                numRow(L10n.zh("相关性阈值", en: "Correlation Threshold"), value: $s.correlationThreshold)
 
                 Divider().foregroundStyle(colors.border)
 
                 // Group 4: Auto
-                settingsRow("自动暂停") {
+                settingsRow(L10n.zh("自动暂停", en: "Auto Pause")) {
                     Toggle("", isOn: $s.autoPause)
                         .tint(PulseColors.accent)
                 }
@@ -42,13 +42,14 @@ struct RiskSettingsView: View {
             .cardStyle()
 
             Button(action: resetDefaults) {
-                Text("恢复默认")
+                Text(L10n.zh("恢复默认", en: "Reset Defaults"))
                     .font(PulseFonts.monoLabel)
                     .foregroundStyle(colors.textMuted)
             }
             .buttonStyle(.plain)
             .padding(.top, PulseSpacing.xs)
         }
+        .id(settings.language)
     }
 
     private func resetDefaults() {

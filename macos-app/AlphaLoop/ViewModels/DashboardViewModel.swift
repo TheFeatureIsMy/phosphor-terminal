@@ -72,10 +72,12 @@ final class DashboardViewModel {
     var pendingAIJobs: Int = 0
     var systemStatus: SystemStatus?
 
+    var dailyWorkflow: DailyWorkflow?
     var isLoading = false
     var error: String?
     var errorHandler: ErrorHandler?
 
+    private let workflowAPI: APIWorkflow
     private let dashboardAPI: APIDashboard
     private let signalsAPI: APISignalsV2
     private let strategiesAPI: APIStrategiesV2
@@ -85,6 +87,7 @@ final class DashboardViewModel {
     private var pollingTask: Task<Void, Never>?
 
     init(client: NetworkClientProtocol) {
+        self.workflowAPI = APIWorkflow(client: client)
         self.dashboardAPI = APIDashboard(client: client)
         self.signalsAPI = APISignalsV2(client: client)
         self.strategiesAPI = APIStrategiesV2(client: client)
@@ -107,6 +110,7 @@ final class DashboardViewModel {
             async let jobsTask: [InferenceJob] = { (try? await self.inferenceAPI.listJobs(limit: 50)) ?? [] }()
             async let runtimeTask: RuntimeStateInfo? = try? await self.inferenceAPI.getRuntimeState()
 
+            dailyWorkflow = try? await workflowAPI.getDailyWorkflow()
             equityCurve = try await curveTask
 
             let signals = await signalsTask

@@ -505,3 +505,106 @@ input::placeholder {
 
 /* ═══════════════ Attribution hide ═══════════════ */
 .react-flow__attribution { display: none; }
+
+/* ═══════════════ MTF Guard Edge Animations ═══════════════ */
+.mtf-guard-edge-animated {
+  animation: mtfGuardPulse 2s ease-in-out infinite;
+}
+
+@keyframes mtfGuardPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* ═══════════════ MTF Guard Node Header ═══════════════ */
+.node-header.mtf-guard {
+  background: rgba(100, 210, 255, 0.08);
+  color: #64D2FF;
+}
+
+/* ═══════════════ Structure Defense & Account Risk Node Headers ═══════════════ */
+.node-header.structure-defense {
+  background: rgba(48, 209, 88, 0.08);
+  color: #30D158;
+}
+.node-header.account-risk {
+  background: rgba(255, 69, 58, 0.08);
+  color: #FF453A;
+}
+
+/* ═══════════════ Config Panel Extras ═══════════════ */
+.config-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+}
+.config-checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.config-checkbox-label {
+  font-size: 13px;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+.config-multi-select {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 4px 0;
+}
+.config-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-out);
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+}
+.config-chip.active {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.config-chip:hover {
+  border-color: var(--border-focused);
+}
+.config-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.config-slider {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--surface-elevated);
+  outline: none;
+}
+.config-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+.config-slider-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  min-width: 32px;
+  text-align: right;
+}

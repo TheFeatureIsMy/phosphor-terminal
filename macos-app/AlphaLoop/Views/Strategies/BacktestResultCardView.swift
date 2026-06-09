@@ -4,6 +4,7 @@ import SwiftUI
 
 struct BacktestResultCardView: View {
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
     let run: BacktestRunV2
 
     var body: some View {
@@ -12,7 +13,7 @@ struct BacktestResultCardView: View {
             HStack {
                 Image(systemName: run.status == "completed" ? "checkmark.circle.fill" : "clock.fill")
                     .foregroundStyle(run.status == "completed" ? PulseColors.success : PulseColors.warning)
-                Text(run.status == "completed" ? "回测完成" : run.status)
+                Text(run.status == "completed" ? L10n.zh("回测完成", en: "Backtest Complete") : run.status)
                     .font(PulseFonts.bodyMedium)
                     .foregroundStyle(colors.textPrimary)
 
@@ -57,14 +58,14 @@ struct BacktestResultCardView: View {
             GridItem(.flexible()),
             GridItem(.flexible()),
         ], spacing: PulseSpacing.sm) {
-            metricCell("总收益率", value: pct(run.totalReturn), color: run.totalReturn >= 0 ? PulseColors.success : PulseColors.danger)
-            metricCell("夏普比率", value: fmt(run.sharpeRatio), color: run.sharpeRatio >= 1 ? PulseColors.success : PulseColors.warning)
-            metricCell("最大回撤", value: pct(run.maxDrawdown), color: PulseColors.danger)
-            metricCell("胜率", value: pct(run.winRate), color: run.winRate >= 0.5 ? PulseColors.success : PulseColors.warning)
-            metricCell("盈亏比", value: fmt(run.profitFactor), color: run.profitFactor >= 1 ? PulseColors.success : PulseColors.danger)
-            metricCell("总交易", value: "\(run.totalTrades)", color: colors.textPrimary)
-            metricCell("初始资金", value: "$\(Int(run.initialCapital))", color: colors.textSecondary)
-            metricCell("交易对", value: run.symbols.joined(separator: ","), color: colors.textSecondary)
+            metricCell(L10n.zh("总收益率", en: "Total Return"), value: pct(run.totalReturn), color: run.totalReturn >= 0 ? PulseColors.success : PulseColors.danger)
+            metricCell(L10n.zh("夏普比率", en: "Sharpe Ratio"), value: fmt(run.sharpeRatio), color: run.sharpeRatio >= 1 ? PulseColors.success : PulseColors.warning)
+            metricCell(L10n.zh("最大回撤", en: "Max Drawdown"), value: pct(run.maxDrawdown), color: PulseColors.danger)
+            metricCell(L10n.zh("胜率", en: "Win Rate"), value: pct(run.winRate), color: run.winRate >= 0.5 ? PulseColors.success : PulseColors.warning)
+            metricCell(L10n.zh("盈亏比", en: "Profit Factor"), value: fmt(run.profitFactor), color: run.profitFactor >= 1 ? PulseColors.success : PulseColors.danger)
+            metricCell(L10n.zh("总交易", en: "Total Trades"), value: "\(run.totalTrades)", color: colors.textPrimary)
+            metricCell(L10n.zh("初始资金", en: "Initial Capital"), value: "$\(Int(run.initialCapital))", color: colors.textSecondary)
+            metricCell(L10n.zh("交易对", en: "Trading Pair"), value: run.symbols.joined(separator: ","), color: colors.textSecondary)
         }
     }
 

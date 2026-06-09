@@ -5,6 +5,7 @@ import SwiftUI
 struct LiveReadinessView: View {
     @Environment(PulseColors.self) private var colors
     @Environment(\.networkClient) private var networkClient
+    @Environment(SettingsState.self) private var settingsState
     @State private var viewModel: LiveReadinessViewModel?
 
     var body: some View {
@@ -21,11 +22,11 @@ struct LiveReadinessView: View {
                         .padding(.horizontal, PulseSpacing.lg)
 
                         if !data.blockingReasons.isEmpty {
-                            reasonSection(title: "阻断项", reasons: data.blockingReasons, color: PulseColors.StateColors.red)
+                            reasonSection(title: L10n.zh("阻断项", en: "Blockers"), reasons: data.blockingReasons, color: PulseColors.StateColors.red)
                         }
 
                         if !data.warnings.isEmpty {
-                            reasonSection(title: "警告项", reasons: data.warnings, color: PulseColors.StateColors.yellow)
+                            reasonSection(title: L10n.zh("警告项", en: "Warnings"), reasons: data.warnings, color: PulseColors.StateColors.yellow)
                         }
 
                         systemCheckGrid(checks: data.checks)
@@ -33,13 +34,14 @@ struct LiveReadinessView: View {
                     }
                     .padding(.vertical, PulseSpacing.lg)
                 } else {
-                    EmptyStateView(icon: "checkmark.shield", title: "加载失败", description: vm.error ?? "无法获取准入数据")
+                    EmptyStateView(icon: "checkmark.shield", title: L10n.zh("加载失败", en: "Load Failed"), description: vm.error ?? L10n.zh("无法获取准入数据", en: "Unable to fetch readiness data"))
                         .padding(PulseSpacing.lg)
                 }
             } else {
                 LoadingView(type: .detail).padding(PulseSpacing.lg)
             }
         }
+        .id(settingsState.language)
         .task {
             if viewModel == nil {
                 let vm = LiveReadinessViewModel(client: networkClient)
@@ -69,7 +71,7 @@ struct LiveReadinessView: View {
                         .foregroundStyle(colors.textMuted)
                 }
             }
-            Text("准入分数")
+            Text(L10n.zh("准入分数", en: "Readiness Score"))
                 .font(PulseFonts.caption)
                 .foregroundStyle(colors.textMuted)
         }
@@ -173,18 +175,18 @@ struct LiveReadinessView: View {
                     if vm.isChecking {
                         ProgressView().controlSize(.small)
                     }
-                    Text("重新检查")
+                    Text(L10n.zh("重新检查", en: "Re-Check"))
                 }
             }
             .buttonStyle(.bordered)
             .disabled(vm.isChecking)
 
             if data.canStartPaper {
-                Button("启动模拟") {}
+                Button(L10n.zh("启动模拟", en: "Start Paper Trading")) {}
                     .buttonStyle(.bordered)
             }
             if data.canStartLiveSmall {
-                Button("启动小仓实盘") {}
+                Button(L10n.zh("启动小仓实盘", en: "Start Small-Size Live")) {}
                     .buttonStyle(.borderedProminent)
                     .tint(PulseColors.StateColors.orange)
             }
@@ -210,10 +212,10 @@ struct LiveReadinessView: View {
 
     private func stateDescription(_ state: String) -> String {
         switch state {
-        case "LIVE_READY": return "所有检查通过，可启动实盘交易"
-        case "LIVE_SMALL_READY": return "部分项存在警告，仅允许小仓实盘"
-        case "PAPER_ONLY": return "存在阻断项，仅允许模拟交易"
-        default: return "系统未就绪，请检查阻断项"
+        case "LIVE_READY": return L10n.zh("所有检查通过，可启动实盘交易", en: "All checks passed. Ready for live trading.")
+        case "LIVE_SMALL_READY": return L10n.zh("部分项存在警告，仅允许小仓实盘", en: "Some warnings present. Small-size live trading only.")
+        case "PAPER_ONLY": return L10n.zh("存在阻断项，仅允许模拟交易", en: "Blockers found. Paper trading only.")
+        default: return L10n.zh("系统未就绪，请检查阻断项", en: "System not ready. Check blockers.")
         }
     }
 

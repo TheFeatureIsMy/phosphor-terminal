@@ -5,6 +5,7 @@ import SwiftUI
 
 struct StrategyCardView: View {
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
     let strategy: StrategyV2
     let onTap: () -> Void
     var onRename: (() -> Void)?

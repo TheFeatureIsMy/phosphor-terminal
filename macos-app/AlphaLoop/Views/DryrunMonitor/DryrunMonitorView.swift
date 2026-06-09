@@ -7,6 +7,7 @@ struct DryrunMonitorView: View {
     @Environment(\.networkClient) private var networkClient
     @Environment(PulseColors.self) private var colors
     @Environment(AppState.self) private var appState
+    @Environment(SettingsState.self) private var settingsState
     @State private var viewModel: DryrunMonitorViewModel?
     @State private var showCompletedRuns = false
     @State private var showStartPanel = false
@@ -32,17 +33,17 @@ struct DryrunMonitorView: View {
             if showStartPanel {
                 PulseModalOverlay {
                     VStack(spacing: PulseSpacing.md) {
-                        TerminalLabel(text: "启动模拟盘")
+                        TerminalLabel(text: L10n.zh("启动模拟盘", en: "Start Paper Trading"))
                         VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
-                            Text("策略版本 ID").font(PulseFonts.captionMedium).foregroundStyle(colors.textSecondary)
-                            TextField("输入策略版本 ID...", text: $dryrunStrategyId).darkTextField()
+                            Text(L10n.zh("策略版本 ID", en: "Strategy Version ID")).font(PulseFonts.captionMedium).foregroundStyle(colors.textSecondary)
+                            TextField(L10n.zh("输入策略版本 ID...", en: "Enter strategy version ID..."), text: $dryrunStrategyId).darkTextField()
                         }
                         HStack {
-                            KryptonButton(title: "取消", action: {
+                            KryptonButton(title: L10n.zh("取消", en: "Cancel"), action: {
                                 withAnimation { showStartPanel = false }
                             }, style: .ghost)
                             Spacer()
-                            KryptonButton(title: "启动", action: {
+                            KryptonButton(title: L10n.zh("启动", en: "Start"), action: {
                                 Task {
                                     let api = APIDryrunV2(client: networkClient)
                                     _ = try? await api.startDryrun(["strategy_version_id": dryrunStrategyId])
@@ -82,8 +83,8 @@ struct DryrunMonitorView: View {
             } else if vm.runs.isEmpty {
                 EmptyStateView(
                     icon: "play.circle",
-                    title: "暂无模拟运行",
-                    description: "启动模拟运行后，Bot 状态将实时显示在此处"
+                    title: L10n.zh("暂无模拟运行", en: "No Paper Trading Runs"),
+                    description: L10n.zh("启动模拟运行后，Bot 状态将实时显示在此处", en: "Bot status will appear here once paper trading is started")
                 )
                 .frame(maxHeight: .infinity)
             } else {
@@ -95,7 +96,7 @@ struct DryrunMonitorView: View {
                         // 运行中
                         if !vm.activeRuns.isEmpty {
                             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-                                TerminalLabel(text: "运行中")
+                                TerminalLabel(text: L10n.zh("运行中", en: "Running"))
                                     .padding(.horizontal, PulseSpacing.lg)
 
                                 LazyVStack(spacing: PulseSpacing.xs) {
@@ -116,7 +117,7 @@ struct DryrunMonitorView: View {
                         if !vm.completedRuns.isEmpty {
                             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
                                 HStack {
-                                    TerminalLabel(text: "已完成")
+                                    TerminalLabel(text: L10n.zh("已完成", en: "Completed"))
 
                                     Spacer()
 
@@ -126,7 +127,7 @@ struct DryrunMonitorView: View {
                                         }
                                     } label: {
                                         HStack(spacing: PulseSpacing.xxs) {
-                                            Text(showCompletedRuns ? "收起" : "展开")
+                                            Text(showCompletedRuns ? L10n.zh("收起", en: "Collapse") : L10n.zh("展开", en: "Expand"))
                                                 .font(PulseFonts.monoLabel)
                                             Image(systemName: showCompletedRuns ? "chevron.up" : "chevron.down")
                                                 .font(.system(size: 9))
@@ -155,6 +156,7 @@ struct DryrunMonitorView: View {
                     }
                     .padding(.vertical, PulseSpacing.md)
                 }
+                .id(settingsState.language)
                 .scrollEdgeEffectStyle(.soft, for: .vertical)
             }
         }
@@ -164,7 +166,7 @@ struct DryrunMonitorView: View {
 
     private func headerBar(_ vm: DryrunMonitorViewModel) -> some View {
         HStack(spacing: PulseSpacing.sm) {
-            TerminalLabel(text: "模拟监控")
+            TerminalLabel(text: L10n.zh("模拟监控", en: "Paper Trading Monitor"))
 
             Text("\(vm.activeRuns.count)")
                 .font(PulseFonts.monoLabel)
@@ -186,9 +188,9 @@ struct DryrunMonitorView: View {
                     .foregroundStyle(colors.textMuted)
             }
             .buttonStyle(.plain)
-            .help("刷新")
+            .help(L10n.zh("刷新", en: "Refresh"))
 
-            KryptonButton(title: "启动模拟", action: {
+            KryptonButton(title: L10n.zh("启动模拟", en: "Start Paper Trading"), action: {
                 showStartPanel = true
             }, style: .primary)
         }
@@ -201,19 +203,19 @@ struct DryrunMonitorView: View {
     private func statusOverview(_ vm: DryrunMonitorViewModel) -> some View {
         HStack(spacing: PulseSpacing.sm) {
             statCard(
-                title: "运行中",
+                title: L10n.zh("运行中", en: "Running"),
                 value: "\(vm.activeRuns.count)",
                 color: PulseColors.statusActive
             )
 
             statCard(
-                title: "已完成",
+                title: L10n.zh("已完成", en: "Completed"),
                 value: "\(vm.completedRuns.count)",
                 color: PulseColors.info
             )
 
             statCard(
-                title: "平均时长",
+                title: L10n.zh("平均时长", en: "Avg Duration"),
                 value: formatDuration(vm.avgDurationSeconds),
                 color: PulseColors.accent
             )

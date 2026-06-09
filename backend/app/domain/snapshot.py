@@ -57,6 +57,19 @@ class ExecutionPlan(BaseModel):
     reject_reason: Optional[str] = None
 
 
+class MTFGuardContext(BaseModel):
+    """MTF Temporal Guard context — cross-timeframe structure defense state."""
+    enabled: bool = False
+    guard_id: str = ""
+    fast_timeframe: str = ""
+    slow_timeframe: str = ""
+    guard_state: str = "inactive"
+    source_structure: dict = Field(default_factory=dict)
+    violation: dict = Field(default_factory=dict)
+    action: str = "ignore"
+    reason_codes: list[str] = Field(default_factory=list)
+
+
 def _default_valid_until() -> datetime:
     return datetime.now(timezone.utc) + timedelta(minutes=5)
 
@@ -78,6 +91,8 @@ class RuntimeDecisionSnapshot(BaseModel):
     liquidity_execution_context: LiquidityExecutionContext = Field(default_factory=LiquidityExecutionContext)
     risk_context: RiskContext = Field(default_factory=RiskContext)
     execution_plan: ExecutionPlan
+
+    mtf_guard_context: Optional[MTFGuardContext] = None
 
     reason_codes: list[str] = Field(default_factory=list)
     latency_ms: Optional[int] = None

@@ -5,10 +5,11 @@ import SwiftUI
 
 struct SidebarView: View {
     @Environment(AppState.self) private var appState
-    @Environment(ThemeManager.self) private var themeManager
     @Environment(PulseColors.self) private var colors
-    @Namespace private var glassNamespace
+    @Environment(SettingsState.self) private var settingsState
     @State private var isLogoHovered = false
+
+    @Namespace private var glassNamespace
 
     var body: some View {
         VStack(spacing: 0) {
@@ -26,8 +27,7 @@ struct SidebarView: View {
                                 .padding(.horizontal, PulseSpacing.sm)
                                 .padding(.top, PulseSpacing.md).padding(.bottom, PulseSpacing.xxs)
                             } else if index == 0 {
-                                Divider().foregroundStyle(colors.border)
-                                    .padding(.vertical, PulseSpacing.xxs).padding(.horizontal, PulseSpacing.md)
+                                Spacer().frame(height: PulseSpacing.sm)
                             }
                             ForEach(routes) { route in
                                 let globalIndex = AppRoute.allCases.firstIndex(of: route)
@@ -37,14 +37,12 @@ struct SidebarView: View {
                     }
                 }
                 .padding(.horizontal, 6)
+                .padding(.top, PulseSpacing.sm)
+                .id(settingsState.language)
             }
-            .clipped()
 
             Spacer(minLength: 0)
             sidebarFooter
-        }
-        .safeAreaInset(edge: .top) {
-            logoHeader
         }
         .frame(width: appState.sidebarCollapsed ? 56 : 228)
         .background(colors.background)
@@ -54,72 +52,47 @@ struct SidebarView: View {
         .animation(PulseAnimation.springDefault, value: appState.sidebarCollapsed)
     }
 
-    private var logoHeader: some View {
+    // MARK: - 底部：Logo + 产品名 + 折叠/主题切换
+    private var sidebarFooter: some View {
         VStack(spacing: 0) {
-            HStack(spacing: PulseSpacing.xs) {
+            Divider().foregroundStyle(colors.border).opacity(0.5)
+
+            if appState.sidebarCollapsed {
                 Button { appState.toggleSidebar() } label: {
-                    HStack(spacing: PulseSpacing.xs) {
-                        ZStack {
-                            if isLogoHovered {
-                                PulseRing(color: PulseColors.accent.opacity(0.6), size: 52)
-                            }
-                            AlphaLoopLogoView()
-                                .frame(width: 36, height: 36)
+                    ZStack {
+                        if isLogoHovered {
+                            PulseRing(color: PulseColors.accent.opacity(0.6), size: 44)
                         }
-                        if !appState.sidebarCollapsed {
-                            L10nText("弈机", en: "AlphaLoop")
-                                .font(PulseFonts.displayHeading)
-                                .foregroundStyle(colors.textPrimary)
-                                .transition(.opacity.combined(with: .move(edge: .leading)))
-                        }
+                        AlphaLoopLogoView()
+                            .frame(width: 28, height: 28)
                     }
                 }
                 .buttonStyle(.plain)
                 .onHover { hovering in
                     withAnimation(PulseAnimation.easeOutFast) { isLogoHovered = hovering }
                 }
-                Spacer()
-                if !appState.sidebarCollapsed {
-                    Button { appState.toggleSidebar() } label: {
-                        Image(systemName: "sidebar.left").font(.system(size: 12)).foregroundStyle(colors.textMuted)
-                    }
-                    .buttonStyle(.plain).transition(.opacity)
-                }
-            }
-            .padding(.horizontal, PulseSpacing.sm)
-            .padding(.vertical, PulseSpacing.sm)
-            .frame(height: 68)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, PulseSpacing.sm)
+            } else {
+                HStack(spacing: PulseSpacing.xs) {
+                    AlphaLoopLogoView()
+                        .frame(width: 28, height: 28)
 
-            Divider().foregroundStyle(colors.border).opacity(0.5)
-        }
-        .background(colors.background)
-    }
-
-    private var sidebarFooter: some View {
-        VStack(spacing: 0) {
-            Divider().foregroundStyle(colors.border)
-            HStack(spacing: PulseSpacing.xs) {
-                StatusDot(status: .online)
-                if !appState.sidebarCollapsed {
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text("系统运行中").font(PulseFonts.captionMedium).foregroundStyle(colors.textPrimary)
-                        Text("Freqtrade 已连接").font(PulseFonts.micro).foregroundStyle(colors.textMuted)
-                    }
                     Spacer()
 
-                    // 主题切换按钮 — Liquid Glass
-                    Button { themeManager.toggle() } label: {
-                        Image(systemName: themeManager.current == .dark ? "moon.fill" : "sun.max.fill")
-                            .font(.system(size: 11))
+                    Button { appState.toggleSidebar() } label: {
+                        Image(systemName: "sidebar.left")
+                            .font(.system(size: 12))
                             .foregroundStyle(colors.textMuted)
                             .frame(width: 24, height: 24)
                             .hoverGlassStyle(cornerRadius: PulseRadii.md)
                     }
                     .buttonStyle(.plain)
-                    .help(themeManager.current == .dark ? "切换明亮模式" : "切换暗黑模式")
+                    .help(L10n.zh("折叠侧边栏", en: "Collapse sidebar"))
                 }
+                .padding(.horizontal, PulseSpacing.sm)
+                .padding(.vertical, PulseSpacing.sm)
             }
-            .padding(.horizontal, PulseSpacing.sm).padding(.vertical, PulseSpacing.xs)
         }
     }
 }
@@ -143,7 +116,6 @@ struct SidebarButtonView: View {
             }
         } label: {
             HStack(spacing: PulseSpacing.xs) {
-                // accent 指示条
                 RoundedRectangle(cornerRadius: 1)
                     .fill(isSelected ? PulseColors.accent : Color.clear)
                     .frame(width: 3, height: 16)
@@ -172,12 +144,10 @@ struct SidebarButtonView: View {
             }
             .padding(.vertical, 7).padding(.horizontal, PulseSpacing.xs)
             .frame(maxWidth: .infinity)
-            // 参考主题切换按钮：glassEffect 直接作用于内容，仅选中态
             .modifier(ConditionalGlassModifier(isActive: isSelected, cornerRadius: PulseRadii.md))
             .clipShape(RoundedRectangle(cornerRadius: PulseRadii.md))
             .overlay {
                 if isSelected {
-                    // accent 描边在玻璃之上
                     RoundedRectangle(cornerRadius: PulseRadii.md)
                         .stroke(LinearGradient(
                             colors: [PulseColors.accent.opacity(0.2), PulseColors.accent.opacity(0.06)],

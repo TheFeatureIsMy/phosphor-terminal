@@ -13,6 +13,11 @@ final class SettingsState {
     // 语言设置
     var language: Language = .zhCN
 
+    func toggleLanguage() {
+        language = language == .zhCN ? .enUS : .zhCN
+        scheduleSave()
+    }
+
     // 交易所配置
     var exchange: Exchange = .binance
     var tradingMode: TradingMode = .spot

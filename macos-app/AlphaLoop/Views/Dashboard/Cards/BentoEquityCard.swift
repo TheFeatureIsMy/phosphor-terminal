@@ -3,6 +3,7 @@ import SwiftUI
 
 struct BentoEquityCard: View {
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
     let points: [EquityPoint]
 
     var body: some View {
@@ -10,7 +11,7 @@ struct BentoEquityCard: View {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
                 HStack(alignment: .firstTextBaseline) {
                     VStack(alignment: .leading, spacing: 2) {
-                        TerminalLabel(text: "账户总权益走势 (USDT)")
+                        TerminalLabel(text: L10n.zh("账户总权益走势 (USDT)", en: "Total Equity Curve (USDT)"))
 
                         HStack(alignment: .firstTextBaseline, spacing: PulseSpacing.xs) {
                             Text("124,850.32")
@@ -42,7 +43,7 @@ struct BentoEquityCard: View {
                 if points.isEmpty {
                     VStack {
                         Spacer()
-                        Text("等待权益曲线数据加载...")
+                        Text(L10n.zh("等待权益曲线数据加载...", en: "Loading equity curve data..."))
                             .font(PulseFonts.caption)
                             .foregroundStyle(colors.textMuted)
                         Spacer()
@@ -55,5 +56,6 @@ struct BentoEquityCard: View {
             }
         }
         .hoverEffect()
+        .id(settingsState.language)
     }
 }

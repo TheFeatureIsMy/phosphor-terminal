@@ -7,6 +7,7 @@ struct CommandPaletteView: View {
     @Environment(AppState.self) private var appState
     @Environment(PulseColors.self) private var colors
     @Environment(\.networkClient) private var networkClient
+    @Environment(SettingsState.self) private var settingsState
     @State private var searchText = ""
     @State private var selectedIndex = 0
     @State private var searchResults: [Strategy] = []
@@ -79,7 +80,7 @@ struct CommandPaletteView: View {
                         VStack(alignment: .leading, spacing: 2) {
                             // Section: Pages
                             if !filteredRoutes.isEmpty {
-                                sectionLabel(searchText.isEmpty ? "最近" : "页面")
+                                sectionLabel(searchText.isEmpty ? L10n.zh("最近", en: "Recent") : L10n.zh("页面", en: "Pages"))
                                 ForEach(Array(filteredRoutes.enumerated()), id: \.element.id) { index, route in
                                     routeRow(route, index: index).id(index)
                                 }
@@ -87,7 +88,7 @@ struct CommandPaletteView: View {
 
                             // Section: Trading Pairs
                             if !filteredPairs.isEmpty {
-                                sectionLabel("交易对")
+                                sectionLabel(L10n.zh("交易对", en: "Trading Pairs"))
                                 ForEach(Array(filteredPairs.enumerated()), id: \.element.id) { index, pair in
                                     pairRow(pair, index: pairSectionStart + index).id(pairSectionStart + index)
                                 }
@@ -95,7 +96,7 @@ struct CommandPaletteView: View {
 
                             // Section: Strategies (backend)
                             if !searchResults.isEmpty {
-                                sectionLabel("策略")
+                                sectionLabel(L10n.zh("策略", en: "Strategies"))
                                 ForEach(Array(searchResults.enumerated()), id: \.element.id) { index, strategy in
                                     strategyRow(strategy, index: strategySectionStart + index).id(strategySectionStart + index)
                                 }
@@ -103,7 +104,7 @@ struct CommandPaletteView: View {
 
                             // Empty state
                             if filteredRoutes.isEmpty && filteredPairs.isEmpty && searchResults.isEmpty && !searchText.isEmpty {
-                                Text("无匹配结果")
+                                Text(L10n.zh("无匹配结果", en: "No results found"))
                                     .font(PulseFonts.body)
                                     .foregroundStyle(colors.textMuted)
                                     .frame(maxWidth: .infinity, alignment: .center)
@@ -270,12 +271,12 @@ struct CommandPaletteView: View {
 
     private var footerHints: some View {
         HStack(spacing: PulseSpacing.lg) {
-            hint("↑↓", "导航")
-            hint("↵", "选择")
-            hint("ESC", "关闭")
+            hint("↑↓", L10n.zh("导航", en: "Navigate"))
+            hint("↵", L10n.zh("选择", en: "Select"))
+            hint("ESC", L10n.zh("关闭", en: "Close"))
             Spacer()
             if !searchText.isEmpty {
-                Text("\(totalItems) 个结果")
+                Text("\(totalItems) \(L10n.zh("个结果", en: "results"))")
                     .font(PulseFonts.micro).foregroundStyle(colors.textMuted)
             }
         }

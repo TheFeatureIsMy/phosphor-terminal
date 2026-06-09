@@ -10,12 +10,12 @@ struct ExchangeSettingsView: View {
         @Bindable var s = settings
 
         VStack(alignment: .leading, spacing: PulseSpacing.lg) {
-            Text("交易所配置")
+            Text(L10n.zh("交易所配置", en: "Exchange Configuration"))
                 .font(PulseFonts.displaySubheading)
                 .foregroundStyle(colors.textPrimary)
 
             VStack(alignment: .leading, spacing: PulseSpacing.md) {
-                settingsRow("交易所") {
+                settingsRow(L10n.zh("交易所", en: "Exchange")) {
                     Picker("", selection: $s.exchange) {
                         ForEach(Exchange.allCases) { Text($0.label).tag($0) }
                     }
@@ -23,7 +23,7 @@ struct ExchangeSettingsView: View {
                     .darkPicker()
                 }
 
-                settingsRow("交易模式") {
+                settingsRow(L10n.zh("交易模式", en: "Trading Mode")) {
                     Picker("", selection: $s.tradingMode) {
                         ForEach(TradingMode.allCases) { Text($0.label).tag($0) }
                     }
@@ -32,22 +32,23 @@ struct ExchangeSettingsView: View {
                 }
 
                 settingsRow("API Key") {
-                    SecureField("输入 API Key", text: $s.apiKey)
+                    SecureField(L10n.zh("输入 API Key", en: "Enter API Key"), text: $s.apiKey)
                         .darkTextField()
                 }
 
                 settingsRow("API Secret") {
-                    SecureField("输入 API Secret", text: $s.apiSecret)
+                    SecureField(L10n.zh("输入 API Secret", en: "Enter API Secret"), text: $s.apiSecret)
                         .darkTextField()
                 }
 
-                settingsRow("模拟交易") {
+                settingsRow(L10n.zh("模拟交易", en: "Paper Trading")) {
                     Toggle("", isOn: $s.dryRun)
                         .tint(PulseColors.accent)
                 }
             }
             .cardStyle()
         }
+        .id(settings.language)
     }
 
     private func settingsRow<Content: View>(_ label: String, @ViewBuilder content: () -> Content) -> some View {

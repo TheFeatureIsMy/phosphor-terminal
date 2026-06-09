@@ -1,9 +1,12 @@
-"""Execution BFF — Center + Orders/Positions + Emergency"""
+"""Execution BFF — Center + Orders/Positions + Emergency + Trade Trace/Labels/Review"""
 import logging
 import time
+import uuid
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 
+from app.database import get_db
 from app.schemas.execution_bff import (
     ExecutionCenterResponse, ExecutionSession,
     OrdersPositionsResponse, OrderResponse, PositionResponse,
@@ -58,7 +61,7 @@ def _mock_orders_positions() -> dict:
 
 
 # ---------------------------------------------------------------------------
-# Endpoints
+# Endpoints — Execution Center / Orders / Positions / Emergency
 # ---------------------------------------------------------------------------
 
 @router.get("/center", response_model=ExecutionCenterResponse)
@@ -80,7 +83,6 @@ async def get_execution_center():
 
         # status_data may be a list of trades or a dict with error
         if not FreqtradeClient.is_success(status_data):
-            # Freqtrade returned an error but is reachable — partial data
             return ExecutionCenterResponse(
                 state="degraded",
                 reason_codes=["freqtrade_status_error"],
@@ -95,10 +97,8 @@ async def get_execution_center():
                 execution_latency_ms=latency_ms,
             ).model_dump()
 
-        # Freqtrade /api/v1/status returns a list of open trades
         trades = status_data if isinstance(status_data, list) else status_data.get("trades", [])
 
-        # Map trades into ExecutionSession format (group by pair)
         sessions: list[ExecutionSession] = []
         total_positions = 0
         total_orders = 0
@@ -109,7 +109,6 @@ async def get_execution_center():
             is_open = trade.get("is_open", True)
             trade_status = "running" if is_open else "closed"
 
-            # Count open orders for this trade
             orders_count = len(trade.get("orders", []))
             open_orders = sum(1 for o in trade.get("orders", []) if o.get("status") == "open")
 
@@ -169,7 +168,6 @@ async def get_orders_positions():
             pair = trade.get("pair", "UNKNOWN")
             is_open = trade.get("is_open", True)
 
-            # Map open trade to position
             if is_open:
                 side = "long" if trade.get("is_short", False) is False else "short"
                 entry_price = float(trade.get("open_rate", 0))
@@ -192,7 +190,6 @@ async def get_orders_positions():
                     freqtrade_trade_id=trade_id,
                 ))
 
-            # Map individual orders
             for order in trade.get("orders", []):
                 order_status = order.get("status", "unknown")
                 if order_status in ("open", "pending"):
@@ -307,3 +304,284 @@ async def emergency_stop():
     except Exception as e:
         logger.warning(f"[emergency-stop] FreqtradeClient unavailable, mock fallback: {e}")
         return {"status": "emergency_stop_executed", "reason_codes": ["manual_trigger"], "_mock": True}
+
+
+# ---------------------------------------------------------------------------
+# Trade Trace / Labels / Review — real DB-backed endpoints
+# ---------------------------------------------------------------------------
+
+@router.get("/trades/{trade_id}/trace")
+async def get_trade_source_trace(trade_id: str, db: Session = Depends(get_db)):
+    """Return the full source trace for a trade: Signal -> Strategy -> Snapshot -> RiskDecision -> Trade."""
+    feature_snapshot_data = None
+    runtime_snapshot_data = None
+
+    try:
+        from app.services.feature_snapshot_service import FeatureSnapshotService
+
+        fs_svc = FeatureSnapshotService(db)
+
+        # Try lookup by trade_intent_id first
+        fs = None
+        try:
+            fs = fs_svc.get_by_trade(trade_id)
+        except Exception:
+            pass
+
+        if fs:
+            feature_snapshot_data = {
+                "feature_snapshot_id": str(fs.id),
+                "snapshot_at": fs.snapshot_at.isoformat() if fs.snapshot_at else None,
+                "features": fs.technical_features,
+                "structure_context": fs.structure_context,
+                "mtf_guard_context": fs.mtf_guard_context,
+                "ai_context": fs.ai_context,
+                "risk_context": fs.risk_context,
+                "liquidity_context": fs.liquidity_context,
+            }
+
+            # If we have a runtime_snapshot_id, load the decision snapshot
+            if fs.runtime_snapshot_id:
+                try:
+                    from app.domain.runtime import DecisionSnapshot
+                    ds = (
+                        db.query(DecisionSnapshot)
+                        .filter(DecisionSnapshot.snapshot_uid == fs.runtime_snapshot_id)
+                        .first()
+                    )
+                    if ds:
+                        runtime_snapshot_data = {
+                            "snapshot_id": ds.snapshot_uid,
+                            "decision": ds.final_decision,
+                            "reason_codes": ds.reason_codes or [],
+                            "mtf_guard_context": fs.mtf_guard_context,
+                            "structure_context": ds.structure_context,
+                            "ai_context": ds.ai_context,
+                            "indicator_context": ds.indicator_context,
+                        }
+                except Exception:
+                    logger.debug("DecisionSnapshot lookup failed for %s", fs.runtime_snapshot_id)
+    except Exception as e:
+        logger.warning("[trade-trace] DB lookup failed, returning empty trace: %s", e)
+
+    # Build labels list
+    labels_data = []
+    try:
+        from app.services.trade_reviewer import TradeReviewer
+        label_rows = TradeReviewer.get_labels(db, trade_id)
+        labels_data = [
+            {
+                "id": str(lbl.id),
+                "label": lbl.label,
+                "label_source": lbl.label_source,
+                "confidence": float(lbl.confidence) if lbl.confidence is not None else None,
+                "notes": lbl.notes,
+                "created_at": lbl.created_at.isoformat() if lbl.created_at else None,
+            }
+            for lbl in label_rows
+        ]
+    except Exception:
+        logger.debug("[trade-trace] label lookup failed for %s", trade_id)
+
+    has_snapshot = runtime_snapshot_data is not None
+    has_feature = feature_snapshot_data is not None
+
+    return {
+        "trade_id": trade_id,
+        "trace": {
+            "signal": {
+                "signal_id": None,
+                "source_type": None,
+                "direction": None,
+                "confidence": None,
+                "status": None,
+            },
+            "strategy": {
+                "strategy_id": feature_snapshot_data.get("features", {}).get("strategy_id") if has_feature else None,
+                "strategy_name": None,
+                "version_id": None,
+                "version_no": None,
+                "dsl_version": None,
+            },
+            "runtime_snapshot": runtime_snapshot_data or {
+                "snapshot_id": None,
+                "decision": None,
+                "reason_codes": [],
+                "mtf_guard_context": None,
+                "structure_context": None,
+                "ai_context": None,
+            },
+            "risk_decision": {
+                "decision_type": None,
+                "reason_code": None,
+            },
+            "execution": {
+                "strategy_run_id": None,
+                "run_mode": None,
+                "entry_price": None,
+                "exit_price": None,
+                "pnl_pct": None,
+            },
+            "feature_snapshot": feature_snapshot_data or {
+                "feature_snapshot_id": None,
+                "features": None,
+            },
+        },
+        "labels": labels_data,
+        "available_actions": [
+            {"type": "open_signal", "enabled": has_snapshot, "label": "查看信号"},
+            {"type": "open_strategy", "enabled": has_snapshot, "label": "查看策略"},
+            {"type": "open_snapshot", "enabled": has_snapshot, "label": "查看快照"},
+            {"type": "add_review_label", "enabled": True, "label": "打标签"},
+            {"type": "generate_shadow_strategy", "enabled": True, "label": "生成影子策略"},
+        ],
+    }
+
+
+@router.post("/trades/{trade_id}/labels")
+async def add_trade_review_label(trade_id: str, body: dict, db: Session = Depends(get_db)):
+    """Add a review label to a trade for failure clustering."""
+    label = body.get("label", "")
+    label_source = body.get("label_source", "human")
+    confidence = body.get("confidence")
+    notes = body.get("notes", "")
+
+    if not label:
+        return {"error": "label is required", "status": "error"}
+
+    try:
+        from app.services.trade_reviewer import TradeReviewer
+
+        row = TradeReviewer.add_label(
+            db=db,
+            trade_id=trade_id,
+            label=label,
+            label_source=label_source,
+            confidence=confidence,
+            notes=notes,
+            runtime_snapshot_id=body.get("runtime_snapshot_id"),
+            feature_snapshot_id=body.get("feature_snapshot_id"),
+        )
+        db.commit()
+        return {
+            "trade_id": trade_id,
+            "label_id": str(row.id),
+            "label": row.label,
+            "label_source": row.label_source,
+            "confidence": float(row.confidence) if row.confidence is not None else None,
+            "notes": row.notes,
+            "result": "label_added",
+        }
+    except Exception as e:
+        db.rollback()
+        logger.warning("[add-label] DB write failed, returning stub: %s", e)
+        return {
+            "trade_id": trade_id,
+            "label": label,
+            "label_source": label_source,
+            "notes": notes,
+            "result": "label_added",
+            "_mock": True,
+        }
+
+
+@router.get("/trades/{trade_id}/labels")
+async def get_trade_labels(trade_id: str, db: Session = Depends(get_db)):
+    """List all review labels for a trade."""
+    try:
+        from app.services.trade_reviewer import TradeReviewer
+
+        rows = TradeReviewer.get_labels(db, trade_id)
+        return {
+            "trade_id": trade_id,
+            "labels": [
+                {
+                    "id": str(r.id),
+                    "label": r.label,
+                    "label_source": r.label_source,
+                    "confidence": float(r.confidence) if r.confidence is not None else None,
+                    "notes": r.notes,
+                    "created_at": r.created_at.isoformat() if r.created_at else None,
+                }
+                for r in rows
+            ],
+        }
+    except Exception as e:
+        logger.warning("[get-labels] DB read failed: %s", e)
+        return {"trade_id": trade_id, "labels": [], "_mock": True}
+
+
+@router.get("/trades/{trade_id}/review")
+async def get_trade_review(trade_id: str, db: Session = Depends(get_db)):
+    """Get trade review info including FeatureSnapshot and labels."""
+    feature_snapshot = None
+    labels = []
+    mtf_guard_context = None
+    attribution = None
+
+    # Load FeatureSnapshot
+    try:
+        from app.services.feature_snapshot_service import FeatureSnapshotService
+
+        fs_svc = FeatureSnapshotService(db)
+        fs = fs_svc.get_by_trade(trade_id)
+        if fs:
+            feature_snapshot = {
+                "id": str(fs.id),
+                "snapshot_at": fs.snapshot_at.isoformat() if fs.snapshot_at else None,
+                "symbol": fs.symbol,
+                "exchange": fs.exchange,
+                "timeframe": fs.timeframe,
+                "features": fs.technical_features,
+                "structure_context": fs.structure_context,
+                "ai_context": fs.ai_context,
+                "risk_context": fs.risk_context,
+                "liquidity_context": fs.liquidity_context,
+            }
+            mtf_guard_context = fs.mtf_guard_context
+    except Exception as e:
+        logger.debug("[trade-review] FeatureSnapshot lookup failed: %s", e)
+
+    # Load labels
+    try:
+        from app.services.trade_reviewer import TradeReviewer
+
+        rows = TradeReviewer.get_labels(db, trade_id)
+        labels = [
+            {
+                "id": str(r.id),
+                "label": r.label,
+                "label_source": r.label_source,
+                "confidence": float(r.confidence) if r.confidence is not None else None,
+                "notes": r.notes,
+                "created_at": r.created_at.isoformat() if r.created_at else None,
+            }
+            for r in rows
+        ]
+    except Exception as e:
+        logger.debug("[trade-review] label lookup failed: %s", e)
+
+    # Load attribution
+    try:
+        from app.domain.growth import OrderAttribution
+        attr = (
+            db.query(OrderAttribution)
+            .filter(OrderAttribution.execution_order_id == uuid.UUID(trade_id))
+            .first()
+        )
+        if attr:
+            attribution = {
+                "id": str(attr.id),
+                "rule_path": attr.rule_path,
+                "attribution_confidence": attr.attribution_confidence,
+            }
+    except Exception:
+        pass  # attribution is optional
+
+    return {
+        "trade_id": trade_id,
+        "feature_snapshot": feature_snapshot,
+        "labels": labels,
+        "mtf_guard_context": mtf_guard_context,
+        "attribution": attribution,
+    }

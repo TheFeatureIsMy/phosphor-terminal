@@ -4,6 +4,7 @@ import SwiftUI
 
 struct StrategyBacktestTab: View {
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
     @Bindable var viewModel: StrategyDetailViewModel
 
     var body: some View {
@@ -27,17 +28,18 @@ struct StrategyBacktestTab: View {
             .padding(PulseSpacing.lg)
         }
         .scrollEdgeEffectStyle(.soft, for: .vertical)
+        .id(settingsState.language)
     }
 
     // MARK: - Config
 
     private var configSection: some View {
         VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-            TerminalLabel(text: "回测配置")
+            TerminalLabel(text: L10n.zh("回测配置", en: "Backtest Configuration"))
 
             HStack(spacing: PulseSpacing.md) {
                 VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
-                    Text("时间范围").font(PulseFonts.micro).foregroundStyle(colors.textMuted)
+                    Text(L10n.zh("时间范围", en: "Date Range")).font(PulseFonts.micro).foregroundStyle(colors.textMuted)
                     TextField("YYYYMMDD-YYYYMMDD", text: $viewModel.backtestTimerange)
                         .textFieldStyle(.plain)
                         .font(PulseFonts.label)
@@ -49,7 +51,7 @@ struct StrategyBacktestTab: View {
                 }
 
                 VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
-                    Text("初始资金").font(PulseFonts.micro).foregroundStyle(colors.textMuted)
+                    Text(L10n.zh("初始资金", en: "Initial Capital")).font(PulseFonts.micro).foregroundStyle(colors.textMuted)
                     TextField("10000", value: $viewModel.backtestCapital, format: .number)
                         .textFieldStyle(.plain)
                         .font(PulseFonts.label)
@@ -61,7 +63,7 @@ struct StrategyBacktestTab: View {
                 }
 
                 VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
-                    Text("交易对").font(PulseFonts.micro).foregroundStyle(colors.textMuted)
+                    Text(L10n.zh("交易对", en: "Trading Pair")).font(PulseFonts.micro).foregroundStyle(colors.textMuted)
                     Text(viewModel.backtestSymbols.joined(separator: ", "))
                         .font(PulseFonts.caption)
                         .foregroundStyle(colors.textSecondary)
@@ -74,15 +76,15 @@ struct StrategyBacktestTab: View {
 
     private var actionBar: some View {
         HStack(spacing: PulseSpacing.sm) {
-            let title = viewModel.isStartingBacktest ? "提交中..." :
-                        viewModel.isPollingBacktest ? "回测运行中..." : "启动回测"
+            let title = viewModel.isStartingBacktest ? L10n.zh("提交中...", en: "Submitting...") :
+                        viewModel.isPollingBacktest ? L10n.zh("回测运行中...", en: "Backtest running...") : L10n.zh("启动回测", en: "Run Backtest")
             KryptonButton(title: title) {
                 Task { await viewModel.startBacktest() }
             }
             .disabled(!viewModel.canStartBacktest || viewModel.isStartingBacktest)
 
             if viewModel.isPollingBacktest {
-                Button("取消") { viewModel.stopPolling() }
+                Button(L10n.zh("取消", en: "Cancel")) { viewModel.stopPolling() }
                     .font(PulseFonts.caption)
                     .foregroundStyle(PulseColors.danger)
                     .buttonStyle(.plain)
@@ -94,7 +96,7 @@ struct StrategyBacktestTab: View {
                 HStack(spacing: PulseSpacing.xxs) {
                     Image(systemName: "info.circle")
                         .font(PulseFonts.monoLabel)
-                    Text("请先在 DSL 规则中保存一个版本")
+                    Text(L10n.zh("请先在 DSL 规则中保存一个版本", en: "Save a version in DSL Rules first"))
                         .font(PulseFonts.micro)
                 }
                 .foregroundStyle(PulseColors.warning)
@@ -109,7 +111,7 @@ struct StrategyBacktestTab: View {
             ProgressView()
                 .controlSize(.small)
             VStack(alignment: .leading, spacing: 2) {
-                Text("回测运行中...")
+                Text(L10n.zh("回测运行中...", en: "Backtest running..."))
                     .font(PulseFonts.bodyMedium)
                     .foregroundStyle(colors.textPrimary)
                 if let status = viewModel.backtestStatus {

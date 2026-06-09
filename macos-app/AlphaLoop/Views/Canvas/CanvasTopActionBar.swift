@@ -5,6 +5,7 @@ import SwiftUI
 
 struct CanvasTopActionBar: View {
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
 
     let strategyName: String?
     let strategyStatus: String?
@@ -51,7 +52,7 @@ struct CanvasTopActionBar: View {
                     .padding(.vertical, PulseSpacing.xxs)
                     .background(RoundedRectangle(cornerRadius: PulseRadii.sm).fill(colors.surface))
                 } else {
-                    Text("选择策略开始编辑")
+                    Text(L10n.zh("选择策略开始编辑", en: "Select a strategy to edit"))
                         .font(PulseFonts.caption)
                         .foregroundStyle(colors.textMuted)
                 }
@@ -65,14 +66,14 @@ struct CanvasTopActionBar: View {
                 if isSaving {
                     HStack(spacing: 4) {
                         ProgressView().controlSize(.small).scaleEffect(0.7)
-                        Text("保存中...")
+                        Text(L10n.zh("保存中...", en: "Saving..."))
                             .font(PulseFonts.caption).foregroundStyle(colors.textMuted)
                     }
                 } else if saveSuccess {
                     HStack(spacing: 4) {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 11)).foregroundStyle(KryptonColor.green)
-                        Text("已保存")
+                        Text(L10n.zh("已保存", en: "Saved"))
                             .font(PulseFonts.caption).foregroundStyle(KryptonColor.green)
                     }
                 }
@@ -81,7 +82,7 @@ struct CanvasTopActionBar: View {
                 if let valid = validationValid {
                     HStack(spacing: 4) {
                         Circle().fill(valid ? KryptonColor.green : KryptonColor.red).frame(width: 5, height: 5)
-                        Text(valid ? "验证通过" : "\(validationErrors) 错误")
+                        Text(valid ? L10n.zh("验证通过", en: "Validation Passed") : L10n.zh("\(validationErrors) 错误", en: "\(validationErrors) errors"))
                             .font(PulseFonts.caption)
                             .foregroundStyle(valid ? KryptonColor.green : KryptonColor.red)
                     }
@@ -98,16 +99,17 @@ struct CanvasTopActionBar: View {
 
                 // Action buttons
                 HStack(spacing: PulseSpacing.xxs) {
-                    KryptonActionChip(label: "新建", icon: "plus", action: onCreate)
-                    KryptonActionChip(label: "模板", icon: "square.grid.2x2", action: onTemplate)
-                    KryptonActionChip(label: "验证", icon: "checkmark.shield", action: onValidate, disabled: !hasDSL)
-                    KryptonActionChip(label: "保存", icon: "square.and.arrow.down", action: onSave, primary: true, disabled: !hasDSL)
+                    KryptonActionChip(label: L10n.zh("新建", en: "New"), icon: "plus", action: onCreate)
+                    KryptonActionChip(label: L10n.zh("模板", en: "Templates"), icon: "square.grid.2x2", action: onTemplate)
+                    KryptonActionChip(label: L10n.zh("验证", en: "Validate"), icon: "checkmark.shield", action: onValidate, disabled: !hasDSL)
+                    KryptonActionChip(label: L10n.zh("保存", en: "Save"), icon: "square.and.arrow.down", action: onSave, primary: true, disabled: !hasDSL)
                 }
             }
         }
         .padding(.horizontal, PulseSpacing.lg)
         .padding(.vertical, PulseSpacing.sm)
         .background(colors.surfaceElevated.opacity(0.5))
+        .id(settingsState.language)
     }
 
     private var statusColor: Color {

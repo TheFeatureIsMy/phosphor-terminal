@@ -3,6 +3,7 @@ import SwiftUI
 
 struct RecentRiskEventsCard: View {
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
 
     let events: [RiskEventItem]
 
@@ -40,12 +41,12 @@ struct RecentRiskEventsCard: View {
     var body: some View {
         KryptonCard(emphasis: .balanced) {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-                TerminalLabel(text: "最近风险事件")
+                TerminalLabel(text: L10n.zh("最近风险事件", en: "Recent Risk Events"))
 
                 if events.isEmpty {
                     HStack(spacing: PulseSpacing.xs) {
                         StatusDot(status: .online)
-                        Text("无最近风险事件")
+                        Text(L10n.zh("无最近风险事件", en: "No Recent Risk Events"))
                             .font(PulseFonts.caption)
                             .foregroundStyle(colors.textMuted)
                     }
@@ -60,6 +61,7 @@ struct RecentRiskEventsCard: View {
             }
         }
         .hoverEffect()
+        .id(settingsState.language)
     }
 
     private func eventRow(_ event: RiskEventItem) -> some View {

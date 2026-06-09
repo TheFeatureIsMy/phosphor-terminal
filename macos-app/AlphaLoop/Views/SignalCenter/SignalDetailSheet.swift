@@ -7,6 +7,7 @@ struct SignalDetailSheet: View {
     let signal: SignalV2
     let viewModel: SignalCenterViewModel
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
     let onDismiss: () -> Void
 
     var body: some View {
@@ -53,6 +54,7 @@ struct SignalDetailSheet: View {
             }
         }
         .frame(width: 520, height: 480)
+        .id(settingsState.language)
         
     }
 
@@ -101,18 +103,18 @@ struct SignalDetailSheet: View {
         KryptonCard(emphasis: .balanced) {
             VStack(spacing: PulseSpacing.md) {
                 HStack(spacing: PulseSpacing.xl) {
-                    metricItem(label: "置信度", value: "\(Int(signal.confidence * 100))%", color: confidenceColor)
+                    metricItem(label: L10n.zh("置信度", en: "Confidence"), value: "\(Int(signal.confidence * 100))%", color: confidenceColor)
                     if let score = signal.score {
-                        metricItem(label: "评分", value: String(format: "%.1f", score), color: scoreColor(score))
+                        metricItem(label: L10n.zh("评分", en: "Score"), value: String(format: "%.1f", score), color: scoreColor(score))
                     }
-                    metricItem(label: "风险", value: riskLabel, color: riskColor)
-                    metricItem(label: "状态", value: statusLabel, color: statusColor)
+                    metricItem(label: L10n.zh("风险", en: "Risk"), value: riskLabel, color: riskColor)
+                    metricItem(label: L10n.zh("状态", en: "Status"), value: statusLabel, color: statusColor)
                 }
 
                 HStack(spacing: PulseSpacing.lg) {
-                    detailRow(label: "来源", value: sourceLabel)
-                    detailRow(label: "创建时间", value: formatDate(signal.createdAt))
-                    detailRow(label: "到期时间", value: formatDate(signal.expiresAt))
+                    detailRow(label: L10n.zh("来源", en: "Source"), value: sourceLabel)
+                    detailRow(label: L10n.zh("创建时间", en: "Created"), value: formatDate(signal.createdAt))
+                    detailRow(label: L10n.zh("到期时间", en: "Expires"), value: formatDate(signal.expiresAt))
                 }
             }
         }
@@ -144,9 +146,9 @@ struct SignalDetailSheet: View {
 
     private var reasoningSection: some View {
         VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-            TerminalLabel(text: "推理分析")
+            TerminalLabel(text: L10n.zh("推理分析", en: "Reasoning"))
 
-            Text(signal.reasoning ?? "暂无推理信息")
+            Text(signal.reasoning ?? L10n.zh("暂无推理信息", en: "No reasoning available"))
                 .font(PulseFonts.body)
                 .foregroundStyle(colors.textSecondary)
                 .textSelection(.enabled)
@@ -157,7 +159,7 @@ struct SignalDetailSheet: View {
 
     private func evidenceSection(_ evidence: [AnyCodable]) -> some View {
         VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-            TerminalLabel(text: "证据")
+            TerminalLabel(text: L10n.zh("证据", en: "Evidence"))
 
             ForEach(Array(evidence.enumerated()), id: \.offset) { index, item in
                 HStack(spacing: PulseSpacing.xs) {
@@ -177,7 +179,7 @@ struct SignalDetailSheet: View {
 
     private func lifecycleSection(_ events: [AnyCodable]) -> some View {
         VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-            TerminalLabel(text: "生命周期")
+            TerminalLabel(text: L10n.zh("生命周期", en: "Lifecycle"))
 
             ForEach(Array(events.enumerated()), id: \.offset) { index, event in
                 HStack(spacing: PulseSpacing.xs) {
@@ -207,7 +209,7 @@ struct SignalDetailSheet: View {
     @ViewBuilder
     private var providerTraceSection: some View {
         VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-            TerminalLabel(text: "AI 溯源")
+            TerminalLabel(text: L10n.zh("AI 溯源", en: "AI Provenance"))
 
             if let trace = signal.providerTrace,
                let dict = trace.value as? [String: Any] {
@@ -234,7 +236,7 @@ struct SignalDetailSheet: View {
                     }
                 }
             } else {
-                Text("无溯源数据")
+                Text(L10n.zh("无溯源数据", en: "No provenance data"))
                     .font(PulseFonts.caption)
                     .foregroundStyle(colors.textMuted)
             }
@@ -245,13 +247,13 @@ struct SignalDetailSheet: View {
     private var actionButtons: some View {
         HStack(spacing: PulseSpacing.sm) {
             if signal.status == "pending" {
-                KryptonButton(title: "激活", action: {
+                KryptonButton(title: L10n.zh("激活", en: "Activate"), action: {
                     Task { await viewModel.transition(signal.id, to: "active") }
                     onDismiss()
                 })
             }
 
-            KryptonButton(title: "发布为策略", action: {
+            KryptonButton(title: L10n.zh("发布为策略", en: "Publish as Strategy"), action: {
                 Task { await viewModel.publishToStrategy(signal.id) }
                 onDismiss()
             }, style: .ghost)
@@ -259,7 +261,7 @@ struct SignalDetailSheet: View {
             Spacer()
 
             if signal.status != "archived" {
-                KryptonButton(title: "归档", action: {
+                KryptonButton(title: L10n.zh("归档", en: "Archive"), action: {
                     Task { await viewModel.archive(signal.id) }
                     onDismiss()
                 }, style: .ghost)
@@ -293,9 +295,9 @@ struct SignalDetailSheet: View {
 
     private var sourceLabel: String {
         switch signal.sourceType {
-        case "ai_research": return "AI研究"
+        case "ai_research": return L10n.zh("AI研究", en: "AI Research")
         case "tradingagents": return "TradingAgents"
-        case "manual": return "手动"
+        case "manual": return L10n.zh("手动", en: "Manual")
         case "canvas": return "Canvas"
         default: return signal.sourceType
         }
@@ -303,11 +305,11 @@ struct SignalDetailSheet: View {
 
     private var statusLabel: String {
         switch signal.status {
-        case "pending": return "待处理"
-        case "active": return "已激活"
-        case "expired": return "已过期"
-        case "archived": return "已归档"
-        case "rejected": return "已拒绝"
+        case "pending": return L10n.zh("待处理", en: "Pending")
+        case "active": return L10n.zh("已激活", en: "Active")
+        case "expired": return L10n.zh("已过期", en: "Expired")
+        case "archived": return L10n.zh("已归档", en: "Archived")
+        case "rejected": return L10n.zh("已拒绝", en: "Rejected")
         default: return signal.status
         }
     }
@@ -324,10 +326,10 @@ struct SignalDetailSheet: View {
 
     private var riskLabel: String {
         switch signal.riskLevel {
-        case "low": return "低"
-        case "medium": return "中"
-        case "high": return "高"
-        case "critical": return "极高"
+        case "low": return L10n.zh("低", en: "Low")
+        case "medium": return L10n.zh("中", en: "Medium")
+        case "high": return L10n.zh("高", en: "High")
+        case "critical": return L10n.zh("极高", en: "Critical")
         default: return signal.riskLevel
         }
     }

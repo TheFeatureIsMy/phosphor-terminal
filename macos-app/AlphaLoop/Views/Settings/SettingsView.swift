@@ -28,6 +28,7 @@ struct SettingsView: View {
                 settingsContent
                     .padding(PulseSpacing.lg)
             }
+            .id(settings.language)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }

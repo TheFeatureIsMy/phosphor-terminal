@@ -162,3 +162,51 @@ class RuntimeRedisStore:
 
     async def read_execution_center(self) -> dict | None:
         return await self._get(self._execution_center_key())
+
+    # ── MTF Guard Keys ──
+
+    @staticmethod
+    def _mtf_guard_key(strategy_id: str, symbol: str, fast_tf: str, slow_tf: str) -> str:
+        return f"mtf_guard:{strategy_id}:{symbol}:{fast_tf}:{slow_tf}"
+
+    @staticmethod
+    def _mtf_guard_state_key(strategy_id: str, symbol: str) -> str:
+        return f"mtf_guard_state:{strategy_id}:{symbol}"
+
+    async def write_mtf_guard_state(
+        self,
+        strategy_id: str,
+        symbol: str,
+        fast_tf: str,
+        slow_tf: str,
+        state_data: dict,
+        ttl: int = 300,
+    ) -> None:
+        """Write MTF guard state for a specific timeframe pair and an aggregate key."""
+        pair_key = self._mtf_guard_key(strategy_id, symbol, fast_tf, slow_tf)
+        await self._set(pair_key, state_data, ttl)
+
+        # Also write to the aggregate state key (latest guard state for this symbol)
+        agg_key = self._mtf_guard_state_key(strategy_id, symbol)
+        aggregate = {
+            "fast_tf": fast_tf,
+            "slow_tf": slow_tf,
+            **state_data,
+        }
+        await self._set(agg_key, aggregate, ttl)
+
+    async def read_mtf_guard_state(self, strategy_id: str, symbol: str) -> dict | None:
+        """Read the aggregate MTF guard state for a symbol."""
+        key = self._mtf_guard_state_key(strategy_id, symbol)
+        return await self._get(key)
+
+    async def read_mtf_guard_pair(
+        self,
+        strategy_id: str,
+        symbol: str,
+        fast_tf: str,
+        slow_tf: str,
+    ) -> dict | None:
+        """Read MTF guard state for a specific timeframe pair."""
+        key = self._mtf_guard_key(strategy_id, symbol, fast_tf, slow_tf)
+        return await self._get(key)

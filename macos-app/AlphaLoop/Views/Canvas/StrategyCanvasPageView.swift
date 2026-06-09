@@ -7,6 +7,7 @@ struct StrategyCanvasPageView: View {
     @Environment(PulseColors.self) private var colors
     @Environment(AppState.self) private var appState
     @Environment(\.networkClient) private var networkClient
+    @Environment(SettingsState.self) private var settingsState
 
     // MARK: - State
 
@@ -41,6 +42,7 @@ struct StrategyCanvasPageView: View {
             validationStatusBar
         }
         .background(colors.background)
+        .id(settingsState.language)
         .task { await loadStrategies() }
         .onChange(of: selectedStrategyId) { _, newId in
             if let id = newId {
@@ -59,7 +61,7 @@ struct StrategyCanvasPageView: View {
 
     private var headerBar: some View {
         HStack(spacing: PulseSpacing.md) {
-            TerminalLabel(text: "策略画布")
+            TerminalLabel(text: L10n.zh("策略画布", en: "Strategy Canvas"))
 
             if let strategy = selectedStrategy {
                 HStack(spacing: PulseSpacing.xs) {
@@ -82,21 +84,21 @@ struct StrategyCanvasPageView: View {
             Spacer()
 
             HStack(spacing: PulseSpacing.xs) {
-                KryptonButton(title: "新建策略", action: {
+                KryptonButton(title: L10n.zh("新建策略", en: "New Strategy"), action: {
                     showCreatePanel = true
                 }, style: .ghost)
 
-                KryptonButton(title: "模板库", action: {
+                KryptonButton(title: L10n.zh("模板库", en: "Template Library"), action: {
                     showTemplateLibrary = true
                 }, style: .ghost)
 
-                KryptonButton(title: "验证", action: {
+                KryptonButton(title: L10n.zh("验证", en: "Validate"), action: {
                     Task { await validateCurrentDSL() }
                 }, style: .ghost)
                 .disabled(canvasVM == nil || canvasVM?.lastDSL == nil)
                 .opacity(canvasVM?.lastDSL == nil ? 0.5 : 1)
 
-                KryptonButton(title: "保存", action: {
+                KryptonButton(title: L10n.zh("保存", en: "Save"), action: {
                     Task { await saveCurrentVersion() }
                 })
                 .disabled(canvasVM == nil || canvasVM?.lastDSL == nil)
@@ -149,7 +151,7 @@ struct StrategyCanvasPageView: View {
         VStack(alignment: .leading, spacing: 0) {
             // Sidebar header
             HStack {
-                Text("策略列表")
+                Text(L10n.zh("策略列表", en: "Strategy List"))
                     .font(PulseFonts.captionMedium)
                     .foregroundStyle(colors.textMuted)
                     .textCase(.uppercase)
@@ -243,7 +245,7 @@ struct StrategyCanvasPageView: View {
                 if vm.isSaving {
                     HStack(spacing: 4) {
                         ProgressView().controlSize(.small)
-                        Text("保存中...")
+                        Text(L10n.zh("保存中...", en: "Saving..."))
                             .font(PulseFonts.caption)
                             .foregroundStyle(colors.textSecondary)
                     }
@@ -254,7 +256,7 @@ struct StrategyCanvasPageView: View {
                     )
                 }
                 if vm.saveSuccess {
-                    Text("✓ 已保存")
+                    Text(L10n.zh("✓ 已保存", en: "Saved"))
                         .font(PulseFonts.caption)
                         .foregroundStyle(PulseColors.accent)
                         .padding(.horizontal, 10).padding(.vertical, 5)
@@ -290,11 +292,11 @@ struct StrategyCanvasPageView: View {
                 .font(.system(size: 32, weight: .light))
                 .foregroundStyle(colors.textMuted.opacity(0.5))
 
-            Text("选择左侧策略开始编辑")
+            Text(L10n.zh("选择左侧策略开始编辑", en: "Select a strategy to start editing"))
                 .font(PulseFonts.body)
                 .foregroundStyle(colors.textMuted)
 
-            Text("或创建新策略")
+            Text(L10n.zh("或创建新策略", en: "or create a new strategy"))
                 .font(PulseFonts.caption)
                 .foregroundStyle(colors.textMuted.opacity(0.6))
         }
@@ -330,7 +332,7 @@ struct StrategyCanvasPageView: View {
                         )
                 }
                 .buttonStyle(.plain)
-                .help("复制 DSL")
+                .help(L10n.zh("复制 DSL", en: "Copy DSL"))
 
                 Button(action: {
                     withAnimation(PulseAnimation.springDefault) {
@@ -355,7 +357,7 @@ struct StrategyCanvasPageView: View {
 
             // DSL content
             ScrollView(.vertical, showsIndicators: true) {
-                Text(dslPreviewText.isEmpty ? "// 画布变更后，DSL 代码将在此处实时预览\n// Edit the canvas to see DSL output" : dslPreviewText)
+                Text(dslPreviewText.isEmpty ? L10n.zh("// 画布变更后，DSL 代码将在此处实时预览\n// Edit the canvas to see DSL output", en: "// Edit the canvas to see DSL output here") : dslPreviewText)
                     .font(PulseFonts.body)
                     .foregroundStyle(dslPreviewText.isEmpty ? colors.textMuted : colors.textSecondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -378,14 +380,14 @@ struct StrategyCanvasPageView: View {
                         Circle()
                             .fill(valid ? PulseColors.accent : PulseColors.danger)
                             .frame(width: 6, height: 6)
-                        Text(valid ? "验证通过" : "验证失败 (\(vm.validationErrors) 错误)")
+                        Text(valid ? L10n.zh("验证通过", en: "Validation Passed") : L10n.zh("验证失败 (\(vm.validationErrors) 错误)", en: "Validation Failed (\(vm.validationErrors) errors)"))
                             .font(PulseFonts.caption)
                             .foregroundStyle(valid ? PulseColors.accent : PulseColors.danger)
                     } else {
                         Circle()
                             .fill(colors.textMuted.opacity(0.4))
                             .frame(width: 6, height: 6)
-                        Text("未验证")
+                        Text(L10n.zh("未验证", en: "Not Validated"))
                             .font(PulseFonts.caption)
                             .foregroundStyle(colors.textMuted)
                     }
@@ -406,7 +408,7 @@ struct StrategyCanvasPageView: View {
                 HStack(spacing: PulseSpacing.xxs) {
                     Image(systemName: "chevron.left.forwardslash.chevron.right")
                         .font(.system(size: 9, weight: .medium))
-                    Text("DSL 预览")
+                    Text(L10n.zh("DSL 预览", en: "DSL Preview"))
                         .font(PulseFonts.caption)
                 }
                 .foregroundStyle(showDSLPreview ? PulseColors.accent : colors.textSecondary)
@@ -425,7 +427,7 @@ struct StrategyCanvasPageView: View {
 
             // Strategy count
             if !strategies.isEmpty {
-                Text("\(strategies.count) 策略")
+                Text(L10n.zh("\(strategies.count) 策略", en: "\(strategies.count) Strategies"))
                     .font(PulseFonts.micro)
                     .foregroundStyle(colors.textMuted)
             }
@@ -441,7 +443,7 @@ struct StrategyCanvasPageView: View {
         VStack(spacing: PulseSpacing.md) {
             ProgressView()
                 .controlSize(.regular)
-            Text("加载策略列表...")
+            Text(L10n.zh("加载策略列表...", en: "Loading strategies..."))
                 .font(PulseFonts.body)
                 .foregroundStyle(colors.textSecondary)
         }
@@ -453,10 +455,10 @@ struct StrategyCanvasPageView: View {
     private var emptyStateView: some View {
         EmptyStateView(
             icon: "square.on.square.dashed",
-            title: "暂无策略",
-            description: "创建您的第一个策略，使用可视化画布拖拽编排交易规则",
-            primaryAction: (title: "新建策略", action: { showCreatePanel = true }),
-            secondaryAction: (title: "浏览模板", action: { showTemplateLibrary = true })
+            title: L10n.zh("暂无策略", en: "No Strategies"),
+            description: L10n.zh("创建您的第一个策略，使用可视化画布拖拽编排交易规则", en: "Create your first strategy using the visual canvas to design trading rules"),
+            primaryAction: (title: L10n.zh("新建策略", en: "New Strategy"), action: { showCreatePanel = true }),
+            secondaryAction: (title: L10n.zh("浏览模板", en: "Browse Templates"), action: { showTemplateLibrary = true })
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -479,7 +481,7 @@ struct StrategyCanvasPageView: View {
     private var templateLibrarySheet: some View {
         VStack(alignment: .leading, spacing: PulseSpacing.md) {
             HStack {
-                TerminalLabel(text: "模板库")
+                TerminalLabel(text: L10n.zh("模板库", en: "Template Library"))
                 Spacer()
                 Button(action: { showTemplateLibrary = false }) {
                     Image(systemName: "xmark")
@@ -495,28 +497,28 @@ struct StrategyCanvasPageView: View {
             ScrollView {
                 LazyVStack(spacing: PulseSpacing.sm) {
                     templateRow(
-                        name: "RSI 均值回归",
-                        description: "RSI 超卖买入、超买卖出，适合震荡行情",
+                        name: L10n.zh("RSI 均值回归", en: "RSI Mean Reversion"),
+                        description: L10n.zh("RSI 超卖买入、超买卖出，适合震荡行情", en: "Buy on RSI oversold, sell on overbought — suited for range-bound markets"),
                         icon: "waveform.path.ecg"
                     )
                     templateRow(
-                        name: "布林带突破",
-                        description: "价格突破布林带上轨做多，跌破下轨做空",
+                        name: L10n.zh("布林带突破", en: "Bollinger Band Breakout"),
+                        description: L10n.zh("价格突破布林带上轨做多，跌破下轨做空", en: "Go long on upper band breakout, short on lower band breakdown"),
                         icon: "chart.line.uptrend.xyaxis"
                     )
                     templateRow(
-                        name: "MACD 趋势跟踪",
-                        description: "MACD 金叉做多、死叉做空，搭配 EMA 过滤",
+                        name: L10n.zh("MACD 趋势跟踪", en: "MACD Trend Following"),
+                        description: L10n.zh("MACD 金叉做多、死叉做空，搭配 EMA 过滤", en: "Long on MACD bullish crossover, short on bearish — with EMA filter"),
                         icon: "arrow.up.right"
                     )
                     templateRow(
-                        name: "多时间框架确认",
-                        description: "大周期定方向，小周期定入场，多级别共振",
+                        name: L10n.zh("多时间框架确认", en: "Multi-Timeframe Confirmation"),
+                        description: L10n.zh("大周期定方向，小周期定入场，多级别共振", en: "Higher timeframe sets direction, lower timeframe times entry — multi-TF confluence"),
                         icon: "clock.arrow.2.circlepath"
                     )
                     templateRow(
-                        name: "网格交易",
-                        description: "在固定价格区间内等距挂单，赚取波动收益",
+                        name: L10n.zh("网格交易", en: "Grid Trading"),
+                        description: L10n.zh("在固定价格区间内等距挂单，赚取波动收益", en: "Place evenly-spaced limit orders within a price range to capture volatility"),
                         icon: "grid"
                     )
                 }
@@ -651,7 +653,7 @@ struct StrategyCanvasPageView: View {
             let data = try JSONSerialization.data(withJSONObject: dsl, options: [.prettyPrinted, .sortedKeys])
             dslPreviewText = String(data: data, encoding: .utf8) ?? ""
         } catch {
-            dslPreviewText = "// 无法序列化 DSL\n// \(error.localizedDescription)"
+            dslPreviewText = L10n.zh("// 无法序列化 DSL\n// \(error.localizedDescription)", en: "// Failed to serialize DSL\n// \(error.localizedDescription)")
         }
     }
 

@@ -5,6 +5,7 @@ import SwiftUI
 
 struct CanvasDSLPreviewPanel: View {
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
 
     let dslText: String
     let onCopy: () -> Void
@@ -26,7 +27,7 @@ struct CanvasDSLPreviewPanel: View {
 
                 Spacer()
 
-                KryptonMiniIconButton(icon: "doc.on.doc", action: onCopy, help: "复制 DSL")
+                KryptonMiniIconButton(icon: "doc.on.doc", action: onCopy, help: L10n.zh("复制 DSL", en: "Copy DSL"))
                 KryptonMiniIconButton(icon: "xmark", action: onClose)
             }
             .padding(.horizontal, PulseSpacing.sm)
@@ -36,7 +37,7 @@ struct CanvasDSLPreviewPanel: View {
 
             // Content
             ScrollView(.vertical, showsIndicators: true) {
-                Text(dslText.isEmpty ? "// 画布变更后，DSL 代码将在此处实时预览" : dslText)
+                Text(dslText.isEmpty ? L10n.zh("// 画布变更后，DSL 代码将在此处实时预览", en: "// Edit the canvas to see live DSL preview here") : dslText)
                     .font(.system(size: 11, design: .monospaced))
                     .foregroundStyle(dslText.isEmpty ? colors.textMuted : colors.textSecondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -46,6 +47,7 @@ struct CanvasDSLPreviewPanel: View {
             .background(colors.background.opacity(0.5))
         }
         .background(colors.surface.opacity(0.3))
+        .id(settingsState.language)
     }
 }
 

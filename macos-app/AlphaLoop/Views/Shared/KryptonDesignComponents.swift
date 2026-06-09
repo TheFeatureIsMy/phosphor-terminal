@@ -95,8 +95,8 @@ struct KryptonSignalTag: View {
 
         var label: String {
             switch self {
-            case .long: return "LONG 多"
-            case .short: return "SHORT 空"
+            case .long: return L10n.zh("LONG 多", en: "LONG")
+            case .short: return L10n.zh("SHORT 空", en: "SHORT")
             case .neutral: return "NEUTRAL"
             }
         }
@@ -155,7 +155,7 @@ struct KryptonTradingTable<Data: RandomAccessCollection, RowContent: View>: View
         data: Data,
         columns: [TableColumn],
         maxHeight: CGFloat? = 240,
-        emptyMessage: String = "暂无数据",
+        emptyMessage: String = L10n.zh("暂无数据", en: "No Data"),
         @ViewBuilder rowContent: @escaping (Data.Element) -> RowContent
     ) {
         self.data = data

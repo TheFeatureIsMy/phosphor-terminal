@@ -4,6 +4,7 @@ import SwiftUI
 
 struct DSLValidationReportView: View {
     @Environment(PulseColors.self) private var colors
+    @Environment(SettingsState.self) private var settingsState
     let report: DSLValidationReport
 
     var body: some View {
@@ -12,17 +13,17 @@ struct DSLValidationReportView: View {
             HStack(spacing: PulseSpacing.xs) {
                 Image(systemName: report.valid ? "checkmark.shield.fill" : "xmark.shield.fill")
                     .foregroundStyle(report.valid ? PulseColors.success : PulseColors.danger)
-                Text(report.valid ? "验证通过" : "验证失败")
+                Text(report.valid ? L10n.zh("验证通过", en: "Validation Passed") : L10n.zh("验证失败", en: "Validation Failed"))
                     .font(PulseFonts.bodyMedium)
                     .foregroundStyle(report.valid ? PulseColors.success : PulseColors.danger)
 
                 Spacer()
 
                 if report.errorCount > 0 {
-                    badge("\(report.errorCount) 错误", color: PulseColors.danger)
+                    badge(L10n.zh("\(report.errorCount) 错误", en: "\(report.errorCount) errors"), color: PulseColors.danger)
                 }
                 if report.warningCount > 0 {
-                    badge("\(report.warningCount) 警告", color: PulseColors.warning)
+                    badge(L10n.zh("\(report.warningCount) 警告", en: "\(report.warningCount) warnings"), color: PulseColors.warning)
                 }
             }
 
@@ -31,7 +32,7 @@ struct DSLValidationReportView: View {
                 HStack(spacing: PulseSpacing.xxs) {
                     Image(systemName: "exclamationmark.octagon.fill")
                         .foregroundStyle(PulseColors.danger)
-                    Text("Safe Hold 触发: \(report.safeHoldReasons.joined(separator: ", "))")
+                    Text(L10n.zh("Safe Hold 触发: ", en: "Safe Hold triggered: ") + report.safeHoldReasons.joined(separator: ", "))
                         .font(PulseFonts.caption)
                         .foregroundStyle(PulseColors.danger)
                 }

@@ -3,7 +3,7 @@ import type { Node, Edge } from '@xyflow/react'
 import { setBridgeHandler, sendToSwift } from '../bridge'
 import { graphToDsl } from '../converters/graphToDsl'
 import { dslToGraph } from '../converters/dslToGraph'
-import type { SwiftToReactMessage, ValidationReport, RulePackageDSL } from '../types'
+import type { SwiftToReactMessage, ValidationReport, AnyRulePackageDSL } from '../types'
 
 interface UseBridgeParams {
   setNodes: (nodes: Node[]) => void
@@ -18,7 +18,8 @@ export function useCanvasBridge({ setNodes, setEdges, setValidation }: UseBridge
   const handleMessage = useCallback((msg: SwiftToReactMessage) => {
     switch (msg.type) {
       case 'loadDSL': {
-        const { nodes, edges } = dslToGraph(msg.payload.dsl)
+        const dsl = msg.payload.dsl as AnyRulePackageDSL
+        const { nodes, edges } = dslToGraph(dsl)
         setNodes(nodes)
         setEdges(edges)
         nodesRef.current = nodes
@@ -38,6 +39,27 @@ export function useCanvasBridge({ setNodes, setEdges, setValidation }: UseBridge
       }
       case 'validationResult': {
         setValidation(msg.payload)
+        break
+      }
+      case 'mtfGuardStateUpdate': {
+        const { guardId, state, reasonCodes } = msg.payload
+        // Update all edges whose data.guardId matches
+        const updatedEdges = edgesRef.current.map(edge => {
+          const edgeData = edge.data as Record<string, unknown> | undefined
+          if (edge.type === 'mtfGuard' && edgeData?.guardId === guardId) {
+            return {
+              ...edge,
+              data: {
+                ...edgeData,
+                guardState: state,
+                reasonCodes: reasonCodes ?? [],
+              },
+            }
+          }
+          return edge
+        })
+        edgesRef.current = updatedEdges
+        setEdges(updatedEdges)
         break
       }
     }
