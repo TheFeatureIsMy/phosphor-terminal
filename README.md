@@ -1,73 +1,73 @@
-# React + TypeScript + Vite
+# AlphaLoop
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+AI 驱动的加密货币量化交易工作台 — macOS 原生客户端 + Python/FastAPI 后端 + React 策略画布。
 
-Currently, two official plugins are available:
+界面默认中文（zh-CN），暗黑赛博朋克 + Liquid Glass 设计语言。
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 三个相互独立的代码库
 
-## React Compiler
+| 路径 | 技术栈 | 职责 |
+|---|---|---|
+| `backend/` | Python 3.11 · FastAPI · SQLAlchemy · Pydantic v2 | API、策略评估、风控、AI 研究编排、Freqtrade 适配 |
+| `macos-app/` | Swift 6.2 · SwiftUI · macOS 26+ | 原生客户端，target = `AlphaLoop` |
+| `canvas-web/` | React 19 · Vite · @xyflow/react | 策略图形化编辑器（嵌入 macOS WebView） |
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+三方之间不共享代码,只通过 HTTP API 通信。
 
-## Expanding the ESLint configuration
+## 快速开始
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 后端
+```bash
+cd backend
+python3 run.py                          # FastAPI on :8000
+python3 -m pytest tests/ -q             # 跑测试 (CI 覆盖率门槛 30%)
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### macOS App
+```bash
+cd macos-app
+swift build && swift run                # 编译 + 运行
 ```
+
+### 策略画布
+```bash
+cd canvas-web
+npm install && npm run dev              # Vite dev server on :5173
+```
+
+### Docker 全栈
+```bash
+docker compose up                       # 起 backend (:8000) + Freqtrade (:8080)
+```
+
+## 文档入口
+
+完整文档清单见 [`docs/README.md`](docs/README.md)。常用入口：
+
+- **产品愿景与 IA**: [`docs/product/ia_backend_redesign.md`](docs/product/ia_backend_redesign.md)
+- **架构总览 (v2.5)**: [`docs/architecture/00_master_architecture_decision_v2_5.md`](docs/architecture/00_master_architecture_decision_v2_5.md)
+- **开发计划**: [`docs/planning/development_plan_v2_5.md`](docs/planning/development_plan_v2_5.md)
+- **页面设计稿**: [`docs/superpowers/specs/`](docs/superpowers/specs/)
+- **Claude Code 协作约定**: [`CLAUDE.md`](CLAUDE.md)
+
+## 仓库布局
+
+```
+phosphor-terminal/
+├── backend/              FastAPI 后端
+├── macos-app/            SwiftUI 原生应用 (AlphaLoop)
+├── canvas-web/           React 策略画布
+├── docs/                 全部产品 / 架构 / 设计文档
+│   ├── product/          顶层产品 PRD
+│   ├── architecture/     v2.5 架构决策与阶段方案
+│   ├── planning/         开发计划
+│   ├── superpowers/      页面级设计稿 (specs)
+│   ├── ui-references/    截图与 HTML 原型
+│   └── archive/          历史重构报告
+├── docker-compose.yml
+└── CLAUDE.md             Claude Code 工作规约
+```
+
+## 许可
+
+私有项目。

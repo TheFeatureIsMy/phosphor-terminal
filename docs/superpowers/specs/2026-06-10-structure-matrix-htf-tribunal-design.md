@@ -9,7 +9,7 @@
 
 ## Problem
 
-The current `StructureMatrixView` (Column-First implementation) renders a 3-column zone-type tower (Order Block / FVG / Liquidity Pool) cross-cut by a timeframe gutter (5m/15m/1h/4h) and a bottom reason-codes console. It covers basic matrix display + status banner + shadow-window side panel, but is missing roughly half of the features specified in `PulseDesk_Final_Product_IA_Backend_Redesign.md` §6.2:
+The current `StructureMatrixView` (Column-First implementation) renders a 3-column zone-type tower (Order Block / FVG / Liquidity Pool) cross-cut by a timeframe gutter (5m/15m/1h/4h) and a bottom reason-codes console. It covers basic matrix display + status banner + shadow-window side panel, but is missing roughly half of the features specified in `docs/product/ia_backend_redesign.md` §6.2:
 
 - **No Shadow Window state visualization** (the central concept: countdown to next HTF candle close)
 - **No 8-state machine display** (the real `MTFGuardState` has 8 values, not the 5 the previous spec assumed)
