@@ -53,6 +53,15 @@ extension L10n {
         static var block: String { zh("阻断", en: "Block") }
         static var reduce: String { zh("减仓", en: "Reduce") }
 
+        // Matrix · Column-First redesign
+        static var consistencyTowers: String { zh("区域一致性矩阵", en: "Zone Consistency Towers") }
+        static var aligned: String { zh("对齐", en: "aligned") }
+        static var auditLog: String { zh("审计日志", en: "Audit Log") }
+        static var htf: String { zh("高周期", en: "HTF") }
+        static var ltf: String { zh("低周期", en: "LTF") }
+        static var preEntryGuard: String { zh("多周期一致性裁判", en: "multi-timeframe consistency referee") }
+        static var observe: String { zh("观察", en: "Observe") }
+
         // States
         static var stateHealthy: String { zh("健康", en: "Healthy") }
         static var stateWarning: String { zh("警告", en: "Warning") }
