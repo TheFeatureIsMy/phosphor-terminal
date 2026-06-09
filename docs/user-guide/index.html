@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN" data-lang="zh">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AlphaLoop · 用户指南</title>
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#/">
+      <span class="brand-mark">α</span>
+      <span class="brand-name">AlphaLoop Guide</span>
+    </a>
+    <div class="topbar-actions">
+      <button id="lang-toggle" class="lang-toggle" aria-label="Toggle language">
+        <span data-lang-zh>中</span><span class="lang-sep">◍</span><span data-lang-en>en</span>
+      </button>
+      <button id="search-toggle" class="search-toggle" aria-label="Search">⌘K</button>
+    </div>
+  </header>
+  <div class="layout">
+    <nav class="sidebar" id="sidebar" aria-label="Guide navigation"></nav>
+    <main class="chapter" id="chapter" tabindex="-1"><p class="loading">载入中…</p></main>
+  </div>
+  <div class="search-modal" id="search-modal" hidden>
+    <div class="search-shell">
+      <input id="search-input" type="search" autocomplete="off" placeholder="搜索章节…" />
+      <ul id="search-results"></ul>
+    </div>
+  </div>
+  <footer class="footer">
+    <span>© 2026 AlphaLoop</span>
+    <nav class="pager">
+      <a id="pager-prev" rel="prev">◀ 上一章</a>
+      <a id="pager-next" rel="next">下一章 ▶</a>
+    </nav>
+  </footer>
+  <script type="module" src="assets/app.js"></script>
+</body>
+</html>
