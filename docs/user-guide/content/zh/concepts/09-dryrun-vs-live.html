@@ -1,0 +1,106 @@
+<h1>回测 vs 干跑 vs 实盘</h1>
+<p class="chapter-meta">概念 · 09 / 10 · 5 分钟</p>
+
+<blockquote class="lede">同一个策略在三个世界跑: 回测看历史,干跑看现在,实盘看口袋。三个数字差一点都正常,差太多就不能上。</blockquote>
+
+<blockquote class="pull">
+  "Backtesting is the process of testing a trading strategy on historical data to see how it would have performed. It's the first step before risking real capital."<cite>— Freqtrade<sup class="cite">[1]</sup></cite>
+</blockquote>
+
+<svg class="diagram" viewBox="0 0 600 240" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="240" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- Three phase columns -->
+  <line x1="200" y1="20" x2="200" y2="220" stroke="rgba(255,255,255,0.08)" stroke-width="1" stroke-dasharray="4,4"/>
+  <line x1="400" y1="20" x2="400" y2="220" stroke="rgba(255,255,255,0.08)" stroke-width="1" stroke-dasharray="4,4"/>
+
+  <!-- Column headers -->
+  <text x="100" y="32" fill="#00ff9d" font-family="monospace" font-size="12" text-anchor="middle" font-weight="bold">BACKTEST</text>
+  <text x="300" y="32" fill="#f5c542" font-family="monospace" font-size="12" text-anchor="middle" font-weight="bold">DRY-RUN</text>
+  <text x="500" y="32" fill="#ff5470" font-family="monospace" font-size="12" text-anchor="middle" font-weight="bold">LIVE</text>
+
+  <!-- Backtest column -->
+  <rect x="30" y="50" width="140" height="40" fill="rgba(0,255,157,0.15)" stroke="#00ff9d" stroke-width="1" rx="4"/>
+  <text x="100" y="68" fill="#e8eaee" font-family="monospace" font-size="11" text-anchor="middle">历史 K 线</text>
+  <text x="100" y="82" fill="#9ca0a8" font-family="monospace" font-size="10" text-anchor="middle">2023 — 今天</text>
+
+  <rect x="30" y="100" width="140" height="40" fill="rgba(0,255,157,0.15)" stroke="#00ff9d" stroke-width="1" rx="4"/>
+  <text x="100" y="118" fill="#e8eaee" font-family="monospace" font-size="11" text-anchor="middle">模拟撮合</text>
+  <text x="100" y="132" fill="#9ca0a8" font-family="monospace" font-size="10" text-anchor="middle">假定全成交</text>
+
+  <rect x="30" y="150" width="140" height="40" fill="rgba(0,255,157,0.15)" stroke="#00ff9d" stroke-width="1" rx="4"/>
+  <text x="100" y="168" fill="#e8eaee" font-family="monospace" font-size="11" text-anchor="middle">分钟级跑完</text>
+  <text x="100" y="182" fill="#9ca0a8" font-family="monospace" font-size="10" text-anchor="middle">100 天 / 30 秒</text>
+
+  <!-- Dry-Run column -->
+  <rect x="230" y="50" width="140" height="40" fill="rgba(245,197,66,0.15)" stroke="#f5c542" stroke-width="1" rx="4"/>
+  <text x="300" y="68" fill="#e8eaee" font-family="monospace" font-size="11" text-anchor="middle">实时行情</text>
+  <text x="300" y="82" fill="#9ca0a8" font-family="monospace" font-size="10" text-anchor="middle">WebSocket 推送</text>
+
+  <rect x="230" y="100" width="140" height="40" fill="rgba(245,197,66,0.15)" stroke="#f5c542" stroke-width="1" rx="4"/>
+  <text x="300" y="118" fill="#e8eaee" font-family="monospace" font-size="11" text-anchor="middle">纸面下单</text>
+  <text x="300" y="132" fill="#9ca0a8" font-family="monospace" font-size="10" text-anchor="middle">不动真金</text>
+
+  <rect x="230" y="150" width="140" height="40" fill="rgba(245,197,66,0.15)" stroke="#f5c542" stroke-width="1" rx="4"/>
+  <text x="300" y="168" fill="#e8eaee" font-family="monospace" font-size="11" text-anchor="middle">真实时间流</text>
+  <text x="300" y="182" fill="#9ca0a8" font-family="monospace" font-size="10" text-anchor="middle">1 周 = 1 周</text>
+
+  <!-- Live column -->
+  <rect x="430" y="50" width="140" height="40" fill="rgba(255,84,112,0.15)" stroke="#ff5470" stroke-width="1" rx="4"/>
+  <text x="500" y="68" fill="#e8eaee" font-family="monospace" font-size="11" text-anchor="middle">实时行情</text>
+  <text x="500" y="82" fill="#9ca0a8" font-family="monospace" font-size="10" text-anchor="middle">+ 滑点 + 手续费</text>
+
+  <rect x="430" y="100" width="140" height="40" fill="rgba(255,84,112,0.15)" stroke="#ff5470" stroke-width="1" rx="4"/>
+  <text x="500" y="118" fill="#e8eaee" font-family="monospace" font-size="11" text-anchor="middle">交易所下单</text>
+  <text x="500" y="132" fill="#9ca0a8" font-family="monospace" font-size="10" text-anchor="middle">真金白银</text>
+
+  <rect x="430" y="150" width="140" height="40" fill="rgba(255,84,112,0.15)" stroke="#ff5470" stroke-width="1" rx="4"/>
+  <text x="500" y="168" fill="#e8eaee" font-family="monospace" font-size="11" text-anchor="middle">部分成交 / 排队</text>
+  <text x="500" y="182" fill="#9ca0a8" font-family="monospace" font-size="10" text-anchor="middle">价格可能跑掉</text>
+
+  <!-- Bottom progression -->
+  <path d="M170 215 L195 215 M205 215 L230 215" stroke="#9ca0a8" stroke-width="1.5" marker-end="url(#arrow-r)"/>
+  <path d="M370 215 L395 215 M405 215 L430 215" stroke="#9ca0a8" stroke-width="1.5" marker-end="url(#arrow-r)"/>
+  <defs>
+    <marker id="arrow-r" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#9ca0a8"/>
+    </marker>
+  </defs>
+  <text x="100" y="232" fill="#9ca0a8" font-family="monospace" font-size="10" text-anchor="middle">先证明它在历史上能赚</text>
+  <text x="300" y="232" fill="#9ca0a8" font-family="monospace" font-size="10" text-anchor="middle">再验证现在还能赚</text>
+  <text x="500" y="232" fill="#9ca0a8" font-family="monospace" font-size="10" text-anchor="middle">最后用小本上场</text>
+</svg>
+
+<h2>为什么重要</h2>
+<p>每个交易者都想跳过测试直接上实盘——历史上从来没人这么做后还能活下来。三个阶段不是"麻烦",是<strong>三个独立的过滤器</strong>: 回测过滤掉数学上就不赚钱的策略;干跑过滤掉<strong>过拟合</strong>(在历史上长得好看,换个时间段就垮)的策略;实盘小仓过滤掉那些"理论上能赚但你心理上扛不住"的策略。三关都过了才能放大。</p>
+<p>更现实的一点: 回测和实盘之间总有差距(滑点、手续费、撮合延迟、流动性不足),这个差距叫 <strong>backtest-live gap</strong>。能在干跑里复现的差距,叫"已知的差距",可以接受。回测赚 20% 实盘亏 5% 的策略,差距太大,不能上。</p>
+
+<h2>三个阶段</h2>
+<ul>
+  <li><strong>回测 (Backtest)</strong> — 用历史 K 线模拟下单,几分钟跑完几年的数据。优点是快、可重复;缺点是<strong>用了未来信息</strong>(回头看的时候你知道哪根 K 线会涨)、<strong>没有滑点</strong>(假定按你想要的价格全成交)、<strong>用同一段数据反复调参</strong>(过拟合)。</li>
+  <li><strong>干跑 (Dry-Run / Paper Trading)</strong> — 用实时行情,但下单只走"纸面账户"。优点是消除回测的所有作弊空间(你看不到未来),还能测系统稳定性、网络断线、API 限频等工程问题;缺点是<strong>没有真实成交</strong>,有些流动性问题暴露不出来。</li>
+  <li><strong>实盘 (Live)</strong> — 真金白银。即使做了一切准备,也要用<strong>极小仓位</strong>开始(账户的 0.5% – 2%),让真实的滑点、部分成交、心理压力都暴露出来。运行 2 周后没失控,再考虑放大。</li>
+</ul>
+
+<h2>常见坑</h2>
+<ul>
+  <li><strong>用同一段数据既调参又评估</strong>——这是过拟合的标准操作。正确做法: 训练集 / 验证集 / 测试集分开,测试集只用一次。</li>
+  <li><strong>回测设默认 0 滑点 0 手续费</strong>——这等于在自己骗自己。至少加上交易所的真实手续费(币安现货 0.1%)和合理滑点(0.05% – 0.2%)。</li>
+  <li><strong>干跑跑了 2 天就觉得"够了"</strong>——大多数策略要 1 – 2 周才能见到完整的市场状态(趋势 / 横盘 / 突发波动)。</li>
+  <li><strong>实盘直接全仓上</strong>——回测里 -20% 的最大回撤是历史最大值,实盘几乎肯定会更大。先小后大。</li>
+</ul>
+
+<h2>在 AlphaLoop 中</h2>
+<ul>
+  <li><a href="#/pages/strategy/backtest-simulation">回测与仿真</a> — 跑回测、看曲线、对比策略</li>
+  <li><a href="#/pages/execution/execution-center">执行中心</a> — 切换 dry-run / live 模式,启停策略</li>
+  <li><a href="#/pages/overview/live-readiness">上线就绪度</a> — 策略上实盘前的自检清单</li>
+  <li><a href="#/walkthroughs/first-strategy">情景 · 第一个策略上线</a> — 从回测到实盘的完整走查</li>
+</ul>
+
+<section class="sources">
+  <h3>引用</h3>
+  <ol>
+    <li><a href="https://www.freqtrade.io/en/2023.8/backtesting" target="_blank" rel="noreferrer noopener">Freqtrade — Backtesting Documentation</a></li>
+  </ol>
+</section>
