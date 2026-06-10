@@ -1,0 +1,131 @@
+<h1>执行中心</h1>
+<p class="chapter-meta">页面 · 执行 · 5 分钟</p>
+
+<blockquote class="lede">执行中心是 AlphaLoop 的总控台——从这里你可以看到所有策略会话的运行状态、切换干跑/实盘模式、一键紧急停止。</blockquote>
+
+<h2>TL;DR</h2>
+<p>执行中心汇总了所有正在运行的 Freqtrade 会话。顶部五张卡片分别显示运行中会话数、持仓数、挂单数、Freqtrade 心跳状态和执行延迟。下方是每个会话的详细列表，标注模式（干跑/实盘/纸交易）、策略名和持仓/挂单计数。右上角的红色紧急停止按钮可以在极端情况下立即终止所有交易。</p>
+
+<h2>谁用 · 何时用</h2>
+<p>任何需要知道"当前策略在跑吗？跑得怎么样？"的时候，都该先看执行中心。每天早上开盘前、策略部署后、收到异常告警时，执行中心是你的第一站。如果你只想看一个页面来了解系统是否健康，就看这个。</p>
+
+<h2>页面解剖</h2>
+<svg class="diagram" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="320" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- ① 状态横幅区域 -->
+  <rect x="20" y="14" width="560" height="40" fill="rgba(255,84,112,0.08)" stroke="#ff5470" stroke-width="0.8" rx="4"/>
+  <circle cx="40" cy="34" r="5" fill="#ff5470"/>
+  <text x="52" y="38" fill="#e8eaee" font-family="monospace" font-size="11" font-weight="bold">引擎异常: freqtrade_heartbeat_timeout, exchange_connection_lost</text>
+  <text x="20" y="10" fill="#5e636d" font-family="monospace" font-size="9">① 状态横幅</text>
+
+  <!-- ② 汇总卡片 -->
+  <rect x="20" y="66" width="100" height="52" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.8" rx="4"/>
+  <circle cx="38" cy="86" r="6" fill="#00ff9d"/>
+  <text x="50" y="90" fill="#e8eaee" font-family="monospace" font-size="14" font-weight="bold">3</text>
+  <text x="50" y="104" fill="#5e636d" font-family="monospace" font-size="8">运行中</text>
+
+  <rect x="128" y="66" width="100" height="52" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.8" rx="4"/>
+  <circle cx="146" cy="86" r="6" fill="#ff9b3d"/>
+  <text x="158" y="90" fill="#e8eaee" font-family="monospace" font-size="14" font-weight="bold">7</text>
+  <text x="158" y="104" fill="#5e636d" font-family="monospace" font-size="8">持仓</text>
+
+  <rect x="236" y="66" width="100" height="52" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.8" rx="4"/>
+  <circle cx="254" cy="86" r="6" fill="#f5c542"/>
+  <text x="266" y="90" fill="#e8eaee" font-family="monospace" font-size="14" font-weight="bold">2</text>
+  <text x="266" y="104" fill="#5e636d" font-family="monospace" font-size="8">挂单</text>
+
+  <rect x="344" y="66" width="100" height="52" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.8" rx="4"/>
+  <circle cx="362" cy="86" r="6" fill="#00ff9d"/>
+  <text x="374" y="90" fill="#e8eaee" font-family="monospace" font-size="14" font-weight="bold">Healthy</text>
+  <text x="374" y="104" fill="#5e636d" font-family="monospace" font-size="8">Freqtrade</text>
+
+  <rect x="452" y="66" width="70" height="52" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.8" rx="4"/>
+  <circle cx="470" cy="86" r="6" fill="#00ff9d"/>
+  <text x="482" y="90" fill="#e8eaee" font-family="monospace" font-size="14" font-weight="bold">42ms</text>
+  <text x="482" y="104" fill="#5e636d" font-family="monospace" font-size="8">延迟</text>
+
+  <rect x="530" y="66" width="50" height="52" fill="rgba(255,84,112,0.12)" stroke="#ff5470" stroke-width="0.8" rx="20"/>
+  <text x="555" y="100" fill="white" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">紧急停止</text>
+
+  <text x="20" y="62" fill="#5e636d" font-family="monospace" font-size="9">② 汇总卡片</text>
+
+  <!-- ③ 会话列表 -->
+  <rect x="20" y="132" width="560" height="36" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.8" rx="4"/>
+  <circle cx="36" cy="150" r="4" fill="#00ff9d"/>
+  <text x="46" y="154" fill="#e8eaee" font-family="monospace" font-size="11">ScalpBTC</text>
+  <text x="46" y="164" fill="#5e636d" font-family="monospace" font-size="8">BTC/USDT</text>
+  <rect x="190" y="145" width="40" height="14" fill="rgba(245,197,66,0.12)" stroke="#f5c542" stroke-width="0.5" rx="7"/>
+  <text x="210" y="155" fill="#f5c542" font-family="monospace" font-size="8" text-anchor="middle">dryrun</text>
+  <text x="290" y="154" fill="#9ca0a8" font-family="monospace" font-size="10" text-anchor="end">持仓 2</text>
+  <text x="360" y="154" fill="#5e636d" font-family="monospace" font-size="10" text-anchor="end">挂单 0</text>
+
+  <rect x="20" y="172" width="560" height="36" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.8" rx="4"/>
+  <circle cx="36" cy="190" r="4" fill="#00ff9d"/>
+  <text x="46" y="194" fill="#e8eaee" font-family="monospace" font-size="11">ETHMomentum</text>
+  <text x="46" y="204" fill="#5e636d" font-family="monospace" font-size="8">ETH/USDT</text>
+  <rect x="190" y="185" width="40" height="14" fill="rgba(255,84,112,0.12)" stroke="#ff5470" stroke-width="0.5" rx="7"/>
+  <text x="210" y="195" fill="#ff5470" font-family="monospace" font-size="8" text-anchor="middle">live</text>
+  <text x="290" y="194" fill="#9ca0a8" font-family="monospace" font-size="10" text-anchor="end">持仓 5</text>
+  <text x="360" y="194" fill="#5e636d" font-family="monospace" font-size="10" text-anchor="end">挂单 1</text>
+
+  <rect x="20" y="212" width="560" height="36" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.8" rx="4"/>
+  <circle cx="36" cy="230" r="4" fill="#f5c542"/>
+  <text x="46" y="234" fill="#e8eaee" font-family="monospace" font-size="11">SOLGrid</text>
+  <text x="46" y="244" fill="#5e636d" font-family="monospace" font-size="8">SOL/USDT</text>
+  <rect x="190" y="225" width="50" height="14" fill="rgba(0,255,157,0.12)" stroke="#00ff9d" stroke-width="0.5" rx="7"/>
+  <text x="215" y="235" fill="#00ff9d" font-family="monospace" font-size="8" text-anchor="middle">paper</text>
+  <text x="290" y="234" fill="#9ca0a8" font-family="monospace" font-size="10" text-anchor="end">持仓 0</text>
+  <text x="360" y="234" fill="#5e636d" font-family="monospace" font-size="10" text-anchor="end">挂单 0</text>
+  <!-- 黄色警告 -->
+  <polygon points="440,222 446,238 434,238" fill="#f5c542"/>
+  <text x="400" y="234" fill="#f5c542" font-family="monospace" font-size="8" text-anchor="end">reason_codes</text>
+
+  <text x="20" y="128" fill="#5e636d" font-family="monospace" font-size="9">③ 会话列表</text>
+
+  <!-- ④ 模式指示 -->
+  <rect x="20" y="265" width="560" height="40" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.8" rx="4"/>
+  <circle cx="36" cy="285" r="4" fill="#00ff9d"/>
+  <text x="46" y="289" fill="#5e636d" font-family="monospace" font-size="9">运行中</text>
+  <circle cx="96" cy="285" r="4" fill="#f5c542"/>
+  <text x="106" y="289" fill="#5e636d" font-family="monospace" font-size="9">暂停</text>
+  <circle cx="156" cy="285" r="4" fill="#5e636d"/>
+  <text x="166" y="289" fill="#5e636d" font-family="monospace" font-size="9">已停止</text>
+  <circle cx="226" cy="285" r="4" fill="#ff5470"/>
+  <text x="236" y="289" fill="#5e636d" font-family="monospace" font-size="9">错误</text>
+  <text x="20" y="261" fill="#5e636d" font-family="monospace" font-size="9">④ 模式/状态色码</text>
+</svg>
+
+<ol>
+  <li><strong>① 状态横幅</strong> — 当 Freqtrade 心跳丢失或交易所连接异常时出现，显示具体的 reason_codes 供排查。</li>
+  <li><strong>② 汇总卡片</strong> — 运行中会话数、总持仓、总挂单、Freqtrade 心跳（Healthy/Degraded/Down）、执行延迟（&lt;100ms 绿 / &lt;300ms 黄 / 以上橙）。右侧紧急停止按钮需二次确认。</li>
+  <li><strong>③ 会话列表</strong> — 每行一个 Freqtrade 会话，显示策略名、交易对、模式徽章（dryrun=黄 / live=红 / paper=绿）、持仓数和挂单数。黄色三角形表示该会话有 reason_codes 需要关注。</li>
+  <li><strong>④ 模式色码</strong> — 绿=运行中 / 黄=暂停 / 灰=已停止 / 红=错误。</li>
+</ol>
+
+<h2>关键指标怎么读</h2>
+<ul>
+  <li><strong>运行中会话数</strong> — 当前有多少个策略会话在活动。如果比预期少，检查是否有会话意外停止。</li>
+  <li><strong>Freqtrade 心跳</strong> — Healthy 表示 Freqtrade 引擎正常响应；Degraded 表示部分功能可用但延迟偏高；Down 表示无法连接，需要检查 Freqtrade 服务状态。</li>
+  <li><strong>执行延迟</strong> — 从发起到交易所确认的往返时间。100ms 以内正常，超过 300ms 说明网络或交易所负载异常，可能影响成交质量。</li>
+  <li><strong>紧急停止</strong> — 点击后向所有会话发送终止信号。只有在系统失控、策略出现异常行为时才使用。使用后需要手动恢复每个会话。</li>
+</ul>
+
+<h2>常见操作 · 一步步</h2>
+<ol>
+  <li><strong>查看会话详情</strong> — 点击任意会话行，跳转到对应的订单/持仓页面查看该会话的完整交易记录。</li>
+  <li><strong>紧急停止所有交易</strong> — 点击右上角红色"紧急停止"按钮 → 在弹出的确认对话框中点击"确认停止" → 系统向所有 Freqtrade 会话发送终止信号 → 页面自动刷新显示更新后的状态。</li>
+  <li><strong>切换模式</strong> — 执行中心本身不提供模式切换。请在策略管理页面选择 dryrun / paper / live_small / live 模式启动新会话。</li>
+  <li><strong>刷新状态</strong> — 页面在打开时自动加载最新数据。如需手动刷新，可切换到其他页面再切回。</li>
+</ol>
+
+<h2>幕后</h2>
+<p>执行中心的数据来自后端 BFF 端点 <code>/api/execution/center</code>。后端首先尝试从 Redis 缓存读取会话状态（实时性要求高），缓存未命中时从数据库查询 Freqtrade 会话表和心跳表，最后如果数据库也空则返回模拟数据。每个会话的状态由 Freqtrade REST API 定期同步（通过 <code>freqtrade_client.py</code>），而历史交易数据则直接读取 Freqtrade 的 SQLite 数据库（<code>freqtrade_db.py</code>）。紧急停止功能调用 <code>/api/execution/emergency-stop</code> 端点，后端向所有运行中的 Freqtrade 会话广播停止命令。</p>
+
+<h2>相关</h2>
+<ul>
+  <li><a href="#/pages/execution/orders-positions">订单与持仓</a></li>
+  <li><a href="#/concepts/09-dryrun-vs-live">概念 · 回测 / 干跑 / 实盘</a></li>
+  <li><a href="#/pages/system/service-management">服务管理</a></li>
+  <li><a href="#/walkthroughs/daily-trading-loop">攻略 · 每日交易循环</a></li>
+</ul>

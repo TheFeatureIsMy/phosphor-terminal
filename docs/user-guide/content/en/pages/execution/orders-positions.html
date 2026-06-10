@@ -1,0 +1,109 @@
+<h1>Orders & Positions</h1>
+<p class="chapter-meta">Page · Execution · 5 min</p>
+
+<blockquote class="lede">Track every order through its entire lifecycle — from placement to fill — and monitor all open positions with real-time P&L.</blockquote>
+
+<h2>TL;DR</h2>
+<p>The Orders & Positions page has two tabs: Orders lists every historical order (side, symbol, quantity, price, status), and Positions shows all currently open positions (entry price, current price, unrealized P&L, stop loss). Connection status indicators for Exchange and Freqtrade sit at the top, with warning banners when something is wrong. The page also serves as the detail view for the execution records — clicking "Orders" on a run row opens this data in a sheet.</p>
+
+<h2>Who uses it & when</h2>
+<p>Traders check this page daily to review open positions and verify order fills. Use it when you need to confirm whether an order went through, check floating P&L, or see if a stop loss has been triggered. It is also the detail drill-down target from the Execution Records view.</p>
+
+<h2>Page Anatomy</h2>
+<svg class="diagram" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="320" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- ① Status indicators -->
+  <rect x="20" y="14" width="560" height="24" fill="rgba(0,255,157,0.08)" stroke="rgba(0,255,157,0.12)" stroke-width="0.8" rx="4"/>
+  <circle cx="36" cy="26" r="3" fill="#00ff9d"/>
+  <text x="44" y="30" fill="#5e636d" font-family="monospace" font-size="9">Exchange: OK</text>
+  <circle cx="126" cy="26" r="3" fill="#00ff9d"/>
+  <text x="134" y="30" fill="#5e636d" font-family="monospace" font-size="9">Freqtrade: Healthy</text>
+  <text x="20" y="10" fill="#5e636d" font-family="monospace" font-size="9">① Connection Status</text>
+
+  <!-- ② Tab switcher -->
+  <rect x="20" y="46" width="70" height="28" fill="rgba(0,255,157,0.08)" stroke="rgba(0,255,157,0.15)" stroke-width="0.8" rx="4"/>
+  <text x="55" y="64" fill="#00ff9d" font-family="monospace" font-size="11" text-anchor="middle" font-weight="bold">Orders 6</text>
+  <rect x="94" y="46" width="90" height="28" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.8" rx="4"/>
+  <text x="139" y="64" fill="#5e636d" font-family="monospace" font-size="11" text-anchor="middle">Positions 3</text>
+
+  <text x="20" y="42" fill="#5e636d" font-family="monospace" font-size="9">② Tab Switcher</text>
+
+  <!-- ③ Orders list -->
+  <rect x="20" y="86" width="560" height="32" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.8" rx="4"/>
+  <text x="36" y="106" fill="#00ff9d" font-family="monospace" font-size="10" font-weight="bold">BUY</text>
+  <text x="80" y="106" fill="#e8eaee" font-family="monospace" font-size="10">BTC/USDT</text>
+  <text x="170" y="106" fill="#5e636d" font-family="monospace" font-size="9">LIMIT</text>
+  <text x="290" y="106" fill="#9ca0a8" font-family="monospace" font-size="10" text-anchor="end">Qty: 0.0100</text>
+  <text x="420" y="106" fill="#e8eaee" font-family="monospace" font-size="10" text-anchor="end">@ 68420.00</text>
+  <rect x="490" y="94" width="50" height="14" fill="rgba(0,255,157,0.12)" stroke="#00ff9d" stroke-width="0.5" rx="7"/>
+  <text x="515" y="104" fill="#00ff9d" font-family="monospace" font-size="8" text-anchor="middle">filled</text>
+
+  <rect x="20" y="122" width="560" height="32" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.8" rx="4"/>
+  <text x="36" y="142" fill="#ff5470" font-family="monospace" font-size="10" font-weight="bold">SELL</text>
+  <text x="80" y="142" fill="#e8eaee" font-family="monospace" font-size="10">ETH/USDT</text>
+  <text x="170" y="142" fill="#5e636d" font-family="monospace" font-size="9">MARKET</text>
+  <text x="290" y="142" fill="#9ca0a8" font-family="monospace" font-size="10" text-anchor="end">Qty: 0.5000</text>
+  <text x="420" y="142" fill="#e8eaee" font-family="monospace" font-size="10" text-anchor="end">@ 3521.40</text>
+  <rect x="490" y="130" width="50" height="14" fill="rgba(0,255,157,0.12)" stroke="#00ff9d" stroke-width="0.5" rx="7"/>
+  <text x="515" y="140" fill="#00ff9d" font-family="monospace" font-size="8" text-anchor="middle">filled</text>
+
+  <rect x="20" y="158" width="560" height="32" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.8" rx="4"/>
+  <text x="36" y="178" fill="#ff5470" font-family="monospace" font-size="10" font-weight="bold">SELL</text>
+  <text x="80" y="178" fill="#e8eaee" font-family="monospace" font-size="10">SOL/USDT</text>
+  <text x="170" y="178" fill="#5e636d" font-family="monospace" font-size="9">LIMIT</text>
+  <text x="290" y="178" fill="#9ca0a8" font-family="monospace" font-size="10" text-anchor="end">Qty: 2.0000</text>
+  <text x="420" y="178" fill="#e8eaee" font-family="monospace" font-size="10" text-anchor="end">@ 168.50</text>
+  <rect x="490" y="166" width="50" height="14" fill="rgba(245,197,66,0.12)" stroke="#f5c542" stroke-width="0.5" rx="7"/>
+  <text x="515" y="176" fill="#f5c542" font-family="monospace" font-size="8" text-anchor="middle">pending</text>
+
+  <text x="20" y="82" fill="#5e636d" font-family="monospace" font-size="9">③ Orders List</text>
+
+  <!-- ④ Legend -->
+  <rect x="20" y="205" width="560" height="100" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.8" rx="4"/>
+  <text x="36" y="222" fill="#5e636d" font-family="monospace" font-size="9">Status colors:</text>
+  <circle cx="36" cy="238" r="3" fill="#00ff9d"/><text x="44" y="242" fill="#5e636d" font-family="monospace" font-size="8">filled</text>
+  <circle cx="96" cy="238" r="3" fill="#f5c542"/><text x="104" y="242" fill="#5e636d" font-family="monospace" font-size="8">pending/open</text>
+  <circle cx="190" cy="238" r="3" fill="#ff9b3d"/><text x="198" y="242" fill="#5e636d" font-family="monospace" font-size="8">partially_filled</text>
+  <circle cx="310" cy="238" r="3" fill="#5e636d"/><text x="318" y="242" fill="#5e636d" font-family="monospace" font-size="8">cancelled</text>
+  <circle cx="400" cy="238" r="3" fill="#ff5470"/><text x="408" y="242" fill="#5e636d" font-family="monospace" font-size="8">rejected</text>
+
+  <text x="36" y="262" fill="#9ca0a8" font-family="monospace" font-size="9">Side colors: <tspan fill="#00ff9d">Green=Buy/Long</tspan> <tspan fill="#ff5470">Red=Sell/Short</tspan></text>
+  <text x="36" y="280" fill="#9ca0a8" font-family="monospace" font-size="9">PnL colors: <tspan fill="#00ff9d">Green=Profit</tspan> <tspan fill="#ff5470">Red=Loss</tspan></text>
+
+  <text x="20" y="201" fill="#5e636d" font-family="monospace" font-size="9">④ Color Legend</text>
+</svg>
+
+<ol>
+  <li><strong>① Connection Status</strong> — Real-time health indicators for the exchange and Freqtrade connections. Green=normal, Red=error. A banner expands with reason_codes when something is wrong.</li>
+  <li><strong>② Tab Switcher</strong> — Orders and Positions tabs each show a count badge. The active tab is highlighted in green.</li>
+  <li><strong>③ Orders/Positions List</strong> — Each row is one record. Order rows show direction (BUY/SELL), symbol, order type, quantity, price, status badge, and exchange order ID. Position rows additionally show entry price, current price, unrealized P&L, and stop loss.</li>
+  <li><strong>④ Color Legend</strong> — Status colors, side colors, and P&L colors are explained at the bottom.</li>
+</ol>
+
+<h2>Reading the Key Metrics</h2>
+<ul>
+  <li><strong>Order Status</strong> — filled means fully executed; pending/open means waiting on the order book; partially_filled means only part of the order was executed; cancelled or rejected needs investigation.</li>
+  <li><strong>Unrealized P&L</strong> — Position rows show floating profit/loss as both an absolute value and a percentage. Green for profit, red for loss. A large unrealized loss means you should check whether your stop loss is appropriate or whether manual intervention is needed.</li>
+  <li><strong>Entry Price vs Current Price</strong> — The gap directly determines your P&L. If the current price is approaching your stop loss level, the system will auto-close the position — but it is better to act before it does.</li>
+  <li><strong>reason_codes</strong> — A yellow triangle on any row indicates additional metadata is available (risk flags, source trace info, etc.). Hover to see details.</li>
+</ul>
+
+<h2>Common Actions, Step by Step</h2>
+<ol>
+  <li><strong>View order details</strong> — Click the "Orders" button on a run row in the Execution Records page to open a detail sheet with the order list, ledger events, and signal trace chain.</li>
+  <li><strong>Filter by mode or status</strong> — In the Execution Records page, use the filter bar to narrow runs by mode (backtest / dryrun / live_small / live) or status (running / completed / stopped / failed).</li>
+  <li><strong>View the trace chain</strong> — In the detail sheet's "Trace" tab, follow the six-step chain: Signal → Agent → Strategy → TradeIntent → RiskDecision → Order.</li>
+  <li><strong>Track ledger events</strong> — The "Events" tab in the detail sheet shows fund movements for each trade (trade_pnl, fee, funding, deposit, withdrawal) with a timeline and balance changes.</li>
+</ol>
+
+<h2>Behind the Scenes</h2>
+<p>Orders and positions data comes from the BFF endpoint <code>/api/execution/orders-positions</code>. The Freqtrade REST API provides real-time pending orders and open positions, while the historical order details are read directly from the Freqtrade SQLite database via <code>freqtrade_db.py</code>. These two data sources are reconciled by the Reconciliation Bus — any discrepancies between local records and the exchange state are flagged in reason_codes. The trace chain data is rendered by the <code>TradeSourceTrace</code> component, which integrates signal source, strategy DSL version, runtime snapshot, and risk decision information into a single vertical flow.</p>
+
+<h2>See Also</h2>
+<ul>
+  <li><a href="#/pages/execution/execution-center">Execution Center</a></li>
+  <li><a href="#/pages/execution/reconciliation-bus">Reconciliation Bus</a></li>
+  <li><a href="#/concepts/09-dryrun-vs-live">Concept: Backtest / Dry-Run / Live</a></li>
+  <li><a href="#/walkthroughs/risk-incident">Walkthrough: Risk Incident Response</a></li>
+</ul>

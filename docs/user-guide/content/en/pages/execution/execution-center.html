@@ -1,0 +1,128 @@
+<h1>Execution Center</h1>
+<p class="chapter-meta">Page · Execution · 5 min</p>
+
+<blockquote class="lede">The Execution Center is the master control panel of AlphaLoop — see all active strategy sessions at a glance, toggle between dry-run and live modes, and hit the emergency stop when things go wrong.</blockquote>
+
+<h2>TL;DR</h2>
+<p>The Execution Center aggregates every running Freqtrade session into one view. Five summary cards at the top show running sessions, open positions, pending orders, Freqtrade heartbeat status, and execution latency. Below is a detailed session list with mode badges (dry-run / live / paper), strategy names, and position counts. The red emergency stop button in the top right lets you halt all trading instantly when needed.</p>
+
+<h2>Who uses it & when</h2>
+<p>Anyone who needs to know "is my strategy running, and is it healthy?" should check the Execution Center first. Open it every morning before market open, after deploying a new strategy, or when an alert fires. If you only look at one page to understand system health, this is the one.</p>
+
+<h2>Page Anatomy</h2>
+<svg class="diagram" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="320" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- ① Status banner -->
+  <rect x="20" y="14" width="560" height="40" fill="rgba(255,84,112,0.08)" stroke="#ff5470" stroke-width="0.8" rx="4"/>
+  <circle cx="40" cy="34" r="5" fill="#ff5470"/>
+  <text x="52" y="38" fill="#e8eaee" font-family="monospace" font-size="11" font-weight="bold">Engine Error: freqtrade_heartbeat_timeout, exchange_connection_lost</text>
+  <text x="20" y="10" fill="#5e636d" font-family="monospace" font-size="9">① Status Banner</text>
+
+  <!-- ② Summary cards -->
+  <rect x="20" y="66" width="100" height="52" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.8" rx="4"/>
+  <circle cx="38" cy="86" r="6" fill="#00ff9d"/>
+  <text x="50" y="90" fill="#e8eaee" font-family="monospace" font-size="14" font-weight="bold">3</text>
+  <text x="50" y="104" fill="#5e636d" font-family="monospace" font-size="8">Running</text>
+
+  <rect x="128" y="66" width="100" height="52" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.8" rx="4"/>
+  <circle cx="146" cy="86" r="6" fill="#ff9b3d"/>
+  <text x="158" y="90" fill="#e8eaee" font-family="monospace" font-size="14" font-weight="bold">7</text>
+  <text x="158" y="104" fill="#5e636d" font-family="monospace" font-size="8">Positions</text>
+
+  <rect x="236" y="66" width="100" height="52" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.8" rx="4"/>
+  <circle cx="254" cy="86" r="6" fill="#f5c542"/>
+  <text x="266" y="90" fill="#e8eaee" font-family="monospace" font-size="14" font-weight="bold">2</text>
+  <text x="266" y="104" fill="#5e636d" font-family="monospace" font-size="8">Pending</text>
+
+  <rect x="344" y="66" width="100" height="52" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.8" rx="4"/>
+  <circle cx="362" cy="86" r="6" fill="#00ff9d"/>
+  <text x="374" y="90" fill="#e8eaee" font-family="monospace" font-size="14" font-weight="bold">Healthy</text>
+  <text x="374" y="104" fill="#5e636d" font-family="monospace" font-size="8">Freqtrade</text>
+
+  <rect x="452" y="66" width="70" height="52" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.8" rx="4"/>
+  <circle cx="470" cy="86" r="6" fill="#00ff9d"/>
+  <text x="482" y="90" fill="#e8eaee" font-family="monospace" font-size="14" font-weight="bold">42ms</text>
+  <text x="482" y="104" fill="#5e636d" font-family="monospace" font-size="8">Latency</text>
+
+  <rect x="530" y="66" width="50" height="52" fill="rgba(255,84,112,0.12)" stroke="#ff5470" stroke-width="0.8" rx="20"/>
+  <text x="555" y="100" fill="white" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">STOP</text>
+
+  <text x="20" y="62" fill="#5e636d" font-family="monospace" font-size="9">② Summary Cards</text>
+
+  <!-- ③ Session list -->
+  <rect x="20" y="132" width="560" height="36" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.8" rx="4"/>
+  <circle cx="36" cy="150" r="4" fill="#00ff9d"/>
+  <text x="46" y="154" fill="#e8eaee" font-family="monospace" font-size="11">ScalpBTC</text>
+  <text x="46" y="164" fill="#5e636d" font-family="monospace" font-size="8">BTC/USDT</text>
+  <rect x="190" y="145" width="40" height="14" fill="rgba(245,197,66,0.12)" stroke="#f5c542" stroke-width="0.5" rx="7"/>
+  <text x="210" y="155" fill="#f5c542" font-family="monospace" font-size="8" text-anchor="middle">dryrun</text>
+  <text x="290" y="154" fill="#9ca0a8" font-family="monospace" font-size="10" text-anchor="end">Pos 2</text>
+  <text x="360" y="154" fill="#5e636d" font-family="monospace" font-size="10" text-anchor="end">Pend 0</text>
+
+  <rect x="20" y="172" width="560" height="36" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.8" rx="4"/>
+  <circle cx="36" cy="190" r="4" fill="#00ff9d"/>
+  <text x="46" y="194" fill="#e8eaee" font-family="monospace" font-size="11">ETHMomentum</text>
+  <text x="46" y="204" fill="#5e636d" font-family="monospace" font-size="8">ETH/USDT</text>
+  <rect x="190" y="185" width="40" height="14" fill="rgba(255,84,112,0.12)" stroke="#ff5470" stroke-width="0.5" rx="7"/>
+  <text x="210" y="195" fill="#ff5470" font-family="monospace" font-size="8" text-anchor="middle">live</text>
+  <text x="290" y="194" fill="#9ca0a8" font-family="monospace" font-size="10" text-anchor="end">Pos 5</text>
+  <text x="360" y="194" fill="#5e636d" font-family="monospace" font-size="10" text-anchor="end">Pend 1</text>
+
+  <rect x="20" y="212" width="560" height="36" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.8" rx="4"/>
+  <circle cx="36" cy="230" r="4" fill="#f5c542"/>
+  <text x="46" y="234" fill="#e8eaee" font-family="monospace" font-size="11">SOLGrid</text>
+  <text x="46" y="244" fill="#5e636d" font-family="monospace" font-size="8">SOL/USDT</text>
+  <rect x="190" y="225" width="50" height="14" fill="rgba(0,255,157,0.12)" stroke="#00ff9d" stroke-width="0.5" rx="7"/>
+  <text x="215" y="235" fill="#00ff9d" font-family="monospace" font-size="8" text-anchor="middle">paper</text>
+  <text x="290" y="234" fill="#9ca0a8" font-family="monospace" font-size="10" text-anchor="end">Pos 0</text>
+  <text x="360" y="234" fill="#5e636d" font-family="monospace" font-size="10" text-anchor="end">Pend 0</text>
+
+  <text x="20" y="128" fill="#5e636d" font-family="monospace" font-size="9">③ Session List</text>
+
+  <!-- ④ Color legend -->
+  <rect x="20" y="265" width="560" height="40" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.8" rx="4"/>
+  <circle cx="36" cy="285" r="4" fill="#00ff9d"/>
+  <text x="46" y="289" fill="#5e636d" font-family="monospace" font-size="9">Running</text>
+  <circle cx="96" cy="285" r="4" fill="#f5c542"/>
+  <text x="106" y="289" fill="#5e636d" font-family="monospace" font-size="9">Paused</text>
+  <circle cx="156" cy="285" r="4" fill="#5e636d"/>
+  <text x="166" y="289" fill="#5e636d" font-family="monospace" font-size="9">Stopped</text>
+  <circle cx="226" cy="285" r="4" fill="#ff5470"/>
+  <text x="236" y="289" fill="#5e636d" font-family="monospace" font-size="9">Error</text>
+  <text x="20" y="261" fill="#5e636d" font-family="monospace" font-size="9">④ Status Color Legend</text>
+</svg>
+
+<ol>
+  <li><strong>① Status Banner</strong> — Appears when Freqtrade heartbeat is missing or the exchange connection is broken. Displays specific reason_codes for diagnosis.</li>
+  <li><strong>② Summary Cards</strong> — Running sessions, open positions, pending orders, Freqtrade heartbeat (Healthy/Degraded/Down), and execution latency (&lt;100ms green / &lt;300ms yellow / above orange). The emergency stop button requires a confirmation dialog.</li>
+  <li><strong>③ Session List</strong> — One row per Freqtrade session showing strategy name, trading pair, mode badge (dryrun=yellow / live=red / paper=green), open positions, and pending orders. A yellow triangle indicates reason_codes that need attention.</li>
+  <li><strong>④ Color Legend</strong> — Green=running / Yellow=paused / Gray=stopped / Red=error.</li>
+</ol>
+
+<h2>Reading the Key Metrics</h2>
+<ul>
+  <li><strong>Running Sessions</strong> — How many strategy sessions are currently active. If this is lower than expected, check whether a session stopped unexpectedly.</li>
+  <li><strong>Freqtrade Heartbeat</strong> — Healthy means the Freqtrade engine is responding normally; Degraded means partial functionality with elevated latency; Down means the connection is lost and you should check the Freqtrade service.</li>
+  <li><strong>Execution Latency</strong> — Round-trip time from command issuance to exchange confirmation. Under 100ms is normal; above 300ms indicates network or exchange load issues that may affect fill quality.</li>
+  <li><strong>Emergency Stop</strong> — Sends a termination signal to all active sessions. Only use when the system is out of control or a strategy is behaving unexpectedly. Sessions must be manually restarted afterward.</li>
+</ul>
+
+<h2>Common Actions, Step by Step</h2>
+<ol>
+  <li><strong>View session details</strong> — Click any session row to navigate to its Orders & Positions page for the full trade log.</li>
+  <li><strong>Emergency stop all trading</strong> — Click the red "Emergency Stop" button in the top right → confirm in the dialog → the system broadcasts a stop signal to all Freqtrade sessions → the page refreshes automatically.</li>
+  <li><strong>Switch mode</strong> — The Execution Center does not provide mode switching. Start new sessions in dry-run, paper, live_small, or live mode from the strategy management page.</li>
+  <li><strong>Refresh state</strong> — Data loads automatically when the page opens. To manually refresh, navigate away and back.</li>
+</ol>
+
+<h2>Behind the Scenes</h2>
+<p>The Execution Center fetches data from the BFF endpoint <code>/api/execution/center</code>. The backend first tries the Redis cache for session states (latency-critical), falls back to database queries on the Freqtrade sessions and heartbeat tables, and finally returns mock data if the database is empty. Session states are periodically synchronized via the Freqtrade REST API through <code>freqtrade_client.py</code>, while historical trade data is read directly from the Freqtrade SQLite database via <code>freqtrade_db.py</code>. The emergency stop calls <code>/api/execution/emergency-stop</code>, which broadcasts a stop command to all running Freqtrade sessions.</p>
+
+<h2>See Also</h2>
+<ul>
+  <li><a href="#/pages/execution/orders-positions">Orders & Positions</a></li>
+  <li><a href="#/concepts/09-dryrun-vs-live">Concept: Backtest / Dry-Run / Live</a></li>
+  <li><a href="#/pages/system/service-management">Service Management</a></li>
+  <li><a href="#/walkthroughs/daily-trading-loop">Walkthrough: Daily Trading Loop</a></li>
+</ul>

@@ -1,0 +1,109 @@
+<h1>对账总线</h1>
+<p class="chapter-meta">页面 · 执行 · 5 分钟</p>
+
+<blockquote class="lede">对账总线确保你看到的持仓数据与交易所的真实状态一致——任何偏差都会被捕获并标记为差异。</blockquote>
+
+<h2>TL;DR</h2>
+<p>对账总线是 AlphaLoop 的"数据一致性警察"。它定期比较本地数据库中的持仓记录与 Freqtrade/交易所的真实状态，找出差异（如本地有但交易所无、交易所存在但本地缺失、数量不匹配），并在页面中以 Command Bus 时间线和对账运行记录的形式展示。页面顶部有刷新交易所状态的按钮，你可以手动触发一次完整的对账流程。</p>
+
+<h2>谁用 · 何时用</h2>
+<p>系统管理员或高级交易员在以下场景使用：怀疑订单状态不同步时（比如本地显示已成交但交易所显示挂单中）、运行回测/模拟后验证数据一致性、或者排查"幽灵持仓"问题时。一般用户在正常情况下不需要频繁访问此页面——对账是自动运行的。</p>
+
+<h2>页面解剖</h2>
+<svg class="diagram" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="320" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- ① 标题区 -->
+  <text x="24" y="30" fill="#e8eaee" font-family="monospace" font-size="13" font-weight="bold">对账总线</text>
+  <text x="24" y="46" fill="#5e636d" font-family="monospace" font-size="9">Command Bus · State Lease · Exchange Finality</text>
+  <rect x="400" y="18" width="170" height="22" fill="rgba(0,255,157,0.08)" stroke="rgba(0,255,157,0.15)" stroke-width="0.8" rx="4"/>
+  <text x="485" y="33" fill="#00ff9d" font-family="monospace" font-size="9" text-anchor="middle">刷新交易所状态</text>
+  <text x="20" y="10" fill="#5e636d" font-family="monospace" font-size="9">① 标题区</text>
+
+  <!-- ② 状态横幅 -->
+  <rect x="20" y="58" width="560" height="32" fill="rgba(0,255,157,0.08)" stroke="rgba(0,255,157,0.12)" stroke-width="0.8" rx="4"/>
+  <circle cx="36" cy="74" r="4" fill="#00ff9d"/>
+  <text x="46" y="78" fill="#e8eaee" font-family="monospace" font-size="10" font-weight="bold">healthy</text>
+  <text x="20" y="54" fill="#5e636d" font-family="monospace" font-size="9">② 对账状态</text>
+
+  <!-- ③ Command Bus Timeline -->
+  <text x="24" y="108" fill="#e8eaee" font-family="monospace" font-size="10" font-weight="bold">Command Bus Timeline</text>
+
+  <rect x="20" y="116" width="560" height="28" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.8" rx="4"/>
+  <circle cx="36" cy="130" r="3" fill="#00ff9d"/>
+  <text x="46" y="134" fill="#e8eaee" font-family="monospace" font-size="10">start_dryrun</text>
+  <text x="150" y="134" fill="#5e636d" font-family="monospace" font-size="8">cmd-001</text>
+  <rect x="470" y="119" width="60" height="14" fill="rgba(0,255,157,0.12)" stroke="#00ff9d" stroke-width="0.5" rx="7"/>
+  <text x="500" y="129" fill="#00ff9d" font-family="monospace" font-size="8" text-anchor="middle">completed</text>
+
+  <rect x="20" y="148" width="560" height="28" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.8" rx="4"/>
+  <circle cx="36" cy="162" r="3" fill="#00ff9d"/>
+  <text x="46" y="166" fill="#e8eaee" font-family="monospace" font-size="10">place_order</text>
+  <text x="150" y="166" fill="#5e636d" font-family="monospace" font-size="8">cmd-002</text>
+  <rect x="470" y="151" width="60" height="14" fill="rgba(0,255,157,0.12)" stroke="#00ff9d" stroke-width="0.5" rx="7"/>
+  <text x="500" y="161" fill="#00ff9d" font-family="monospace" font-size="8" text-anchor="middle">completed</text>
+
+  <text x="20" y="104" fill="#5e636d" font-family="monospace" font-size="9">③ Command Bus</text>
+
+  <!-- ④ Reconciliation Runs -->
+  <text x="24" y="198" fill="#e8eaee" font-family="monospace" font-size="10" font-weight="bold">Reconciliation Runs</text>
+
+  <rect x="20" y="206" width="560" height="28" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.8" rx="4"/>
+  <circle cx="36" cy="220" r="3" fill="#00ff9d"/>
+  <text x="46" y="224" fill="#e8eaee" font-family="monospace" font-size="10">recon-001</text>
+  <text x="290" y="224" fill="#00ff9d" font-family="monospace" font-size="9" text-anchor="end">0 discrepancies</text>
+  <rect x="470" y="209" width="60" height="14" fill="rgba(0,255,157,0.12)" stroke="#00ff9d" stroke-width="0.5" rx="7"/>
+  <text x="500" y="219" fill="#00ff9d" font-family="monospace" font-size="8" text-anchor="middle">completed</text>
+
+  <rect x="20" y="238" width="560" height="28" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.8" rx="4"/>
+  <circle cx="36" cy="252" r="3" fill="#ff9b3d"/>
+  <text x="46" y="256" fill="#e8eaee" font-family="monospace" font-size="10">recon-002</text>
+  <text x="290" y="256" fill="#ff9b3d" font-family="monospace" font-size="9" text-anchor="end">3 discrepancies</text>
+  <rect x="470" y="241" width="60" height="14" fill="rgba(255,155,61,0.12)" stroke="#ff9b3d" stroke-width="0.5" rx="7"/>
+  <text x="500" y="251" fill="#ff9b3d" font-family="monospace" font-size="8" text-anchor="middle">completed</text>
+  <polygon points="430,248 436,264 424,264" fill="#f5c542"/>
+  <text x="395" y="252" fill="#f5c542" font-family="monospace" font-size="7" text-anchor="end">warn</text>
+
+  <text x="20" y="194" fill="#5e636d" font-family="monospace" font-size="9">④ 对账记录</text>
+
+  <!-- ⑤ 状态色码 -->
+  <rect x="20" y="280" width="560" height="28" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.8" rx="4"/>
+  <circle cx="36" cy="294" r="3" fill="#00ff9d"/><text x="44" y="298" fill="#5e636d" font-family="monospace" font-size="8">completed / success</text>
+  <circle cx="170" cy="294" r="3" fill="#f5c542"/><text x="178" y="298" fill="#5e636d" font-family="monospace" font-size="8">pending / running</text>
+  <circle cx="290" cy="294" r="3" fill="#ff5470"/><text x="298" y="298" fill="#5e636d" font-family="monospace" font-size="8">failed / error</text>
+  <circle cx="400" cy="294" r="3" fill="#ff9b3d"/><text x="408" y="298" fill="#5e636d" font-family="monospace" font-size="8">timeout</text>
+  <text x="20" y="276" fill="#5e636d" font-family="monospace" font-size="9">⑤ 状态色码</text>
+</svg>
+
+<ol>
+  <li><strong>① 标题区</strong> — 显示页面标题和副标题 "Command Bus · State Lease · Exchange Finality"。右上角有"刷新交易所状态"按钮，手动触发一次完整对账。</li>
+  <li><strong>② 对账状态</strong> — 整体对账健康度：healthy（正常）/ reconciliating（对账中）/ degraded（有差异需关注）/ error（对账失败）。</li>
+  <li><strong>③ Command Bus Timeline</strong> — 最近 20 条命令执行记录，每条显示命令类型、ID 和状态（completed / pending / failed / timeout）。命令包括 start_dryrun、place_order、stop_session 等。</li>
+  <li><strong>④ 对账记录</strong> — 最近 10 次对账运行，每次显示差异数量。0 discrepancies 为绿色（完全一致），大于 0 为橙色（需要调查）。黄色三角形表示附加的 reason_codes。</li>
+  <li><strong>⑤ 状态色码</strong> — 绿=完成/成功 / 黄=待处理/运行中 / 红=失败/错误 / 橙=超时。</li>
+</ol>
+
+<h2>关键指标怎么读</h2>
+<ul>
+  <li><strong>discrepancies（差异数）</strong> — 对账运行时发现的本地与交易所状态不一致的数量。0 是最好的情况。任何大于 0 的差异都应该被调查。常见的差异类型：local_only（本地有但交易所无）、remote_only（交易所存在但本地无记录）、amount_mismatch（数量对不上）。</li>
+  <li><strong>对账状态</strong> — healthy 表示最近一次对账无差异且一切正常；reconciliating 表示系统正在运行对账；degraded 表示检测到差异但系统仍在运行；error 表示对账流程本身失败。</li>
+  <li><strong>Command Bus 命令状态</strong> — completed 表示命令已成功执行；pending/running 表示命令还在处理中；failed 表示命令执行出错；timeout 表示命令执行超时（通常意味着交易所响应过慢）。</li>
+</ul>
+
+<h2>常见操作 · 一步步</h2>
+<ol>
+  <li><strong>刷新交易所状态</strong> — 点击右上角"刷新交易所状态"按钮 → 系统从 Freqtrade REST API 拉取最新持仓和订单数据 → 自动与本地记录比对 → 更新差异列表。</li>
+  <li><strong>查看对账详情</strong> — 点击对账记录行，可展开查看具体的差异明细（当前版本中差异行直接显示在页面中，详细 drill-down 在开发中）。</li>
+  <li><strong>排查差异</strong> — 当看到 discrepancies > 0 时，检查差异类型：local_only 通常意味着本地记录未同步到交易所（可能是网络问题）；remote_only 意味着交易所的订单未回写到本地（可能是回调丢失）；amount_mismatch 需要检查是否有部分成交未更新。</li>
+</ol>
+
+<h2>幕后</h2>
+<p>对账总线由 <code>ReconciliationService</code>（<code>reconciliation_service.py</code>）驱动。对账流程分三步：首先 <code>start_reconciliation</code> 创建对账事件并将 FreqtradeRun 标记为 "reconciliating"；然后 <code>execute</code> 对比本地 <code>ExecutionPosition</code> 与 Freqtrade REST API 返回的持仓数据，逐交易对检查存在性和数量一致性；最后 <code>complete</code> 标记对账完成并将 FreqtradeRun 恢复为 "running"。每次对账的每一步都通过 <code>ExecutionLedgerEvent</code> 写入账本（事件类型 PULSEDESK_RECONCILIATION_STARTED / COMPLETED）。后端 BFF 端点 <code>/api/reconciliation/bus</code> 和 <code>/api/reconciliation/runs</code> 提供前端数据，查询最近 20 条 Command Bus 命令和最近 50 条对账记录。</p>
+
+<h2>相关</h2>
+<ul>
+  <li><a href="#/pages/execution/orders-positions">订单与持仓</a>——对账差异直接影响订单和持仓页面的数据准确性</li>
+  <li><a href="#/pages/execution/execution-center">执行中心</a></li>
+  <li><a href="#/concepts/09-dryrun-vs-live">概念 · 回测 / 干跑 / 实盘</a></li>
+  <li><a href="#/walkthroughs/risk-incident">攻略 · 风险事件处理</a></li>
+</ul>

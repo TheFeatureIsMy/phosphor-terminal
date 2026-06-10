@@ -1,0 +1,109 @@
+<h1>Reconciliation Bus</h1>
+<p class="chapter-meta">Page · Execution · 5 min</p>
+
+<blockquote class="lede">The Reconciliation Bus ensures that the position data you see in AlphaLoop matches the exchange's true state — every discrepancy is captured and flagged.</blockquote>
+
+<h2>TL;DR</h2>
+<p>The Reconciliation Bus is AlphaLoop's "data consistency police." It periodically compares local database positions against the Freqtrade/exchange real state, finds discrepancies (local-only, remote-only, amount mismatches), and presents them as a Command Bus timeline and reconciliation run history. A "Refresh Exchange State" button at the top lets you trigger a full reconciliation cycle manually.</p>
+
+<h2>Who uses it & when</h2>
+<p>System administrators and advanced traders use this page when they suspect order state is out of sync (e.g., the local UI shows an order as filled but the exchange still has it open), after running backtests or dry-runs to verify data consistency, or when investigating "ghost position" problems. Regular users do not need to visit this page frequently — reconciliation runs automatically in the background.</p>
+
+<h2>Page Anatomy</h2>
+<svg class="diagram" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="320" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- ① Header -->
+  <text x="24" y="30" fill="#e8eaee" font-family="monospace" font-size="13" font-weight="bold">Reconciliation Bus</text>
+  <text x="24" y="46" fill="#5e636d" font-family="monospace" font-size="9">Command Bus · State Lease · Exchange Finality</text>
+  <rect x="400" y="18" width="170" height="22" fill="rgba(0,255,157,0.08)" stroke="rgba(0,255,157,0.15)" stroke-width="0.8" rx="4"/>
+  <text x="485" y="33" fill="#00ff9d" font-family="monospace" font-size="9" text-anchor="middle">Refresh Exchange State</text>
+  <text x="20" y="10" fill="#5e636d" font-family="monospace" font-size="9">① Header</text>
+
+  <!-- ② Status banner -->
+  <rect x="20" y="58" width="560" height="32" fill="rgba(0,255,157,0.08)" stroke="rgba(0,255,157,0.12)" stroke-width="0.8" rx="4"/>
+  <circle cx="36" cy="74" r="4" fill="#00ff9d"/>
+  <text x="46" y="78" fill="#e8eaee" font-family="monospace" font-size="10" font-weight="bold">healthy</text>
+  <text x="20" y="54" fill="#5e636d" font-family="monospace" font-size="9">② Reconciliation Status</text>
+
+  <!-- ③ Command Bus Timeline -->
+  <text x="24" y="108" fill="#e8eaee" font-family="monospace" font-size="10" font-weight="bold">Command Bus Timeline</text>
+
+  <rect x="20" y="116" width="560" height="28" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.8" rx="4"/>
+  <circle cx="36" cy="130" r="3" fill="#00ff9d"/>
+  <text x="46" y="134" fill="#e8eaee" font-family="monospace" font-size="10">start_dryrun</text>
+  <text x="150" y="134" fill="#5e636d" font-family="monospace" font-size="8">cmd-001</text>
+  <rect x="470" y="119" width="60" height="14" fill="rgba(0,255,157,0.12)" stroke="#00ff9d" stroke-width="0.5" rx="7"/>
+  <text x="500" y="129" fill="#00ff9d" font-family="monospace" font-size="8" text-anchor="middle">completed</text>
+
+  <rect x="20" y="148" width="560" height="28" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.8" rx="4"/>
+  <circle cx="36" cy="162" r="3" fill="#00ff9d"/>
+  <text x="46" y="166" fill="#e8eaee" font-family="monospace" font-size="10">place_order</text>
+  <text x="150" y="166" fill="#5e636d" font-family="monospace" font-size="8">cmd-002</text>
+  <rect x="470" y="151" width="60" height="14" fill="rgba(0,255,157,0.12)" stroke="#00ff9d" stroke-width="0.5" rx="7"/>
+  <text x="500" y="161" fill="#00ff9d" font-family="monospace" font-size="8" text-anchor="middle">completed</text>
+
+  <text x="20" y="104" fill="#5e636d" font-family="monospace" font-size="9">③ Command Bus</text>
+
+  <!-- ④ Reconciliation Runs -->
+  <text x="24" y="198" fill="#e8eaee" font-family="monospace" font-size="10" font-weight="bold">Reconciliation Runs</text>
+
+  <rect x="20" y="206" width="560" height="28" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.8" rx="4"/>
+  <circle cx="36" cy="220" r="3" fill="#00ff9d"/>
+  <text x="46" y="224" fill="#e8eaee" font-family="monospace" font-size="10">recon-001</text>
+  <text x="290" y="224" fill="#00ff9d" font-family="monospace" font-size="9" text-anchor="end">0 discrepancies</text>
+  <rect x="470" y="209" width="60" height="14" fill="rgba(0,255,157,0.12)" stroke="#00ff9d" stroke-width="0.5" rx="7"/>
+  <text x="500" y="219" fill="#00ff9d" font-family="monospace" font-size="8" text-anchor="middle">completed</text>
+
+  <rect x="20" y="238" width="560" height="28" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.8" rx="4"/>
+  <circle cx="36" cy="252" r="3" fill="#ff9b3d"/>
+  <text x="46" y="256" fill="#e8eaee" font-family="monospace" font-size="10">recon-002</text>
+  <text x="290" y="256" fill="#ff9b3d" font-family="monospace" font-size="9" text-anchor="end">3 discrepancies</text>
+  <rect x="470" y="241" width="60" height="14" fill="rgba(255,155,61,0.12)" stroke="#ff9b3d" stroke-width="0.5" rx="7"/>
+  <text x="500" y="251" fill="#ff9b3d" font-family="monospace" font-size="8" text-anchor="middle">completed</text>
+  <polygon points="430,248 436,264 424,264" fill="#f5c542"/>
+  <text x="395" y="252" fill="#f5c542" font-family="monospace" font-size="7" text-anchor="end">warn</text>
+
+  <text x="20" y="194" fill="#5e636d" font-family="monospace" font-size="9">④ Reconciliation Records</text>
+
+  <!-- ⑤ Legend -->
+  <rect x="20" y="280" width="560" height="28" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.8" rx="4"/>
+  <circle cx="36" cy="294" r="3" fill="#00ff9d"/><text x="44" y="298" fill="#5e636d" font-family="monospace" font-size="8">completed / success</text>
+  <circle cx="170" cy="294" r="3" fill="#f5c542"/><text x="178" y="298" fill="#5e636d" font-family="monospace" font-size="8">pending / running</text>
+  <circle cx="300" cy="294" r="3" fill="#ff5470"/><text x="308" y="298" fill="#5e636d" font-family="monospace" font-size="8">failed / error</text>
+  <circle cx="410" cy="294" r="3" fill="#ff9b3d"/><text x="418" y="298" fill="#5e636d" font-family="monospace" font-size="8">timeout</text>
+  <text x="20" y="276" fill="#5e636d" font-family="monospace" font-size="9">⑤ Status Colors</text>
+</svg>
+
+<ol>
+  <li><strong>① Header</strong> — Page title with subtitle "Command Bus · State Lease · Exchange Finality". The "Refresh Exchange State" button triggers a manual reconciliation cycle.</li>
+  <li><strong>② Reconciliation Status</strong> — Overall health: healthy / reconciliating / degraded (discrepancies found) / error.</li>
+  <li><strong>③ Command Bus Timeline</strong> — Last 20 command executions showing command type, ID, and status (completed / pending / failed / timeout). Commands include start_dryrun, place_order, stop_session, etc.</li>
+  <li><strong>④ Reconciliation Records</strong> — Last 10 reconciliation runs, each showing the discrepancy count. 0 discrepancies is green (fully consistent), greater than 0 is orange (needs investigation). A yellow triangle indicates additional reason_codes.</li>
+  <li><strong>⑤ Status Colors</strong> — Green=completed/success / Yellow=pending/running / Red=failed/error / Orange=timeout.</li>
+</ol>
+
+<h2>Reading the Key Metrics</h2>
+<ul>
+  <li><strong>Discrepancies</strong> — The number of mismatches found between local and exchange state during a reconciliation run. Zero is the ideal. Any non-zero value should be investigated. Common types: local_only (position exists locally but not on the exchange), remote_only (position exists on the exchange but not in local records), amount_mismatch (quantities do not match).</li>
+  <li><strong>Reconciliation Status</strong> — healthy means the last run had zero discrepancies; reconciliating means a run is in progress; degraded means discrepancies were detected but the system continues running; error means the reconciliation process itself failed.</li>
+  <li><strong>Command Bus Status</strong> — completed means the command executed successfully; pending/running means it is still being processed; failed means execution returned an error; timeout means the command exceeded its time limit (usually indicates a slow exchange response).</li>
+</ul>
+
+<h2>Common Actions, Step by Step</h2>
+<ol>
+  <li><strong>Refresh exchange state</strong> — Click the "Refresh Exchange State" button in the top right. The system pulls the latest positions and orders from the Freqtrade REST API, compares them against local records, and updates the discrepancy list.</li>
+  <li><strong>View reconciliation details</strong> — Click a reconciliation run row to expand its discrepancy details (currently shown inline; a full drill-down view is in development).</li>
+  <li><strong>Investigate discrepancies</strong> — When discrepancies > 0, check the type: local_only usually means the local record was not synced to the exchange (possibly a network issue); remote_only means an exchange order was not written back locally (possibly a lost callback); amount_mismatch requires checking for partial fills that were not updated.</li>
+</ol>
+
+<h2>Behind the Scenes</h2>
+<p>The Reconciliation Bus is driven by <code>ReconciliationService</code> (<code>reconciliation_service.py</code>). The reconciliation flow has three steps: first, <code>start_reconciliation</code> creates a reconciliation event and marks the FreqtradeRun as "reconciliating"; second, <code>execute</code> compares local <code>ExecutionPosition</code> records against the positions returned by the Freqtrade REST API, checking each symbol for existence and amount consistency; third, <code>complete</code> marks the reconciliation as finished and restores the FreqtradeRun status to "running". Every step is written to the execution ledger as <code>PULSEDESK_RECONCILIATION_STARTED</code> / <code>PULSEDESK_RECONCILIATION_COMPLETED</code> events. The BFF endpoints <code>/api/reconciliation/bus</code> and <code>/api/reconciliation/runs</code> serve the frontend, querying the last 20 Command Bus entries and the last 50 reconciliation events.</p>
+
+<h2>See Also</h2>
+<ul>
+  <li><a href="#/pages/execution/orders-positions">Orders & Positions</a> — reconciliation discrepancies directly affect data accuracy on this page</li>
+  <li><a href="#/pages/execution/execution-center">Execution Center</a></li>
+  <li><a href="#/concepts/09-dryrun-vs-live">Concept: Backtest / Dry-Run / Live</a></li>
+  <li><a href="#/walkthroughs/risk-incident">Walkthrough: Risk Incident Response</a></li>
+</ul>

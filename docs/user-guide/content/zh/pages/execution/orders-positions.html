@@ -1,0 +1,109 @@
+<h1>订单与持仓</h1>
+<p class="chapter-meta">页面 · 执行 · 5 分钟</p>
+
+<blockquote class="lede">在这里追踪每一笔订单的生命周期——从委托到成交，以及当前所有持仓的盈亏情况。</blockquote>
+
+<h2>TL;DR</h2>
+<p>订单与持仓页面用两个 Tab 展示数据：订单 Tab 列出所有历史委托（含买卖方向、数量、价格、状态），持仓 Tab 显示当前开仓头寸（含入场价、现价、未实现盈亏、止损价）。顶部有 Exchange 和 Freqtrade 连接状态指示器，异常时显示橙色/红色警告横幅。</p>
+
+<h2>谁用 · 何时用</h2>
+<p>交易员每天查看持仓状态时用这个页面。需要确认某笔委托是否成交、查看当前浮动盈亏、或者检查止损是否触发时，都在这里操作。它也用作执行记录页面的详情入口——点击运行记录中的"查看订单"即可跳转到具体订单列表。</p>
+
+<h2>页面解剖</h2>
+<svg class="diagram" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="320" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- ① 状态指示器 -->
+  <rect x="20" y="14" width="560" height="24" fill="rgba(0,255,157,0.08)" stroke="rgba(0,255,157,0.12)" stroke-width="0.8" rx="4"/>
+  <circle cx="36" cy="26" r="3" fill="#00ff9d"/>
+  <text x="44" y="30" fill="#5e636d" font-family="monospace" font-size="9">Exchange: OK</text>
+  <circle cx="126" cy="26" r="3" fill="#00ff9d"/>
+  <text x="134" y="30" fill="#5e636d" font-family="monospace" font-size="9">Freqtrade: Healthy</text>
+  <text x="20" y="10" fill="#5e636d" font-family="monospace" font-size="9">① 连接状态</text>
+
+  <!-- ② Tab 切换 -->
+  <rect x="20" y="46" width="70" height="28" fill="rgba(0,255,157,0.08)" stroke="rgba(0,255,157,0.15)" stroke-width="0.8" rx="4"/>
+  <text x="55" y="64" fill="#00ff9d" font-family="monospace" font-size="11" text-anchor="middle" font-weight="bold">订单 6</text>
+  <rect x="94" y="46" width="90" height="28" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.8" rx="4"/>
+  <text x="139" y="64" fill="#5e636d" font-family="monospace" font-size="11" text-anchor="middle">持仓 3</text>
+
+  <text x="20" y="42" fill="#5e636d" font-family="monospace" font-size="9">② Tab 切换</text>
+
+  <!-- ③ 订单列表 -->
+  <rect x="20" y="86" width="560" height="32" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.8" rx="4"/>
+  <text x="36" y="106" fill="#00ff9d" font-family="monospace" font-size="10" font-weight="bold">BUY</text>
+  <text x="80" y="106" fill="#e8eaee" font-family="monospace" font-size="10">BTC/USDT</text>
+  <text x="170" y="106" fill="#5e636d" font-family="monospace" font-size="9">LIMIT</text>
+  <text x="290" y="106" fill="#9ca0a8" font-family="monospace" font-size="10" text-anchor="end">Qty: 0.0100</text>
+  <text x="420" y="106" fill="#e8eaee" font-family="monospace" font-size="10" text-anchor="end">@ 68420.00</text>
+  <rect x="490" y="94" width="50" height="14" fill="rgba(0,255,157,0.12)" stroke="#00ff9d" stroke-width="0.5" rx="7"/>
+  <text x="515" y="104" fill="#00ff9d" font-family="monospace" font-size="8" text-anchor="middle">filled</text>
+
+  <rect x="20" y="122" width="560" height="32" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.8" rx="4"/>
+  <text x="36" y="142" fill="#ff5470" font-family="monospace" font-size="10" font-weight="bold">SELL</text>
+  <text x="80" y="142" fill="#e8eaee" font-family="monospace" font-size="10">ETH/USDT</text>
+  <text x="170" y="142" fill="#5e636d" font-family="monospace" font-size="9">MARKET</text>
+  <text x="290" y="142" fill="#9ca0a8" font-family="monospace" font-size="10" text-anchor="end">Qty: 0.5000</text>
+  <text x="420" y="142" fill="#e8eaee" font-family="monospace" font-size="10" text-anchor="end">@ 3521.40</text>
+  <rect x="490" y="130" width="50" height="14" fill="rgba(0,255,157,0.12)" stroke="#00ff9d" stroke-width="0.5" rx="7"/>
+  <text x="515" y="140" fill="#00ff9d" font-family="monospace" font-size="8" text-anchor="middle">filled</text>
+
+  <rect x="20" y="158" width="560" height="32" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.8" rx="4"/>
+  <text x="36" y="178" fill="#ff5470" font-family="monospace" font-size="10" font-weight="bold">SELL</text>
+  <text x="80" y="178" fill="#e8eaee" font-family="monospace" font-size="10">SOL/USDT</text>
+  <text x="170" y="178" fill="#5e636d" font-family="monospace" font-size="9">LIMIT</text>
+  <text x="290" y="178" fill="#9ca0a8" font-family="monospace" font-size="10" text-anchor="end">Qty: 2.0000</text>
+  <text x="420" y="178" fill="#e8eaee" font-family="monospace" font-size="10" text-anchor="end">@ 168.50</text>
+  <rect x="490" y="166" width="50" height="14" fill="rgba(245,197,66,0.12)" stroke="#f5c542" stroke-width="0.5" rx="7"/>
+  <text x="515" y="176" fill="#f5c542" font-family="monospace" font-size="8" text-anchor="middle">pending</text>
+
+  <text x="20" y="82" fill="#5e636d" font-family="monospace" font-size="9">③ 订单列表</text>
+
+  <!-- ④ 色码说明 -->
+  <rect x="20" y="205" width="560" height="100" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.8" rx="4"/>
+  <text x="36" y="222" fill="#5e636d" font-family="monospace" font-size="9">状态色码:</text>
+  <circle cx="36" cy="238" r="3" fill="#00ff9d"/><text x="44" y="242" fill="#5e636d" font-family="monospace" font-size="8">filled</text>
+  <circle cx="96" cy="238" r="3" fill="#f5c542"/><text x="104" y="242" fill="#5e636d" font-family="monospace" font-size="8">pending/open</text>
+  <circle cx="180" cy="238" r="3" fill="#ff9b3d"/><text x="188" y="242" fill="#5e636d" font-family="monospace" font-size="8">partially_filled</text>
+  <circle cx="280" cy="238" r="3" fill="#5e636d"/><text x="288" y="242" fill="#5e636d" font-family="monospace" font-size="8">cancelled</text>
+  <circle cx="360" cy="238" r="3" fill="#ff5470"/><text x="368" y="242" fill="#5e636d" font-family="monospace" font-size="8">rejected</text>
+
+  <text x="36" y="262" fill="#9ca0a8" font-family="monospace" font-size="9">方向色码: <tspan fill="#00ff9d">绿=买入/做多</tspan> <tspan fill="#ff5470">红=卖出/做空</tspan></text>
+  <text x="36" y="280" fill="#9ca0a8" font-family="monospace" font-size="9">盈亏色码: <tspan fill="#00ff9d">绿=盈利</tspan> <tspan fill="#ff5470">红=亏损</tspan></text>
+
+  <text x="20" y="201" fill="#5e636d" font-family="monospace" font-size="9">④ 色码说明</text>
+</svg>
+
+<ol>
+  <li><strong>① 连接状态</strong> — 实时显示交易所和 Freqtrade 的连接健康度。绿色=正常，红色=异常。异常时会展开横幅提示具体 reason_codes。</li>
+  <li><strong>② Tab 切换</strong> — 订单 Tab 和持仓 Tab 各带一个计数徽章。选中 Tab 用绿色高亮，未选中用灰色。</li>
+  <li><strong>③ 订单/持仓列表</strong> — 每行显示一条记录。订单行显示方向（BUY/SELL）、交易对、订单类型、数量、价格、状态徽章和交易所订单 ID。持仓行额外显示入场价、现价、未实现盈亏和止损价。</li>
+  <li><strong>④ 色码说明</strong> — 状态色码和方向色码一目了然。盈亏用绿色（正）和红色（负）区分。</li>
+</ol>
+
+<h2>关键指标怎么读</h2>
+<ul>
+  <li><strong>订单状态</strong> — filled（已成交）表示委托已完全执行；pending/open（待成交）表示仍在订单簿上等待；partially_filled（部分成交）需要注意剩余部分是否会继续成交；cancelled（已取消）或 rejected（被拒）需要排查原因。</li>
+  <li><strong>未实现盈亏 (PnL)</strong> — 持仓行显示浮盈/浮亏的绝对值和百分比。正数绿色，负数红色。大幅浮亏时要检查止损是否合理，或者是否应该手动干预。</li>
+  <li><strong>入场价 vs 现价</strong> — 两者差距直接反映盈亏。如果现价接近止损价，系统会自动触发平仓——但建议你留意预警，不要等到最后才行动。</li>
+  <li><strong>reason_codes</strong> — 黄色三角形表示该订单或持仓有附加信息（如风控标记、来源追踪等）。悬停可查看详情。</li>
+</ul>
+
+<h2>常见操作 · 一步步</h2>
+<ol>
+  <li><strong>查看订单详情</strong> — 在执行记录页面点击"查看订单"按钮，会弹出详情弹窗，包含订单列表、账本事件和信号追溯链。</li>
+  <li><strong>按模式/状态过滤</strong> — 在执行记录页面使用过滤栏，按 backtest / dryrun / live_small / live 模式或 running / completed / stopped / failed 状态筛选运行记录。</li>
+  <li><strong>查看追溯链</strong> — 在详情弹窗的 "Trace" Tab 中，从 Signal → Agent → Strategy → TradeIntent → RiskDecision → Order 六步链路一目了然。</li>
+  <li><strong>跟踪账本事件</strong> — 详情弹窗的 "Events" Tab 显示每笔交易的资金变动（trade_pnl / fee / funding / deposit / withdrawal），带时间线和余额变化。</li>
+</ol>
+
+<h2>幕后</h2>
+<p>订单和持仓数据来自后端 BFF 端点 <code>/api/execution/orders-positions</code>。Freqtrade 通过 REST API 获取实时挂单和持仓状态，同时后端直接读取 Freqtrade 的 SQLite 数据库获取历史订单详情。两路数据在 Reconciliation Bus 中对账——如果本地记录与交易所状态不一致，会在 reason_codes 中标记差异。追溯链数据通过 <code>TradeSourceTrace</code> 组件呈现，整合了信号源、策略 DSL 版本、运行时快照和风控决策。</p>
+
+<h2>相关</h2>
+<ul>
+  <li><a href="#/pages/execution/execution-center">执行中心</a></li>
+  <li><a href="#/pages/execution/reconciliation-bus">对账总线</a></li>
+  <li><a href="#/concepts/09-dryrun-vs-live">概念 · 回测 / 干跑 / 实盘</a></li>
+  <li><a href="#/walkthroughs/risk-incident">攻略 · 风险事件处理</a></li>
+</ul>
