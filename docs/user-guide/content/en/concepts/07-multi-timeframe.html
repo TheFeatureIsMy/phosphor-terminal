@@ -1,0 +1,124 @@
+<h1>Multi-Timeframe &amp; Shadow Window</h1>
+<p class="chapter-meta">Concept · 07 / 10 · 8 min</p>
+
+<blockquote class="lede">A low-timeframe (LTF) break is provisional — only the high-timeframe (HTF) candle close confirms it. The wait between is the "shadow window."</blockquote>
+
+<blockquote class="pull">
+  "Higher timeframes set the bias; lower timeframes refine the entry. Decisions made against the higher-timeframe trend tend to fail."<cite>— TradingStrategyGuides<sup class="cite">[1]</sup></cite>
+</blockquote>
+
+<svg class="diagram" viewBox="0 0 600 280" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect x="0" y="0" width="600" height="280" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- Grid lines -->
+  <line x1="30" y1="50" x2="570" y2="50" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+  <line x1="30" y1="90" x2="570" y2="90" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+  <line x1="30" y1="130" x2="570" y2="130" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+  <line x1="30" y1="170" x2="570" y2="170" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+  <line x1="30" y1="210" x2="570" y2="210" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+  <line x1="30" y1="250" x2="570" y2="250" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+
+  <!-- Panel label: HTF (1h) -->
+  <text x="20" y="22" fill="#00ff9d" font-family="monospace" font-size="10" font-weight="bold">HTF (1h)</text>
+
+  <!-- HTF candles (top row) -->
+  <!-- Closed candles -->
+  <rect x="50" y="40" width="18" height="40" fill="rgba(0,255,157,0.15)" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+  <rect x="75" y="45" width="18" height="38" fill="rgba(0,255,157,0.15)" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+  <rect x="100" y="35" width="18" height="42" fill="rgba(0,255,157,0.15)" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+  <rect x="125" y="48" width="18" height="35" fill="rgba(0,255,157,0.15)" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+  <rect x="150" y="42" width="18" height="40" fill="rgba(0,255,157,0.15)" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+
+  <!-- Current (still open) HTF candle — highlighted -->
+  <rect x="200" y="30" width="22" height="55" fill="rgba(0,255,157,0.08)" stroke="#00ff9d" stroke-width="1.5"/>
+  <!-- Wick showing intra-candle movement -->
+  <line x1="211" y1="30" x2="211" y2="15" stroke="#00ff9d" stroke-width="1" stroke-dasharray="2,2"/>
+  <circle cx="211" cy="15" r="2" fill="#00ff9d"/>
+  <!-- "Still open" label -->
+  <text x="211" y="12" fill="#00ff9d" font-family="monospace" font-size="8" text-anchor="middle">open</text>
+
+  <!-- Countdown arrow (time remaining) -->
+  <line x1="211" y1="85" x2="211" y2="115" stroke="#f5c542" stroke-width="1.5" stroke-dasharray="3,2"/>
+  <polygon points="211,120 207,115 215,115" fill="#f5c542"/>
+  <text x="225" y="107" fill="#f5c542" font-family="monospace" font-size="8">waiting...</text>
+
+  <!-- Panel label: LTF (5m) -->
+  <text x="20" y="145" fill="#9ca0a8" font-family="monospace" font-size="10" font-weight="bold">LTF (5m)</text>
+
+  <!-- LTF candles (bottom row) — showing breakout -->
+  <rect x="50" y="175" width="8" height="25" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+  <rect x="62" y="170" width="8" height="28" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+  <rect x="74" y="180" width="8" height="22" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+  <rect x="86" y="168" width="8" height="30" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+  <rect x="98" y="178" width="8" height="24" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+
+  <!-- Breakout candles (accent green — CHoCH on LTF) -->
+  <rect x="114" y="155" width="8" height="35" fill="rgba(0,255,157,0.2)" stroke="#00ff9d" stroke-width="1"/>
+  <rect x="126" y="145" width="8" height="38" fill="rgba(0,255,157,0.2)" stroke="#00ff9d" stroke-width="1"/>
+  <rect x="138" y="140" width="8" height="40" fill="rgba(0,255,157,0.2)" stroke="#00ff9d" stroke-width="1"/>
+  <rect x="150" y="135" width="8" height="42" fill="rgba(0,255,157,0.2)" stroke="#00ff9d" stroke-width="1"/>
+
+  <!-- CHoCH arrow on LTF -->
+  <path d="M98 200 L126 185" stroke="#00ff9d" stroke-width="1.5"/>
+  <text x="104" y="210" fill="#00ff9d" font-family="monospace" font-size="8" font-weight="bold">CHoCH</text>
+
+  <!-- Shadow window band (shaded area spanning both panels) -->
+  <rect x="195" y="25" width="140" height="210" rx="4" fill="rgba(245,197,66,0.06)" stroke="#f5c542" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="265" y="148" fill="#f5c542" font-family="monospace" font-size="9" text-anchor="middle" font-weight="bold">Shadow Window</text>
+  <text x="265" y="162" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">wait for HTF close</text>
+
+  <!-- HTF close trigger arrow on the right edge of shadow band -->
+  <line x1="335" y1="60" x2="350" y2="60" stroke="#00ff9d" stroke-width="1.5"/>
+  <polygon points="355,60 348,57 348,63" fill="#00ff9d"/>
+  <text x="365" y="57" fill="#00ff9d" font-family="monospace" font-size="8">HTF close</text>
+  <text x="365" y="68" fill="#9ca0a8" font-family="monospace" font-size="7">→ confirm</text>
+
+  <!-- Post-shadow HTF candle (confirmed) -->
+  <rect x="370" y="30" width="22" height="55" fill="rgba(0,255,157,0.15)" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+
+  <!-- Post-shadow LTF continuation -->
+  <rect x="370" y="132" width="8" height="42" fill="rgba(0,255,157,0.15)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+  <rect x="382" y="130" width="8" height="40" fill="rgba(0,255,157,0.15)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+  <rect x="394" y="128" width="8" height="38" fill="rgba(0,255,157,0.15)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+
+  <!-- Bottom annotations -->
+  <text x="110" y="265" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">LTF structure breaks</text>
+  <text x="265" y="265" fill="#f5c542" font-family="monospace" font-size="8" text-anchor="middle">wait for HTF close</text>
+  <text x="430" y="265" fill="#00ff9d" font-family="monospace" font-size="8" text-anchor="middle">HTF confirms → execute</text>
+</svg>
+
+<h2>Why It Matters</h2>
+<p>This is the most common mistake beginners make: a beautiful breakout appears on the 5-minute chart, they jump in, and price reverses, trapping them at the top. The problem isn't the breakout call — it's that they didn't wait for the higher timeframe to "stamp" it.</p>
+<p>The HTF (Higher TimeFrame) sets the macro direction — it's the referee. The LTF (Lower TimeFrame) fine-tunes the entry — it's the athlete. The athlete can sprint, but the points don't count until the referee blows the whistle. The shadow window is the time between the sprint and the whistle.</p>
+
+<h2>How To Spot One</h2>
+<ol>
+  <li><strong>Pick your HTF / LTF pair</strong> — Common combos: 1h + 5m, 4h + 15m, daily + 1h. HTF sets the bias; LTF refines the entry.</li>
+  <li><strong>HTF candle is still in progress</strong> — The current HTF candle has not yet closed. Any LTF structure break or signal you see is "provisional."</li>
+  <li><strong>Observe the shadow window</strong> — From the LTF signal until the HTF candle closes — that's the shadow window. Price may oscillate, wick around, or even reverse.</li>
+  <li><strong>Wait for HTF close confirmation</strong> — Once the HTF candle closes, if price is still favorably positioned (e.g., above a key structure level), the LTF signal is validated.</li>
+</ol>
+<p>The core idea: patience beats speed. You don't need to catch the first breakout tick. Waiting for HTF confirmation may cost you a few pips, but it dramatically improves win rate.</p>
+
+<h2>Common Pitfalls</h2>
+<ul>
+  <li><strong>Trading inside the shadow window.</strong> Price action during the window is often noise. Making decisions here is like betting before the result is in. Wait for the close.</li>
+  <li><strong>Giving up because price "got away."</strong> Even if price has moved after confirmation, it's still safer than entering blind inside the window. Don't abandon the plan because the price looks worse.</li>
+  <li><strong>Wrong HTF choice.</strong> If your HTF is too large (e.g., daily), the shadow window can be hours long — unsuitable for intraday trading. Match the HTF to your holding period.</li>
+  <li><strong>Ignoring HTF close quality.</strong> The close isn't just a timestamp — read the candle: wick length, body size, engulfing patterns. Same close price, different candle shape, different meaning.</li>
+</ul>
+
+<h2>In AlphaLoop</h2>
+<ul>
+  <li><a href="#/pages/structure/structure-matrix">Structure Matrix</a> — HTF Tribunal home, multi-timeframe structure alignment and shadow window management</li>
+  <li><a href="#/walkthroughs/htf-tribunal-flow">HTF Tribunal Flow</a> — complete shadow window workflow walkthrough</li>
+  <li><a href="#/concepts/03-market-structure">Market Structure: BOS &amp; CHoCH</a> — what signal are we waiting for in the shadow window</li>
+</ul>
+
+<section class="sources">
+  <h3>Sources</h3>
+  <ol>
+    <li><a href="https://tradingstrategyguides.com/day-10-multi-timeframe-analysis-ict-smc-the-top-down-approach-explained" target="_blank" rel="noreferrer noopener">TradingStrategyGuides — MTF Top-Down Analysis</a></li>
+  </ol>
+</section>

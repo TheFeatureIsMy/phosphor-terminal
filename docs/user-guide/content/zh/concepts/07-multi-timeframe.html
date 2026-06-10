@@ -1,0 +1,125 @@
+<h1>多周期与影子窗口</h1>
+<p class="chapter-meta">概念 · 07 / 10 · 8 分钟</p>
+
+<blockquote class="lede">低周期(LTF)的突破都是"暂定的",必须等高周期(HTF)蜡烛收盘才能算数。这个等待期就是"影子窗口"。</blockquote>
+
+<blockquote class="pull">
+  "Higher timeframes set the bias; lower timeframes refine the entry. Decisions made against the higher-timeframe trend tend to fail."<cite>— TradingStrategyGuides<sup class="cite">[1]</sup></cite>
+</blockquote>
+
+<svg class="diagram" viewBox="0 0 600 280" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect x="0" y="0" width="600" height="280" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- Grid lines -->
+  <line x1="30" y1="50" x2="570" y2="50" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+  <line x1="30" y1="90" x2="570" y2="90" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+  <line x1="30" y1="130" x2="570" y2="130" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+  <line x1="30" y1="170" x2="570" y2="170" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+  <line x1="30" y1="210" x2="570" y2="210" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+  <line x1="30" y1="250" x2="570" y2="250" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+
+  <!-- Panel label: HTF (1h) -->
+  <text x="20" y="22" fill="#00ff9d" font-family="monospace" font-size="10" font-weight="bold">HTF (1h)</text>
+
+  <!-- HTF candles (top row) -->
+  <!-- Closed candles -->
+  <rect x="50" y="40" width="18" height="40" fill="rgba(0,255,157,0.15)" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+  <rect x="75" y="45" width="18" height="38" fill="rgba(0,255,157,0.15)" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+  <rect x="100" y="35" width="18" height="42" fill="rgba(0,255,157,0.15)" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+  <rect x="125" y="48" width="18" height="35" fill="rgba(0,255,157,0.15)" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+  <rect x="150" y="42" width="18" height="40" fill="rgba(0,255,157,0.15)" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+
+  <!-- Current (still open) HTF candle — highlighted -->
+  <rect x="200" y="30" width="22" height="55" fill="rgba(0,255,157,0.08)" stroke="#00ff9d" stroke-width="1.5"/>
+  <!-- Wick showing intra-candle movement -->
+  <line x1="211" y1="30" x2="211" y2="15" stroke="#00ff9d" stroke-width="1" stroke-dasharray="2,2"/>
+  <circle cx="211" cy="15" r="2" fill="#00ff9d"/>
+  <!-- "Still open" label -->
+  <text x="211" y="12" fill="#00ff9d" font-family="monospace" font-size="8" text-anchor="middle">open</text>
+
+  <!-- Countdown arrow (time remaining) -->
+  <line x1="211" y1="85" x2="211" y2="115" stroke="#f5c542" stroke-width="1.5" stroke-dasharray="3,2"/>
+  <polygon points="211,120 207,115 215,115" fill="#f5c542"/>
+  <text x="225" y="107" fill="#f5c542" font-family="monospace" font-size="8">waiting...</text>
+
+  <!-- Panel label: LTF (5m) -->
+  <text x="20" y="145" fill="#9ca0a8" font-family="monospace" font-size="10" font-weight="bold">LTF (5m)</text>
+
+  <!-- LTF candles (bottom row) — showing breakout -->
+  <rect x="50" y="175" width="8" height="25" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+  <rect x="62" y="170" width="8" height="28" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+  <rect x="74" y="180" width="8" height="22" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+  <rect x="86" y="168" width="8" height="30" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+  <rect x="98" y="178" width="8" height="24" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+
+  <!-- Breakout candles (accent green — CHoCH on LTF) -->
+  <rect x="114" y="155" width="8" height="35" fill="rgba(0,255,157,0.2)" stroke="#00ff9d" stroke-width="1"/>
+  <rect x="126" y="145" width="8" height="38" fill="rgba(0,255,157,0.2)" stroke="#00ff9d" stroke-width="1"/>
+  <rect x="138" y="140" width="8" height="40" fill="rgba(0,255,157,0.2)" stroke="#00ff9d" stroke-width="1"/>
+  <rect x="150" y="135" width="8" height="42" fill="rgba(0,255,157,0.2)" stroke="#00ff9d" stroke-width="1"/>
+
+  <!-- CHoCH arrow on LTF -->
+  <path d="M98 200 L126 185" stroke="#00ff9d" stroke-width="1.5"/>
+  <text x="104" y="210" fill="#00ff9d" font-family="monospace" font-size="8" font-weight="bold">CHoCH</text>
+
+  <!-- Shadow window band (shaded area spanning both panels) -->
+  <rect x="195" y="25" width="140" height="210" rx="4" fill="rgba(245,197,66,0.06)" stroke="#f5c542" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="265" y="145" fill="#f5c542" font-family="monospace" font-size="9" text-anchor="middle" font-weight="bold">影子窗口</text>
+  <text x="265" y="158" fill="#f5c542" font-family="monospace" font-size="9" text-anchor="middle">Shadow Window</text>
+  <text x="265" y="172" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">wait for HTF close</text>
+
+  <!-- HTF close trigger arrow on the right edge of shadow band -->
+  <line x1="335" y1="60" x2="350" y2="60" stroke="#00ff9d" stroke-width="1.5"/>
+  <polygon points="355,60 348,57 348,63" fill="#00ff9d"/>
+  <text x="365" y="57" fill="#00ff9d" font-family="monospace" font-size="8">HTF close</text>
+  <text x="365" y="68" fill="#9ca0a8" font-family="monospace" font-size="7">→ confirm</text>
+
+  <!-- Post-shadow HTF candle (confirmed) -->
+  <rect x="370" y="30" width="22" height="55" fill="rgba(0,255,157,0.15)" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+
+  <!-- Post-shadow LTF continuation -->
+  <rect x="370" y="132" width="8" height="42" fill="rgba(0,255,157,0.15)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+  <rect x="382" y="130" width="8" height="40" fill="rgba(0,255,157,0.15)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+  <rect x="394" y="128" width="8" height="38" fill="rgba(0,255,157,0.15)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+
+  <!-- Bottom annotations -->
+  <text x="110" y="265" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">LTF 出现结构突破</text>
+  <text x="265" y="265" fill="#f5c542" font-family="monospace" font-size="8" text-anchor="middle">等待 HTF 收盘确认</text>
+  <text x="430" y="265" fill="#00ff9d" font-family="monospace" font-size="8" text-anchor="middle">HTF 确认 → 执行</text>
+</svg>
+
+<h2>为什么重要</h2>
+<p>这是新手最容易犯的错误:在 5 分钟图上看到一个漂亮的突破,直接冲进去,结果价格反转,被套在顶上。问题不在于突破判断错了——而是你没有等高周期来"盖戳"。</p>
+<p>HTF (Higher TimeFrame) 决定了市场的"大方向"——它是裁判。LTF (Lower TimeFrame) 负责精确定位入场点——它是运动员。运动员可以冲刺,但裁判没吹哨之前,得分不算。影子窗口就是"裁判还没吹哨"的那段时间。</p>
+
+<h2>怎么识别</h2>
+<ol>
+  <li><strong>选定 HTF 和 LTF 的配对</strong>——常见的搭配是 1h + 5m、4h + 15m、日线 + 1h。HTF 决定方向,LTF 决定入场。</li>
+  <li><strong>HTF 蜡烛还在进行中</strong>——当前的 HTF 蜡烛尚未收盘。你在 LTF 上看到的结构突破或信号,都还是"暂定的"。</li>
+  <li><strong>观察影子窗口</strong>——从 LTF 信号出现到 HTF 蜡烛收盘之间的这段时间,就是影子窗口。期间价格可能来回波动,甚至反转。</li>
+  <li><strong>等 HTF 收盘确认</strong>——HTF 蜡烛收盘后,如果价格仍处于有利位置(比如收盘在关键结构之上),之前的 LTF 信号才算有效。</li>
+</ol>
+<p>影子窗口的核心思想是:耐心比速度重要。你不需要抓住第一个突破点——等 HTF 确认之后再入场,虽然价格可能更差,但胜率更高。</p>
+
+<h2>常见坑</h2>
+<ul>
+  <li><strong>在影子窗口内追涨杀跌。</strong>影子窗口里的价格波动可能是"噪音"。在里面做决策,相当于结果还没出来就下注。等收盘。</li>
+  <li><strong>HTF 收盘后价格已经跑远了,就不入场了。</strong>确认后的价格位置仍然比在影子窗口里入场安全。不要因为"价格变高了"就放弃计划。</li>
+  <li><strong>HTF 选得不对。</strong>如果 HTF 太大了(比如日线),影子窗口可能长达十几个小时,不适合日内交易。选一个与你的持仓周期匹配的 HTF。</li>
+  <li><strong>忽略 HTF 收盘形态。</strong>HTF 收盘不只是一个"时间点"——要看收盘蜡烛的形态:影线长度、实体大小、是否吞没等。同样的收盘价,不同形态含义不同。</li>
+</ul>
+
+<h2>在 AlphaLoop 中</h2>
+<ul>
+  <li><a href="#/pages/structure/structure-matrix">结构矩阵</a>——HTF Tribunal 主页,多周期结构对齐与影子窗口管理</li>
+  <li><a href="#/walkthroughs/htf-tribunal-flow">HTF Tribunal 走查</a>——影子窗口完整工作流</li>
+  <li><a href="#/concepts/03-market-structure">市场结构: BOS &amp; CHoCH</a>——影子窗口里等待的信号是什么</li>
+</ul>
+
+<section class="sources">
+  <h3>引用</h3>
+  <ol>
+    <li><a href="https://tradingstrategyguides.com/day-10-multi-timeframe-analysis-ict-smc-the-top-down-approach-explained" target="_blank" rel="noreferrer noopener">TradingStrategyGuides — MTF Top-Down Analysis</a></li>
+  </ol>
+</section>
