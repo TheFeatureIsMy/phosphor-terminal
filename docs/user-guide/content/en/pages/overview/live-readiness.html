@@ -1,0 +1,119 @@
+<h1>Live Readiness Check</h1>
+<p class="chapter-meta">Page · Overview · 5 min</p>
+
+<blockquote class="lede">Before going live, the system runs a comprehensive check on infrastructure, exchange connectivity, and performance metrics — and tells you whether you are cleared to trade.</blockquote>
+
+<h2>TL;DR</h2>
+<p>The Live Readiness Check is a safety gate. It aggregates the health of all critical systems (Fast Track, Redis, Freqtrade, exchange API), computes a 0-100 readiness score, and tells you exactly which trading modes are allowed: paper only, small-size live, or full live. Any blockers prevent you from advancing to higher-risk modes.</p>
+
+<h2>Who uses it & when</h2>
+<p>Every time you are about to switch from paper trading to live, or whenever you suspect a system issue. It is also a good practice to run a readiness check before deploying a new strategy to confirm exchange connectivity and that network latencies are within thresholds. During daily operations, if the Dashboard status bar shows an anomaly, come here to see exactly what is wrong.</p>
+
+<h2>Page Anatomy</h2>
+
+<svg class="diagram" viewBox="0 0 600 340" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="340" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- Score circle (left) -->
+  <circle cx="100" cy="90" r="54" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="10"/>
+  <circle cx="100" cy="90" r="54" fill="none" stroke="#f5c542" stroke-width="10" stroke-dasharray="340" stroke-dashoffset="48" stroke-linecap="round" transform="rotate(-90 100 90)"/>
+  <text x="100" y="88" fill="#f5c542" font-family="monospace" font-size="30" font-weight="bold" text-anchor="middle">86</text>
+  <text x="100" y="108" fill="#9ca0a8" font-family="monospace" font-size="10" text-anchor="middle">/ 100</text>
+  <text x="100" y="150" fill="#9ca0a8" font-family="monospace" font-size="9" text-anchor="middle">Readiness Score</text>
+
+  <!-- State banner (right) -->
+  <rect x="200" y="36" width="380" height="110" fill="rgba(245,197,66,0.06)" rx="6" stroke="rgba(245,197,66,0.2)" stroke-width="1"/>
+  <circle cx="214" cy="56" r="5" fill="#f5c542"/>
+  <text x="226" y="60" fill="#f5c542" font-family="monospace" font-size="14" font-weight="bold">LIVE_SMALL_READY</text>
+  <text x="210" y="82" fill="#9ca0a8" font-family="monospace" font-size="9">Some warnings present. Small-size live only.</text>
+  <text x="210" y="104" fill="#00ff9d" font-family="monospace" font-size="9">Paper: ✓   Live Small: ✓   Full Live: ✗</text>
+
+  <!-- Warnings section -->
+  <rect x="16" y="164" width="568" height="40" fill="rgba(245,197,66,0.04)" rx="6" stroke="rgba(245,197,66,0.12)" stroke-width="1"/>
+  <text x="24" y="182" fill="#f5c542" font-family="monospace" font-size="9">Warnings</text>
+  <text x="24" y="196" fill="#f5c542" font-family="monospace" font-size="8">⚠ exchange_api_weight_warning — Exchange API weight usage is high</text>
+
+  <!-- System check grid -->
+  <rect x="16" y="216" width="134" height="60" fill="rgba(0,255,157,0.06)" rx="4" stroke="rgba(0,255,157,0.15)" stroke-width="1"/>
+  <circle cx="50" cy="236" r="4" fill="#00ff9d"/>
+  <text x="62" y="240" fill="#9ca0a8" font-family="monospace" font-size="8">Fast Track</text>
+  <text x="40" y="256" fill="#e8eaee" font-family="monospace" font-size="10">45ms</text>
+  <text x="40" y="268" fill="#5e636d" font-family="monospace" font-size="7">&lt;200ms</text>
+
+  <rect x="158" y="216" width="134" height="60" fill="rgba(0,255,157,0.06)" rx="4" stroke="rgba(0,255,157,0.15)" stroke-width="1"/>
+  <circle cx="192" cy="236" r="4" fill="#00ff9d"/>
+  <text x="204" y="240" fill="#9ca0a8" font-family="monospace" font-size="8">Redis RTT</text>
+  <text x="182" y="256" fill="#e8eaee" font-family="monospace" font-size="10">3ms</text>
+  <text x="182" y="268" fill="#5e636d" font-family="monospace" font-size="7">&lt;50ms</text>
+
+  <rect x="300" y="216" width="134" height="60" fill="rgba(0,255,157,0.06)" rx="4" stroke="rgba(0,255,157,0.15)" stroke-width="1"/>
+  <circle cx="334" cy="236" r="4" fill="#00ff9d"/>
+  <text x="346" y="240" fill="#9ca0a8" font-family="monospace" font-size="8">Freqtrade</text>
+  <text x="324" y="256" fill="#e8eaee" font-family="monospace" font-size="10">running</text>
+  <text x="324" y="268" fill="#5e636d" font-family="monospace" font-size="7">running</text>
+
+  <rect x="442" y="216" width="142" height="60" fill="rgba(245,197,66,0.06)" rx="4" stroke="rgba(245,197,66,0.15)" stroke-width="1"/>
+  <circle cx="476" cy="236" r="4" fill="#f5c542"/>
+  <text x="488" y="240" fill="#9ca0a8" font-family="monospace" font-size="8">Exchange API</text>
+  <text x="466" y="256" fill="#e8eaee" font-family="monospace" font-size="10">weight 80%</text>
+  <text x="466" y="268" fill="#5e636d" font-family="monospace" font-size="7">&lt;90%</text>
+
+  <!-- Action bar -->
+  <rect x="16" y="292" width="568" height="34" fill="rgba(255,255,255,0.03)" rx="4" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="340" y="314" fill="#9ca0a8" font-family="monospace" font-size="9">[ Re-Check ]</text>
+  <text x="440" y="314" fill="#f5c542" font-family="monospace" font-size="9">[ Start Paper ]</text>
+  <text x="520" y="314" fill="#ff9b3d" font-family="monospace" font-size="9">[ Start Small Live ]</text>
+
+  <!-- Callout numbers -->
+  <circle cx="24" cy="20" r="9" fill="none" stroke="#00ff9d" stroke-width="1.5"/>
+  <text x="24" y="24" fill="#00ff9d" font-family="monospace" font-size="10" text-anchor="middle">①</text>
+  <circle cx="200" cy="20" r="9" fill="none" stroke="#f5c542" stroke-width="1.5"/>
+  <text x="200" y="24" fill="#f5c542" font-family="monospace" font-size="10" text-anchor="middle">②</text>
+  <circle cx="24" cy="158" r="9" fill="none" stroke="#ff9b3d" stroke-width="1.5"/>
+  <text x="24" y="162" fill="#ff9b3d" font-family="monospace" font-size="10" text-anchor="middle">③</text>
+  <circle cx="24" cy="210" r="9" fill="none" stroke="#50b4ff" stroke-width="1.5"/>
+  <text x="24" y="214" fill="#50b4ff" font-family="monospace" font-size="10" text-anchor="middle">④</text>
+  <circle cx="24" cy="288" r="9" fill="none" stroke="#ff5470" stroke-width="1.5"/>
+  <text x="24" y="292" fill="#ff5470" font-family="monospace" font-size="10" text-anchor="middle">⑤</text>
+</svg>
+
+<ol>
+  <li><strong>① Readiness Score Ring</strong> — A circular progress bar showing the composite score (0-100). Green at ≥80, yellow at 50-79, red below 50. The score is a weighted calculation from all individual check states.</li>
+  <li><strong>② State Banner</strong> — Shows the current readiness state (LIVE_READY / LIVE_SMALL_READY / PAPER_ONLY / NOT_READY). Below it, three check badges indicate availability for Paper, Live Small, and Full Live modes — green checkmark means allowed, red X means blocked.</li>
+  <li><strong>③ Blockers and Warnings</strong> — "Blockers" on a red background must be resolved to advance the readiness level. "Warnings" on a yellow background are advisory. Each item shows an error code and a descriptive message.</li>
+  <li><strong>④ System Check Grid</strong> — A 4-column grid displaying each subsystem's health: Fast Track latency, Redis round-trip time, Freqtrade status, and Exchange API weight. Each cell contains a status dot (green/yellow/red), metric name, current value, and threshold.</li>
+  <li><strong>⑤ Action Bar</strong> — "Re-Check" button triggers a fresh health check. "Start Paper Trading" and "Start Small-Size Live" buttons are enabled when the corresponding mode is allowed.</li>
+</ol>
+
+<h2>Reading the Key Metrics</h2>
+<ul>
+  <li><strong>Readiness Score (0-100)</strong> — The most important global metric. Above 80 unlocks full live trading, 50-79 allows small-size live only, below 50 restricts to paper trading. The score is most heavily influenced by the worst check — a single "failed" check drags the entire score down significantly.</li>
+  <li><strong>Fast Track Latency</strong> — Internal communication round-trip time. Ideal: &lt;200ms. High latency suggests infrastructure bottlenecks.</li>
+  <li><strong>Redis RTT</strong> — Redis cache response time. Ideal: &lt;50ms. Slow Redis affects all cache-dependent data reads.</li>
+  <li><strong>Freqtrade Status</strong> — The core trading engine must be "running" for any live mode. Any other status ("stopped", "error") is a blocker.</li>
+  <li><strong>Exchange API Weight</strong> — Remaining API quota percentage. Below 90% triggers a warning; dropping below the threshold may cause order submissions to be rate-limited.</li>
+  <li><strong>Readiness State</strong> — Four states: LIVE_READY (green, full trading), LIVE_SMALL_READY (orange, small-size only), PAPER_ONLY (yellow, simulation only), NOT_READY (red, untradeable).</li>
+</ul>
+
+<h2>Common Actions, Step by Step</h2>
+
+<p><strong>Pre-launch check</strong></p>
+<ol>
+  <li>Open the Live Readiness Check page. Look at the score ring in the top-left — is it in the green zone (≥80)?</li>
+  <li>Check the "Blockers" section for red items. If any exist, note the error codes and resolve them one by one.</li>
+  <li>Review the "Warnings" section and decide whether they are acceptable. For example, "Exchange API weight low" is a warning but not a blocker — though it deserves attention in high-frequency scenarios.</li>
+  <li>Confirm the check badges for your target mode are green (e.g., Full Live shows a checkmark).</li>
+  <li>Click "Re-Check" to trigger a fresh health check and confirm recently fixed issues are resolved.</li>
+  <li>Click the action button for the allowed mode (e.g., "Start Small-Size Live") to begin trading.</li>
+</ol>
+
+<h2>Behind the Scenes</h2>
+<p>The page fetches data from the <code>/api/overview/live-readiness</code> endpoint via the <code>APIOverview</code> service. The backend computes the score and state by combining Fast Track heartbeat, Redis connectivity test, Freqtrade process status, and exchange API remaining weight. Clicking "Re-Check" calls the same endpoint to force a refresh. When the backend is unreachable, mock data is returned with a default score of 86 and state LIVE_SMALL_READY.</p>
+
+<h2>See Also</h2>
+<ul>
+  <li><a href="#/pages/overview/dashboard">Page · AI Control Tower</a> — Quick system health overview in the status bar</li>
+  <li><a href="#/concepts/09-dryrun-vs-live">Concept · Dry Run vs Live</a> — Understand the differences between trading modes</li>
+  <li><a href="#/walkthroughs/daily-trading-loop">Walkthrough · Daily Trading Loop</a> — Live Readiness is the first step in the workflow</li>
+  <li><a href="#/pages/risk/risk-center">Page · Risk Center</a> — How risk rules affect readiness state</li>
+</ul>
