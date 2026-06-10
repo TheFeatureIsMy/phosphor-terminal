@@ -1,0 +1,81 @@
+<h1>什么是量化交易</h1>
+<p class="chapter-meta">概念 · 01 / 10 · 5 分钟</p>
+
+<blockquote class="lede">量化交易,就是把"决策标准"写成代码,让程序按规则下单,而不是靠手感。</blockquote>
+
+<blockquote class="pull">
+  "Quantitative trading uses mathematical models and historical data to make trading decisions, removing emotion from the process."<cite>— Investopedia<sup class="cite">[1]</sup></cite>
+</blockquote>
+
+<svg class="diagram" viewBox="0 0 600 190" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect x="0" y="0" width="600" height="190" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- Strategy box -->
+  <rect x="50" y="45" width="140" height="65" rx="6" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.14)" stroke-width="1.5"/>
+  <text x="120" y="72" fill="#e8eaee" font-family="monospace" font-size="13" text-anchor="middle" font-weight="bold">策略</text>
+  <text x="120" y="90" fill="#9ca0a8" font-family="monospace" font-size="9" text-anchor="middle">Strategy</text>
+
+  <!-- Arrow 1 -->
+  <line x1="195" y1="77" x2="222" y2="77" stroke="#5e636d" stroke-width="1.5"/>
+  <polygon points="228,77 220,73 220,81" fill="#5e636d"/>
+
+  <!-- Signal box (highlighted — "the moment") -->
+  <rect x="230" y="45" width="140" height="65" rx="6" fill="rgba(0,255,157,0.08)" stroke="#00ff9d" stroke-width="1.5"/>
+  <text x="300" y="72" fill="#00ff9d" font-family="monospace" font-size="13" text-anchor="middle" font-weight="bold">信号</text>
+  <text x="300" y="90" fill="#9ca0a8" font-family="monospace" font-size="9" text-anchor="middle">Signal</text>
+
+  <!-- Arrow 2 -->
+  <line x1="375" y1="77" x2="402" y2="77" stroke="#5e636d" stroke-width="1.5"/>
+  <polygon points="408,77 400,73 400,81" fill="#5e636d"/>
+
+  <!-- Order box -->
+  <rect x="410" y="45" width="140" height="65" rx="6" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.14)" stroke-width="1.5"/>
+  <text x="480" y="72" fill="#e8eaee" font-family="monospace" font-size="13" text-anchor="middle" font-weight="bold">订单</text>
+  <text x="480" y="90" fill="#9ca0a8" font-family="monospace" font-size="9" text-anchor="middle">Order</text>
+
+  <!-- Sub-labels -->
+  <text x="120" y="130" fill="#5e636d" font-family="monospace" font-size="9" text-anchor="middle">定规则</text>
+  <text x="300" y="130" fill="#00ff9d" font-family="monospace" font-size="9" text-anchor="middle">关键时刻</text>
+  <text x="480" y="130" fill="#5e636d" font-family="monospace" font-size="9" text-anchor="middle">执行</text>
+
+  <!-- Flow accent -->
+  <line x1="50" y1="145" x2="550" y2="145" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+  <text x="300" y="172" fill="#5e636d" font-family="monospace" font-size="8" text-anchor="middle">规则 → 判断 → 行动</text>
+</svg>
+
+<h2>为什么重要</h2>
+<p>量化交易最大的好处不是"赚更多钱"——而是纪律。人的决策会被恐惧、贪婪、FOMO 影响,但代码不会。你设定规则,它就按规则执行,不会在凌晨三点突发奇想开一个仓位。</p>
+<p>另一个常被忽略的好处是可验证性。回测之后表现不行的策略,上了实盘也不会突然变好。传统交易员可能一辈子都不知道自己的胜率到底是多少,但量化交易让你精确知道每一个策略的历史表现。每一笔盈亏都有数据可查。</p>
+
+<h2>怎么识别</h2>
+<p>"量化"听起来很高深,但本质上就是三步:</p>
+<ol>
+  <li><strong>定规则</strong>——什么条件买入?什么条件卖出?仓位多大?止损设在哪?把这些写成清晰的"如果...就..."语句。</li>
+  <li><strong>验证规则</strong>——把规则放到历史数据里跑一遍(回测),看它过去表现如何。</li>
+  <li><strong>执行</strong>——把验证过的规则连接到真实市场,让系统自动下单。</li>
+</ol>
+<p>任何量化系统,不管多复杂,底层逻辑都是这样:策略 → 信号 → 订单。</p>
+
+<h2>常见坑</h2>
+<ul>
+  <li><strong>过度优化</strong>——回测表现太好往往是坏事。过度拟合历史数据会让策略在未来失效。保持简单,保留一定的"松弛度"。</li>
+  <li><strong>忽略滑点和手续费</strong>——回测里赚得欢,实盘里全被手续费和滑点吃掉。一定要把交易成本算进去。</li>
+  <li><strong>没有风控</strong>——很多新手只关心"怎么赚钱",不关心"亏钱了怎么办"。量化交易的第一课应该是风险管理。</li>
+  <li><strong>代码有 bug</strong>——量化的最大敌人不是市场,而是你自己代码里的 bug。上线前一定做足测试。</li>
+</ul>
+
+<h2>在 AlphaLoop 中</h2>
+<ul>
+  <li><a href="#/pages/ai-research/ai-research-room">AI 研究室</a>——让 AI 帮你分析市场和生成策略</li>
+  <li><a href="#/pages/strategy/strategy-canvas">策略画布</a>——可视化搭建量化策略,无需写代码</li>
+  <li><a href="#/pages/strategy/backtest-simulation">回测与模拟</a>——用历史数据验证策略表现</li>
+  <li><a href="#/walkthroughs/first-strategy">情景 · 第一个策略</a>——从零到一的完整流程</li>
+</ul>
+
+<section class="sources">
+  <h3>引用</h3>
+  <ol>
+    <li><a href="https://www.investopedia.com/terms/q/quantitative-trading.asp" target="_blank" rel="noreferrer noopener">Investopedia — Quantitative Trading</a></li>
+  </ol>
+</section>

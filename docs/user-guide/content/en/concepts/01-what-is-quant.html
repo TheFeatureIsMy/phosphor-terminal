@@ -1,0 +1,81 @@
+<h1>What Is Quant Trading</h1>
+<p class="chapter-meta">Concept · 01 / 10 · 5 min</p>
+
+<blockquote class="lede">Quant trading means writing your decision criteria as code and letting the machine execute, not your gut.</blockquote>
+
+<blockquote class="pull">
+  "Quantitative trading uses mathematical models and historical data to make trading decisions, removing emotion from the process."<cite>— Investopedia<sup class="cite">[1]</sup></cite>
+</blockquote>
+
+<svg class="diagram" viewBox="0 0 600 190" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect x="0" y="0" width="600" height="190" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- Strategy box -->
+  <rect x="50" y="45" width="140" height="65" rx="6" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.14)" stroke-width="1.5"/>
+  <text x="120" y="72" fill="#e8eaee" font-family="monospace" font-size="13" text-anchor="middle" font-weight="bold">Strategy</text>
+  <text x="120" y="90" fill="#9ca0a8" font-family="monospace" font-size="9" text-anchor="middle">Rules</text>
+
+  <!-- Arrow 1 -->
+  <line x1="195" y1="77" x2="222" y2="77" stroke="#5e636d" stroke-width="1.5"/>
+  <polygon points="228,77 220,73 220,81" fill="#5e636d"/>
+
+  <!-- Signal box (highlighted — "the moment") -->
+  <rect x="230" y="45" width="140" height="65" rx="6" fill="rgba(0,255,157,0.08)" stroke="#00ff9d" stroke-width="1.5"/>
+  <text x="300" y="72" fill="#00ff9d" font-family="monospace" font-size="13" text-anchor="middle" font-weight="bold">Signal</text>
+  <text x="300" y="90" fill="#9ca0a8" font-family="monospace" font-size="9" text-anchor="middle">The Moment</text>
+
+  <!-- Arrow 2 -->
+  <line x1="375" y1="77" x2="402" y2="77" stroke="#5e636d" stroke-width="1.5"/>
+  <polygon points="408,77 400,73 400,81" fill="#5e636d"/>
+
+  <!-- Order box -->
+  <rect x="410" y="45" width="140" height="65" rx="6" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.14)" stroke-width="1.5"/>
+  <text x="480" y="72" fill="#e8eaee" font-family="monospace" font-size="13" text-anchor="middle" font-weight="bold">Order</text>
+  <text x="480" y="90" fill="#9ca0a8" font-family="monospace" font-size="9" text-anchor="middle">Execution</text>
+
+  <!-- Sub-labels -->
+  <text x="120" y="130" fill="#5e636d" font-family="monospace" font-size="9" text-anchor="middle">Define</text>
+  <text x="300" y="130" fill="#00ff9d" font-family="monospace" font-size="9" text-anchor="middle">Decide</text>
+  <text x="480" y="130" fill="#5e636d" font-family="monospace" font-size="9" text-anchor="middle">Act</text>
+
+  <!-- Flow accent -->
+  <line x1="50" y1="145" x2="550" y2="145" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+  <text x="300" y="172" fill="#5e636d" font-family="monospace" font-size="8" text-anchor="middle">Rules → Judgment → Action</text>
+</svg>
+
+<h2>Why It Matters</h2>
+<p>The biggest advantage of quant trading isn't "more money" — it's discipline. Human decisions are driven by fear, greed, and FOMO. Code isn't. You set the rules, it follows them. It won't open a position at 3 AM on a whim.</p>
+<p>The other underrated benefit is verifiability. A strategy that fails backtesting won't magically work live. Most discretionary traders never know their actual win rate. Quant traders know exactly how every strategy has performed historically — every P&L tick is recorded.</p>
+
+<h2>How To Spot One</h2>
+<p>"Quant" sounds intimidating, but it's really three steps:</p>
+<ol>
+  <li><strong>Define rules</strong> — What triggers a buy? A sell? Position size? Stop loss? Write them as clear "if... then..." statements.</li>
+  <li><strong>Validate</strong> — Run the rules against historical data (backtest) to see how they would have performed.</li>
+  <li><strong>Execute</strong> — Connect the validated rules to the live market and let the system trade.</li>
+</ol>
+<p>Every quant system, no matter how complex, follows the same loop: Strategy → Signal → Order.</p>
+
+<h2>Common Pitfalls</h2>
+<ul>
+  <li><strong>Over-optimization</strong> — A backtest that looks too good is usually a red flag. Curve-fitting to historical data guarantees failure in live markets. Keep it simple.</li>
+  <li><strong>Ignoring slippage and fees</strong> — A profitable backtest can become a losing strategy after costs. Always include realistic transaction costs.</li>
+  <li><strong>No risk management</strong> — Most beginners focus on "how to make money" instead of "how to not lose money." Risk first, strategy second.</li>
+  <li><strong>Bugs</strong> — The biggest enemy of a quant trader isn't the market; it's your own code. Test thoroughly before going live.</li>
+</ul>
+
+<h2>In AlphaLoop</h2>
+<ul>
+  <li><a href="#/pages/ai-research/ai-research-room">AI Research Room</a> — AI-assisted market analysis and strategy generation</li>
+  <li><a href="#/pages/strategy/strategy-canvas">Strategy Canvas</a> — visually build quant strategies without code</li>
+  <li><a href="#/pages/strategy/backtest-simulation">Backtest &amp; Simulation</a> — validate strategies against historical data</li>
+  <li><a href="#/walkthroughs/first-strategy">Walkthrough: First Strategy</a> — end-to-end from zero to one</li>
+</ul>
+
+<section class="sources">
+  <h3>Sources</h3>
+  <ol>
+    <li><a href="https://www.investopedia.com/terms/q/quantitative-trading.asp" target="_blank" rel="noreferrer noopener">Investopedia — Quantitative Trading</a></li>
+  </ol>
+</section>
