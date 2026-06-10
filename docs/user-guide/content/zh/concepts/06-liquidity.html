@@ -1,0 +1,111 @@
+<h1>流动性池与扫荡</h1>
+<p class="chapter-meta">概念 · 06 / 10 · 6 分钟</p>
+
+<blockquote class="lede">流动性 = 一群止损单和挂单堆积的价格区域。大资金需要这些"对手盘"才能成交,所以他们经常去"扫"。</blockquote>
+
+<blockquote class="pull">
+  "Buy-side liquidity sits above swing highs (where shorts stop out); sell-side liquidity sits below swing lows (where longs stop out)."<cite>— DailyPriceAction<sup class="cite">[1]</sup></cite>
+</blockquote>
+
+<svg class="diagram" viewBox="0 0 600 260" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect x="0" y="0" width="600" height="260" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- Grid lines -->
+  <line x1="30" y1="50" x2="570" y2="50" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+  <line x1="30" y1="90" x2="570" y2="90" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+  <line x1="30" y1="130" x2="570" y2="130" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+  <line x1="30" y1="170" x2="570" y2="170" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+  <line x1="30" y1="210" x2="570" y2="210" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+
+  <!-- Price axis label -->
+  <text x="25" y="50" fill="#5e636d" font-family="monospace" font-size="8" text-anchor="end">high</text>
+  <text x="25" y="210" fill="#5e636d" font-family="monospace" font-size="8" text-anchor="end">low</text>
+
+  <!-- Swing high area (left side) -->
+  <rect x="60" y="38" width="100" height="60" rx="4" fill="rgba(0,255,157,0.06)" stroke="rgba(0,255,157,0.25)" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="110" y="35" fill="#00ff9d" font-family="monospace" font-size="10" text-anchor="middle" font-weight="bold">Swing High</text>
+
+  <!-- Swing low area (left side) -->
+  <rect x="60" y="170" width="100" height="55" rx="4" fill="rgba(255,84,112,0.06)" stroke="rgba(255,84,112,0.25)" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="110" y="238" fill="#ff5470" font-family="monospace" font-size="10" text-anchor="middle" font-weight="bold">Swing Low</text>
+
+  <!-- BSL dashed line above swing high -->
+  <line x1="60" y1="28" x2="480" y2="28" stroke="#00ff9d" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <text x="485" y="32" fill="#00ff9d" font-family="monospace" font-size="10" font-weight="bold">BSL</text>
+  <text x="485" y="44" fill="#9ca0a8" font-family="monospace" font-size="8">Buy-Side Liq.</text>
+
+  <!-- SSL dashed line below swing low -->
+  <line x1="60" y1="228" x2="480" y2="228" stroke="#ff5470" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <text x="485" y="232" fill="#ff5470" font-family="monospace" font-size="10" font-weight="bold">SSL</text>
+  <text x="485" y="244" fill="#9ca0a8" font-family="monospace" font-size="8">Sell-Side Liq.</text>
+
+  <!-- Candle cluster before sweep -->
+  <rect x="70" y="80" width="10" height="45" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+  <rect x="85" y="75" width="10" height="42" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+  <rect x="100" y="85" width="10" height="40" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+  <rect x="115" y="70" width="10" height="45" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+
+  <!-- Sweep wick: price breaks above BSL -->
+  <rect x="150" y="40" width="12" height="60" fill="rgba(245,197,66,0.15)" stroke="#f5c542" stroke-width="1"/>
+  <line x1="156" y1="40" x2="156" y2="15" stroke="#f5c542" stroke-width="1.5"/>
+  <!-- Wick cap -->
+  <circle cx="156" cy="15" r="2" fill="#f5c542"/>
+
+  <!-- Reversal candles (price drops back down) -->
+  <rect x="170" y="65" width="12" height="55" fill="rgba(245,197,66,0.15)" stroke="#f5c542" stroke-width="1"/>
+  <rect x="190" y="80" width="12" height="50" fill="rgba(245,197,66,0.15)" stroke="#f5c542" stroke-width="1"/>
+  <rect x="210" y="95" width="12" height="48" fill="rgba(245,197,66,0.15)" stroke="#f5c542" stroke-width="1"/>
+
+  <!-- Continued downward candles -->
+  <rect x="240" y="110" width="12" height="45" fill="rgba(255,84,112,0.15)" stroke="#ff5470" stroke-width="1"/>
+  <rect x="260" y="120" width="12" height="42" fill="rgba(255,84,112,0.15)" stroke="#ff5470" stroke-width="1"/>
+  <rect x="280" y="135" width="12" height="40" fill="rgba(255,84,112,0.15)" stroke="#ff5470" stroke-width="1"/>
+  <rect x="300" y="148" width="12" height="38" fill="rgba(255,84,112,0.15)" stroke="#ff5470" stroke-width="1"/>
+  <rect x="320" y="155" width="12" height="35" fill="rgba(255,84,112,0.15)" stroke="#ff5470" stroke-width="1"/>
+  <rect x="340" y="165" width="12" height="30" fill="rgba(255,84,112,0.15)" stroke="#ff5470" stroke-width="1"/>
+  <rect x="360" y="175" width="12" height="28" fill="rgba(255,84,112,0.15)" stroke="#ff5470" stroke-width="1"/>
+
+  <!-- Sweep arrow label -->
+  <path d="M156 15 L156 8" stroke="#f5c542" stroke-width="1.5"/>
+  <text x="165" y="10" fill="#f5c542" font-family="monospace" font-size="9" font-weight="bold">sweep &amp; reverse</text>
+
+  <!-- Bottom annotation -->
+  <text x="300" y="255" fill="#5e636d" font-family="monospace" font-size="8" text-anchor="middle">大资金扫掉止损后,价格向真实方向运行</text>
+</svg>
+
+<h2>为什么重要</h2>
+<p>价格不会随机波动——它总是朝着流动性最密集的方向走。扫止损不是市场"针对你",而是大资金需要对手盘才能完成大额订单。理解流动性池在哪,就能理解价格为什么会去某些位置,以及为什么会在那里反转。</p>
+<p>BSL (Buy-Side Liquidity) 位于前高之上——空头止损单堆积的地方。SSL (Sell-Side Liquidity) 位于前低之下——多头止损单堆积的地方。大资金拉升或砸盘之前,经常先去扫掉这些止损,拿到对手盘,再往真正的方向走。</p>
+
+<h2>怎么识别</h2>
+<ol>
+  <li><strong>标出明显的高低点</strong>——找到图表上最近的 Swing High 和 Swing Low。</li>
+  <li><strong>画出 BSL / SSL 线</strong>——前高之上是 BSL,前低之下是 SSL。</li>
+  <li><strong>观察价格是否"钓鱼"</strong>——价格短暂突破 BSL/SSL 后立刻反转,留下一根长影线或吞没形态。这就是"扫止损"的典型特征。</li>
+  <li><strong>等确认</strong>——突破 BSL/SSL 但收盘在内部,说明流动性被扫掉了。如果收盘也在外部,可能是真突破,需要重新评估。</li>
+</ol>
+<p>流动性扫荡通常发生在重大新闻前后或亚洲/伦敦/纽约开盘时段——这时候订单流最密集。</p>
+
+<h2>常见坑</h2>
+<ul>
+  <li><strong>每个前高前低都当流动性。</strong>不是每个高低点都有足够的止损堆积。找那些明显的位置——价格在那里多次受阻或盘整过的区域流动性更足。</li>
+  <li><strong>扫完立刻反向入场。</strong>流动性被扫之后价格可能会继续走一段,不一定立刻反转。等一个二次确认结构(如 CHoCH)更安全。</li>
+  <li><strong>忽略多周期流动性。</strong>5 分钟图上的 BSL 可能只是 1 小时图上的一个小波动。始终从高周期往下看,找到"真正重要的流动性池"。</li>
+  <li><strong>把突破当扫荡。</strong>有些突破是真突破,不是扫止损。怎么区分?看收盘价:真突破收盘在外部,扫荡收盘在内部(留下影线)。</li>
+</ul>
+
+<h2>在 AlphaLoop 中</h2>
+<ul>
+  <li><a href="#/pages/structure/manipulation-radar">操纵雷达</a>——实时扫描流动性扫荡和操纵行为</li>
+  <li><a href="#/pages/structure/structure-matrix">结构矩阵</a>——在高周期上标注关键流动性区域</li>
+  <li><a href="#/concepts/04-order-block">订单块</a>——流动性扫荡后形成的订单块是入场关键</li>
+</ul>
+
+<section class="sources">
+  <h3>引用</h3>
+  <ol>
+    <li><a href="https://dailypriceaction.com/blog/smart-money-concepts" target="_blank" rel="noreferrer noopener">DailyPriceAction — SMC Definitive Guide</a></li>
+    <li><a href="https://tradethepool.com/technical-skill/smart-money-concepts-terminology" target="_blank" rel="noreferrer noopener">TradeThePool — SMC Terminology</a></li>
+  </ol>
+</section>
