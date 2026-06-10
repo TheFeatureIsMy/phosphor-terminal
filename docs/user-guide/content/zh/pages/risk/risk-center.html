@@ -1,0 +1,104 @@
+<h1>风控中心</h1>
+<p class="chapter-meta">页面 · 风控 · 5 分钟</p>
+
+<blockquote class="lede">风控中心是 AlphaLoop 的风险总览仪表盘——用一个弧形仪表盘告诉你系统整体风险处于什么状态，以及哪个守卫快要被触发了。</blockquote>
+
+<h2>TL;DR</h2>
+<p>风控中心用一个大型弧形仪表盘显示账户的整体风险状态（SAFE / WARN / RISK / LOCK / HALT）。下面是四个风控守卫的卡片网格，分别跟踪日亏损、周亏损、总敞口和连续亏损的消耗比例。右下方的紧急操作区提供"禁止新开仓"和"紧急停止"按钮。整个页面背景会根据风险等级改变呼吸光效。</p>
+
+<h2>谁用 · 何时用</h2>
+<p>每天开盘前第一件事——看风控中心一眼就知道系统是否安全。当熔断触发、告警推送或你只是想确认"今天还能不能继续交易"时，风控中心是起点。它不处理具体持仓的止损（那个在止损保护页），而是告诉你整体账户的安全水位。</p>
+
+<h2>页面解剖</h2>
+<svg class="diagram" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="320" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- ① Hero arc gauge -->
+  <circle cx="140" cy="130" r="60" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="6"/>
+  <path d="M 95 100 A 60 60 0 0 1 185 100" fill="none" stroke="#00ff9d" stroke-width="8" stroke-linecap="round"/>
+  <text x="140" y="126" fill="#00ff9d" font-family="monospace" font-size="18" font-weight="bold" text-anchor="middle">SAFE</text>
+  <text x="140" y="142" fill="#5e636d" font-family="monospace" font-size="9" text-anchor="middle" letter-spacing="2">NORMAL</text>
+  <text x="20" y="18" fill="#5e636d" font-family="monospace" font-size="9">① 弧形仪表盘</text>
+
+  <!-- ② Quick stats -->
+  <rect x="250" y="40" width="160" height="36" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.5" rx="4"/>
+  <text x="260" y="56" fill="#9ca0a8" font-family="monospace" font-size="9">系统状态</text>
+  <text x="260" y="70" fill="#00ff9d" font-family="monospace" font-size="13" font-weight="bold">正常</text>
+
+  <rect x="250" y="84" width="160" height="36" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.5" rx="4"/>
+  <text x="260" y="100" fill="#9ca0a8" font-family="monospace" font-size="9">守卫告警</text>
+  <text x="260" y="114" fill="#00ff9d" font-family="monospace" font-size="13" font-weight="bold">0 / 4</text>
+
+  <rect x="250" y="128" width="160" height="36" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.5" rx="4"/>
+  <text x="260" y="144" fill="#9ca0a8" font-family="monospace" font-size="9">紧急锁定</text>
+  <text x="260" y="158" fill="#00ff9d" font-family="monospace" font-size="13" font-weight="bold">OFF</text>
+  <text x="20" y="36" fill="#5e636d" font-family="monospace" font-size="9">② 快速统计</text>
+
+  <!-- ③ Guards grid (3 mini arc gauges) -->
+  <rect x="20" y="185" width="170" height="55" fill="rgba(0,255,157,0.04)" stroke="rgba(0,255,157,0.2)" stroke-width="0.5" rx="4"/>
+  <text x="105" y="205" fill="#e8eaee" font-family="monospace" font-size="9" text-anchor="middle">日亏损限制</text>
+  <rect x="60" y="212" width="80" height="4" fill="rgba(255,255,255,0.08)" rx="2"/>
+  <rect x="60" y="212" width="18" height="4" fill="#00ff9d" rx="2"/>
+  <text x="60" y="230" fill="#9ca0a8" font-family="monospace" font-size="8">120 / 500</text>
+  <text x="140" y="230" fill="#00ff9d" font-family="monospace" font-size="8">24%</text>
+
+  <rect x="205" y="185" width="170" height="55" fill="rgba(0,255,157,0.04)" stroke="rgba(0,255,157,0.2)" stroke-width="0.5" rx="4"/>
+  <text x="290" y="205" fill="#e8eaee" font-family="monospace" font-size="9" text-anchor="middle">周亏损限制</text>
+  <rect x="245" y="212" width="80" height="4" fill="rgba(255,255,255,0.08)" rx="2"/>
+  <rect x="245" y="212" width="15" height="4" fill="#00ff9d" rx="2"/>
+  <text x="245" y="230" fill="#9ca0a8" font-family="monospace" font-size="8">280 / 1500</text>
+  <text x="325" y="230" fill="#00ff9d" font-family="monospace" font-size="8">19%</text>
+
+  <rect x="390" y="185" width="190" height="55" fill="rgba(0,255,157,0.04)" stroke="rgba(0,255,157,0.2)" stroke-width="0.5" rx="4"/>
+  <text x="485" y="205" fill="#e8eaee" font-family="monospace" font-size="9" text-anchor="middle">总敞口</text>
+  <rect x="440" y="212" width="90" height="4" fill="rgba(255,255,255,0.08)" rx="2"/>
+  <rect x="440" y="212" width="36" height="4" fill="#00ff9d" rx="2"/>
+  <text x="440" y="230" fill="#9ca0a8" font-family="monospace" font-size="8">3200 / 8000</text>
+  <text x="530" y="230" fill="#00ff9d" font-family="monospace" font-size="8">40%</text>
+  <text x="20" y="178" fill="#5e636d" font-family="monospace" font-size="9">③ 风控守卫</text>
+
+  <!-- ④ Emergency panel -->
+  <rect x="20" y="255" width="175" height="50" fill="rgba(255,155,61,0.08)" stroke="#ff9b3d" stroke-width="0.5" rx="4"/>
+  <text x="107" y="278" fill="#e8eaee" font-family="monospace" font-size="10" text-anchor="middle" font-weight="bold">禁止新开仓</text>
+  <text x="107" y="293" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">阻止新订单</text>
+
+  <rect x="205" y="255" width="175" height="50" fill="rgba(255,84,112,0.08)" stroke="#ff5470" stroke-width="0.5" rx="4"/>
+  <text x="292" y="278" fill="#e8eaee" font-family="monospace" font-size="10" text-anchor="middle" font-weight="bold">紧急停止</text>
+  <text x="292" y="293" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">停止一切交易</text>
+  <text x="20" y="250" fill="#5e636d" font-family="monospace" font-size="9">④ 紧急操作</text>
+</svg>
+
+<ol>
+  <li><strong>① 弧形仪表盘</strong> — 270 度弧线仪表盘，指针位置对应当前风险状态：SAFE（绿）、WARN（黄）、RISK（橙）、LOCK（红）、HALT（深红）。非正常状态下外圈有脉冲光晕。</li>
+  <li><strong>② 快速统计</strong> — 系统状态、守卫告警数（告警/总数）、紧急锁定是否激活、风险原因码数量。</li>
+  <li><strong>③ 风控守卫</strong> — 每张卡片展示一个风险限制指标的当前消耗比例、数值/上限和状态色码（healthy=绿 / warning=黄 / critical=橙 / breached=红）。</li>
+  <li><strong>④ 紧急操作</strong> — "禁止新开仓"阻止新订单但不平现有持仓；"解除禁止"恢复；"紧急停止"发出终止信号并市价平仓（需二次确认）。</li>
+</ol>
+
+<h2>关键指标怎么读</h2>
+<ul>
+  <li><strong>风险状态 (SAFE / WARN / RISK / LOCK / HALT)</strong> — SAFE 表示所有守卫正常。WARN 表示至少一个守卫接近阈值。RISK 表示多个守卫超阈值。LOCK 表示系统已自动锁定。HALT 表示紧急停止已执行。</li>
+  <li><strong>守卫消耗百分比</strong> — 如"日亏损 120 / 500 (24%)"，消耗越低越好。超过 80% 进入 warning，超过 100% 进入 breached。单日回撤超过阈值会触发熔断。</li>
+  <li><strong>紧急锁定 (ACTIVE / OFF)</strong> — ACTIVE 表示系统已被锁定，任何新交易和修改操作都被拒绝。需要人工在紧急操作区解锁。</li>
+  <li><strong>Reason Codes</strong> — 当系统非正常时，这里显示具体的原因码供排查，例如 daily_loss_limit_reached、exchange_stop_discrepancy。</li>
+</ul>
+
+<h2>常见操作 · 一步步</h2>
+<ol>
+  <li><strong>查看整体风险</strong> — 打开风控中心页面，弧形仪表盘和统计摘要会立即加载。绿色表示一切正常。</li>
+  <li><strong>检查守卫详情</strong> — 浏览守卫卡片网格，注意消耗比例接近 80% 以上的卡片。点击卡片可跳转到对应限制的配置页面。</li>
+  <li><strong>紧急停止所有交易</strong> — 点击"紧急停止"按钮 → 在弹出的确认对话框中确认 → 系统向所有运行中的策略发送终止信号 → 状态变为 HALT。</li>
+  <li><strong>解除禁止</strong> — 在问题解决后，点击"解除禁止"按钮恢复系统正常操作。</li>
+</ol>
+
+<h2>幕后</h2>
+<p>风控中心的数据来自后端 BFF 端点 <code>/api/risk/overview</code>。后端首先通过 <code>RiskAggregator</code> 从 Redis 实时缓存中读取各守卫状态和账户状态。如果 Redis 不可用或数据为空，会回退到数据库查询风控事件表，最后如果数据库也为空则返回模拟示例数据。数据每次打开页面时加载一次，不会自动轮询——需要手动刷新。紧急停止、禁止新开仓和解除禁止分别调用 <code>/api/risk/emergency-stop</code>、<code>/api/risk/block-new-entries</code> 和 <code>/api/risk/unblock</code> 三个 POST 端点。</p>
+
+<h2>相关</h2>
+<ul>
+  <li><a href="#/pages/risk/stop-protection">止损保护</a></li>
+  <li><a href="#/pages/risk/circuit-breakers">熔断器</a></li>
+  <li><a href="#/concepts/08-risk-basics">概念 · 风控基础</a></li>
+  <li><a href="#/walkthroughs/risk-incident">攻略 · 风险事件处理</a></li>
+  <li><a href="#/pages/execution/execution-center">执行中心</a></li>
+</ul>

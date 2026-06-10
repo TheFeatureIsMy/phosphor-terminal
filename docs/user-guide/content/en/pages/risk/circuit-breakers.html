@@ -1,0 +1,96 @@
+<h1>Circuit Breakers</h1>
+<p class="chapter-meta">Page · Risk · 5 min</p>
+
+<blockquote class="lede">Circuit breakers are the last line of defense — when daily loss, consecutive losses, or volatility exceeds their thresholds, the system automatically halts all trading to protect the account from a single market event.</blockquote>
+
+<h2>TL;DR</h2>
+<p>The Circuit Breakers page displays every breaker trip as a timeline. Filter chips at the top let you narrow by type: All, Emergency Stop, Kill Switch, Loss Lock, Manual Close, and Safe Mode. Each timeline entry shows the breaker type badge, relative timestamp, reason codes, and associated command/reconciliation IDs. When no breakers have ever been triggered, the page shows a pulsing green shield icon with "ALL CLEAR".</p>
+
+<h2>Who uses it & when</h2>
+<p>The Circuit Breakers page is primarily for post-incident review. When the system suddenly stops trading, first check the Execution Center for the current state, then come here to understand why. A quick scan at the end of each trading day is also good practice. If you're running a new strategy in live-small mode, check this page every few hours.</p>
+
+<h2>Page Anatomy</h2>
+<svg class="diagram" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="320" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- ① Filter chips -->
+  <rect x="20" y="14" width="30" height="22" fill="rgba(0,255,157,0.15)" stroke="#00ff9d" stroke-width="0.5" rx="11"/>
+  <text x="35" y="29" fill="#e8eaee" font-family="monospace" font-size="9" text-anchor="middle">All</text>
+  <rect x="56" y="14" width="70" height="22" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.5" rx="11"/>
+  <text x="91" y="29" fill="#5e636d" font-family="monospace" font-size="9" text-anchor="middle">Emergency</text>
+  <rect x="132" y="14" width="60" height="22" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.5" rx="11"/>
+  <text x="162" y="29" fill="#5e636d" font-family="monospace" font-size="9" text-anchor="middle">Kill Switch</text>
+  <rect x="198" y="14" width="60" height="22" fill="rgba(255,155,61,0.12)" stroke="#ff9b3d" stroke-width="0.5" rx="11"/>
+  <text x="228" y="29" fill="#e8eaee" font-family="monospace" font-size="9" text-anchor="middle">Loss Lock</text>
+  <text x="20" y="10" fill="#5e636d" font-family="monospace" font-size="9">① Filter Chips</text>
+
+  <!-- ② Timeline: daily loss lock -->
+  <line x1="36" y1="54" x2="36" y2="78" stroke="rgba(255,255,255,0.08)" stroke-width="2"/>
+  <circle cx="36" cy="86" r="5" fill="#ff9b3d"/>
+  <circle cx="36" cy="86" r="10" fill="rgba(255,155,61,0.12)"/>
+
+  <rect x="56" y="58" width="520" height="70" fill="rgba(255,255,255,0.02)" stroke="rgba(255,155,61,0.12)" stroke-width="0.8" rx="4"/>
+  <rect x="66" y="66" width="100" height="18" fill="rgba(255,155,61,0.1)" stroke="#ff9b3d" stroke-width="0.5" rx="4"/>
+  <text x="116" y="79" fill="#ff9b3d" font-family="monospace" font-size="9" text-anchor="middle" font-weight="bold">DAILY LOSS LOCK</text>
+  <text x="380" y="78" fill="#5e636d" font-family="monospace" font-size="9">2h ago</text>
+  <rect x="66" y="90" width="80" height="16" fill="rgba(255,155,61,0.06)" stroke="rgba(255,155,61,0.3)" stroke-width="0.5" rx="8"/>
+  <text x="106" y="101" fill="#ff9b3d" font-family="monospace" font-size="8" text-anchor="middle">daily_loss_limit</text>
+  <text x="20" y="52" fill="#5e636d" font-family="monospace" font-size="9">② Daily Loss Lock</text>
+
+  <!-- ③ Timeline: emergency stop -->
+  <line x1="36" y1="136" x2="36" y2="164" stroke="rgba(255,255,255,0.08)" stroke-width="2"/>
+  <circle cx="36" cy="172" r="5" fill="#ff5470"/>
+  <circle cx="36" cy="172" r="10" fill="rgba(255,84,112,0.12)"/>
+
+  <rect x="56" y="144" width="520" height="70" fill="rgba(255,255,255,0.02)" stroke="rgba(255,84,112,0.12)" stroke-width="0.8" rx="4"/>
+  <rect x="66" y="152" width="90" height="18" fill="rgba(255,84,112,0.1)" stroke="#ff5470" stroke-width="0.5" rx="4"/>
+  <text x="111" y="165" fill="#ff5470" font-family="monospace" font-size="9" text-anchor="middle" font-weight="bold">EMERGENCY STOP</text>
+  <text x="380" y="164" fill="#5e636d" font-family="monospace" font-size="9">5d ago</text>
+  <rect x="66" y="176" width="80" height="16" fill="rgba(255,84,112,0.06)" stroke="rgba(255,84,112,0.3)" stroke-width="0.5" rx="8"/>
+  <text x="106" y="187" fill="#ff5470" font-family="monospace" font-size="8" text-anchor="middle">manual_trigger</text>
+  <text x="160" y="188" fill="#5e636d" font-family="monospace" font-size="8">CMD: cmd-099</text>
+  <text x="20" y="138" fill="#5e636d" font-family="monospace" font-size="9">③ Emergency Stop</text>
+
+  <!-- ④ All clear -->
+  <circle cx="300" cy="260" r="30" fill="none" stroke="rgba(0,255,157,0.15)" stroke-width="2"/>
+  <circle cx="300" cy="260" r="22" fill="none" stroke="rgba(0,255,157,0.2)" stroke-width="1"/>
+  <circle cx="300" cy="260" r="16" fill="rgba(0,255,157,0.08)"/>
+  <text x="300" y="265" fill="#00ff9d" font-family="monospace" font-size="16" text-anchor="middle">&#10003;</text>
+  <text x="300" y="300" fill="#00ff9d" font-family="monospace" font-size="13" font-weight="bold" text-anchor="middle" letter-spacing="3">ALL CLEAR</text>
+  <text x="20" y="240" fill="#5e636d" font-family="monospace" font-size="9">④ All Clear State</text>
+</svg>
+
+<ol>
+  <li><strong>1. Filter Chips</strong> — Filter breaker records by type: All, Emergency Stop, Kill Switch, Loss Lock (daily + weekly combined), Manual Close, Safe Mode. Active filter is highlighted in the type's color.</li>
+  <li><strong>2. Breaker Record (Daily Loss Lock)</strong> — Left-side timeline dot colored by breaker type. Card shows type badge, relative timestamp (e.g., "2h ago"), reason code chips, and associated command ID.</li>
+  <li><strong>3. Breaker Record (Emergency Stop)</strong> — Red for manual emergency stop. Shows associated CMD (command) and RECON (reconciliation) IDs for audit trail.</li>
+  <li><strong>4. All Clear State</strong> — When no breakers have ever been triggered, a pulsing green shield icon with "ALL CLEAR" text replaces the timeline.</li>
+</ol>
+
+<h2>Reading the Key Metrics</h2>
+<ul>
+  <li><strong>Breaker Type</strong> — Emergency Stop (manual, red), Kill Switch (automatic protection, red), Daily/Weekly Loss Lock (loss limit reached, orange-red), Manual Close (yellow), Safe Mode (purple). The type determines the recovery procedure after the breaker trips.</li>
+  <li><strong>Trigger Time</strong> — Displayed as a relative timestamp ("just now", "5m ago", "2h ago", "3d ago"). More recent triggers need more urgent attention to the recovery state.</li>
+  <li><strong>Reason Codes</strong> — The specific trigger cause, e.g., daily_loss_limit_reached (daily loss limit hit), manual_trigger (manual initiation), consecutive_loss_limit (consecutive loss limit exceeded).</li>
+  <li><strong>Related CMD / RECON IDs</strong> — When a breaker was triggered by a specific command or is related to a reconciliation event, the associated IDs appear here for audit trail purposes.</li>
+</ul>
+
+<h2>Common Actions, Step by Step</h2>
+<ol>
+  <li><strong>View all breaker history</strong> — Open the Circuit Breakers page. Records appear in reverse chronological order, newest first.</li>
+  <li><strong>Filter by type</strong> — Click a filter chip to show only that breaker type. Click the same chip again to clear the filter.</li>
+  <li><strong>Investigate a trigger</strong> — Examine the reason codes on each record. Common causes: daily_loss_limit_reached, consecutive_loss_limit, manual_trigger.</li>
+  <li><strong>Resume trading</strong> — This page is read-only for historical records. To resume trading after a breaker, go to the Risk Center to unlock, then the Execution Center to restart strategy sessions manually.</li>
+</ol>
+
+<h2>Behind the Scenes</h2>
+<p>Circuit breaker data comes from the <code>/api/risk/circuit-breakers</code> endpoint. The backend queries the <code>circuit_breaker_events</code> table in PostgreSQL for events of types emergency_stop, daily_loss_lock, weekly_loss_lock, kill_switch, and manual_force_close, ordered by creation time descending. Unresolved breaker events (<code>resolved = false</code>) set the overall state to "tripped"; all resolved yields "healthy". If the database query fails, the endpoint falls back to mock data. Breaker events are written by the risk logic in other backend services (e.g., the daily trading loop's circuit breaker check).</p>
+
+<h2>See Also</h2>
+<ul>
+  <li><a href="#/pages/risk/risk-center">Risk Center</a></li>
+  <li><a href="#/pages/risk/stop-protection">Stop Protection</a></li>
+  <li><a href="#/concepts/08-risk-basics">Concept: Risk Basics</a></li>
+  <li><a href="#/walkthroughs/risk-incident">Walkthrough: Risk Incident Response</a></li>
+  <li><a href="#/pages/execution/execution-center">Execution Center</a></li>
+</ul>

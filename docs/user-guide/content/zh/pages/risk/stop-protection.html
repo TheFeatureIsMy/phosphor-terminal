@@ -1,0 +1,117 @@
+<h1>止损保护</h1>
+<p class="chapter-meta">页面 · 风控 · 5 分钟</p>
+
+<blockquote class="lede">止损保护为每个持仓维护一组四层止损价格——从宽松的结构止损到严格的交易所保护止损，逐层收紧确保不会爆仓。</blockquote>
+
+<h2>TL;DR</h2>
+<p>止损保护页面以持仓卡片列表展示每个未平仓位的四层止损：原始结构止损（最宽松）、最后已知好止损、安全运行时止损、交易所保护止损（最严格）。每个卡片左侧有一个价格梯可视化，用彩色标记显示入场价、当前价和各止损层的位置。当波动率异常时，卡片顶部会出现"波动率锁定"徽章，表示止损已冻结不可调整。</p>
+
+<h2>谁用 · 何时用</h2>
+<p>任何持有未平仓位的交易者都应该定期检查止损保护页。每次价格大幅波动后、或者系统推送了"structure_stop_violated"告警时，都该来这里看看止损层是否被突破。这个页面是只读监控页——调整止损参数在策略配置中完成。</p>
+
+<h2>页面解剖</h2>
+<svg class="diagram" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="320" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- ① State banner -->
+  <rect x="20" y="14" width="560" height="36" fill="rgba(245,197,66,0.08)" stroke="#f5c542" stroke-width="0.8" rx="4"/>
+  <circle cx="40" cy="32" r="5" fill="#f5c542"/>
+  <text x="52" y="36" fill="#e8eaee" font-family="monospace" font-size="11" font-weight="bold">止损保护异常 · 2 个 reason codes</text>
+  <text x="20" y="10" fill="#5e636d" font-family="monospace" font-size="9">① 状态横幅</text>
+
+  <!-- ② Position card -->
+  <rect x="20" y="66" width="560" height="120" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.8" rx="4"/>
+
+  <!-- Symbol header -->
+  <text x="36" y="86" fill="#e8eaee" font-family="monospace" font-size="16" font-weight="bold">BTC/USDT</text>
+  <rect x="180" y="74" width="40" height="16" fill="rgba(0,255,157,0.12)" stroke="#00ff9d" stroke-width="0.5" rx="8"/>
+  <text x="200" y="85" fill="#00ff9d" font-family="monospace" font-size="8" text-anchor="middle" font-weight="bold">LONG</text>
+
+  <!-- Volatility lock badge -->
+  <rect x="230" y="74" width="80" height="16" fill="rgba(255,84,112,0.08)" stroke="#ff5470" stroke-width="0.5" rx="8"/>
+  <text x="270" y="85" fill="#ff5470" font-family="monospace" font-size="8" text-anchor="middle" font-weight="bold">VOL LOCKED</text>
+
+  <text x="20" y="62" fill="#5e636d" font-family="monospace" font-size="9">② 持仓卡片</text>
+
+  <!-- Price ladder (simplified vertical bar) -->
+  <line x1="60" y1="105" x2="60" y2="175" stroke="rgba(255,255,255,0.12)" stroke-width="3"/>
+  <circle cx="60" cy="112" r="5" fill="#00ff9d"/>
+  <text x="72" y="115" fill="#00ff9d" font-family="monospace" font-size="9">NOW 62450</text>
+  <circle cx="60" cy="132" r="4" fill="#e8eaee"/>
+  <text x="72" y="135" fill="#e8eaee" font-family="monospace" font-size="9">ENTRY 62100</text>
+  <rect x="54" y="148" width="12" height="3" fill="#5e636d"/>
+  <text x="72" y="152" fill="#5e636d" font-family="monospace" font-size="8">Raw 61200</text>
+  <rect x="54" y="158" width="12" height="3" fill="#f5c542"/>
+  <text x="72" y="162" fill="#f5c542" font-family="monospace" font-size="8">LKG 61350</text>
+  <rect x="54" y="168" width="12" height="3" fill="#ff5470"/>
+  <text x="72" y="172" fill="#ff5470" font-family="monospace" font-size="8">Exch 61000</text>
+  <text x="20" y="100" fill="#5e636d" font-family="monospace" font-size="9">③ 价格梯</text>
+
+  <!-- Stop levels list -->
+  <text x="280" y="103" fill="#5e636d" font-family="monospace" font-size="9" tracking="1">STOP LEVELS</text>
+  <rect x="280" y="108" width="3" height="16" fill="#5e636d"/>
+  <text x="302" y="122" fill="#9ca0a8" font-family="monospace" font-size="9">原始结构止损</text>
+  <text x="420" y="122" fill="#5e636d" font-family="monospace" font-size="11">61200</text>
+  <rect x="280" y="130" width="3" height="16" fill="#f5c542"/>
+  <text x="302" y="144" fill="#9ca0a8" font-family="monospace" font-size="9">最后已知好止损</text>
+  <text x="420" y="144" fill="#f5c542" font-family="monospace" font-size="11">61350</text>
+  <rect x="280" y="152" width="3" height="16" fill="#00ff9d"/>
+  <text x="302" y="166" fill="#9ca0a8" font-family="monospace" font-size="9">安全运行时止损</text>
+  <text x="420" y="166" fill="#00ff9d" font-family="monospace" font-size="11">61350</text>
+  <rect x="280" y="174" width="3" height="16" fill="#ff5470"/>
+  <text x="302" y="188" fill="#9ca0a8" font-family="monospace" font-size="9">交易所保护止损</text>
+  <text x="420" y="188" fill="#ff5470" font-family="monospace" font-size="11">61000</text>
+  <text x="280" y="100" fill="#5e636d" font-family="monospace" font-size="9">④ 止损层级</text>
+
+  <!-- Reason code chips -->
+  <rect x="20" y="200" width="560" height="36" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.5" rx="4"/>
+  <rect x="36" y="210" width="100" height="18" fill="rgba(0,255,157,0.08)" stroke="#00ff9d" stroke-width="0.5" rx="9"/>
+  <text x="86" y="223" fill="#00ff9d" font-family="monospace" font-size="8" text-anchor="middle">structure_stop_valid</text>
+  <text x="20" y="198" fill="#5e636d" font-family="monospace" font-size="9">⑤ Reason Codes</text>
+
+  <!-- ⑥ All-clear state (second position) -->
+  <rect x="20" y="255" width="560" height="50" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.5" rx="4"/>
+  <text x="36" y="275" fill="#e8eaee" font-family="monospace" font-size="14" font-weight="bold">ETH/USDT</text>
+  <rect x="160" y="263" width="36" height="16" fill="rgba(0,255,157,0.12)" stroke="#00ff9d" stroke-width="0.5" rx="8"/>
+  <text x="178" y="274" fill="#00ff9d" font-family="monospace" font-size="8" text-anchor="middle">LONG</text>
+  <rect x="36" y="290" width="60" height="14" fill="rgba(0,255,157,0.08)" stroke="#00ff9d" stroke-width="0.3" rx="7"/>
+  <text x="66" y="300" fill="#00ff9d" font-family="monospace" font-size="7" text-anchor="middle">all stops valid</text>
+  <text x="20" y="252" fill="#5e636d" font-family="monospace" font-size="9">⑥ 正常持仓</text>
+</svg>
+
+<ol>
+  <li><strong>① 状态横幅</strong> — 当系统检测到止损异常时（如交易所止损与计算止损不匹配），显示橙色警示横幅和具体的 reason codes。</li>
+  <li><strong>② 持仓卡片</strong> — 每张卡片对应一个未平仓持仓，显示交易对、方向（LONG/绿、SHORT/红）、波动率锁定徽章和刷新/锁定操作按钮。</li>
+  <li><strong>③ 价格梯</strong> — 垂直价格标尺，用彩色圆点和横线标记入场价（灰）、当前价（绿）和各层止损的位置。红色止损线距离当前价越近，风险越高。</li>
+  <li><strong>④ 止损层级</strong> — 四层止损价格列表，按宽松到严格排列，左侧有色标指示层级。</li>
+  <li><strong>⑤ Reason Codes</strong> — 每个持仓底部的标签显示该持仓的状态码，如 structure_stop_valid（正常）或 exchange_stop_discrepancy（不一致）。</li>
+  <li><strong>⑥ 正常持仓</strong> — 当所有止损都有效时，只显示简洁摘要和 "all stops valid" 绿色徽章。</li>
+</ol>
+
+<h2>关键指标怎么读</h2>
+<ul>
+  <li><strong>四层止损价格</strong> — 最宽松的"原始结构止损"基于市场结构（如之前的低点），最严格的"交易所保护止损"是实际发到交易所的止损单。如果当前价格接近交易所保护止损，该持仓风险很高。四层之间的差距越大，说明止损调整空间越大。</li>
+  <li><strong>波动率锁定 (VOL LOCKED)</strong> — 当市场波动率超过阈值时，止损价格被冻结不可调整。这是为了防止在剧烈波动中过早被扫出局。红色脉冲徽章表示该锁定处于激活状态。</li>
+  <li><strong>交易所止损不一致 (exchange_stop_discrepancy)</strong> — 当系统计算的安全止损与实际发到交易所的止损价格差异超过 0.5% 时出现。需要手动检查哪个价格是正确的。</li>
+  <li><strong>价格梯</strong> — 当前价（绿色圆点）离最近的止损横线越近，该持仓越危险。一个好的持仓应该有足够的"止损空间"让价格正常波动而不触发平仓。</li>
+</ul>
+
+<h2>常见操作 · 一步步</h2>
+<ol>
+  <li><strong>监控所有持仓的止损状态</strong> — 打开止损保护页面，从上到下浏览持仓卡片。注意有黄色或红色 reason codes 的持仓。</li>
+  <li><strong>检查波动率锁定</strong> — 查看是否有持仓显示了"VOL LOCKED"徽章。如果有，说明波动率异常期间止损被冻结，不会自动调整。</li>
+  <li><strong>刷新止损</strong> — 点击持仓卡片的刷新按钮，系统会重新计算各层止损价格并更新显示。</li>
+  <li><strong>强制锁定止损</strong> — 点击锁形按钮强制冻结某个持仓的止损价格（手动模式）。再次点击解除锁定。</li>
+</ol>
+
+<h2>幕后</h2>
+<p>止损保护数据来自 <code>/api/risk/stop-protection</code>。后端 <code>StopProtectionService</code> 先从 Redis 读取缓存的止损价格，然后通过 Freqtrade REST API 获取交易所上实际设置的止损单价格进行比对。如果发现差异超过 0.5%，会在持仓上标记 <code>exchange_stop_discrepancy</code> 并将整体状态升级为 warning。如果 Redis 和 Freqtrade 都不可用，返回模拟数据。价格梯上的"原始结构止损"基于市场结构分析（如最近的 swing low/high），"最后已知好止损"是在结构被破坏前记录的最后一个有效止损。</p>
+
+<h2>相关</h2>
+<ul>
+  <li><a href="#/pages/risk/risk-center">风控中心</a></li>
+  <li><a href="#/pages/risk/circuit-breakers">熔断器</a></li>
+  <li><a href="#/concepts/08-risk-basics">概念 · 风控基础</a></li>
+  <li><a href="#/walkthroughs/risk-incident">攻略 · 风险事件处理</a></li>
+  <li><a href="#/pages/execution/orders-positions">订单与持仓</a></li>
+</ul>

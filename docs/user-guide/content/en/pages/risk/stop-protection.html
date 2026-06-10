@@ -1,0 +1,116 @@
+<h1>Stop Protection</h1>
+<p class="chapter-meta">Page · Risk · 5 min</p>
+
+<blockquote class="lede">Stop Protection maintains a four-layer stop price hierarchy for every open position — from the loose structural stop to the tight exchange protective stop, progressively tightening to prevent catastrophic loss.</blockquote>
+
+<h2>TL;DR</h2>
+<p>The Stop Protection page displays every open position as a card with four layered stop prices: Raw Structure Stop (loosest), Last Known Good Stop, Secure Runtime Stop, and Exchange Protective Stop (strictest). Each card includes a visual price ladder showing the entry price, current price, and all stop levels as colored markers. When volatility spikes, a "VOL LOCKED" badge appears at the top of the card, meaning stops are frozen and cannot be adjusted.</p>
+
+<h2>Who uses it & when</h2>
+<p>Anyone holding open positions should check this page regularly. Visit it after major price moves, or whenever the system pushes a "structure_stop_violated" alert. This is a read-only monitoring page — stop parameter adjustments are made in the strategy configuration.</p>
+
+<h2>Page Anatomy</h2>
+<svg class="diagram" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="320" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- ① State banner -->
+  <rect x="20" y="14" width="560" height="36" fill="rgba(245,197,66,0.08)" stroke="#f5c542" stroke-width="0.8" rx="4"/>
+  <circle cx="40" cy="32" r="5" fill="#f5c542"/>
+  <text x="52" y="36" fill="#e8eaee" font-family="monospace" font-size="11" font-weight="bold">Stop Protection Anomaly · 2 reason codes</text>
+  <text x="20" y="10" fill="#5e636d" font-family="monospace" font-size="9">① State Banner</text>
+
+  <!-- ② Position card -->
+  <rect x="20" y="66" width="560" height="120" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.8" rx="4"/>
+
+  <!-- Symbol header -->
+  <text x="36" y="86" fill="#e8eaee" font-family="monospace" font-size="16" font-weight="bold">BTC/USDT</text>
+  <rect x="180" y="74" width="40" height="16" fill="rgba(0,255,157,0.12)" stroke="#00ff9d" stroke-width="0.5" rx="8"/>
+  <text x="200" y="85" fill="#00ff9d" font-family="monospace" font-size="8" text-anchor="middle" font-weight="bold">LONG</text>
+
+  <!-- Volatility lock badge -->
+  <rect x="230" y="74" width="80" height="16" fill="rgba(255,84,112,0.08)" stroke="#ff5470" stroke-width="0.5" rx="8"/>
+  <text x="270" y="85" fill="#ff5470" font-family="monospace" font-size="8" text-anchor="middle" font-weight="bold">VOL LOCKED</text>
+  <text x="20" y="62" fill="#5e636d" font-family="monospace" font-size="9">② Position Card</text>
+
+  <!-- Price ladder -->
+  <line x1="60" y1="105" x2="60" y2="175" stroke="rgba(255,255,255,0.12)" stroke-width="3"/>
+  <circle cx="60" cy="112" r="5" fill="#00ff9d"/>
+  <text x="72" y="115" fill="#00ff9d" font-family="monospace" font-size="9">NOW 62450</text>
+  <circle cx="60" cy="132" r="4" fill="#e8eaee"/>
+  <text x="72" y="135" fill="#e8eaee" font-family="monospace" font-size="9">ENTRY 62100</text>
+  <rect x="54" y="148" width="12" height="3" fill="#5e636d"/>
+  <text x="72" y="152" fill="#5e636d" font-family="monospace" font-size="8">Raw 61200</text>
+  <rect x="54" y="158" width="12" height="3" fill="#f5c542"/>
+  <text x="72" y="162" fill="#f5c542" font-family="monospace" font-size="8">LKG 61350</text>
+  <rect x="54" y="168" width="12" height="3" fill="#ff5470"/>
+  <text x="72" y="172" fill="#ff5470" font-family="monospace" font-size="8">Exch 61000</text>
+  <text x="20" y="100" fill="#5e636d" font-family="monospace" font-size="9">③ Price Ladder</text>
+
+  <!-- Stop levels list -->
+  <text x="280" y="103" fill="#5e636d" font-family="monospace" font-size="9" letter-spacing="1">STOP LEVELS</text>
+  <rect x="280" y="108" width="3" height="16" fill="#5e636d"/>
+  <text x="302" y="122" fill="#9ca0a8" font-family="monospace" font-size="9">Raw Structure</text>
+  <text x="420" y="122" fill="#5e636d" font-family="monospace" font-size="11">61200</text>
+  <rect x="280" y="130" width="3" height="16" fill="#f5c542"/>
+  <text x="302" y="144" fill="#9ca0a8" font-family="monospace" font-size="9">Last Known Good</text>
+  <text x="420" y="144" fill="#f5c542" font-family="monospace" font-size="11">61350</text>
+  <rect x="280" y="152" width="3" height="16" fill="#00ff9d"/>
+  <text x="302" y="166" fill="#9ca0a8" font-family="monospace" font-size="9">Secure Runtime</text>
+  <text x="420" y="166" fill="#00ff9d" font-family="monospace" font-size="11">61350</text>
+  <rect x="280" y="174" width="3" height="16" fill="#ff5470"/>
+  <text x="302" y="188" fill="#9ca0a8" font-family="monospace" font-size="9">Exchange Protective</text>
+  <text x="420" y="188" fill="#ff5470" font-family="monospace" font-size="11">61000</text>
+  <text x="280" y="100" fill="#5e636d" font-family="monospace" font-size="9">④ Stop Levels</text>
+
+  <!-- Reason codes -->
+  <rect x="20" y="200" width="560" height="36" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.5" rx="4"/>
+  <rect x="36" y="210" width="100" height="18" fill="rgba(0,255,157,0.08)" stroke="#00ff9d" stroke-width="0.5" rx="9"/>
+  <text x="86" y="223" fill="#00ff9d" font-family="monospace" font-size="8" text-anchor="middle">structure_stop_valid</text>
+  <text x="20" y="198" fill="#5e636d" font-family="monospace" font-size="9">⑤ Reason Codes</text>
+
+  <!-- ⑥ Normal position -->
+  <rect x="20" y="255" width="560" height="50" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.5" rx="4"/>
+  <text x="36" y="275" fill="#e8eaee" font-family="monospace" font-size="14" font-weight="bold">ETH/USDT</text>
+  <rect x="160" y="263" width="36" height="16" fill="rgba(0,255,157,0.12)" stroke="#00ff9d" stroke-width="0.5" rx="8"/>
+  <text x="178" y="274" fill="#00ff9d" font-family="monospace" font-size="8" text-anchor="middle">LONG</text>
+  <rect x="36" y="290" width="70" height="14" fill="rgba(0,255,157,0.08)" stroke="#00ff9d" stroke-width="0.3" rx="7"/>
+  <text x="71" y="300" fill="#00ff9d" font-family="monospace" font-size="7" text-anchor="middle">all stops valid</text>
+  <text x="20" y="252" fill="#5e636d" font-family="monospace" font-size="9">⑥ Healthy Position</text>
+</svg>
+
+<ol>
+  <li><strong>1. State Banner</strong> — Appears when the system detects a stop protection anomaly (e.g., exchange stop doesn't match computed stop). Displays an orange warning with specific reason codes.</li>
+  <li><strong>2. Position Card</strong> — One card per open position showing the trading pair, direction (LONG/green, SHORT/red), volatility lock badge, and refresh/lock action buttons.</li>
+  <li><strong>3. Price Ladder</strong> — A vertical price scale with colored markers for entry price (gray), current price (green), and each stop level. The closer a red stop line is to the current price, the higher the risk.</li>
+  <li><strong>4. Stop Levels</strong> — Four layered stop prices from loosest to strictest, each with a colored indicator bar on the left.</li>
+  <li><strong>5. Reason Codes</strong> — Status chips at the bottom of each card, e.g., structure_stop_valid (normal) or exchange_stop_discrepancy (mismatch).</li>
+  <li><strong>6. Healthy Position</strong> — When all stops are valid, the card shows a compact summary with a green "all stops valid" badge.</li>
+</ol>
+
+<h2>Reading the Key Metrics</h2>
+<ul>
+  <li><strong>Four-Layer Stop Prices</strong> — The loosest "Raw Structure Stop" is based on market structure (e.g., the most recent swing low/high). The strictest "Exchange Protective Stop" is the actual stop-loss order sent to the exchange. If the current price is close to the exchange protective stop, the position is in danger. The wider the gap between layers, the more room the system has to adjust stops upward.</li>
+  <li><strong>Volatility Lock (VOL LOCKED)</strong> — When market volatility exceeds the threshold, stop prices are frozen and cannot be adjusted. This prevents being shaken out during剧烈 volatility. The red pulsing badge indicates the lock is active.</li>
+  <li><strong>Exchange Stop Discrepancy</strong> — Appears when the computed safe stop price differs from the actual stop on the exchange by more than 0.5%. Requires manual investigation to determine which price is correct.</li>
+  <li><strong>Price Ladder Proximity</strong> — The closer the current price (green dot) is to the nearest stop line, the more at risk the position is. A healthy position has enough "stop room" for normal price fluctuation.</li>
+</ul>
+
+<h2>Common Actions, Step by Step</h2>
+<ol>
+  <li><strong>Monitor all position stops</strong> — Open the Stop Protection page and scan position cards. Watch for cards with yellow or red reason codes.</li>
+  <li><strong>Check for volatility locks</strong> — Look for the "VOL LOCKED" badge on any card. This means stops are frozen during abnormal volatility and won't auto-adjust.</li>
+  <li><strong>Refresh stops</strong> — Click the refresh button on a position card to recompute all stop levels and update the display.</li>
+  <li><strong>Force lock stops</strong> — Click the lock icon to manually freeze a position's stop prices (manual mode). Click again to unlock.</li>
+</ol>
+
+<h2>Behind the Scenes</h2>
+<p>Stop protection data comes from the <code>/api/risk/stop-protection</code> endpoint. The backend <code>StopProtectionService</code> first reads cached stop prices from Redis, then fetches the actual stop-loss orders from the exchange via the Freqtrade REST API. If a discrepancy of more than 0.5% is found between computed and exchange stops, the position gets an <code>exchange_stop_discrepancy</code> reason code and the overall state upgrades to warning. If both Redis and Freqtrade are unavailable, the endpoint returns mock data. The "Raw Structure Stop" is derived from market structure analysis (e.g., the nearest swing low/high), while the "Last Known Good Stop" records the last valid stop before the structure was broken.</p>
+
+<h2>See Also</h2>
+<ul>
+  <li><a href="#/pages/risk/risk-center">Risk Center</a></li>
+  <li><a href="#/pages/risk/circuit-breakers">Circuit Breakers</a></li>
+  <li><a href="#/concepts/08-risk-basics">Concept: Risk Basics</a></li>
+  <li><a href="#/walkthroughs/risk-incident">Walkthrough: Risk Incident Response</a></li>
+  <li><a href="#/pages/execution/orders-positions">Orders & Positions</a></li>
+</ul>
