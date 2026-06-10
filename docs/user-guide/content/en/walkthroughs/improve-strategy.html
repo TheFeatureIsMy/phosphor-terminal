@@ -1,0 +1,150 @@
+<h1>Improve a Strategy</h1>
+<p class="chapter-meta">Walkthrough · E / 5 · 8 min</p>
+
+<blockquote class="lede">After a week of running, use Growth Review and Failure Clustering to find your strategy's weakness, then iterate through parameter optimization and a shadow strategy dry-run.</blockquote>
+
+<h2>Before You Start — Checklist</h2>
+<ul>
+  <li>☐ The strategy has been running for at least one week (dry-run or live)</li>
+  <li>☐ You have at least 20 trades recorded — enough data for meaningful statistics</li>
+  <li>☐ You have completed <a href="#/walkthroughs/first-strategy">Walkthrough · First Strategy</a> and <a href="#/walkthroughs/risk-incident">Walkthrough · Risk Incident</a></li>
+</ul>
+
+<h2>Flow</h2>
+<svg class="diagram" viewBox="0 0 600 280" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="280" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- Row 1: 3 boxes -->
+  <rect x="20" y="20" width="140" height="50" fill="rgba(80,180,255,0.12)" rx="4" stroke="rgba(80,180,255,0.25)" stroke-width="1"/>
+  <text x="90" y="40" fill="#e8eaee" font-family="monospace" font-size="11" text-anchor="middle" font-weight="bold">① Weekly Review</text>
+  <text x="90" y="56" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">Growth Review</text>
+
+  <path d="M160 45 L190 45" stroke="#9ca0a8" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <rect x="195" y="20" width="140" height="50" fill="rgba(255,155,61,0.12)" rx="4" stroke="rgba(255,155,61,0.25)" stroke-width="1"/>
+  <text x="265" y="40" fill="#e8eaee" font-family="monospace" font-size="11" text-anchor="middle" font-weight="bold">② Failure Cluster</text>
+  <text x="265" y="56" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">Identify Loss Pattern</text>
+
+  <path d="M335 45 L365 45" stroke="#9ca0a8" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <rect x="370" y="20" width="140" height="50" fill="rgba(245,197,66,0.12)" rx="4" stroke="rgba(245,197,66,0.25)" stroke-width="1"/>
+  <text x="440" y="40" fill="#e8eaee" font-family="monospace" font-size="11" text-anchor="middle" font-weight="bold">③ Optimization</text>
+  <text x="440" y="56" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">Strategy Optimization</text>
+
+  <!-- Arrow down -->
+  <path d="M440 70 L440 110" stroke="#9ca0a8" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Row 2: 3 boxes -->
+  <rect x="20" y="110" width="140" height="50" fill="rgba(80,180,255,0.12)" rx="4" stroke="rgba(80,180,255,0.25)" stroke-width="1"/>
+  <text x="90" y="130" fill="#e8eaee" font-family="monospace" font-size="11" text-anchor="middle" font-weight="bold">④ Backtest</text>
+  <text x="90" y="146" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">Backtest Simulation</text>
+
+  <path d="M160 135 L190 135" stroke="#9ca0a8" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <rect x="195" y="110" width="140" height="50" fill="rgba(0,255,157,0.12)" rx="4" stroke="rgba(0,255,157,0.25)" stroke-width="1"/>
+  <text x="265" y="130" fill="#e8eaee" font-family="monospace" font-size="11" text-anchor="middle" font-weight="bold">⑤ Shadow Strategy</text>
+  <text x="265" y="146" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">Strategy Workspace</text>
+
+  <path d="M335 135 L365 135" stroke="#9ca0a8" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <rect x="370" y="110" width="140" height="50" fill="rgba(0,255,157,0.12)" rx="4" stroke="rgba(0,255,157,0.25)" stroke-width="1"/>
+  <text x="440" y="130" fill="#e8eaee" font-family="monospace" font-size="11" text-anchor="middle" font-weight="bold">⑥ One Week Dry-Run</text>
+  <text x="440" y="146" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">Dry-Run Mode</text>
+
+  <!-- Arrow from row 2 to decision -->
+  <path d="M440 160 L440 190" stroke="#9ca0a8" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Row 3: Decision diamond -->
+  <polygon points="440,195 520,230 440,265 360,230" fill="rgba(245,197,66,0.12)" stroke="#f5c542" stroke-width="1.5"/>
+  <text x="440" y="228" fill="#e8eaee" font-family="monospace" font-size="9" text-anchor="middle" font-weight="bold">Outperforms</text>
+  <text x="440" y="240" fill="#e8eaee" font-family="monospace" font-size="9" text-anchor="middle" font-weight="bold">Original?</text>
+
+  <path d="M360 230 L270 230 L270 210" stroke="#00ff9d" stroke-width="1.5" marker-end="url(#arrowGreen)"/>
+  <text x="210" y="210" fill="#00ff9d" font-family="monospace" font-size="9" font-weight="bold">Promote</text>
+
+  <path d="M520 230 L570 230" stroke="#9ca0a8" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="560" y="226" fill="#9ca0a8" font-family="monospace" font-size="9" font-weight="bold">Observe</text>
+
+  <defs>
+    <marker id="arrow" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6" fill="#9ca0a8"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6" fill="#00ff9d"/>
+    </marker>
+  </defs>
+</svg>
+
+<h2>Steps</h2>
+
+<h3>1 · Open Growth Review, check the weekly equity curve <span class="page-ref">(Growth Review)</span></h3>
+<p>Your strategy has been running for a week. You open Growth Review to see the big picture. The weekly equity curve shows daily P&amp;L from Monday to Sunday. It might be net positive, but you notice a few noticeable drawdowns mid-week.</p>
+<ul>
+  <li><strong>What to look at</strong>: The shape of the equity curve — smooth climb (great), jagged (normal but improvable), persistent decline (concerning). Note the timing and depth of drawdowns.</li>
+  <li><strong>How to decide</strong>: If the curve trends upward with manageable drawdowns, the core logic is sound — you can optimize. If it's trending down, the strategy may need a fundamental rethink.</li>
+  <li><strong>Next</strong>: Equity curve looks healthy → move to Failure Clustering to pinpoint loss patterns (step 2). Unhealthy → consider pausing the strategy and revisiting <a href="#/walkthroughs/first-strategy">First Strategy</a>.</li>
+</ul>
+
+<h3>2 · Failure Clustering reveals the loss pattern <span class="page-ref">(Failure Clustering)</span></h3>
+<p>Failure Clustering automatically groups all losing trades from the week. The largest cluster is labeled "Low Liquidity Session · 02:00-05:00 · 55% loss share." Your strategy performs especially poorly during the Asian low-liquidity hours.</p>
+<ul>
+  <li><strong>What to look at</strong>: The cluster with the highest loss share and its characteristic dimensions (time of day, market conditions, signal type, holding duration).</li>
+  <li><strong>How to decide</strong>: If one cluster accounts for 50%+ of all losses, that's your optimization target. For example, if losses cluster in low-liquidity hours, adding a session filter to your strategy could help.</li>
+  <li><strong>Next</strong>: Clear pattern found → go to Strategy Optimization for parameter suggestions (step 3). Clusters scattered with no clear pattern → you may need more data or longer observation.</li>
+</ul>
+
+<h3>3 · Strategy Optimization suggests parameter tweaks <span class="page-ref">(Strategy Optimization)</span></h3>
+<p>The Strategy Optimization page reads your trade history and failure cluster results, then auto-generates parameter adjustment suggestions. For example: "Suggestion 1: Add session filter 06:00-22:00, estimated 55% loss reduction. Suggestion 2: Reduce FVG signal weight to 0.6 (currently 0.8), estimated 30% loss reduction."</p>
+<ul>
+  <li><strong>What to look at</strong>: Each suggestion's expected impact (loss reduction %) and confidence level. Prioritize suggestions with high confidence (80%+).</li>
+  <li><strong>How to decide</strong>: Don't adopt every suggestion. Pick 1-2 that align with your own analysis and have the strongest expected impact. Never change too many parameters at once — you won't know what actually worked.</li>
+  <li><strong>Next</strong>: Adjustments selected → duplicate the strategy and apply changes on the copy (step 4).</li>
+</ul>
+
+<h3>4 · Backtest the adjustments <span class="page-ref">(Backtest Simulation)</span></h3>
+<p>In the Strategy Workspace, create a copy of your current strategy, apply the selected parameter changes, and run a backtest. The backtest uses historical data to simulate how the modified strategy would have performed over the past several weeks. Compare the results against the original strategy's historical performance.</p>
+<ul>
+  <li><strong>What to look at</strong>: Key backtest metrics — total return, max drawdown, win rate, profit factor, Sharpe ratio.</li>
+  <li><strong>How to decide</strong>: The new parameters should be better or equal on both total return and max drawdown. Higher return at the cost of significantly larger drawdown is not necessarily an improvement.</li>
+  <li><strong>Next</strong>: Backtest looks better → deploy as a shadow strategy (step 5). Backtest looks worse → go back to Strategy Optimization and try other suggestions.</li>
+</ul>
+
+<h3>5 · Deploy as a shadow strategy, run in parallel <span class="page-ref">(Strategy Workspace)</span></h3>
+<p>A shadow strategy is "observe only, no orders" — it generates signals and tracks simulated P&amp;L just like a live strategy, but never executes real trades. Create a shadow strategy with the new parameters and run it alongside the original.</p>
+<ul>
+  <li><strong>What to look at</strong>: The shadow strategy's status shows "Shadow · Dry-Run." Confirm it uses the modified parameters you chose.</li>
+  <li><strong>How to decide</strong>: The shadow and original strategies receive the same market data, so you can compare performance fairly. The shadow has zero impact on your real account.</li>
+  <li><strong>Next</strong>: Shadow deployed → wait at least one week for dry-run data (step 6).</li>
+</ul>
+
+<h3>6 · Compare and decide after one week <span class="page-ref">(Growth Review / Strategy Workspace)</span></h3>
+<p>A week later, return to Growth Review and compare the original and shadow strategies side by side. Growth Review supports overlaying two equity curves and comparing key metrics.</p>
+<ul>
+  <li><strong>What to look at</strong>: The two equity curves overlaid — is the shadow strategy's curve consistently above the original? Is its max drawdown smaller?</li>
+  <li><strong>How to decide</strong>: Shadow consistently outperforms (higher return, same or lower drawdown) → promote it to the main strategy. Performance is similar → give the shadow more time (another week). Shadow performs worse → terminate it and try a different optimization direction.</li>
+  <li><strong>Next</strong>: Shadow wins → promote it in the Strategy Workspace. Archive or terminate the original. Need more time → keep both running in parallel.</li>
+</ul>
+
+<h2>When You're Done — Self-Check</h2>
+<ul>
+  <li>☐ You made at least one parameter adjustment and validated it with a backtest</li>
+  <li>☐ A shadow strategy is deployed, and you know where to compare the two strategies' performance</li>
+  <li>☐ You understand the "change one variable at a time" principle — changing too many parameters at once makes attribution impossible</li>
+</ul>
+
+<h2>If Something Goes Wrong</h2>
+<ul>
+  <li><strong>Backtest results differ wildly from dry-run performance</strong> — Likely overfitting. Historical backtest data doesn't guarantee future results. If the gap is large, simplify your parameter changes — fewer parameters, simpler rules.</li>
+  <li><strong>Strategy Optimization generated no suggestions</strong> — Not enough trade data. You need at least 20 trades for statistically meaningful suggestions. Keep the strategy running to accumulate data.</li>
+  <li><strong>Can't create a shadow strategy</strong> — Check if you've hit the maximum strategy limit. View your strategy quota in <a href="#/pages/system/settings">Settings</a>.</li>
+</ul>
+
+<h2>See Also</h2>
+<ul>
+  <li><a href="#/concepts/09-dryrun-vs-live">Concept · Dry-Run vs Live</a></li>
+  <li><a href="#/pages/growth/growth-review">Page · Growth Review</a></li>
+  <li><a href="#/pages/growth/failure-clustering">Page · Failure Clustering</a></li>
+  <li><a href="#/pages/growth/strategy-optimization">Page · Strategy Optimization</a></li>
+  <li><a href="#/pages/strategy/strategy-workspace">Page · Strategy Workspace</a></li>
+  <li><a href="#/pages/strategy/backtest-simulation">Page · Backtest Simulation</a></li>
+</ul>

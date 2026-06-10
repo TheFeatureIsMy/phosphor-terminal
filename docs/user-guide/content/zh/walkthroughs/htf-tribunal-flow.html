@@ -1,0 +1,145 @@
+<h1>HTF Tribunal 流程</h1>
+<p class="chapter-meta">情景 · C / 5 · 8 分钟</p>
+
+<blockquote class="lede">低周期结构突破后，走完结构矩阵 + 影子窗口 + HTF 收盘裁决的全流程，最后把确认的参数送到执行中心下单。</blockquote>
+
+<h2>开始前 · 检查清单</h2>
+<ul>
+  <li>☐ 已有运行中的策略，且已产生至少一次信号</li>
+  <li>☐ 对 SMC/ICT 基础概念（BOS、CHoCH、OB、FVG）有一定了解</li>
+  <li>☐ 已完成 <a href="#/walkthroughs/first-strategy">情景 · 第一个策略</a> 和 <a href="#/walkthroughs/daily-trading-loop">情景 · 每日交易循环</a></li>
+</ul>
+
+<h2>流程图</h2>
+<svg class="diagram" viewBox="0 0 600 280" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="280" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- Row 1: 3 boxes -->
+  <rect x="20" y="20" width="140" height="50" fill="rgba(80,180,255,0.12)" rx="4" stroke="rgba(80,180,255,0.25)" stroke-width="1"/>
+  <text x="90" y="40" fill="#e8eaee" font-family="monospace" font-size="11" text-anchor="middle" font-weight="bold">① 信号产生</text>
+  <text x="90" y="56" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">策略工作区</text>
+
+  <path d="M160 45 L190 45" stroke="#9ca0a8" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <rect x="195" y="20" width="140" height="50" fill="rgba(245,197,66,0.12)" rx="4" stroke="rgba(245,197,66,0.25)" stroke-width="1"/>
+  <text x="265" y="40" fill="#e8eaee" font-family="monospace" font-size="11" text-anchor="middle" font-weight="bold">② LTF 突破</text>
+  <text x="265" y="56" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">市场结构</text>
+
+  <path d="M335 45 L365 45" stroke="#9ca0a8" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <rect x="370" y="20" width="140" height="50" fill="rgba(255,155,61,0.12)" rx="4" stroke="rgba(255,155,61,0.25)" stroke-width="1"/>
+  <text x="440" y="40" fill="#e8eaee" font-family="monospace" font-size="11" text-anchor="middle" font-weight="bold">③ 影子窗口</text>
+  <text x="440" y="56" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">结构矩阵</text>
+
+  <!-- Arrow down -->
+  <path d="M440 70 L440 110" stroke="#9ca0a8" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Row 2: Decision diamond -->
+  <polygon points="440,115 520,155 440,195 360,155" fill="rgba(245,197,66,0.12)" stroke="#f5c542" stroke-width="1.5"/>
+  <text x="440" y="152" fill="#e8eaee" font-family="monospace" font-size="10" text-anchor="middle" font-weight="bold">HTF 收盘</text>
+  <text x="440" y="166" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">裁决</text>
+
+  <!-- CONFIRMED branch (left) -->
+  <path d="M360 155 L270 155 L270 215" stroke="#00ff9d" stroke-width="1.5" marker-end="url(#arrowGreen)"/>
+  <rect x="200" y="215" width="140" height="40" fill="rgba(0,255,157,0.12)" rx="4" stroke="rgba(0,255,157,0.25)" stroke-width="1"/>
+  <text x="270" y="234" fill="#00ff9d" font-family="monospace" font-size="10" text-anchor="middle" font-weight="bold">④ CONFIRMED</text>
+  <text x="270" y="248" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">执行中心 → 下单</text>
+
+  <!-- VETOED branch (right) -->
+  <path d="M520 155 L570 155 L570 235" stroke="#ff5470" stroke-width="1.5" marker-end="url(#arrowRed)"/>
+  <rect x="510" y="235" width="80" height="30" fill="rgba(255,84,112,0.12)" rx="4" stroke="rgba(255,84,112,0.25)" stroke-width="1"/>
+  <text x="550" y="253" fill="#ff5470" font-family="monospace" font-size="10" text-anchor="middle" font-weight="bold">⑤ VETOED</text>
+
+  <defs>
+    <marker id="arrow" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6" fill="#9ca0a8"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6" fill="#00ff9d"/>
+    </marker>
+    <marker id="arrowRed" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6" fill="#ff5470"/>
+    </marker>
+  </defs>
+</svg>
+
+<h2>步骤</h2>
+
+<h3>1 · 信号到达，切到结构矩阵 <span class="page-ref">(策略工作区 → 结构矩阵)</span></h3>
+<p>你的策略在 5 分钟图上捕捉到了一个多头信号——价格突破了前一个 HH，BOS 确认。但你不会直接入场，因为低周期的突破可能是假突破。你打开结构矩阵，让 MTF Guard 做多周期审查。</p>
+<ul>
+  <li><strong>看什么</strong>: 快速扫一眼 Fast Track Health 条——必须是绿色，数据过期时裁决不可信。</li>
+  <li><strong>怎么判断</strong>: 绿色表示数据延迟 &lt; 100ms，Redis 连接正常；橙色或红色说明数据可能已过时，先排查数据源。</li>
+  <li><strong>下一步</strong>: Fast Track 健康 → 看证据矩阵（步骤 2）；不健康 → 先查 <a href="#/pages/system/data-source-management">数据源管理</a>。</li>
+</ul>
+
+<h3>2 · 读证据矩阵 <span class="page-ref">(结构矩阵)</span></h3>
+<p>4x3 矩阵以颜色直观地告诉你每个周期每个结构区域的状态。你的 BOS 发生在 5 分钟图——检查 4H 和 1H 的 OB 和 FVG 列是否支持这个方向。如果高周期也是绿色，说明结构一致性好。</p>
+<ul>
+  <li><strong>看什么</strong>: 4H 和 1H 的 OB / FVG 列强度百分比。绿色 ≥ 70%，黄色 40-70%，红色 &lt; 40%。</li>
+  <li><strong>怎么判断</strong>: 如果 4H OB 是绿色（强度 85%），1H OB 也是绿色（78%），说明 HTF 结构站在你这边。如果 4H 是红色，说明你的入场方向与大周期趋势相反，风险很高。</li>
+  <li><strong>下一步</strong>: 高周期支持 → 看裁决面板（步骤 3）；高周期不支撑 → 放弃这个信号，返回策略工作区等待。</li>
+</ul>
+
+<h3>3 · 影子窗口激活，等待裁决 <span class="page-ref">(结构矩阵)</span></h3>
+<p>价格在 5 分钟图上突破了结构，但这个突破发生在 4H OB 区域内——快周期已经侵入了慢周期的结构区域。结构矩阵顶部亮起橙色影子窗口指示条："5m → 1H 结构违规待确认"。倒计时环开始走动。</p>
+<ul>
+  <li><strong>看什么</strong>: 倒计时环上的剩余时间，以及影子窗口面板中的违规计数和回补进度。</li>
+  <li><strong>怎么判断</strong>: 倒计时环显示 1H 蜡烛还有 42 分钟收盘。在收盘之前，裁决面板保持 OBSERVE（观察）状态，不允许入场。如果价格在收盘前回到区域外（回补），影子窗口可能提前关闭。</li>
+  <li><strong>下一步</strong>: 等待倒计时归零（步骤 4）；或者关注回补进度，如果价格快速回到安全区域可以提前刷新矩阵。</li>
+</ul>
+
+<h3>4 · HTF 收盘，裁决下达 <span class="page-ref">(结构矩阵)</span></h3>
+<p>1H 蜡烛终于收盘了。MTF Guard 状态机根据价格在收盘时的位置做出最终裁决。你刷新结构矩阵，看到裁决面板从 OBSERVE 变成了 ALLOW 或 BLOCK ENTRY。</p>
+<ul>
+  <li><strong>看什么</strong>: 裁决面板的动词——ALLOW（绿色）、OBSERVE（黄色）、REQUIRE CONFIRMATION（黄色）、REDUCE SIZE（橙色）、BLOCK ENTRY（红色）。</li>
+  <li><strong>怎么判断</strong>: ALLOW = HTF 结构确认了低周期的突破，可以入场。BLOCK ENTRY = HTF 结构拒绝了低周期的突破，不要开仓。REQUIRE CONFIRMATION = 还需要额外确认（比如等待下一个 K 线开盘价确认）。</li>
+  <li><strong>下一步</strong>: ALLOW → 步骤 5；BLOCK ENTRY → 放弃信号；REQUIRE CONFIRMATION → 等待额外条件触发后再检查。</li>
+</ul>
+
+<h3>5 · 裁决参数复制到执行中心 <span class="page-ref">(结构矩阵 → 执行中心)</span></h3>
+<p>裁决面板下方有一个"发送到执行中心"按钮。点击后，裁决中携带的参数（交易对、方向、入场价格区间、止损参考、建议仓位比例）会自动填充到执行中心的订单表单中。</p>
+<ul>
+  <li><strong>看什么</strong>: 订单表单是否已填入正确的参数。特别注意入场价格区间和止损参考是否与结构矩阵一致。</li>
+  <li><strong>怎么判断</strong>: 如果裁决是 REDUCE SIZE，订单表单中的仓位比例应该自动减半。检查仓位比例是否匹配裁决建议。</li>
+  <li><strong>下一步</strong>: 参数正确 → 检查账户状态（步骤 6）；参数异常 → 手动调整或回到结构矩阵重新获取裁决。</li>
+</ul>
+
+<h3>6 · 检查账户状态，提交订单 <span class="page-ref">(执行中心)</span></h3>
+<p>执行中心右侧显示账户余额、当前持仓和可用保证金。在提交之前，确认你的资金状况可以支持这笔交易，并且没有与现有持仓冲突。</p>
+<ul>
+  <li><strong>看什么</strong>: 可用保证金是否足够；是否有同方向的对冲持仓。</li>
+  <li><strong>怎么判断</strong>: 可用保证金应至少为订单保证金的 150%，留足安全边际。</li>
+  <li><strong>下一步</strong>: 确认 → 点击提交订单；资金不足 → 减仓或跳过。</li>
+</ul>
+
+<h3>7 · 在 <a href="#/pages/execution/orders-positions">订单与持仓</a> 中跟踪 <span class="page-ref">(订单与持仓)</span></h3>
+<p>订单提交后，切换到订单与持仓页面监控执行状态。挂单会显示为"待成交"，成交后变为持仓。持仓期间建议定期回到结构矩阵检查结构是否仍然有效。</p>
+<ul>
+  <li><strong>看什么</strong>: 订单状态（待成交 / 部分成交 / 完全成交 / 已取消），持仓的浮动盈亏和结构有效性。</li>
+  <li><strong>怎么判断</strong>: 如果持仓期间 MTF Guard 状态从 ALLOW 变为 OBSERVE 或 BLOCK ENTRY，说明结构发生了变化，需要考虑提前离场。</li>
+  <li><strong>下一步</strong>: 持仓持有中 → 加入 <a href="#/walkthroughs/daily-trading-loop">每日交易循环</a> 检查清单；已止盈/止损 → 在 <a href="#/pages/growth/growth-review">成长回顾</a> 中记录。</li>
+</ul>
+
+<h2>结束后 · 自验证</h2>
+<ul>
+  <li>☐ 订单已提交，且在订单与持仓页面能看到正确的方向、大小和止损</li>
+  <li>☐ 你知道当前持仓的结构裁决状态（ALLOW / OBSERVE / BLOCK）</li>
+  <li>☐ 你理解影子窗口的意义——如果你跳过了步骤 3-4 直接入场，你可能会在一小时后收到一个意料之外的止损</li>
+</ul>
+
+<h2>遇到问题</h2>
+<ul>
+  <li><strong>裁决面板一直显示 OBSERVE</strong> — 倒计时环可能还在运行，等它归零。如果归零后还是 OBSERVE，可能是影子窗口重新激活了（价格又回到了违规区域）。</li>
+  <li><strong>参数复制到执行中心后不对</strong> — 检查结构矩阵的交易对选择器是否与策略信号一致。选择了不同的交易对会导致参数不匹配。</li>
+  <li><strong>Fast Track Health 红色</strong> — 数据源可能断开或 Redis 缓存过期。检查 <a href="#/pages/system/data-source-management">数据源管理</a> 中的数据连接状态。</li>
+</ul>
+
+<h2>相关</h2>
+<ul>
+  <li><a href="#/concepts/07-multi-timeframe">概念 · 多周期与影子窗口</a></li>
+  <li><a href="#/concepts/03-market-structure">概念 · 市场结构: BOS &amp; CHoCH</a></li>
+  <li><a href="#/pages/structure/structure-matrix">页面 · 结构矩阵 · HTF Tribunal</a></li>
+  <li><a href="#/pages/execution/execution-center">页面 · 执行中心</a></li>
+  <li><a href="#/pages/structure/market-structure">页面 · 市场结构</a></li>
+</ul>

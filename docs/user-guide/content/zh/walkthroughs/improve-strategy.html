@@ -1,0 +1,150 @@
+<h1>优化策略</h1>
+<p class="chapter-meta">情景 · E / 5 · 8 分钟</p>
+
+<blockquote class="lede">运行一周后，用成长回顾和失败聚类发现策略的弱点，通过参数优化和影子策略迭代改进。</blockquote>
+
+<h2>开始前 · 检查清单</h2>
+<ul>
+  <li>☐ 策略已连续运行至少一周（干跑或实盘均可）</li>
+  <li>☐ 已有至少 20 笔以上交易记录，有足够的统计数据</li>
+  <li>☐ 已完成 <a href="#/walkthroughs/first-strategy">情景 · 第一个策略</a> 和 <a href="#/walkthroughs/risk-incident">情景 · 风险事件处理</a></li>
+</ul>
+
+<h2>流程图</h2>
+<svg class="diagram" viewBox="0 0 600 280" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="280" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- Row 1: 3 boxes -->
+  <rect x="20" y="20" width="140" height="50" fill="rgba(80,180,255,0.12)" rx="4" stroke="rgba(80,180,255,0.25)" stroke-width="1"/>
+  <text x="90" y="40" fill="#e8eaee" font-family="monospace" font-size="11" text-anchor="middle" font-weight="bold">① 一周回顾</text>
+  <text x="90" y="56" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">成长回顾</text>
+
+  <path d="M160 45 L190 45" stroke="#9ca0a8" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <rect x="195" y="20" width="140" height="50" fill="rgba(255,155,61,0.12)" rx="4" stroke="rgba(255,155,61,0.25)" stroke-width="1"/>
+  <text x="265" y="40" fill="#e8eaee" font-family="monospace" font-size="11" text-anchor="middle" font-weight="bold">② 失败聚类</text>
+  <text x="265" y="56" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">识别亏损模式</text>
+
+  <path d="M335 45 L365 45" stroke="#9ca0a8" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <rect x="370" y="20" width="140" height="50" fill="rgba(245,197,66,0.12)" rx="4" stroke="rgba(245,197,66,0.25)" stroke-width="1"/>
+  <text x="440" y="40" fill="#e8eaee" font-family="monospace" font-size="11" text-anchor="middle" font-weight="bold">③ 优化建议</text>
+  <text x="440" y="56" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">策略优化</text>
+
+  <!-- Arrow down -->
+  <path d="M440 70 L440 110" stroke="#9ca0a8" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Row 2: 3 boxes -->
+  <rect x="20" y="110" width="140" height="50" fill="rgba(80,180,255,0.12)" rx="4" stroke="rgba(80,180,255,0.25)" stroke-width="1"/>
+  <text x="90" y="130" fill="#e8eaee" font-family="monospace" font-size="11" text-anchor="middle" font-weight="bold">④ 回测验证</text>
+  <text x="90" y="146" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">回测模拟</text>
+
+  <path d="M160 135 L190 135" stroke="#9ca0a8" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <rect x="195" y="110" width="140" height="50" fill="rgba(0,255,157,0.12)" rx="4" stroke="rgba(0,255,157,0.25)" stroke-width="1"/>
+  <text x="265" y="130" fill="#e8eaee" font-family="monospace" font-size="11" text-anchor="middle" font-weight="bold">⑤ 影子策略</text>
+  <text x="265" y="146" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">策略工作区</text>
+
+  <path d="M335 135 L365 135" stroke="#9ca0a8" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <rect x="370" y="110" width="140" height="50" fill="rgba(0,255,157,0.12)" rx="4" stroke="rgba(0,255,157,0.25)" stroke-width="1"/>
+  <text x="440" y="130" fill="#e8eaee" font-family="monospace" font-size="11" text-anchor="middle" font-weight="bold">⑥ 一周干跑</text>
+  <text x="440" y="146" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">干跑模式</text>
+
+  <!-- Arrow from row 2 to decision -->
+  <path d="M440 160 L440 190" stroke="#9ca0a8" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Row 3: Decision diamond -->
+  <polygon points="440,195 520,230 440,265 360,230" fill="rgba(245,197,66,0.12)" stroke="#f5c542" stroke-width="1.5"/>
+  <text x="440" y="228" fill="#e8eaee" font-family="monospace" font-size="9" text-anchor="middle" font-weight="bold">优于</text>
+  <text x="440" y="240" fill="#e8eaee" font-family="monospace" font-size="9" text-anchor="middle" font-weight="bold">原策略？</text>
+
+  <path d="M360 230 L270 230 L270 210" stroke="#00ff9d" stroke-width="1.5" marker-end="url(#arrowGreen)"/>
+  <text x="210" y="210" fill="#00ff9d" font-family="monospace" font-size="9" font-weight="bold">升级</text>
+
+  <path d="M520 230 L570 230" stroke="#9ca0a8" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="560" y="226" fill="#9ca0a8" font-family="monospace" font-size="9" font-weight="bold">继续观察</text>
+
+  <defs>
+    <marker id="arrow" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6" fill="#9ca0a8"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6" fill="#00ff9d"/>
+    </marker>
+  </defs>
+</svg>
+
+<h2>步骤</h2>
+
+<h3>1 · 打开成长回顾，看一周权益曲线 <span class="page-ref">(成长回顾)</span></h3>
+<p>策略运行了一周，你打开成长回顾页面查看整体表现。周权益曲线显示了从周一到周日的每日盈亏变化。你可能发现整体是盈利的，但周中出现了几次明显的回撤。</p>
+<ul>
+  <li><strong>看什么</strong>: 周权益曲线的形状——平滑上升（优秀）、锯齿状（正常但需优化）、持续下行（严重）。注意回撤的时间和幅度。</li>
+  <li><strong>怎么判断</strong>: 如果权益曲线整体向上但回撤幅度可控，策略核心逻辑没问题，可以优化。如果曲线持续下行，可能需要重新审视策略逻辑。</li>
+  <li><strong>下一步</strong>: 权益曲线基本健康 → 进入失败聚类分析具体亏损原因（步骤 2）。曲线不健康 → 考虑暂停策略，回 <a href="#/walkthroughs/first-strategy">第一个策略</a> 重新设计。</li>
+</ul>
+
+<h3>2 · 失败聚类找出亏损模式 <span class="page-ref">(失败聚类)</span></h3>
+<p>失败聚类自动将本周所有亏损交易分组。你看到最大的聚类标注为"低流动性时段 · 凌晨 2-5 时 · 亏损占比 55%"。这意味着你的策略在亚洲低流动性时段表现尤其差。</p>
+<ul>
+  <li><strong>看什么</strong>: 亏损占比最高的聚类及其特征维度（时间段、市场条件、信号类型、持仓时长）。</li>
+  <li><strong>怎么判断</strong>: 如果一个聚类占所有亏损的 50% 以上，这是明确的优化方向。例如，如果你的策略在低流动性时段频繁亏损，可能需要在策略中添加交易时段过滤器。</li>
+  <li><strong>下一步</strong>: 找到明确模式 → 去策略优化查看参数建议（步骤 3）。聚类分散无明确模式 → 可能需要更多的数据或更长时间观察。</li>
+</ul>
+
+<h3>3 · 策略优化提出参数调整建议 <span class="page-ref">(策略优化)</span></h3>
+<p>策略优化页面读取你的历史交易数据和失败聚类结果，自动生成几组参数调整建议。例如："建议 1：添加交易时段限制 06:00-22:00，预计减少亏损 55%；建议 2：降低 FVG 信号评分权重至 0.6（当前 0.8），预计减少亏损 30%。"</p>
+<ul>
+  <li><strong>看什么</strong>: 每个建议的预期效果（减少亏损百分比）和置信度。高置信度（如 80% 以上）的建议优先尝试。</li>
+  <li><strong>怎么判断</strong>: 不是所有建议都要采纳。选择与你的分析一致的、预期效果最显著的 1-2 个建议。不要一次改太多参数——否则你无法判断哪个改动有效。</li>
+  <li><strong>下一步</strong>: 选定要测试的调整 → 复制当前策略创建副本，在副本上修改参数（步骤 4）。</li>
+</ul>
+
+<h3>4 · 回测验证调整 <span class="page-ref">(回测模拟)</span></h3>
+<p>在策略工作区创建一个当前策略的副本，应用选定的参数调整，然后运行回测。回测使用历史数据模拟策略在过去几周的表现。比较回测结果和原策略的历史表现。</p>
+<ul>
+  <li><strong>看什么</strong>: 回测报告的关键指标——总收益率、最大回撤、胜率、盈亏比、Sharpe 比率。</li>
+  <li><strong>怎么判断</strong>: 新参数的回测结果应该在总收益率和最大回撤两个维度上都优于或等于原策略。如果只提高了收益率但回撤更大，不一定更好。</li>
+  <li><strong>下一步</strong>: 回测结果更好 → 以影子策略模式部署（步骤 5）。回测结果更差 → 回到策略优化尝试其他建议。</li>
+</ul>
+
+<h3>5 · 部署为影子策略，并行运行 <span class="page-ref">(策略工作区)</span></h3>
+<p>影子策略是"只观察不下单"的模式——它会像真实策略一样产生信号和计算盈亏，但不会实际执行交易。你创建一个影子策略，应用新的参数，与原策略并行运行。</p>
+<ul>
+  <li><strong>看什么</strong>: 影子策略已创建，状态显示为"影子 · 干跑"。确认它使用了修改后的参数。</li>
+  <li><strong>怎么判断</strong>: 影子策略和原策略接收相同的市场数据，因此你可以公平地对比它们的表现。影子策略不会影响你的实际账户。</li>
+  <li><strong>下一步</strong>: 影子策略部署成功 → 等待至少一周的干跑数据（步骤 6）。</li>
+</ul>
+
+<h3>6 · 一周干跑后对比决策 <span class="page-ref">(成长回顾 / 策略工作区)</span></h3>
+<p>一周后回到成长回顾，对比原策略和影子策略的表现。成长回顾支持并排显示两个策略的权益曲线和关键指标。</p>
+<ul>
+  <li><strong>看什么</strong>: 两个策略的权益曲线叠加对比——影子策略的曲线是否在原策略之上？最大回撤是否更小？</li>
+  <li><strong>怎么判断</strong>: 影子策略在一周内持续优于原策略（更高的收益率、更低或相同的回撤）→ 可以升级为主策略。如果表现差异不大 → 给影子策略更多时间（再一周）。如果表现更差 → 终止影子策略，尝试其他优化方向。</li>
+  <li><strong>下一步</strong>: 影子策略胜出 → 在策略工作区中将影子策略升级为主策略，原策略可以选择归档或终止。需要更多时间 → 继续并行运行。</li>
+</ul>
+
+<h2>结束后 · 自验证</h2>
+<ul>
+  <li>☐ 你至少进行了一次参数调整，并用回测验证了效果</li>
+  <li>☐ 影子策略已部署，且你知道在哪里对比两个策略的表现</li>
+  <li>☐ 你理解"一次只改一个变量"的原则——同时改太多参数会让你无法归因</li>
+</ul>
+
+<h2>遇到问题</h2>
+<ul>
+  <li><strong>回测结果与干跑表现差异很大</strong> — 可能是过拟合。回测历史数据不代表未来，如果差异过大，简化你的参数调整——用更少的参数、更简单的规则。</li>
+  <li><strong>策略优化没有生成任何建议</strong> — 交易数据可能不够。需要至少 20 笔交易才能产生有统计意义的建议。继续运行策略积累数据。</li>
+  <li><strong>影子策略无法创建</strong> — 检查你是否已经达到最大策略数量限制。在 <a href="#/pages/system/settings">设置</a> 中查看策略配额。</li>
+</ul>
+
+<h2>相关</h2>
+<ul>
+  <li><a href="#/concepts/09-dryrun-vs-live">概念 · 干跑 vs 实盘</a></li>
+  <li><a href="#/pages/growth/growth-review">页面 · 成长回顾</a></li>
+  <li><a href="#/pages/growth/failure-clustering">页面 · 失败聚类</a></li>
+  <li><a href="#/pages/growth/strategy-optimization">页面 · 策略优化</a></li>
+  <li><a href="#/pages/strategy/strategy-workspace">页面 · 策略工作区</a></li>
+  <li><a href="#/pages/strategy/backtest-simulation">页面 · 回测模拟</a></li>
+</ul>

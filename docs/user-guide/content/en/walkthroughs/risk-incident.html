@@ -1,0 +1,148 @@
+<h1>Risk Incident Response</h1>
+<p class="chapter-meta">Walkthrough · D / 5 · 8 min</p>
+
+<blockquote class="lede">A circuit breaker trips. Follow the path from alert to diagnosis, strategy pause, post-mortem review, and the final decision to resume or terminate.</blockquote>
+
+<h2>Before You Start — Checklist</h2>
+<ul>
+  <li>☐ At least one strategy is running (dry-run or live)</li>
+  <li>☐ Risk controls are enabled with at least one active circuit breaker</li>
+  <li>☐ You have completed <a href="#/walkthroughs/first-strategy">Walkthrough · First Strategy</a></li>
+</ul>
+
+<h2>Flow</h2>
+<svg class="diagram" viewBox="0 0 600 280" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="280" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- Row 1: 3 boxes -->
+  <rect x="20" y="20" width="140" height="50" fill="rgba(255,84,112,0.12)" rx="4" stroke="rgba(255,84,112,0.25)" stroke-width="1"/>
+  <text x="90" y="40" fill="#e8eaee" font-family="monospace" font-size="11" text-anchor="middle" font-weight="bold">① Alert Fires</text>
+  <text x="90" y="56" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">Dashboard / Push</text>
+
+  <path d="M160 45 L190 45" stroke="#9ca0a8" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <rect x="195" y="20" width="140" height="50" fill="rgba(255,155,61,0.12)" rx="4" stroke="rgba(255,155,61,0.25)" stroke-width="1"/>
+  <text x="265" y="40" fill="#e8eaee" font-family="monospace" font-size="11" text-anchor="middle" font-weight="bold">② Risk Center</text>
+  <text x="265" y="56" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">Identify Breaker Type</text>
+
+  <path d="M335 45 L365 45" stroke="#9ca0a8" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <rect x="370" y="20" width="140" height="50" fill="rgba(255,84,112,0.12)" rx="4" stroke="rgba(255,84,112,0.25)" stroke-width="1"/>
+  <text x="440" y="40" fill="#e8eaee" font-family="monospace" font-size="11" text-anchor="middle" font-weight="bold">③ Breaker Detail</text>
+  <text x="440" y="56" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">Event Timeline</text>
+
+  <!-- Arrow down -->
+  <path d="M440 70 L440 110" stroke="#9ca0a8" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Row 2: Decision diamond -->
+  <polygon points="440,115 520,155 440,195 360,155" fill="rgba(245,197,66,0.12)" stroke="#f5c542" stroke-width="1.5"/>
+  <text x="440" y="150" fill="#e8eaee" font-family="monospace" font-size="10" text-anchor="middle" font-weight="bold">Pause</text>
+  <text x="440" y="164" fill="#e8eaee" font-family="monospace" font-size="10" text-anchor="middle" font-weight="bold">Strategy?</text>
+
+  <!-- YES branch (left) -->
+  <path d="M360 155 L270 155 L270 215" stroke="#ff5470" stroke-width="1.5" marker-end="url(#arrowRed)"/>
+  <rect x="200" y="215" width="140" height="40" fill="rgba(255,84,112,0.12)" rx="4" stroke="rgba(255,84,112,0.25)" stroke-width="1"/>
+  <text x="270" y="234" fill="#ff5470" font-family="monospace" font-size="10" text-anchor="middle" font-weight="bold">④ Pause Strategy</text>
+  <text x="270" y="248" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">Execution Center</text>
+
+  <path d="M270 255 L270 275" stroke="#9ca0a8" stroke-width="1.5"/>
+
+  <!-- NO branch (right) -->
+  <path d="M520 155 L570 155 L570 235" stroke="#00ff9d" stroke-width="1.5" marker-end="url(#arrowGreen)"/>
+  <rect x="520" y="235" width="70" height="30" fill="rgba(0,255,157,0.12)" rx="4" stroke="rgba(0,255,157,0.25)" stroke-width="1"/>
+  <text x="555" y="253" fill="#00ff9d" font-family="monospace" font-size="9" text-anchor="middle" font-weight="bold">Resume</text>
+
+  <defs>
+    <marker id="arrow" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6" fill="#9ca0a8"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6" fill="#00ff9d"/>
+    </marker>
+    <marker id="arrowRed" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6" fill="#ff5470"/>
+    </marker>
+  </defs>
+</svg>
+
+<h2>Steps</h2>
+
+<h3>1 · Alert arrives <span class="page-ref">(Dashboard / Push Notification)</span></h3>
+<p>A push notification pops up on your phone or desktop: "Strategy BTC-USDT Long — Daily Drawdown Breaker Triggered." You open the AlphaLoop dashboard. The risk status bar at the top has turned red, showing the breaker name and affected strategy.</p>
+<ul>
+  <li><strong>What to look at</strong>: The color of the risk status bar and the breaker name. Red = a breaker has tripped — needs immediate attention. Yellow = warning (close to threshold but not yet triggered).</li>
+  <li><strong>How to decide</strong>: If it's a Daily Drawdown breaker, the strategy lost more than the daily threshold (e.g. 5%). If it's a Consecutive Losses breaker, the strategy lost N trades in a row. If it's a Vol Spike breaker, market volatility suddenly surged.</li>
+  <li><strong>Next</strong>: Click the risk status bar to go to the Risk Center (step 2). If it's a false alarm (e.g. test environment), mark it as read.</li>
+</ul>
+
+<h3>2 · Identify the breaker in the Risk Center <span class="page-ref">(Risk Center)</span></h3>
+<p>The Risk Center shows every configured breaker as a card with its current status. The triggered breaker card is highlighted, showing the trigger time, current value, and threshold.</p>
+<ul>
+  <li><strong>What to look at</strong>: The highlighted breaker card — "Daily DD 5.8% / Threshold 5.0%." Note the trigger time and how far the current value overshot the threshold.</li>
+  <li><strong>How to decide</strong>: If the overshoot is small (5.8% vs 5.0%), it could be normal fluctuation — but a rule is a rule, handle it first, then tune. If it's a large overshoot (12% vs 5%), the strategy likely has a systemic flaw.</li>
+  <li><strong>Next</strong>: Click the breaker card to see the event detail (step 3).</li>
+</ul>
+
+<h3>3 · Read the breaker event detail <span class="page-ref">(Circuit Breakers page)</span></h3>
+<p>The breaker detail page shows a full event timeline: the last trade before the trigger, the account state at the time of trigger, and any automatic actions the system took (e.g. blocking new entries).</p>
+<ul>
+  <li><strong>What to look at</strong>: Each trade on the timeline — the losing trade that pushed the strategy over the edge, the market conditions at the time (volatility, liquidity), and the system's automated response.</li>
+  <li><strong>How to decide</strong>: Look for patterns. Was it a single large loss or many small losses piling up? A single large loss might be bad luck; many small losses suggest a logic problem. Watch for "low liquidity" tags on the timeline.</li>
+  <li><strong>Next</strong>: Root cause understood → pause the strategy at Execution Center (step 4). Or if you confirm it's a one-off event with acceptable risk → skip the pause and resume trading directly.</li>
+</ul>
+
+<h3>4 · Pause the strategy <span class="page-ref">(Execution Center)</span></h3>
+<p>The Execution Center lists all running strategies. Find the triggered strategy and click the pause button. The strategy stops generating new signals. Existing positions continue to run or close according to preset rules.</p>
+<ul>
+  <li><strong>What to look at</strong>: The strategy status changing from "Running" to "Paused." Confirm no new orders are being submitted.</li>
+  <li><strong>How to decide</strong>: Pausing does not auto-close positions. You can either close them manually (if market conditions are worsening) or let them hit their TP/SL naturally.</li>
+  <li><strong>Next</strong>: Strategy paused → go to Growth Review for the post-mortem (step 5).</li>
+</ul>
+
+<h3>5 · Post-mortem in Growth Review <span class="page-ref">(Growth Review)</span></h3>
+<p>Growth Review shows daily P&amp;L and trade history in a calendar view. Find the day the breaker triggered and expand it for the full breakdown. Look for commonalities across the losing trades — session, market conditions, signal type.</p>
+<ul>
+  <li><strong>What to look at</strong>: Every trade from that day — entry time, direction, P&amp;L, holding period.</li>
+  <li><strong>How to decide</strong>: If all losses happened in the early morning (low liquidity), you may need session restrictions. If losses cluster around one signal type (e.g. FVG entries), that signal's scoring weight may need adjustment.</li>
+  <li><strong>Next</strong>: Pattern found → dig deeper in <a href="#/pages/growth/failure-clustering">Failure Clustering</a> (step 6). One-off event → decide on resume directly (step 7).</li>
+</ul>
+
+<h3>6 · Failure clustering analysis <span class="page-ref">(Failure Clustering)</span></h3>
+<p>Failure Clustering automatically groups losing trades by multiple dimensions — time of day, market conditions, signal type, holding duration. Each cluster shows its loss share and trade count, helping you pinpoint the root cause fast.</p>
+<ul>
+  <li><strong>What to look at</strong>: The cluster with the highest loss share. For example "02:00-05:00 · Low Liquidity · 60% loss share."</li>
+  <li><strong>How to decide</strong>: If one cluster dominates (60% vs 20% average), the problem is likely concentrated in specific conditions. If losses are evenly distributed, the strategy may need a broad overhaul.</li>
+  <li><strong>Next</strong>: Root cause found → adjust risk rules or strategy parameters (step 7). Clusters inconclusive → collect more data and observe.</li>
+</ul>
+
+<h3>7 · Decide: resume, tune, or terminate <span class="page-ref">(Execution Center / Strategy Workspace)</span></h3>
+<p>Based on your post-mortem, make the final call: resume the strategy as-is, adjust risk thresholds or parameters and resume, or terminate the strategy entirely.</p>
+<ul>
+  <li><strong>What to look at</strong>: Your action depends on the analysis. If the threshold was too tight, adjust it on the <a href="#/pages/risk/circuit-breakers">Circuit Breakers</a> page. If the strategy needs parameter changes, do it in <a href="#/pages/strategy/strategy-workspace">Strategy Workspace</a>.</li>
+  <li><strong>How to decide</strong>: One-off event (e.g. black swan volatility spike) → resume. Parameters need tuning → adjust then resume. Strategy has a systemic flaw → terminate and go back to <a href="#/walkthroughs/first-strategy">First Strategy</a> to redesign.</li>
+  <li><strong>Next</strong>: After resuming, monitor closely for 24 hours. After termination, archive strategy data for future reference.</li>
+</ul>
+
+<h2>When You're Done — Self-Check</h2>
+<ul>
+  <li>☐ The strategy is in a clear state — Running, Paused, or Terminated</li>
+  <li>☐ You have recorded the root cause and can explain in one sentence what tripped the breaker</li>
+  <li>☐ Risk configuration has been updated if needed: threshold adjustment, new rule, or session restriction</li>
+</ul>
+
+<h2>If Something Goes Wrong</h2>
+<ul>
+  <li><strong>Pause button is disabled</strong> — Verify you have operator permissions for that strategy. Shared strategies may require admin rights.</li>
+  <li><strong>Can't find the trigger day in Growth Review</strong> — Check the time range filter. It defaults to the last 7 days.</li>
+  <li><strong>Breaker reset but strategy won't trade</strong> — A breaker trip does not auto-resume strategy trading. You must manually click "Resume" on the <a href="#/pages/execution/execution-center">Execution Center</a>.</li>
+</ul>
+
+<h2>See Also</h2>
+<ul>
+  <li><a href="#/concepts/08-risk-basics">Concept · Risk Basics</a></li>
+  <li><a href="#/pages/risk/risk-center">Page · Risk Center</a></li>
+  <li><a href="#/pages/risk/circuit-breakers">Page · Circuit Breakers</a></li>
+  <li><a href="#/pages/growth/growth-review">Page · Growth Review</a></li>
+  <li><a href="#/pages/growth/failure-clustering">Page · Failure Clustering</a></li>
+  <li><a href="#/walkthroughs/improve-strategy">Walkthrough · Improve Strategy</a></li>
+</ul>
