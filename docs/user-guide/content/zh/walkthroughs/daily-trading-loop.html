@@ -1,0 +1,152 @@
+<h1>每日交易循环</h1>
+<p class="chapter-meta">情景 · 2 / 5 · 7 分钟</p>
+
+<blockquote class="lede">每天开盘前，用 7 分钟按固定流程走一遍——快速扫描全局、检查市场结构、查看信号、评估风险，然后决定今天做什么或不做什么。</blockquote>
+
+<h2>开始前 · 检查清单</h2>
+<ul>
+  <li>☐ 后端已启动，Dashboard 正常加载</li>
+  <li>☐ 至少有一个策略在运行（干跑或实盘），或有信号正在流入</li>
+  <li>☐ Freqtrade 心跳正常，交易所连接在线</li>
+</ul>
+
+<h2>流程图</h2>
+<svg class="diagram" viewBox="0 0 600 280" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="280" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- Row 1: 3 boxes -->
+  <rect x="20" y="30" width="130" height="60" rx="4" fill="rgba(80,180,255,0.12)" stroke="#50b4ff" stroke-width="1.2"/>
+  <text x="85" y="54" fill="#e8eaee" font-family="monospace" font-size="10" text-anchor="middle">Dashboard</text>
+  <text x="85" y="72" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">快速扫描</text>
+
+  <line x1="154" y1="60" x2="172" y2="60" stroke="#5e636d" stroke-width="1.5"/>
+  <polygon points="178,60 170,56 170,64" fill="#5e636d"/>
+
+  <rect x="182" y="30" width="130" height="60" rx="4" fill="rgba(80,180,255,0.12)" stroke="#50b4ff" stroke-width="1.2"/>
+  <text x="247" y="54" fill="#e8eaee" font-family="monospace" font-size="10" text-anchor="middle">市场结构</text>
+  <text x="247" y="72" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">趋势判断</text>
+
+  <line x1="316" y1="60" x2="334" y2="60" stroke="#5e636d" stroke-width="1.5"/>
+  <polygon points="340,60 332,56 332,64" fill="#5e636d"/>
+
+  <rect x="344" y="30" width="130" height="60" rx="4" fill="rgba(245,197,66,0.12)" stroke="#f5c542" stroke-width="1.2"/>
+  <text x="409" y="54" fill="#e8eaee" font-family="monospace" font-size="10" text-anchor="middle">结构矩阵</text>
+  <text x="409" y="72" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">MTF 审查</text>
+
+  <!-- Down arrow to row 2 -->
+  <line x1="409" y1="90" x2="409" y2="130" stroke="#5e636d" stroke-width="1.5"/>
+  <polygon points="409,136 405,128 413,128" fill="#5e636d"/>
+
+  <!-- Row 2: 3 boxes -->
+  <rect x="20" y="140" width="130" height="60" rx="4" fill="rgba(245,197,66,0.12)" stroke="#f5c542" stroke-width="1.2"/>
+  <text x="85" y="164" fill="#e8eaee" font-family="monospace" font-size="10" text-anchor="middle">信号中心</text>
+  <text x="85" y="182" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">融合信号</text>
+
+  <line x1="154" y1="170" x2="172" y2="170" stroke="#5e636d" stroke-width="1.5"/>
+  <polygon points="178,170 170,166 170,174" fill="#5e636d"/>
+
+  <rect x="182" y="140" width="130" height="60" rx="4" fill="rgba(255,155,61,0.12)" stroke="#ff9b3d" stroke-width="1.2"/>
+  <text x="247" y="164" fill="#e8eaee" font-family="monospace" font-size="10" text-anchor="middle">风控中心</text>
+  <text x="247" y="182" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">风险评估</text>
+
+  <line x1="316" y1="170" x2="334" y2="170" stroke="#5e636d" stroke-width="1.5"/>
+  <polygon points="340,170 332,166 332,174" fill="#5e636d"/>
+
+  <rect x="344" y="140" width="130" height="60" rx="4" fill="rgba(0,255,157,0.12)" stroke="#00ff9d" stroke-width="1.2"/>
+  <text x="409" y="164" fill="#e8eaee" font-family="monospace" font-size="10" text-anchor="middle">执行中心</text>
+  <text x="409" y="182" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">行动或等待</text>
+
+  <!-- Step numbers -->
+  <circle cx="30" cy="18" r="9" fill="#50b4ff" opacity="0.9"/>
+  <text x="30" y="22" fill="#000" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">1</text>
+  <circle cx="192" cy="18" r="9" fill="#50b4ff" opacity="0.9"/>
+  <text x="192" y="22" fill="#000" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">2</text>
+  <circle cx="354" cy="18" r="9" fill="#f5c542" opacity="0.9"/>
+  <text x="354" y="22" fill="#000" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">3</text>
+  <circle cx="30" cy="128" r="9" fill="#f5c542" opacity="0.9"/>
+  <text x="30" y="132" fill="#000" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">4</text>
+  <circle cx="192" cy="128" r="9" fill="#ff9b3d" opacity="0.9"/>
+  <text x="192" y="132" fill="#000" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">5</text>
+  <circle cx="354" cy="128" r="9" fill="#00ff9d" opacity="0.9"/>
+  <text x="354" y="132" fill="#000" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">6</text>
+</svg>
+
+<h2>步骤</h2>
+
+<h3>1 · 快速扫描全局（AI 总控台 / Dashboard）</h3>
+<p>打开 Dashboard。顶部的交易工作流导轨会显示 Daily Trading Loop 每一步的实时状态——绿色表示正常，黄色表示有警告，红色表示有阻断项。导轨下方的 P0 区域展示 AI 对市场的方向判断、当前持仓的盈亏状态，以及待确认事项的数量。花 30 秒扫一眼，建立一个对今天市场的第一印象。</p>
+<ul>
+  <li><strong>看什么</strong>: AI 市场判断的方向和置信度，持仓 PnL 的正负，待确认事项的数量</li>
+  <li><strong>怎么判断</strong>: AI 判断方向明确（置信度 ≥ 70%）且持仓总体盈利，今天可以积极参与。置信度低或持仓出现大额亏损，需要保持警惕。</li>
+  <li><strong>下一步</strong>: 不管好坏，都进入下一步——市场结构页。</li>
+</ul>
+
+<h3>2 · 检查市场结构（市场结构）</h3>
+<p>进入市场结构页面，选择你主要交易标的时间周期（建议先看 4H 或 1H 的大周期结构）。页面顶部显示当前市场状态词（上升趋势 / 下降趋势 / 震荡 / 高波动 / 恐慌）和结构评分（0-100）。往下是结构事件时间线——最近发生了哪些 BoS（突破结构）、CHoCH（结构反转）、Sweep（流动性扫除）。</p>
+<ul>
+  <li><strong>看什么</strong>: 结构评分，以及最近一个结构事件的方向</li>
+  <li><strong>怎么判断</strong>: 评分 ≥ 70 说明结构健康。最近的事件如果是 BoS 且方向与你倾向的交易方向一致，是好的入场环境。如果是 CHoCH 或 Sweep，说明市场可能在转向——需要谨慎。</li>
+  <li><strong>下一步</strong>: 结构评分 ≥ 60 且趋势明确，继续到结构矩阵。如果评分低于 40 或市场处于"恐慌"状态，建议跳过当天的交易。</li>
+</ul>
+
+<h3>3 · 多周期结构审查（结构矩阵 / HTF Tribunal）</h3>
+<p>打开结构矩阵页面。你看到的是一个 4x4 矩阵——行是时间周期（5m / 15m / 1H / 4H），列是结构区域类型（OB / FVG / LP）。每个格子显示该周期该区域的结构强度百分比。右侧的裁决面板告诉你 MTF Guard 状态机的最终意见：允许、观察、要求确认、减仓、或阻止开仓。矩阵上方的倒计时环显示当前最慢 K 线剩余时间。</p>
+<ul>
+  <li><strong>看什么</strong>: 右侧裁决面板的最终裁决，以及各个周期是否一致</li>
+  <li><strong>怎么判断</strong>: 裁决为"允许"（绿色）且多周期方向一致（4H 和 1H 都看多/看空），可以积极操作。裁决为"要求确认"需要等信号中心确认。"阻止开仓"（红色）意味着不能入场——无论信号多诱人。</li>
+  <li><strong>下一步</strong>: 裁决为"允许"或"观察" → 去信号中心。裁决为"阻止开仓" → 今天的循环到此为止，等待。</li>
+</ul>
+
+<h3>4 · 查看融合信号（信号中心）</h3>
+<p>进入信号中心。默认视图是所有来源的融合信号，按综合评分从高到低排列。评分是每个来源策略近 30 天表现的加权平均。点击一个信号卡片可以展开详细面板，查看每个来源策略的贡献权重和详细分析。你也可以按来源或方向过滤。</p>
+<ul>
+  <li><strong>看什么</strong>: 评分最高的信号及其方向、风险等级</li>
+  <li><strong>怎么判断</strong>: 评分 ≥ 4.0 且方向与市场结构和 MTF 裁决一致，是高质量的入场信号。评分 2.5-4.0 可参考但需要额外确认。低于 2.5 的忽略。</li>
+  <li><strong>下一步</strong>: 如果有高质量信号且方向一致，去风控中心检查风险水位。如果没有信号或信号方向与结构判断冲突，今天的循环结束。</li>
+</ul>
+
+<h3>5 · 评估风险水位（风控中心）</h3>
+<p>打开风控中心。顶部的弧形仪表盘显示整体风险状态：SAFE（绿）/ WARN（黄）/ RISK（橙）/ LOCK（红）/ HALT（红）。下面是四个风控守卫的卡片——日亏损限制、周亏损限制、总敞口、连续亏损，每张卡片显示当前消耗比例。右下角的紧急操作区有"禁止新开仓"和"紧急停止"按钮。</p>
+<ul>
+  <li><strong>看什么</strong>: 仪表盘的颜色和状态文字，以及四个守卫的消耗比例</li>
+  <li><strong>怎么判断</strong>: SAFE 且所有守卫消耗 < 60% = 正常交易。WARN 且某个守卫接近 80% = 减少新开仓。RISK 或 LOCK = 立即停止新开仓，检查原因。HALT = 熔断已触发。</li>
+  <li><strong>下一步</strong>: 风险状态 SAFE 或 WARN → 去执行中心执行。RISK 及以上 → 停止交易，先搞清风控问题。</li>
+</ul>
+
+<h3>6 · 行动或等待（执行中心）</h3>
+<p>最后一步来到执行中心。查看所有运行中会话的状态——心跳是否正常、延迟是否在阈值以内、持仓和挂单数量是否异常。如果前面几步都通过了，这里通常是确认一切正常。如果你使用的是手动交易模式，可以在执行中心手动开仓或调整现有持仓。如果是自动化策略，确认它们按预期运行即可。</p>
+<ul>
+  <li><strong>看什么</strong>: 所有会话的状态（绿色/黄色/红色），Freqtrade 心跳，平均延迟</li>
+  <li><strong>怎么判断</strong>: 所有会话绿色 + 心跳正常 + 延迟 < 200ms = 一切正常。如果有黄色或红色会话，点击查看详情。</li>
+  <li><strong>下一步</strong>: 今天的循环完成。设置 Dashboard 的告警通知，然后去做别的事。收盘前再回来快速扫一眼执行中心确认收市情况。</li>
+</ul>
+
+<h2>结束后 · 自验证</h2>
+<ul>
+  <li>☐ 确认今天的市场结构判断（上升/下降/震荡）记录在案</li>
+  <li>☐ 风控中心仪表盘仍然是绿色（SAFE）或至多是黄色（WARN）</li>
+  <li>☐ 执行中心没有任何红色异常会话</li>
+  <li>☐ 如果有新开仓，订单已出现在订单/持仓页面</li>
+</ul>
+
+<h2>遇到问题</h2>
+<ul>
+  <li><strong>Dashboard 加载慢或显示系统异常</strong> — 先看实盘准入检查页确认各组件状态。常见原因：Freqtrade 未启动或 Redis 连接断开。</li>
+  <li><strong>市场结构评分突然从 80 掉到 30</strong> — 说明发生了 CHoCH（结构反转）或高波动事件。切换到小周期（5m/15m）确认细节。今天建议保守操作。</li>
+  <li><strong>MTF 裁决为"阻止开仓"但没有明显原因</strong> — 打开影子窗口面板（结构矩阵下方），查看是否有隐藏的反向结构在更高时间周期上未被注意到。</li>
+  <li><strong>信号中心没有高分信号</strong> — 可能是市场处于震荡状态，策略不产生信号。这是正常的——不是每个交易日都有交易机会。</li>
+  <li><strong>风控仪表盘变红（RISK 及以上）</strong> — 立即停止新开仓。检查哪个守卫被触发，去止损保护页查看具体持仓的止损状态。如果熔断已触发，等待系统自动解锁或手动评估后重置。</li>
+</ul>
+
+<h2>相关</h2>
+<ul>
+  <li><a href="#/concepts/03-market-structure">概念 · 市场结构</a></li>
+  <li><a href="#/concepts/07-multi-timeframe">概念 · 多周期分析</a></li>
+  <li><a href="#/concepts/08-risk-basics">概念 · 风控基础</a></li>
+  <li><a href="#/pages/overview/dashboard">页面 · AI 总控台</a></li>
+  <li><a href="#/pages/structure/market-structure">页面 · 市场结构</a></li>
+  <li><a href="#/pages/structure/structure-matrix">页面 · 结构矩阵</a></li>
+  <li><a href="#/pages/ai-research/signal-center">页面 · 信号中心</a></li>
+  <li><a href="#/pages/risk/risk-center">页面 · 风控中心</a></li>
+  <li><a href="#/pages/execution/execution-center">页面 · 执行中心</a></li>
+</ul>

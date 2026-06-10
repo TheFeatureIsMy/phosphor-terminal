@@ -1,0 +1,152 @@
+<h1>Daily Trading Loop</h1>
+<p class="chapter-meta">Walkthrough · 2 / 5 · 7 min</p>
+
+<blockquote class="lede">Every day before the market opens, spend 7 minutes going through a fixed routine — quick scan the big picture, check market structure, review signals, assess risk, and decide what to do (or not do) today.</blockquote>
+
+<h2>Before You Start — Checklist</h2>
+<ul>
+  <li>☐ Backend is running, Dashboard loads without errors</li>
+  <li>☐ At least one strategy is active (dry-run or live), or signals are flowing in</li>
+  <li>☐ Freqtrade heartbeat is normal, exchange connection is online</li>
+</ul>
+
+<h2>Flow</h2>
+<svg class="diagram" viewBox="0 0 600 280" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="280" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- Row 1: 3 boxes -->
+  <rect x="20" y="30" width="130" height="60" rx="4" fill="rgba(80,180,255,0.12)" stroke="#50b4ff" stroke-width="1.2"/>
+  <text x="85" y="54" fill="#e8eaee" font-family="monospace" font-size="10" text-anchor="middle">Dashboard</text>
+  <text x="85" y="72" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">Quick Scan</text>
+
+  <line x1="154" y1="60" x2="172" y2="60" stroke="#5e636d" stroke-width="1.5"/>
+  <polygon points="178,60 170,56 170,64" fill="#5e636d"/>
+
+  <rect x="182" y="30" width="130" height="60" rx="4" fill="rgba(80,180,255,0.12)" stroke="#50b4ff" stroke-width="1.2"/>
+  <text x="247" y="54" fill="#e8eaee" font-family="monospace" font-size="10" text-anchor="middle">Market Structure</text>
+  <text x="247" y="72" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">Regime Check</text>
+
+  <line x1="316" y1="60" x2="334" y2="60" stroke="#5e636d" stroke-width="1.5"/>
+  <polygon points="340,60 332,56 332,64" fill="#5e636d"/>
+
+  <rect x="344" y="30" width="130" height="60" rx="4" fill="rgba(245,197,66,0.12)" stroke="#f5c542" stroke-width="1.2"/>
+  <text x="409" y="54" fill="#e8eaee" font-family="monospace" font-size="10" text-anchor="middle">Structure Matrix</text>
+  <text x="409" y="72" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">MTF Review</text>
+
+  <!-- Down arrow to row 2 -->
+  <line x1="409" y1="90" x2="409" y2="130" stroke="#5e636d" stroke-width="1.5"/>
+  <polygon points="409,136 405,128 413,128" fill="#5e636d"/>
+
+  <!-- Row 2: 3 boxes -->
+  <rect x="20" y="140" width="130" height="60" rx="4" fill="rgba(245,197,66,0.12)" stroke="#f5c542" stroke-width="1.2"/>
+  <text x="85" y="164" fill="#e8eaee" font-family="monospace" font-size="10" text-anchor="middle">Signal Center</text>
+  <text x="85" y="182" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">Fused Signals</text>
+
+  <line x1="154" y1="170" x2="172" y2="170" stroke="#5e636d" stroke-width="1.5"/>
+  <polygon points="178,170 170,166 170,174" fill="#5e636d"/>
+
+  <rect x="182" y="140" width="130" height="60" rx="4" fill="rgba(255,155,61,0.12)" stroke="#ff9b3d" stroke-width="1.2"/>
+  <text x="247" y="164" fill="#e8eaee" font-family="monospace" font-size="10" text-anchor="middle">Risk Center</text>
+  <text x="247" y="182" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">Exposure Check</text>
+
+  <line x1="316" y1="170" x2="334" y2="170" stroke="#5e636d" stroke-width="1.5"/>
+  <polygon points="340,170 332,166 332,174" fill="#5e636d"/>
+
+  <rect x="344" y="140" width="130" height="60" rx="4" fill="rgba(0,255,157,0.12)" stroke="#00ff9d" stroke-width="1.2"/>
+  <text x="409" y="164" fill="#e8eaee" font-family="monospace" font-size="10" text-anchor="middle">Execution Center</text>
+  <text x="409" y="182" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">Act or Wait</text>
+
+  <!-- Step numbers -->
+  <circle cx="30" cy="18" r="9" fill="#50b4ff" opacity="0.9"/>
+  <text x="30" y="22" fill="#000" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">1</text>
+  <circle cx="192" cy="18" r="9" fill="#50b4ff" opacity="0.9"/>
+  <text x="192" y="22" fill="#000" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">2</text>
+  <circle cx="354" cy="18" r="9" fill="#f5c542" opacity="0.9"/>
+  <text x="354" y="22" fill="#000" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">3</text>
+  <circle cx="30" cy="128" r="9" fill="#f5c542" opacity="0.9"/>
+  <text x="30" y="132" fill="#000" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">4</text>
+  <circle cx="192" cy="128" r="9" fill="#ff9b3d" opacity="0.9"/>
+  <text x="192" y="132" fill="#000" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">5</text>
+  <circle cx="354" cy="128" r="9" fill="#00ff9d" opacity="0.9"/>
+  <text x="354" y="132" fill="#000" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">6</text>
+</svg>
+
+<h2>Steps</h2>
+
+<h3>1 · Quick Scan (Dashboard / AI Control Tower)</h3>
+<p>Open the Dashboard. The Trading Workflow Rail at the top shows the real-time status of each step in the Daily Trading Loop — green means normal, yellow means a warning, red means a blocker. Below the rail, the P0 area shows the AI market judgment (direction + confidence), current position P&L, and the number of pending confirmations. Spend 30 seconds building a first impression of today's market.</p>
+<ul>
+  <li><strong>What to look at</strong>: AI market judgment direction and confidence, whether position P&L is positive or negative, number of pending confirmations</li>
+  <li><strong>How to decide</strong>: Clear AI direction (confidence ≥ 70%) with mostly profitable positions means you can participate actively. Low confidence or large losses signal caution.</li>
+  <li><strong>Next</strong>: Regardless of what you see, proceed to the next step — Market Structure.</li>
+</ul>
+
+<h3>2 · Check Market Structure (Market Structure)</h3>
+<p>Go to the Market Structure page. Select your main trading pair's higher timeframe (start with 4H or 1H). The top area shows the current market regime label (Uptrend / Downtrend / Ranging / High Volatility / Panic) and a structure score (0-100). Below that is the event timeline — recent BoS (Break of Structure), CHoCH (Change of Character), and Sweep (Liquidity Sweep) events.</p>
+<ul>
+  <li><strong>What to look at</strong>: The structure score and the direction of the most recent structural event</li>
+  <li><strong>How to decide</strong>: Score ≥ 70 means healthy structure. If the latest event is a BoS aligned with your intended direction, it is a good entry environment. A CHoCH or Sweep suggests the market may be turning — proceed with caution.</li>
+  <li><strong>Next</strong>: Score ≥ 60 with a clear trend → continue to the Structure Matrix. If score is below 40 or the market is in "Panic" mode, consider skipping trading today.</li>
+</ul>
+
+<h3>3 · Multi-Timeframe Structure Review (Structure Matrix / HTF Tribunal)</h3>
+<p>Open the Structure Matrix page. You will see a 4x4 grid — rows are timeframes (5m / 15m / 1H / 4H), columns are structure zone types (OB / FVG / LP). Each cell shows a strength percentage for that period and zone. The verdict panel on the right shows the MTF Guard state machine's final opinion: Allow, Observe, Require Confirmation, Reduce Position, or Block Entry. The countdown ring above the grid shows time remaining on the slowest candle.</p>
+<ul>
+  <li><strong>What to look at</strong>: The verdict panel's final ruling and whether all timeframes are aligned</li>
+  <li><strong>How to decide</strong>: "Allow" (green) with consistent direction across timeframes (4H and 1H both bullish/bearish) means you can operate actively. "Require Confirmation" means wait for the Signal Center to corroborate. "Block Entry" (red) means no entry — regardless of how attractive the signal looks.</li>
+  <li><strong>Next</strong>: Verdict is "Allow" or "Observe" → go to the Signal Center. Verdict is "Block Entry" → the loop ends here. Wait.</li>
+</ul>
+
+<h3>4 · Review Fused Signals (Signal Center)</h3>
+<p>Enter the Signal Center. The default view shows fused signals from all sources, sorted by composite score descending. The score is a weighted average of each source strategy's performance over the last 30 days. Click a signal card to expand the detail panel showing each source's contribution weight and analysis. You can also filter by source or direction.</p>
+<ul>
+  <li><strong>What to look at</strong>: The highest-scored signals, their direction, and risk level</li>
+  <li><strong>How to decide</strong>: Score ≥ 4.0 with direction matching both the Market Structure and MTF verdict is a high-quality entry signal. Scores 2.5-4.0 are worth noting but need extra confirmation. Ignore anything below 2.5.</li>
+  <li><strong>Next</strong>: If there is a high-quality signal aligned with your structure analysis → go to the Risk Center to check exposure. If no signals or they conflict with the structure read → the loop ends here for today.</li>
+</ul>
+
+<h3>5 · Assess Risk Water Level (Risk Center)</h3>
+<p>Open the Risk Center. The large arc gauge at the top shows the overall risk state: SAFE (green) / WARN (yellow) / RISK (orange) / LOCK (red) / HALT (red). Below are four risk guard cards — daily loss limit, weekly loss limit, total exposure, and consecutive losses — each showing the current consumption ratio. The emergency panel in the bottom right has "Block New Positions" and "Emergency Stop" buttons.</p>
+<ul>
+  <li><strong>What to look at</strong>: The gauge color and state label, plus each guard's consumption percentage</li>
+  <li><strong>How to decide</strong>: SAFE with all guards under 60% = normal trading. WARN with a guard near 80% = reduce new entries. RISK or LOCK = stop new entries immediately, investigate the cause. HALT = circuit breaker triggered.</li>
+  <li><strong>Next</strong>: Risk state is SAFE or WARN → proceed to the Execution Center. RISK or above → stop trading and resolve the risk issue first.</li>
+</ul>
+
+<h3>6 · Act or Wait (Execution Center)</h3>
+<p>Final stop — the Execution Center. Check all running sessions: heartbeats normal, latency within threshold, position and open order counts look reasonable. If the previous steps all passed, this is usually just a confirmation that everything is fine. If you trade manually, you can open or adjust positions here. For automated strategies, confirm they are executing as expected.</p>
+<ul>
+  <li><strong>What to look at</strong>: All session status dots (green/yellow/red), Freqtrade heartbeat, average latency</li>
+  <li><strong>How to decide</strong>: All sessions green + healthy heartbeat + latency < 200ms = everything is normal. Yellow or red sessions need investigation.</li>
+  <li><strong>Next</strong>: The daily loop is complete. Set up Dashboard alerts if needed, then go do something else. Come back before market close for a quick check on the Execution Center.</li>
+</ul>
+
+<h2>When You're Done — Self-Check</h2>
+<ul>
+  <li>☐ Today's market structure read (uptrend/downtrend/ranging) is noted</li>
+  <li>☐ Risk Center gauge is still green (SAFE) or at most yellow (WARN)</li>
+  <li>☐ Execution Center has no red abnormal sessions</li>
+  <li>☐ If new positions were opened, they appear on the Orders/Positions page</li>
+</ul>
+
+<h2>If Something Goes Wrong</h2>
+<ul>
+  <li><strong>Dashboard loads slowly or shows system errors</strong> — Check the Live Readiness page first to confirm component health. Common causes: Freqtrade not started or Redis disconnected.</li>
+  <li><strong>Market structure score drops from 80 to 30 suddenly</strong> — A CHoCH (structure reversal) or high-volatility event likely occurred. Switch to a lower timeframe (5m/15m) to confirm details. Consider a conservative approach today.</li>
+  <li><strong>MTF verdict is "Block Entry" with no obvious reason</strong> — Open the Shadow Window panel (below the Structure Matrix) to check for hidden opposing structures on higher timeframes you might have missed.</li>
+  <li><strong>Signal Center shows no high-score signals</strong> — The market may be ranging, and your strategies are not generating signals. This is normal — not every trading day has opportunities.</li>
+  <li><strong>Risk gauge turns red (RISK or above)</strong> — Stop new entries immediately. Check which guard was triggered. Go to the Stop Protection page to see individual position stop-loss states. If the circuit breaker has fired, wait for auto-unlock or manually assess and reset.</li>
+</ul>
+
+<h2>See Also</h2>
+<ul>
+  <li><a href="#/concepts/03-market-structure">Concept · Market Structure</a></li>
+  <li><a href="#/concepts/07-multi-timeframe">Concept · Multi-Timeframe Analysis</a></li>
+  <li><a href="#/concepts/08-risk-basics">Concept · Risk Basics</a></li>
+  <li><a href="#/pages/overview/dashboard">Page · AI Control Tower</a></li>
+  <li><a href="#/pages/structure/market-structure">Page · Market Structure</a></li>
+  <li><a href="#/pages/structure/structure-matrix">Page · Structure Matrix</a></li>
+  <li><a href="#/pages/ai-research/signal-center">Page · Signal Center</a></li>
+  <li><a href="#/pages/risk/risk-center">Page · Risk Center</a></li>
+  <li><a href="#/pages/execution/execution-center">Page · Execution Center</a></li>
+</ul>

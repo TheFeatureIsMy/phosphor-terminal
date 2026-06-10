@@ -1,0 +1,160 @@
+<h1>第一个策略：从零到实盘</h1>
+<p class="chapter-meta">情景 · 1 / 5 · 8 分钟</p>
+
+<blockquote class="lede">从头脑里的一个交易想法开始，经过 AI 研究、策略创建、回测验证、干跑观察，最终以小仓位上线实盘——完成一条完整的策略生命周期。</blockquote>
+
+<h2>开始前 · 检查清单</h2>
+<ul>
+  <li>☐ 后端已启动，Dashboard 正常加载</li>
+  <li>☐ Freqtrade 服务运行中，交易所 API 已配置</li>
+  <li>☐ 至少有一个交易对的行情数据可用（推荐 BTC/USDT）</li>
+</ul>
+
+<h2>流程图</h2>
+<svg class="diagram" viewBox="0 0 600 280" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="280" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- Row 1: 4 boxes -->
+  <!-- Box 1: AI Research Room (observe) -->
+  <rect x="30" y="30" width="110" height="60" rx="4" fill="rgba(80,180,255,0.12)" stroke="#50b4ff" stroke-width="1.2"/>
+  <text x="85" y="54" fill="#e8eaee" font-family="monospace" font-size="10" text-anchor="middle">AI 投研室</text>
+  <text x="85" y="72" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">研究生成想法</text>
+
+  <!-- Arrow 1 -->
+  <line x1="144" y1="60" x2="162" y2="60" stroke="#5e636d" stroke-width="1.5"/>
+  <polygon points="168,60 160,56 160,64" fill="#5e636d"/>
+
+  <!-- Box 2: Strategy Workspace (act) -->
+  <rect x="172" y="30" width="110" height="60" rx="4" fill="rgba(0,255,157,0.12)" stroke="#00ff9d" stroke-width="1.2"/>
+  <text x="227" y="54" fill="#e8eaee" font-family="monospace" font-size="10" text-anchor="middle">策略工作区</text>
+  <text x="227" y="72" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">创建策略</text>
+
+  <!-- Arrow 2 -->
+  <line x1="286" y1="60" x2="304" y2="60" stroke="#5e636d" stroke-width="1.5"/>
+  <polygon points="310,60 302,56 302,64" fill="#5e636d"/>
+
+  <!-- Box 3: Backtest (decide) -->
+  <rect x="314" y="30" width="110" height="60" rx="4" fill="rgba(245,197,66,0.12)" stroke="#f5c542" stroke-width="1.2"/>
+  <text x="369" y="54" fill="#e8eaee" font-family="monospace" font-size="10" text-anchor="middle">回测与模拟</text>
+  <text x="369" y="72" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">验证结果</text>
+
+  <!-- Arrow 3 -->
+  <line x1="428" y1="60" x2="446" y2="60" stroke="#5e636d" stroke-width="1.5"/>
+  <polygon points="452,60 444,56 444,64" fill="#5e636d"/>
+
+  <!-- Box 4: Execution Center (act) -->
+  <rect x="456" y="30" width="110" height="60" rx="4" fill="rgba(0,255,157,0.12)" stroke="#00ff9d" stroke-width="1.2"/>
+  <text x="511" y="54" fill="#e8eaee" font-family="monospace" font-size="10" text-anchor="middle">执行中心</text>
+  <text x="511" y="72" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">干跑 1 周</text>
+
+  <!-- Down arrow from row 1 to row 2 -->
+  <line x1="511" y1="90" x2="511" y2="150" stroke="#5e636d" stroke-width="1.5"/>
+  <polygon points="511,156 507,148 515,148" fill="#5e636d"/>
+
+  <!-- Row 2: 2 boxes centered -->
+  <!-- Box 5: Live Readiness (decide) -->
+  <rect x="240" y="160" width="110" height="60" rx="4" fill="rgba(245,197,66,0.12)" stroke="#f5c542" stroke-width="1.2"/>
+  <text x="295" y="184" fill="#e8eaee" font-family="monospace" font-size="10" text-anchor="middle">实盘准入</text>
+  <text x="295" y="202" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">检查通过</text>
+
+  <!-- Arrow 5 -->
+  <line x1="354" y1="190" x2="372" y2="190" stroke="#5e636d" stroke-width="1.5"/>
+  <polygon points="378,190 370,186 370,194" fill="#5e636d"/>
+
+  <!-- Box 6: Execution Center (act) -->
+  <rect x="382" y="160" width="110" height="60" rx="4" fill="rgba(0,255,157,0.12)" stroke="#00ff9d" stroke-width="1.2"/>
+  <text x="437" y="184" fill="#e8eaee" font-family="monospace" font-size="10" text-anchor="middle">执行中心</text>
+  <text x="437" y="202" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">实盘小仓</text>
+
+  <!-- Step numbers -->
+  <circle cx="40" cy="18" r="9" fill="#00ff9d" opacity="0.9"/>
+  <text x="40" y="22" fill="#000" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">1</text>
+  <circle cx="182" cy="18" r="9" fill="#00ff9d" opacity="0.9"/>
+  <text x="182" y="22" fill="#000" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">2</text>
+  <circle cx="324" cy="18" r="9" fill="#f5c542" opacity="0.9"/>
+  <text x="324" y="22" fill="#000" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">3</text>
+  <circle cx="466" cy="18" r="9" fill="#00ff9d" opacity="0.9"/>
+  <text x="466" y="22" fill="#000" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">4</text>
+  <circle cx="250" cy="148" r="9" fill="#f5c542" opacity="0.9"/>
+  <text x="250" y="152" fill="#000" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">5</text>
+  <circle cx="392" cy="148" r="9" fill="#00ff9d" opacity="0.9"/>
+  <text x="392" y="152" fill="#000" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">6</text>
+</svg>
+
+<h2>步骤</h2>
+
+<h3>1 · 用 AI 投研生成策略想法（AI 投研室）</h3>
+<p>打开 AI 投研室，输入你想交易的标的（比如 BTC/USDT）。选择 Standard 研究深度，点"开始研究"。系统会并行派出 7 个研究员角色，分别从技术面、情绪面、新闻面、链上分析等角度分析市场。2 分钟后你会看到最终评级面板。</p>
+<ul>
+  <li><strong>看什么</strong>: 最终评级的综合置信度</li>
+  <li><strong>怎么判断</strong>: 置信度 ≥ 70% 且方向明确（看多或看空），说明市场信号足够强，值得据此构建策略。40-70% 需要谨慎，低于 40% 建议换一个标的或等一等。</li>
+  <li><strong>下一步</strong>: 如果评级可用，点击"生成策略草稿"按钮，系统会自动跳转到策略工作区并填入初始参数。</li>
+</ul>
+
+<h3>2 · 创建策略（策略工作区）</h3>
+<p>策略工作区中你会看到一个预填的策略草稿卡片——名称、标的、初始参数已经来自 AI 研究的输出。确认一下策略名称和交易对是否正确。你也可以点击"画布"标签页，进入策略画布，用拖拽节点的方式可视化调整逻辑。</p>
+<ul>
+  <li><strong>看什么</strong>: 策略名称旁边的状态标签——应该是"草稿"</li>
+  <li><strong>怎么判断</strong>: 状态为"草稿"说明策略还未生效。来源如果是"AI Research"说明研究结果已正确传递。右上角应该显示一个绿色"验证通过"或黄色警告。</li>
+  <li><strong>下一步</strong>: 验证通过后，点击"回测"标签页准备验证。</li>
+</ul>
+
+<h3>3 · 运行回测（回测与模拟）</h3>
+<p>在回测标签页，设置时间范围（建议至少 3-6 个月历史数据）、初始资金（默认 100,000 USDT）和交易标的。点击"启动回测"。系统会以异步方式执行——你可以在结果面板看到轮询进度。回测完成后，结果区域会显示总收益率、夏普比率、最大回撤、胜率等关键指标。</p>
+<ul>
+  <li><strong>看什么</strong>: 总收益率、夏普比率和最大回撤</li>
+  <li><strong>怎么判断</strong>: 夏普比率 > 1.5 说明风险调整后收益合理。最大回撤不超过你的心理底线（通常 < 20%）。总收益率跑赢基准即可——不要追求不切实际的超高收益。</li>
+  <li><strong>下一步</strong>: 如果结果满意，切换到"模拟"标签页，启动纸交易。如果结果不理想，回到策略详情页修改参数或 DSL 规则，重新回测。</li>
+</ul>
+
+<h3>4 · 启动干跑（执行中心）</h3>
+<p>回到策略详情页，点"启动模拟"按钮（或在执行中心的操作菜单中选择"启动干跑"）。系统会在 Freqtrade 中以 dry-run 模式运行你的策略——接收实时行情，但不下真实订单。你可以在执行中心看到新创建的会话，模式标注为"dryrun"。</p>
+<ul>
+  <li><strong>看什么</strong>: 执行中心顶部汇总卡片的"运行中"计数是否增加，新会话的状态是否为绿色圆点</li>
+  <li><strong>怎么判断</strong>: 绿色圆点 + "dryrun" 标签 = 正常运行。延迟在 200ms 以内正常。</li>
+  <li><strong>下一步</strong>: 让它跑至少 1 周。这期间每天来执行中心看一眼，确认信号生成和下单逻辑正常。</li>
+</ul>
+
+<h3>5 · 实盘准入检查（实盘准入检查）</h3>
+<p>干跑 1 周后，如果你对策略表现满意，打开实盘准入检查页面。系统会自动检查 Fast Track 延迟、Redis RTT、Freqtrade 状态、交易所 API 权重等各项指标，计算一个 0-100 的准入分数，并告诉你当前允许的交易模式。</p>
+<ul>
+  <li><strong>看什么</strong>: 准入分数和右侧的状态横幅</li>
+  <li><strong>怎么判断</strong>: 准入分数 ≥ 80 且状态为 LIVE_SMALL_READY，表示可以上线小仓。如果有红色阻断项（比如交易所 API 权重耗尽或 Freqtrade 心跳超时），需要先解决它们。</li>
+  <li><strong>下一步</strong>: 准入通过后，回到执行中心。</li>
+</ul>
+
+<h3>6 · 切换实盘小仓（执行中心）</h3>
+<p>在执行中心找到你的策略会话，点击模式标签旁边的操作菜单，选择"切换为实盘"。系统会弹出确认对话框——建议设置一个小仓位比例（比如 10-20% 的资金）。确认后会话模式从 "dryrun" 变为 "live"，你的策略开始用真金白银交易。</p>
+<ul>
+  <li><strong>看什么</strong>: 会话的模式标签从黄色 "dryrun" 变为红色 "live"</li>
+  <li><strong>怎么判断</strong>: 红色 "live" 标签 + 正常的心跳 = 实盘运行中。首次实盘建议前 3 天每几小时来看一次。</li>
+  <li><strong>下一步</strong>: 持续观察至少 1 周。如果表现稳定，可以逐步增加仓位。如果出现异常，随时可以点"紧急停止"。</li>
+</ul>
+
+<h2>结束后 · 自验证</h2>
+<ul>
+  <li>☐ 执行中心显示策略会话模式为 "live"，状态绿色</li>
+  <li>☐ 订单/持仓页面可以看到真实挂单和持仓</li>
+  <li>☐ Dashboard 的持仓区域显示对应标的的 PnL</li>
+</ul>
+
+<h2>遇到问题</h2>
+<ul>
+  <li><strong>策略无法创建</strong> — 检查名称是否重复，或 DSL 规则是否有语法错误。查看策略详情页底部的验证状态栏。</li>
+  <li><strong>回测一直"排队中"</strong> — 检查 Fast Track 服务是否正常运行（实盘准入检查页可以看）。也检查数据源管理页面，确认历史数据已下载。</li>
+  <li><strong>干跑没有产生任何信号</strong> — 在策略详情页检查信号日志。可能是条件设置太严格。也可以回到 AI 投研室检查当前市场状态是否适合该策略类型。</li>
+  <li><strong>实盘准入不通过</strong> — 展开警告项列表，逐一解决。最常见的原因是交易所 API 权重不足或 Freqtrade 心跳超时。</li>
+  <li><strong>切换实盘后立即出现亏损</strong> — 这是正常的滑点效应。小仓位运行几天，如果亏损持续扩大，点"紧急停止"并回到回测页面重新分析。</li>
+</ul>
+
+<h2>相关</h2>
+<ul>
+  <li><a href="#/concepts/09-dryrun-vs-live">概念 · 回测 vs 干跑 vs 实盘</a></li>
+  <li><a href="#/concepts/10-ai-roles">概念 · AI 角色</a></li>
+  <li><a href="#/pages/ai-research/ai-research-room">页面 · AI 投研室</a></li>
+  <li><a href="#/pages/strategy/strategy-workspace">页面 · 策略工作区</a></li>
+  <li><a href="#/pages/strategy/strategy-canvas">页面 · 策略画布</a></li>
+  <li><a href="#/pages/strategy/backtest-simulation">页面 · 回测与模拟</a></li>
+  <li><a href="#/pages/execution/execution-center">页面 · 执行中心</a></li>
+  <li><a href="#/pages/overview/live-readiness">页面 · 实盘准入检查</a></li>
+</ul>

@@ -1,0 +1,149 @@
+<h1>First Strategy: From Zero to Live</h1>
+<p class="chapter-meta">Walkthrough · 1 / 5 · 8 min</p>
+
+<blockquote class="lede">Start with a trading idea in your head, move through AI research, strategy creation, backtest validation, dry-run observation, and finally go live with a small position — a complete strategy lifecycle in one walkthrough.</blockquote>
+
+<h2>Before You Start — Checklist</h2>
+<ul>
+  <li>☐ Backend is running, Dashboard loads without errors</li>
+  <li>☐ Freqtrade service is active and exchange API is configured</li>
+  <li>☐ At least one trading pair has market data available (BTC/USDT recommended)</li>
+</ul>
+
+<h2>Flow</h2>
+<svg class="diagram" viewBox="0 0 600 280" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="280" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- Row 1: 4 boxes -->
+  <rect x="30" y="30" width="110" height="60" rx="4" fill="rgba(80,180,255,0.12)" stroke="#50b4ff" stroke-width="1.2"/>
+  <text x="85" y="54" fill="#e8eaee" font-family="monospace" font-size="10" text-anchor="middle">AI Research</text>
+  <text x="85" y="72" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">Generate Idea</text>
+
+  <line x1="144" y1="60" x2="162" y2="60" stroke="#5e636d" stroke-width="1.5"/>
+  <polygon points="168,60 160,56 160,64" fill="#5e636d"/>
+
+  <rect x="172" y="30" width="110" height="60" rx="4" fill="rgba(0,255,157,0.12)" stroke="#00ff9d" stroke-width="1.2"/>
+  <text x="227" y="54" fill="#e8eaee" font-family="monospace" font-size="10" text-anchor="middle">Workspace</text>
+  <text x="227" y="72" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">Create Strategy</text>
+
+  <line x1="286" y1="60" x2="304" y2="60" stroke="#5e636d" stroke-width="1.5"/>
+  <polygon points="310,60 302,56 302,64" fill="#5e636d"/>
+
+  <rect x="314" y="30" width="110" height="60" rx="4" fill="rgba(245,197,66,0.12)" stroke="#f5c542" stroke-width="1.2"/>
+  <text x="369" y="54" fill="#e8eaee" font-family="monospace" font-size="10" text-anchor="middle">Backtest</text>
+  <text x="369" y="72" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">Validate Results</text>
+
+  <line x1="428" y1="60" x2="446" y2="60" stroke="#5e636d" stroke-width="1.5"/>
+  <polygon points="452,60 444,56 444,64" fill="#5e636d"/>
+
+  <rect x="456" y="30" width="110" height="60" rx="4" fill="rgba(0,255,157,0.12)" stroke="#00ff9d" stroke-width="1.2"/>
+  <text x="511" y="54" fill="#e8eaee" font-family="monospace" font-size="10" text-anchor="middle">Execution</text>
+  <text x="511" y="72" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">Dry-run 1 Week</text>
+
+  <line x1="511" y1="90" x2="511" y2="150" stroke="#5e636d" stroke-width="1.5"/>
+  <polygon points="511,156 507,148 515,148" fill="#5e636d"/>
+
+  <!-- Row 2 -->
+  <rect x="240" y="160" width="110" height="60" rx="4" fill="rgba(245,197,66,0.12)" stroke="#f5c542" stroke-width="1.2"/>
+  <text x="295" y="184" fill="#e8eaee" font-family="monospace" font-size="10" text-anchor="middle">Live Readiness</text>
+  <text x="295" y="202" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">Pre-flight Pass</text>
+
+  <line x1="354" y1="190" x2="372" y2="190" stroke="#5e636d" stroke-width="1.5"/>
+  <polygon points="378,190 370,186 370,194" fill="#5e636d"/>
+
+  <rect x="382" y="160" width="110" height="60" rx="4" fill="rgba(0,255,157,0.12)" stroke="#00ff9d" stroke-width="1.2"/>
+  <text x="437" y="184" fill="#e8eaee" font-family="monospace" font-size="10" text-anchor="middle">Execution</text>
+  <text x="437" y="202" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">Live Small</text>
+
+  <!-- Step numbers -->
+  <circle cx="40" cy="18" r="9" fill="#00ff9d" opacity="0.9"/>
+  <text x="40" y="22" fill="#000" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">1</text>
+  <circle cx="182" cy="18" r="9" fill="#00ff9d" opacity="0.9"/>
+  <text x="182" y="22" fill="#000" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">2</text>
+  <circle cx="324" cy="18" r="9" fill="#f5c542" opacity="0.9"/>
+  <text x="324" y="22" fill="#000" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">3</text>
+  <circle cx="466" cy="18" r="9" fill="#00ff9d" opacity="0.9"/>
+  <text x="466" y="22" fill="#000" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">4</text>
+  <circle cx="250" cy="148" r="9" fill="#f5c542" opacity="0.9"/>
+  <text x="250" y="152" fill="#000" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">5</text>
+  <circle cx="392" cy="148" r="9" fill="#00ff9d" opacity="0.9"/>
+  <text x="392" y="152" fill="#000" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">6</text>
+</svg>
+
+<h2>Steps</h2>
+
+<h3>1 · Generate a Strategy Idea (AI Research Room)</h3>
+<p>Open the AI Research Room and enter a trading pair, say BTC/USDT. Select Standard depth and click "Start Research." The system dispatches 7 AI researcher roles in parallel — technical analysis, sentiment, news, on-chain data, and more. In about 2 minutes you will see the final rating panel with a direction and confidence score.</p>
+<ul>
+  <li><strong>What to look at</strong>: The final rating's composite confidence score</li>
+  <li><strong>How to decide</strong>: Confidence ≥ 70% with a clear direction (bullish or bearish) means the market signal is strong enough to build a strategy on. 40-70% needs caution. Below 40% — pick a different pair or wait.</li>
+  <li><strong>Next</strong>: If the rating is usable, click "Generate Strategy Draft." The system auto-navigates to the Strategy Workspace with initial parameters pre-filled.</li>
+</ul>
+
+<h3>2 · Create the Strategy (Strategy Workspace)</h3>
+<p>In the Strategy Workspace, you will find a pre-filled draft card — name, trading pair, and initial parameters already carried over from the AI research output. Verify the name and pair are correct. Optionally switch to the Canvas tab to visually drag-and-drop nodes to fine-tune the logic.</p>
+<ul>
+  <li><strong>What to look at</strong>: The status badge next to the strategy name — it should read "Draft"</li>
+  <li><strong>How to decide</strong>: "Draft" means the strategy is not yet active. Source should say "AI Research" if the research result carried over correctly. The validation status bar should show green "Valid" or a yellow warning.</li>
+  <li><strong>Next</strong>: Once validation passes, click the "Backtest" tab to run the first validation.</li>
+</ul>
+
+<h3>3 · Run a Backtest (Backtest & Simulation)</h3>
+<p>In the Backtest tab, set the date range (at least 3-6 months of historical data), initial capital (default 100,000 USDT), and trading pair. Click "Run Backtest." The system executes asynchronously — you can watch the polling progress on the results panel. Once finished, the results area shows total return, Sharpe ratio, max drawdown, and win rate.</p>
+<ul>
+  <li><strong>What to look at</strong>: Total return, Sharpe ratio, and max drawdown</li>
+  <li><strong>How to decide</strong>: Sharpe > 1.5 means risk-adjusted returns are reasonable. Max drawdown should be within your comfort zone (typically < 20%). Total return beating the benchmark is enough — do not chase unrealistic numbers.</li>
+  <li><strong>Next</strong>: If results look good, switch to the Simulation tab and start paper trading. If not, return to the strategy detail page to adjust parameters or DSL rules, then re-run the backtest.</li>
+</ul>
+
+<h3>4 · Start a Dry-Run (Execution Center)</h3>
+<p>Back on the strategy detail page, click "Start Paper Trading" (or select "Start Dry-Run" from the action menu in the Execution Center). The system launches a Freqtrade session in dry-run mode — it receives live market data but places no real orders. The Execution Center will show a new session labeled "dryrun."</p>
+<ul>
+  <li><strong>What to look at</strong>: The "Running" count on the summary cards should increase by 1. The new session should show a green status dot.</li>
+  <li><strong>How to decide</strong>: Green dot + "dryrun" label = running normally. Latency under 200ms is healthy.</li>
+  <li><strong>Next</strong>: Let it run for at least 1 week. Check the Execution Center daily to confirm signals and mock order logic are working correctly.</li>
+</ul>
+
+<h3>5 · Pass Live Readiness (Live Readiness)</h3>
+<p>After 1 week of dry-run, if you are satisfied with the strategy's behavior, open the Live Readiness page. The system automatically checks Fast Track latency, Redis RTT, Freqtrade status, exchange API weight, and other indicators. It calculates a 0-100 readiness score and tells you what trading modes are currently allowed.</p>
+<ul>
+  <li><strong>What to look at</strong>: The readiness score and the status banner on the right</li>
+  <li><strong>How to decide</strong>: Score ≥ 80 and status showing "LIVE_SMALL_READY" means you can go live with small size. Red blockers (e.g., exchange API weight exhausted or Freqtrade heartbeat timeout) need to be resolved first.</li>
+  <li><strong>Next</strong>: If the check passes, head back to the Execution Center.</li>
+</ul>
+
+<h3>6 · Switch to Live Small (Execution Center)</h3>
+<p>Find your strategy session in the Execution Center. Click the action menu next to the mode badge and select "Switch to Live." A confirmation dialog appears — set a small position ratio (10-20% of capital is a good start). Confirm, and the session mode changes from "dryrun" to "live." Your strategy is now trading real money.</p>
+<ul>
+  <li><strong>What to look at</strong>: The session mode badge changes from yellow "dryrun" to red "live"</li>
+  <li><strong>How to decide</strong>: Red "live" badge + healthy heartbeat = live and running. For the first 3 days, check in every few hours.</li>
+  <li><strong>Next</strong>: Monitor for at least 1 week. If stable, gradually increase position size. If anything looks wrong, hit "Emergency Stop" immediately.</li>
+</ul>
+
+<h2>When You're Done — Self-Check</h2>
+<ul>
+  <li>☐ Execution Center shows the session mode as "live" with a green status dot</li>
+  <li>☐ Orders/Positions page shows real open orders and positions</li>
+  <li>☐ Dashboard's position area displays PnL for the traded pair</li>
+</ul>
+
+<h2>If Something Goes Wrong</h2>
+<ul>
+  <li><strong>Strategy cannot be created</strong> — Check for duplicate names or DSL syntax errors. Look at the validation status bar at the bottom of the strategy detail page.</li>
+  <li><strong>Backtest stuck on "queued"</strong> — Check if Fast Track is running (the Live Readiness page can confirm). Also check the Data Source Management page to confirm historical data has been downloaded.</li>
+  <li><strong>Dry-run produces zero signals</strong> — Check the signal log on the strategy detail page. The conditions may be too strict. Return to the AI Research Room to see if the current market regime suits your strategy type.</li>
+  <li><strong>Live Readiness fails</strong> — Expand the warnings list and address each item. The most common causes are low exchange API weight or Freqtrade heartbeat timeout.</li>
+  <li><strong>Immediate losses after switching to live</strong> — Slippage effect is normal. Run small for a few days. If losses keep mounting, hit "Emergency Stop" and go back to the backtest page to re-analyze.</li>
+</ul>
+
+<h2>See Also</h2>
+<ul>
+  <li><a href="#/concepts/09-dryrun-vs-live">Concept · Backtest vs Dry-Run vs Live</a></li>
+  <li><a href="#/concepts/10-ai-roles">Concept · AI Roles</a></li>
+  <li><a href="#/pages/ai-research/ai-research-room">Page · AI Research Room</a></li>
+  <li><a href="#/pages/strategy/strategy-workspace">Page · Strategy Workspace</a></li>
+  <li><a href="#/pages/strategy/strategy-canvas">Page · Strategy Canvas</a></li>
+  <li><a href="#/pages/strategy/backtest-simulation">Page · Backtest & Simulation</a></li>
+  <li><a href="#/pages/execution/execution-center">Page · Execution Center</a></li>
+  <li><a href="#/pages/overview/live-readiness">Page · Live Readiness</a></li>
+</ul>
