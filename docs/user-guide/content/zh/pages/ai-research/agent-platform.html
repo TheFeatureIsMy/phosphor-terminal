@@ -1,0 +1,114 @@
+<h1>代理平台</h1>
+<p class="chapter-meta">页面 · AI 研究 · 5 分钟</p>
+
+<blockquote class="lede">配置、监控和管理你的 AI 交易代理——每个代理是一个独立的研究分析师，定期扫描市场并产生信号。</blockquote>
+
+<h2>TL;DR</h2>
+<p>代理平台是一个 AI 代理的"控制室"。每个代理是一个可独立配置的分析角色，有自己的 LLM 提供商、研究偏好和输出格式。你可以在这里查看所有代理的运行状态、最近产出信号的统计、以及单个代理的详细表现。代理就像你的研究员团队——你可以给他们分配不同的标的研究任务、调整分析深度、甚至选择不同的 AI 模型后端。</p>
+
+<h2>谁用 · 何时用</h2>
+<p>管理多条策略的高级交易者和量化开发者。当你希望 AI 持续跟踪多个标的、定期产出研究报告和信号时，需要来这里配置代理。也适合在部署新代理后回来检查它是否在正常工作、信号质量如何。</p>
+
+<h2>页面解剖</h2>
+<svg class="diagram" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="320" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- ① Header with count -->
+  <text x="12" y="24" fill="#e8eaee" font-family="monospace" font-size="14" font-weight="bold">Agent Platform</text>
+  <rect x="152" y="12" width="20" height="18" fill="rgba(0,255,157,0.08)" rx="3"/>
+  <text x="158" y="25" fill="#00ff9d" font-family="monospace" font-size="9">6</text>
+
+  <text x="12" y="44" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2460; 顶部栏：标题 + 活跃代理数量徽标</text>
+
+  <!-- ② Agent cards grid (3 columns) -->
+  <rect x="12" y="52" width="180" height="80" fill="rgba(255,255,255,0.02)" rx="4"/>
+  <rect x="12" y="52" width="180" height="80" stroke="rgba(255,255,255,0.08)" stroke-width="1" fill="none" rx="4"/>
+
+  <!-- Card 1 -->
+  <circle cx="28" cy="68" r="4" fill="#00ff9d"/>
+  <text x="38" y="72" fill="#e8eaee" font-family="monospace" font-size="10" font-weight="bold">Tech Analyst</text>
+  <text x="38" y="84" fill="#9ca0a8" font-family="monospace" font-size="8">Provider: OpenAI</text>
+  <text x="38" y="96" fill="#f5c542" font-family="monospace" font-size="8">12 signals this week</text>
+  <rect x="12" y="108" width="180" height="18" fill="rgba(0,255,157,0.06)" rx="2"/>
+  <text x="20" y="121" fill="#00ff9d" font-family="monospace" font-size="8">Avg score 72%</text>
+
+  <!-- Card 2 -->
+  <rect x="202" y="52" width="180" height="80" fill="rgba(255,255,255,0.02)" rx="4"/>
+  <rect x="202" y="52" width="180" height="80" stroke="rgba(255,255,255,0.08)" stroke-width="1" fill="none" rx="4"/>
+  <circle cx="218" cy="68" r="4" fill="#00ff9d"/>
+  <text x="228" y="72" fill="#e8eaee" font-family="monospace" font-size="10" font-weight="bold">Sentiment Scout</text>
+  <text x="228" y="84" fill="#9ca0a8" font-family="monospace" font-size="8">Provider: Anthropic</text>
+  <text x="228" y="96" fill="#f5c542" font-family="monospace" font-size="8">8 signals this week</text>
+  <rect x="202" y="108" width="180" height="18" fill="rgba(245,197,66,0.06)" rx="2"/>
+  <text x="210" y="121" fill="#f5c542" font-family="monospace" font-size="8">Avg score 58%</text>
+
+  <!-- Card 3 -->
+  <rect x="392" y="52" width="196" height="80" fill="rgba(255,255,255,0.02)" rx="4"/>
+  <rect x="392" y="52" width="196" height="80" stroke="rgba(255,255,255,0.08)" stroke-width="1" fill="none" rx="4"/>
+  <circle cx="408" cy="68" r="4" fill="#ff9b3d"/>
+  <text x="418" y="72" fill="#e8eaee" font-family="monospace" font-size="10" font-weight="bold">Risk Guardian</text>
+  <text x="418" y="84" fill="#9ca0a8" font-family="monospace" font-size="8">Provider: OpenAI</text>
+  <text x="418" y="96" fill="#f5c542" font-family="monospace" font-size="8">5 signals this week</text>
+  <rect x="392" y="108" width="196" height="18" fill="rgba(255,84,112,0.06)" rx="2"/>
+  <text x="400" y="121" fill="#ff5470" font-family="monospace" font-size="8">Avg score 42%</text>
+
+  <text x="12" y="148" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2461; Agent 卡片网格：每张卡片显示名称、提供商、状态指示灯（绿=运行中）、周信号数和平均分数</text>
+
+  <!-- ③ Detail panel -->
+  <rect x="12" y="156" width="576" height="140" fill="rgba(255,255,255,0.02)" rx="4"/>
+  <rect x="12" y="156" width="576" height="140" stroke="rgba(255,255,255,0.08)" stroke-width="1" fill="none" rx="4"/>
+
+  <text x="24" y="176" fill="#e8eaee" font-family="monospace" font-size="10" font-weight="bold">Tech Analyst · 配置</text>
+
+  <!-- Config fields -->
+  <text x="24" y="198" fill="#9ca0a8" font-family="monospace" font-size="8">LLM Provider</text>
+  <rect x="120" y="190" width="120" height="18" fill="rgba(0,255,157,0.08)" rx="2"/>
+  <text x="126" y="203" fill="#00ff9d" font-family="monospace" font-size="8">OpenAI</text>
+
+  <text x="24" y="218" fill="#9ca0a8" font-family="monospace" font-size="8">Research Focus</text>
+  <rect x="120" y="210" width="200" height="18" fill="rgba(80,180,255,0.08)" rx="2"/>
+  <text x="126" y="223" fill="#50b4ff" font-family="monospace" font-size="8">Technical + On-Chain</text>
+
+  <text x="24" y="238" fill="#9ca0a8" font-family="monospace" font-size="8">Output Language</text>
+  <rect x="120" y="230" width="80" height="18" fill="rgba(0,255,157,0.08)" rx="2"/>
+  <text x="126" y="243" fill="#00ff9d" font-family="monospace" font-size="8">English</text>
+
+  <!-- Recent signals list -->
+  <rect x="24" y="258" width="540" height="14" fill="rgba(255,255,255,0.02)" rx="2"/>
+  <text x="30" y="269" fill="#e8eaee" font-family="monospace" font-size="8">BTC/USDT → Long @72% · ETH/USDT → Short @65% · SOL/USDT → Hold @51%</text>
+
+  <text x="12" y="300" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2462; 代理详情面板：LLM 提供商、研究偏好、输出语言配置 + 近期信号列表</text>
+</svg>
+<ol>
+  <li><strong>① 顶部栏</strong> — 页面标题和活跃代理总数。代理数量会随你配置的增加而实时更新。</li>
+  <li><strong>② Agent 卡片网格</strong> — 每个代理一张卡片，显示名称、LLM 提供商、运行状态指示灯（绿色=在线、橙色=警告、红色=故障）、本周产生信号数量和平均信号质量分数。点击卡片打开详情面板。</li>
+  <li><strong>③ 代理详情面板</strong> — 选中代理后可查看和编辑配置：LLM 提供商、研究偏好（如技术+链上、仅情绪等）、输出语言。下方显示该代理近期产出的信号列表。</li>
+</ol>
+
+<h2>关键指标怎么读</h2>
+<ul>
+  <li><strong>平均分数</strong> — 该代理所有信号在信号融合系统中的平均得分。持续高于 70% 说明代理表现好；持续低于 40% 可能需要调整配置或检查数据源。</li>
+  <li><strong>周信号数</strong> — 信号数量本身不是质量指标——有时一个代理一周只发 2 个高精度信号比发 20 个低质量信号更有价值。结合平均分数看。</li>
+  <li><strong>状态指示灯</strong> — 绿色 = 正常运行；橙色 = 代理运行中但部分数据源异常；红色 = 代理故障（通常是 LLM API 调用失败），需要检查 API Key 或网络连接。</li>
+</ul>
+
+<h2>常见操作 · 一步步</h2>
+<ol>
+  <li>浏览 Agent 卡片网格，查看所有代理的运行状态和性能概览。</li>
+  <li>点击某个代理卡片进入详情面板，查看详细配置和近期信号。</li>
+  <li>在详情面板中修改 LLM 提供商（如从 OpenAI 切换到 Anthropic）或调整研究偏好。</li>
+  <li>回到网格视图，通过右上角的"新增代理"按钮添加新的 AI 代理。</li>
+  <li>配置新代理的名称、研究偏好、输出语言和 LLM 提供商。</li>
+  <li>一段时间后回到代理平台，检查代理的信号质量——如果平均分数持续偏低，尝试调整研究偏好或更换 LLM 提供商。</li>
+</ol>
+
+<h2>幕后</h2>
+<p>代理平台通过 <code>tradingagents_adapter.py</code> 管理每个代理的配置和生命周期。每个代理本质上是一个 TradingAgents 实例，配置了独立的 LLM 提供商和偏好参数。代理运行时产生的信号经过 <code>signal_scoring.py</code> 的评分体系（基于可验证性、证据充分性、具体性、新颖性、风险意识五个维度，加权得到 0-5 分）后进入信号中心。代理的配置持久化在数据库中，每次启动时加载。</p>
+
+<h2>相关</h2>
+<ul>
+  <li><a href="#/concepts/10-ai-roles">概念 · AlphaLoop 中的 AI 角色</a></li>
+  <li><a href="#/pages/ai-research/ai-research-room">页面 · AI 投研室</a></li>
+  <li><a href="#/pages/ai-research/signal-center">页面 · 信号中心</a></li>
+  <li><a href="#/pages/system/data-source-management">页面 · 数据源管理</a></li>
+</ul>

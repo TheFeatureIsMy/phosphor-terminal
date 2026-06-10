@@ -1,0 +1,99 @@
+<h1>AI 投研室</h1>
+<p class="chapter-meta">页面 · AI 研究 · 5 分钟</p>
+
+<blockquote class="lede">输入一个标的，7 个 AI 研究员从不同视角并行分析，最终给出方向评级和交易建议。</blockquote>
+
+<h2>TL;DR</h2>
+<p>AI 投研室是 AlphaLoop 里"研究员"角色的前端入口。你选择一个交易对、选择研究深度，AI 会从技术面、情绪面、新闻面、基本面、链上数据、多空论证、风险评估 7 个视角并行分析，综合给出看多/看空/震荡的判断和置信度。结果可以一键发布为信号或生成策略草稿。</p>
+
+<h2>谁用 · 何时用</h2>
+<p>每个交易者在入场前都应该来一趟 AI 投研室——不管是手动交易还是使用自动策略。当你想快速了解一个陌生标的，或者对熟悉的标的想听听 AI 的独立判断时，花 2-5 分钟做一个研究，能得到 7 个视角的参考意见。研究结果也可以作为信号源，纳入后续的融合打分体系。</p>
+
+<h2>页面解剖</h2>
+<svg class="diagram" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="320" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- ① Symbol input + depth selector -->
+  <rect x="12" y="8" width="576" height="56" fill="rgba(255,255,255,0.02)" rx="4"/>
+  <text x="24" y="24" fill="#00ff9d" font-family="monospace" font-size="9" font-weight="bold">BTC/USDT</text>
+  <rect x="24" y="30" width="80" height="18" fill="rgba(0,255,157,0.08)" rx="3"/>
+  <text x="30" y="43" fill="#00ff9d" font-family="monospace" font-size="9">STANDARD</text>
+  <rect x="120" y="30" width="40" height="18" fill="rgba(255,255,255,0.04)" rx="3"/>
+  <text x="126" y="43" fill="#9ca0a8" font-family="monospace" font-size="9">DEEP</text>
+
+  <text x="12" y="80" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2460; 标的输入 + 研究深度选择（Quick / Standard / Deep）</text>
+
+  <!-- ② 7 perspective panels (3+3+1 layout) -->
+  <rect x="12" y="88" width="185" height="60" fill="rgba(0,255,157,0.08)" rx="3"/>
+  <text x="20" y="104" fill="#e8eaee" font-family="monospace" font-size="9">&#x2461; 多头观点</text>
+  <text x="20" y="118" fill="#00ff9d" font-family="monospace" font-size="8">置信度 78%</text>
+  <text x="20" y="130" fill="#9ca0a8" font-family="monospace" font-size="7">上升趋势 成交量配合</text>
+
+  <rect x="207" y="88" width="185" height="60" fill="rgba(255,84,112,0.08)" rx="3"/>
+  <text x="215" y="104" fill="#e8eaee" font-family="monospace" font-size="9">空头观点</text>
+  <text x="215" y="118" fill="#ff5470" font-family="monospace" font-size="8">置信度 52%</text>
+  <text x="215" y="130" fill="#9ca0a8" font-family="monospace" font-size="7">前高阻力 获利抛压</text>
+
+  <rect x="402" y="88" width="186" height="60" fill="rgba(80,180,255,0.08)" rx="3"/>
+  <text x="410" y="104" fill="#e8eaee" font-family="monospace" font-size="9">技术分析</text>
+  <text x="410" y="118" fill="#50b4ff" font-family="monospace" font-size="8">置信度 72%</text>
+  <text x="410" y="130" fill="#9ca0a8" font-family="monospace" font-size="7">MACD 金叉 RSI 中性</text>
+
+  <rect x="12" y="156" width="185" height="60" fill="rgba(80,180,255,0.08)" rx="3"/>
+  <text x="20" y="172" fill="#e8eaee" font-family="monospace" font-size="9">情绪分析</text>
+  <text x="20" y="186" fill="#50b4ff" font-family="monospace" font-size="8">置信度 65%</text>
+  <text x="20" y="198" fill="#9ca0a8" font-family="monospace" font-size="7">社媒热度+35% 贪婪68</text>
+
+  <rect x="207" y="156" width="185" height="60" fill="rgba(0,255,157,0.08)" rx="3"/>
+  <text x="215" y="172" fill="#e8eaee" font-family="monospace" font-size="9">链上分析</text>
+  <text x="215" y="186" fill="#00ff9d" font-family="monospace" font-size="8">置信度 81%</text>
+  <text x="215" y="198" fill="#9ca0a8" font-family="monospace" font-size="7">鲸鱼增持 交易所流出</text>
+
+  <rect x="402" y="156" width="186" height="60" fill="rgba(255,155,61,0.08)" rx="3"/>
+  <text x="410" y="172" fill="#e8eaee" font-family="monospace" font-size="9">风险评估</text>
+  <text x="410" y="186" fill="#ff9b3d" font-family="monospace" font-size="8">置信度 70%</text>
+  <text x="410" y="198" fill="#9ca0a8" font-family="monospace" font-size="7">监管中 流动性中高</text>
+
+  <text x="12" y="232" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2461; 7 个视角面板（并行分析），每个显示标题、置信度进度条和摘要</text>
+
+  <!-- ③ Final rating -->
+  <rect x="12" y="242" width="576" height="50" fill="rgba(0,255,157,0.06)" rx="4"/>
+  <text x="24" y="260" fill="#e8eaee" font-family="monospace" font-size="9" font-weight="bold">最终评级</text>
+  <text x="24" y="278" fill="#00ff9d" font-family="monospace" font-size="11" font-weight="bold">看多 · 72%</text>
+  <text x="180" y="278" fill="#f5c542" font-family="monospace" font-size="9">风险中 · 仓位 ≤15%</text>
+
+  <text x="12" y="308" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2462; 最终评级面板：方向 + 置信度 + 风险等级 + 交易建议。下方有"发布为信号"和"生成策略草稿"按钮</text>
+</svg>
+<ol>
+  <li><strong>① 标的输入区</strong> — 输入交易对（如 BTC/USDT），通过标签页切换研究深度：Quick（~30 秒快速扫描）、Standard（~2 分钟标准分析）、Deep（~5 分钟深度研究）。提供热门标的快捷按钮。</li>
+  <li><strong>② 7 视角并行分析</strong> — 系统同时派出 7 个研究员角色独立分析：多头观点、空头观点、技术分析、情绪分析、新闻分析、基本面/链上分析、风险评估。每个面板展示置信度进度条（绿 ≥ 70%、黄 40-70%、红 &lt; 40%）和摘要文本。</li>
+  <li><strong>③ 最终评级</strong> — 综合 7 个视角后给出的方向判断（看多/看空/震荡）、综合置信度、风险等级和交易建议。下方有"发布为信号"（直接进入信号中心）和"生成策略草稿"（跳转到策略工作区）两个操作按钮。</li>
+</ol>
+
+<h2>关键指标怎么读</h2>
+<ul>
+  <li><strong>置信度进度条</strong> — 每个视角的置信度反映该分析维度的可靠程度。技术分析和链上分析通常置信度较高（因为有量化数据支持），情绪分析置信度较低（社媒噪音多）。低置信度的视角不代表错误——只是信息量不足以做强烈判断。</li>
+  <li><strong>最终评级置信度</strong> — 综合 7 个视角后的总体信心水平。70% 以上可视为较强信号，40-70% 需谨慎参考，低于 40% 建议等待更多确认。</li>
+  <li><strong>风险等级</strong> — 低/中/高/极高。影响建议仓位比例。高风险信号即使方向看多，也建议控制仓位。</li>
+</ul>
+
+<h2>常见操作 · 一步步</h2>
+<ol>
+  <li>在标的输入框输入交易对（或点击热门标的快捷按钮）。</li>
+  <li>选择研究深度：首次研究一个标的用 Standard，快速复查用 Quick，需要全面分析用 Deep。</li>
+  <li>点击"开始研究"按钮。等待期间会显示进度指示器和预计耗时。</li>
+  <li>研究完成后，逐一阅读 7 个视角面板的内容。注意置信度高低：高置信度的视角值得优先关注。</li>
+  <li>查看最终评级面板的方向判断和风险等级。</li>
+  <li>点击"发布为信号"将本次研究结果推送到信号中心参与融合打分，或点击"生成策略草稿"跳转到策略工作区进一步编辑。</li>
+</ol>
+
+<h2>幕后</h2>
+<p>点击"开始研究"后，前端调用 <code>/api/ai-research/runs</code> 创建研究任务。后端通过 <code>tradingagents_adapter.py</code> 调用 TradingAgents 多代理框架，每个视角对应一个独立的研究代理并行分析。如果上传了 PDF 研报，会先经过 <code>rag_service.py</code> 提取文档中的策略概念和关键指标，作为研究上下文注入。分析完成后通过轮询获取结果。研究结果还可以经过 <code>code_safety.py</code> 静态代码安全检查后再生成可部署的策略代码。</p>
+
+<h2>相关</h2>
+<ul>
+  <li><a href="#/concepts/10-ai-roles">概念 · AlphaLoop 中的 AI 角色</a></li>
+  <li><a href="#/pages/ai-research/agent-platform">页面 · 代理平台</a></li>
+  <li><a href="#/pages/ai-research/signal-center">页面 · 信号中心</a></li>
+  <li><a href="#/walkthroughs/first-strategy">情景 · 从零创建第一个策略</a></li>
+</ul>

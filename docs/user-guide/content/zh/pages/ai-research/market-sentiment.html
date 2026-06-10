@@ -1,0 +1,105 @@
+<h1>市场情绪</h1>
+<p class="chapter-meta">页面 · AI 研究 · 5 分钟</p>
+
+<blockquote class="lede">用 FinBERT 实时分析新闻和社媒情绪，以 -1 到 +1 的热力图为每个标的打分，帮你在情绪层面确认或质疑结构信号。</blockquote>
+
+<h2>TL;DR</h2>
+<p>市场情绪页面展示 FinBERT 模型对主流交易对的实时情绪分析结果。页面中央是一个恐惧贪婪指数表盘，下方是各标的的情绪热力图——行是交易对，颜色从红色（负面）渐变到绿色（正面），每个格子显示具体分数。你还可以输入一段新闻或推文文本，让 FinBERT 分析正面/中性/负面比例。</p>
+
+<h2>谁用 · 何时用</h2>
+<p>所有交易者在入场前都应该看情绪数据——不是用来做交易决策，而是用来检验你的判断。当你的技术面看多信号和市场情绪高度负面同时出现时，意味着需要更强有力的入场理由。情绪极端时（恐惧贪婪指数 &lt; 10 或 &gt; 90），市场往往已充分定价，此时反向操作风险极高。</p>
+
+<h2>页面解剖</h2>
+<svg class="diagram" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="320" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- ① Fear & Greed gauge -->
+  <circle cx="80" cy="80" r="50" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="8"/>
+  <!-- Arc from fear (red) through neutral (yellow) to greed (green) -->
+  <path d="M 55 45 A 50 50 0 0 1 116 56" fill="none" stroke="#00ff9d" stroke-width="8" stroke-linecap="round"/>
+  <text x="80" y="84" fill="#e8eaee" font-family="monospace" font-size="20" font-weight="bold" text-anchor="middle">68</text>
+  <text x="80" y="100" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">Greed</text>
+
+  <text x="12" y="152" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2460; 恐惧贪婪指数表盘：0-100，绿 = 贪婪，红 = 恐惧</text>
+
+  <!-- ② Sentiment heatmap -->
+  <rect x="12" y="160" width="576" height="120" fill="rgba(255,255,255,0.02)" rx="4"/>
+  <rect x="12" y="160" width="576" height="120" stroke="rgba(255,255,255,0.08)" stroke-width="1" fill="none" rx="4"/>
+
+  <!-- Column headers -->
+  <text x="24" y="176" fill="#5e636d" font-family="monospace" font-size="8">Symbol</text>
+  <text x="120" y="176" fill="#5e636d" font-family="monospace" font-size="8">Score</text>
+  <text x="220" y="176" fill="#5e636d" font-family="monospace" font-size="8">Sentiment Bar</text>
+  <text x="520" y="176" fill="#5e636d" font-family="monospace" font-size="8">Label</text>
+
+  <line x1="12" y1="180" x2="588" y2="180" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+
+  <!-- Row 1: BTC -->
+  <text x="24" y="198" fill="#e8eaee" font-family="monospace" font-size="9">BTC/USDT</text>
+  <text x="120" y="198" fill="#00ff9d" font-family="monospace" font-size="9">+0.72</text>
+  <rect x="220" y="190" width="280" height="14" fill="rgba(255,255,255,0.04)" rx="2"/>
+  <rect x="220" y="190" width="210" height="14" fill="rgba(0,255,157,0.4)" rx="2"/>
+  <text x="520" y="198" fill="#00ff9d" font-family="monospace" font-size="9">POSITIVE</text>
+
+  <!-- Row 2: ETH -->
+  <text x="24" y="216" fill="#e8eaee" font-family="monospace" font-size="9">ETH/USDT</text>
+  <text x="120" y="216" fill="#50b4ff" font-family="monospace" font-size="9">+0.12</text>
+  <rect x="220" y="208" width="280" height="14" fill="rgba(255,255,255,0.04)" rx="2"/>
+  <rect x="220" y="208" width="140" height="14" fill="rgba(80,180,255,0.4)" rx="2"/>
+  <text x="520" y="216" fill="#50b4ff" font-family="monospace" font-size="9">NEUTRAL</text>
+
+  <!-- Row 3: SOL -->
+  <text x="24" y="234" fill="#e8eaee" font-family="monospace" font-size="9">SOL/USDT</text>
+  <text x="120" y="234" fill="#ff5470" font-family="monospace" font-size="9">-0.45</text>
+  <rect x="220" y="226" width="280" height="14" fill="rgba(255,255,255,0.04)" rx="2"/>
+  <rect x="220" y="226" width="80" height="14" fill="rgba(255,84,112,0.4)" rx="2"/>
+  <text x="520" y="234" fill="#ff5470" font-family="monospace" font-size="9">NEGATIVE</text>
+
+  <!-- Row 4: NVDA -->
+  <text x="24" y="252" fill="#e8eaee" font-family="monospace" font-size="9">NVDA</text>
+  <text x="120" y="252" fill="#f5c542" font-family="monospace" font-size="9">-0.08</text>
+  <rect x="220" y="244" width="280" height="14" fill="rgba(255,255,255,0.04)" rx="2"/>
+  <rect x="220" y="244" width="60" height="14" fill="rgba(245,197,66,0.4)" rx="2"/>
+  <text x="520" y="252" fill="#f5c542" font-family="monospace" font-size="9">NEUTRAL</text>
+
+  <!-- Row 5: AAPL -->
+  <text x="24" y="270" fill="#e8eaee" font-family="monospace" font-size="9">AAPL</text>
+  <text x="120" y="270" fill="#00ff9d" font-family="monospace" font-size="9">+0.35</text>
+  <rect x="220" y="262" width="280" height="14" fill="rgba(255,255,255,0.04)" rx="2"/>
+  <rect x="220" y="262" width="120" height="14" fill="rgba(0,255,157,0.4)" rx="2"/>
+  <text x="520" y="270" fill="#00ff9d" font-family="monospace" font-size="9">POSITIVE</text>
+
+  <text x="12" y="305" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2461; 情绪热力图：每行一个标的，分数 -1（红）到 +1（绿），条形长度反映情绪强度</text>
+</svg>
+<ol>
+  <li><strong>① 恐惧贪婪指数</strong> — 市场整体的恐惧贪婪指数（0-100），以半圆表盘展示。指针颜色从红色（恐惧）渐变到绿色（贪婪）。数字显示当前值，下方标注区间名称（极度恐惧 / 恐惧 / 中性 / 贪婪 / 极度贪婪）。</li>
+  <li><strong>② 情绪热力图</strong> — 每个主流交易对一行，显示 FinBERT 情绪分数（-1.0 到 +1.0）。分数用颜色编码：绿色（+0.2 以上 = 正面）、蓝色（-0.2 到 +0.2 = 中性）、红色（-0.2 以下 = 负面）。右侧条形长度反映情绪强度。</li>
+</ol>
+
+<h2>关键指标怎么读</h2>
+<ul>
+  <li><strong>恐惧贪婪指数</strong> — 低于 20 是极度恐惧，高于 80 是极度贪婪。历史数据表明，极度恐惧时往往是较好的买入机会，极度贪婪时市场可能接近顶部。但不要反向押注——情绪极端时市场可能继续极端。</li>
+  <li><strong>情绪分数</strong> — FinBERT 对每个标的的 -1 到 +1 综合评分。正分 = 新闻和社媒整体偏正面。负分 = 偏负面。绝对值越大情绪越强烈。</li>
+  <li><strong>情绪与结构信号的一致性</strong> — 最关键的用法：当情绪分数和你的结构分析方向一致时，可以增加仓位信心；当方向相反时，要么等待情绪转变，要么要求更强有力的结构信号再入场。</li>
+</ul>
+
+<h2>常见操作 · 一步步</h2>
+<ol>
+  <li>打开市场情绪页面，扫视恐惧贪婪指数——了解当前市场整体情绪基调。</li>
+  <li>浏览情绪热力图，找到你关注的标的的情绪分数。</li>
+  <li>将情绪分数与你在 AI 投研室或结构分析中得到的信号方向对比。方向一致？可以增加信心。方向相反？需要谨慎。</li>
+  <li>在"文本分析"区域输入一条新闻标题或推文，点击"分析"按钮让 FinBERT 分析正面/中性/负面比例。</li>
+  <li>分析结果可以一键发布为信号——如果发现一条重大利空新闻，可以快速生成一个做空信号。</li>
+  <li>在每日交易循环中，建议先看情绪页面了解市场基调，再深入具体标的的分析。</li>
+</ol>
+
+<h2>幕后</h2>
+<p>情绪数据来自 <code>sentiment_finbert.py</code> 中的 FinBERTAdapter。FinBERT 是一个基于 BERT 的金融领域情感分析模型（ProsusAI/finbert），专门在金融新闻文本上微调。分析时输出正面、负面、中性三个标签的概率，最终情绪分数 = 正面概率 - 负面概率（范围 -1 到 +1）。模型加载失败时自动降级为关键词匹配回退方案（使用预设的正负面词表）。批量分析时使用 <code>analyze_batch</code> 方法并行处理。情绪结果可通过"发布为信号"功能推送到信号中心，作为情绪类信号参与融合打分。</p>
+
+<h2>相关</h2>
+<ul>
+  <li><a href="#/concepts/10-ai-roles">概念 · AlphaLoop 中的 AI 角色</a></li>
+  <li><a href="#/pages/ai-research/signal-center">页面 · 信号中心</a></li>
+  <li><a href="#/walkthroughs/daily-trading-loop">情景 · 每日交易循环</a></li>
+  <li><a href="#/walkthroughs/improve-strategy">情景 · 改进策略</a></li>
+</ul>

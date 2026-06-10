@@ -1,0 +1,110 @@
+<h1>Signal Center</h1>
+<p class="chapter-meta">Page · AI Research · 5 min</p>
+
+<blockquote class="lede">Every signal from AI research, agents, strategies, and manual input converges here — fused and scored so you know which ones deserve your attention.</blockquote>
+
+<h2>TL;DR</h2>
+<p>The Signal Center is AlphaLoop's signal hub. Signals from the AI Research Room, multiple agents, running strategies, and manual entries all flow here, where the fusion scoring system weights and ranks them by each source strategy's performance over the last 30 days. Filter by source, direction, or risk level. Tap any signal to see its full detail and trace its lifecycle from creation to execution.</p>
+
+<h2>Who uses it & when</h2>
+<p>Every trader should check the Signal Center at least once daily. Manual traders browse high-scoring signals as entry references; automated traders verify that signals are generated and executed correctly. Best used as the "signal check" step in your daily trading loop — review before and after major market events.</p>
+
+<h2>Page Anatomy</h2>
+<svg class="diagram" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="320" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- ① Filter bar -->
+  <text x="12" y="22" fill="#e8eaee" font-family="monospace" font-size="9" font-weight="bold">SOURCE</text>
+  <rect x="60" y="10" width="36" height="16" fill="rgba(0,255,157,0.08)" rx="2"/>
+  <text x="66" y="22" fill="#00ff9d" font-family="monospace" font-size="8">All</text>
+  <rect x="102" y="10" width="72" height="16" fill="rgba(255,255,255,0.04)" rx="2"/>
+  <text x="108" y="22" fill="#9ca0a8" font-family="monospace" font-size="8">AI Research</text>
+  <rect x="180" y="10" width="80" height="16" fill="rgba(255,255,255,0.04)" rx="2"/>
+  <text x="186" y="22" fill="#9ca0a8" font-family="monospace" font-size="8">Trading Agents</text>
+
+  <text x="12" y="42" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2460; Filter bar: by source (All / AI Research / Trading Agents / Manual / Canvas) and direction (All / Long / Short / Hold)</text>
+
+  <!-- ② Fused signal card -->
+  <rect x="12" y="50" width="576" height="90" fill="rgba(0,255,157,0.04)" rx="4"/>
+  <rect x="12" y="50" width="576" height="90" stroke="#00ff9d" stroke-width="1" fill="none" rx="4"/>
+
+  <text x="24" y="68" fill="#e8eaee" font-family="monospace" font-size="11" font-weight="bold">BTC/USDT</text>
+  <text x="130" y="68" fill="#00ff9d" font-family="monospace" font-size="11" font-weight="bold">LONG</text>
+  <rect x="200" y="58" width="60" height="18" fill="rgba(0,255,157,0.1)" rx="3"/>
+  <text x="208" y="71" fill="#00ff9d" font-family="monospace" font-size="9">Score 4.2</text>
+
+  <text x="24" y="90" fill="#9ca0a8" font-family="monospace" font-size="8">Sources:</text>
+  <rect x="80" y="80" width="120" height="8" fill="rgba(255,255,255,0.04)" rx="2"/>
+  <rect x="80" y="80" width="60" height="8" fill="rgba(0,255,157,0.4)" rx="2"/>
+  <text x="204" y="88" fill="#00ff9d" font-family="monospace" font-size="7">AI Research · 72%</text>
+
+  <rect x="80" y="92" width="120" height="8" fill="rgba(255,255,255,0.04)" rx="2"/>
+  <rect x="80" y="92" width="40" height="8" fill="rgba(80,180,255,0.4)" rx="2"/>
+  <text x="204" y="100" fill="#50b4ff" font-family="monospace" font-size="7">Tech Analyst · 48%</text>
+
+  <rect x="80" y="104" width="120" height="8" fill="rgba(255,255,255,0.04)" rx="2"/>
+  <rect x="80" y="104" width="35" height="8" fill="rgba(245,197,66,0.4)" rx="2"/>
+  <text x="204" y="112" fill="#f5c542" font-family="monospace" font-size="7">Sentiment Scout · 42%</text>
+
+  <rect x="400" y="68" width="60" height="16" fill="rgba(245,197,66,0.1)" rx="3"/>
+  <text x="406" y="80" fill="#f5c542" font-family="monospace" font-size="8">MEDIUM</text>
+  <text x="400" y="100" fill="#9ca0a8" font-family="monospace" font-size="7">2026-06-10 08:30</text>
+
+  <text x="12" y="150" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2461; Fused signal card: asset + direction + composite score + sub-bars for each source's weight contribution. Risk badge and timestamp on the right.</text>
+
+  <!-- ③ Detail sheet -->
+  <rect x="12" y="160" width="576" height="140" fill="rgba(255,255,255,0.02)" rx="4"/>
+  <rect x="12" y="160" width="576" height="140" stroke="rgba(255,255,255,0.08)" stroke-width="1" fill="none" rx="4"/>
+  <text x="24" y="180" fill="#e8eaee" font-family="monospace" font-size="10" font-weight="bold">BTC/USDT · Signal Detail</text>
+
+  <text x="24" y="198" fill="#9ca0a8" font-family="monospace" font-size="8">Source: AI Research Room</text>
+  <text x="24" y="212" fill="#9ca0a8" font-family="monospace" font-size="8">Reasoning: Technical bullish + on-chain accumulation + positive sentiment</text>
+  <text x="24" y="226" fill="#9ca0a8" font-family="monospace" font-size="8">Target: 72,500 · Stop: 65,000</text>
+
+  <rect x="24" y="238" width="80" height="14" fill="rgba(0,255,157,0.06)" rx="2"/>
+  <text x="30" y="249" fill="#00ff9d" font-family="monospace" font-size="7">Verif 4.5</text>
+  <rect x="120" y="238" width="80" height="14" fill="rgba(80,180,255,0.06)" rx="2"/>
+  <text x="126" y="249" fill="#50b4ff" font-family="monospace" font-size="7">Evid 3.8</text>
+  <rect x="216" y="238" width="80" height="14" fill="rgba(245,197,66,0.06)" rx="2"/>
+  <text x="222" y="249" fill="#f5c542" font-family="monospace" font-size="7">Spec 4.2</text>
+  <rect x="312" y="238" width="80" height="14" fill="rgba(255,155,61,0.06)" rx="2"/>
+  <text x="318" y="249" fill="#ff9b3d" font-family="monospace" font-size="7">Novel 3.0</text>
+  <rect x="408" y="238" width="80" height="14" fill="rgba(255,84,112,0.06)" rx="2"/>
+  <text x="414" y="249" fill="#ff5470" font-family="monospace" font-size="7">Risk 2.5</text>
+
+  <text x="12" y="295" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2462; Signal detail panel: source, reasoning, target/stop prices + five-dimension score breakdown</text>
+</svg>
+<ol>
+  <li><strong>① Filter Bar</strong> — Filter signals by source (AI Research Room / Trading Agents / Manual / Canvas strategies), direction (Long / Short / Hold), and risk level (Low / Medium / High / Critical).</li>
+  <li><strong>② Fused Signal Card</strong> — Each signal displayed as a card showing: asset name, direction (green long / red short / yellow hold), composite fusion score (0-5), and sub-bars for each source's weight contribution. Higher scores with consistent direction have higher priority.</li>
+  <li><strong>③ Signal Detail Panel</strong> — Tap a card to open a glass modal with full information: signal source, reasoning logic, target and stop prices, and the five-dimension score breakdown (verifiability, evidence, specificity, novelty, risk awareness). Execute or dismiss the signal from this panel.</li>
+</ol>
+
+<h2>Reading the Key Metrics</h2>
+<ul>
+  <li><strong>Fusion Score (0-5)</strong> — Weighted from five dimensions: verifiability 30% + evidence 25% + specificity 20% + novelty 10% + risk 15%. Above 3.5 is worth a look; above 4.0 is a strong signal.</li>
+  <li><strong>Source Sub-Bars</strong> — Each source strategy's weight reflects its last-30-day performance. Higher weight means better historical signal accuracy. The longer the sub-bar, the more that source contributed to this fused score.</li>
+  <li><strong>Risk Level</strong> — Determined by stop-loss and position sizing in the signal. Low-risk signals typically include clear stop and target levels.</li>
+  <li><strong>Direction</strong> — Long, Short, or Hold. Avoid trading against the fused direction — the signal already aggregates multiple sources, so going contrary carries elevated risk.</li>
+</ul>
+
+<h2>Common Actions, Step by Step</h2>
+<ol>
+  <li>Open Signal Center and browse the recent signal list (default order: newest first).</li>
+  <li>Use the filter bar to narrow scope: for example, view only AI Research sources or only Long signals.</li>
+  <li>Focus on high-fusion-score signals (4.0+) — these have been verified across multiple sources.</li>
+  <li>Tap a signal card to open its detail panel and review the reasoning logic and target/stop prices.</li>
+  <li>Check the five-dimension score breakdown: high verifiability means clear targets and stops; high evidence means strong supporting reasoning.</li>
+  <li>To execute the signal, tap "Execute" to enter the order flow. If the signal is stale, tap "Dismiss" to mark it.</li>
+</ol>
+
+<h2>Behind the Scenes</h2>
+<p>All signals flow through the <code>/api/signals-v2</code> endpoint for creation and querying. Signal sources include the AI Research Room, Agent Platform, Canvas strategies, and manual input. Each incoming signal is scored by <code>signal_scoring.py</code> across five dimensions: verifiability (has clear asset + direction), evidence (text length and reasoning keywords), specificity (contains numeric targets), novelty (base score for fresh signals), and risk awareness (includes stop-loss and position management). Fusion weights adjust dynamically based on each source strategy's last-30-day accuracy — well-performing sources gain weight, poor performers lose it.</p>
+
+<h2>See Also</h2>
+<ul>
+  <li><a href="#/concepts/10-ai-roles">Concept · AI Roles in AlphaLoop</a></li>
+  <li><a href="#/pages/ai-research/ai-research-room">Page · AI Research Room</a></li>
+  <li><a href="#/pages/ai-research/agent-platform">Page · Agent Platform</a></li>
+  <li><a href="#/walkthroughs/daily-trading-loop">Walkthrough · Daily Trading Loop</a></li>
+</ul>

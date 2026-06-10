@@ -1,0 +1,105 @@
+<h1>Agent Platform</h1>
+<p class="chapter-meta">Page · AI Research · 5 min</p>
+
+<blockquote class="lede">Configure, monitor, and manage your AI trading agents — each one is an independent research analyst that scans markets and produces signals on a schedule.</blockquote>
+
+<h2>TL;DR</h2>
+<p>The Agent Platform is your "control room" for AI agents. Each agent is an independently configurable analyst role with its own LLM provider, research preferences, and output format. From here you can see every agent's running status, recent signal statistics, and detailed performance. Agents are like your research team — assign them different assets to track, adjust analysis depth, and even choose different AI model backends.</p>
+
+<h2>Who uses it & when</h2>
+<p>Advanced traders and quant developers managing multiple strategies. Use the Agent Platform when you want AI to continuously track multiple assets and produce regular research reports and signals. Also useful after deploying a new agent to check whether it's working correctly and what signal quality looks like.</p>
+
+<h2>Page Anatomy</h2>
+<svg class="diagram" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="320" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <text x="12" y="24" fill="#e8eaee" font-family="monospace" font-size="14" font-weight="bold">Agent Platform</text>
+  <rect x="152" y="12" width="20" height="18" fill="rgba(0,255,157,0.08)" rx="3"/>
+  <text x="158" y="25" fill="#00ff9d" font-family="monospace" font-size="9">6</text>
+
+  <text x="12" y="44" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2460; Header bar: title + active agent count badge</text>
+
+  <rect x="12" y="52" width="180" height="80" fill="rgba(255,255,255,0.02)" rx="4"/>
+  <rect x="12" y="52" width="180" height="80" stroke="rgba(255,255,255,0.08)" stroke-width="1" fill="none" rx="4"/>
+  <circle cx="28" cy="68" r="4" fill="#00ff9d"/>
+  <text x="38" y="72" fill="#e8eaee" font-family="monospace" font-size="10" font-weight="bold">Tech Analyst</text>
+  <text x="38" y="84" fill="#9ca0a8" font-family="monospace" font-size="8">Provider: OpenAI</text>
+  <text x="38" y="96" fill="#f5c542" font-family="monospace" font-size="8">12 signals this week</text>
+  <rect x="12" y="108" width="180" height="18" fill="rgba(0,255,157,0.06)" rx="2"/>
+  <text x="20" y="121" fill="#00ff9d" font-family="monospace" font-size="8">Avg score 72%</text>
+
+  <rect x="202" y="52" width="180" height="80" fill="rgba(255,255,255,0.02)" rx="4"/>
+  <rect x="202" y="52" width="180" height="80" stroke="rgba(255,255,255,0.08)" stroke-width="1" fill="none" rx="4"/>
+  <circle cx="218" cy="68" r="4" fill="#00ff9d"/>
+  <text x="228" y="72" fill="#e8eaee" font-family="monospace" font-size="10" font-weight="bold">Sentiment Scout</text>
+  <text x="228" y="84" fill="#9ca0a8" font-family="monospace" font-size="8">Provider: Anthropic</text>
+  <text x="228" y="96" fill="#f5c542" font-family="monospace" font-size="8">8 signals this week</text>
+  <rect x="202" y="108" width="180" height="18" fill="rgba(245,197,66,0.06)" rx="2"/>
+  <text x="210" y="121" fill="#f5c542" font-family="monospace" font-size="8">Avg score 58%</text>
+
+  <rect x="392" y="52" width="196" height="80" fill="rgba(255,255,255,0.02)" rx="4"/>
+  <rect x="392" y="52" width="196" height="80" stroke="rgba(255,255,255,0.08)" stroke-width="1" fill="none" rx="4"/>
+  <circle cx="408" cy="68" r="4" fill="#ff9b3d"/>
+  <text x="418" y="72" fill="#e8eaee" font-family="monospace" font-size="10" font-weight="bold">Risk Guardian</text>
+  <text x="418" y="84" fill="#9ca0a8" font-family="monospace" font-size="8">Provider: OpenAI</text>
+  <text x="418" y="96" fill="#f5c542" font-family="monospace" font-size="8">5 signals this week</text>
+  <rect x="392" y="108" width="196" height="18" fill="rgba(255,84,112,0.06)" rx="2"/>
+  <text x="400" y="121" fill="#ff5470" font-family="monospace" font-size="8">Avg score 42%</text>
+
+  <text x="12" y="148" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2461; Agent card grid: name, provider, status dot (green=running), weekly signal count, average score</text>
+
+  <rect x="12" y="156" width="576" height="140" fill="rgba(255,255,255,0.02)" rx="4"/>
+  <rect x="12" y="156" width="576" height="140" stroke="rgba(255,255,255,0.08)" stroke-width="1" fill="none" rx="4"/>
+
+  <text x="24" y="176" fill="#e8eaee" font-family="monospace" font-size="10" font-weight="bold">Tech Analyst · Configuration</text>
+
+  <text x="24" y="198" fill="#9ca0a8" font-family="monospace" font-size="8">LLM Provider</text>
+  <rect x="120" y="190" width="120" height="18" fill="rgba(0,255,157,0.08)" rx="2"/>
+  <text x="126" y="203" fill="#00ff9d" font-family="monospace" font-size="8">OpenAI</text>
+
+  <text x="24" y="218" fill="#9ca0a8" font-family="monospace" font-size="8">Research Focus</text>
+  <rect x="120" y="210" width="200" height="18" fill="rgba(80,180,255,0.08)" rx="2"/>
+  <text x="126" y="223" fill="#50b4ff" font-family="monospace" font-size="8">Technical + On-Chain</text>
+
+  <text x="24" y="238" fill="#9ca0a8" font-family="monospace" font-size="8">Output Language</text>
+  <rect x="120" y="230" width="80" height="18" fill="rgba(0,255,157,0.08)" rx="2"/>
+  <text x="126" y="243" fill="#00ff9d" font-family="monospace" font-size="8">English</text>
+
+  <rect x="24" y="258" width="540" height="14" fill="rgba(255,255,255,0.02)" rx="2"/>
+  <text x="30" y="269" fill="#e8eaee" font-family="monospace" font-size="8">BTC/USDT → Long @72% · ETH/USDT → Short @65% · SOL/USDT → Hold @51%</text>
+
+  <text x="12" y="300" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2462; Agent detail panel: LLM provider, research focus, output language + recent signals list</text>
+</svg>
+<ol>
+  <li><strong>① Header Bar</strong> — Page title and active agent count. Updates in real time as you add or remove agents.</li>
+  <li><strong>② Agent Card Grid</strong> — Each agent is a card showing its name, LLM provider, status indicator (green=online, orange=warning, red=faulted), weekly signal count, and average signal quality score. Tap a card to open its detail panel.</li>
+  <li><strong>③ Agent Detail Panel</strong> — View and edit configuration: LLM provider, research focus (e.g., Technical+On-Chain, Sentiment only), output language. Recent signals from this agent appear below.</li>
+</ol>
+
+<h2>Reading the Key Metrics</h2>
+<ul>
+  <li><strong>Average Score</strong> — The agent's signals' average score in the fusion system. Consistently above 70% means the agent performs well; consistently below 40% may need configuration adjustments or data source checks.</li>
+  <li><strong>Weekly Signal Count</strong> — Quantity alone isn't quality. An agent producing 2 high-precision signals per week is often more valuable than one producing 20 low-quality signals. Read this together with the average score.</li>
+  <li><strong>Status Dot</strong> — Green = running normally; Orange = running but some data sources are degraded; Red = agent faulted (usually an LLM API call failure), check API key or network connectivity.</li>
+</ul>
+
+<h2>Common Actions, Step by Step</h2>
+<ol>
+  <li>Browse the agent card grid to see all agents' running status and performance at a glance.</li>
+  <li>Tap an agent card to open its detail panel for configuration and recent signals.</li>
+  <li>Edit LLM provider (e.g., switch from OpenAI to Anthropic) or adjust research focus in the detail panel.</li>
+  <li>Return to the grid and tap "Add Agent" to create a new AI agent.</li>
+  <li>Configure the new agent's name, research focus, output language, and LLM provider.</li>
+  <li>Check back after a while to review signal quality — if the average score stays low, try a different research focus or LLM provider.</li>
+</ol>
+
+<h2>Behind the Scenes</h2>
+<p>The Agent Platform manages each agent's configuration and lifecycle through <code>tradingagents_adapter.py</code>. Each agent is essentially a TradingAgents instance with its own LLM provider and preference parameters. Signals produced by agents are scored through <code>signal_scoring.py</code>'s five-dimension system (verifiability, evidence, specificity, novelty, risk awareness — weighted into a 0-5 score) before entering the Signal Center. Agent configurations persist in the database and load on each startup.</p>
+
+<h2>See Also</h2>
+<ul>
+  <li><a href="#/concepts/10-ai-roles">Concept · AI Roles in AlphaLoop</a></li>
+  <li><a href="#/pages/ai-research/ai-research-room">Page · AI Research Room</a></li>
+  <li><a href="#/pages/ai-research/signal-center">Page · Signal Center</a></li>
+  <li><a href="#/pages/system/data-source-management">Page · Data Source Management</a></li>
+</ul>

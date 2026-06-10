@@ -1,0 +1,114 @@
+<h1>信号中心</h1>
+<p class="chapter-meta">页面 · AI 研究 · 5 分钟</p>
+
+<blockquote class="lede">所有 AI 研究结果、代理信号、策略信号、手动信号的汇聚和融合打分中心——用一个加权分数告诉你哪些信号值得关注。</blockquote>
+
+<h2>TL;DR</h2>
+<p>信号中心是 AlphaLoop 的"信号大脑"。来自 AI 投研室、多个代理、策略运行和手动输入的所有信号都在这里汇集，经过融合打分系统按每个来源策略近 30 天的表现加权排序。你可以按来源、方向、风险等级过滤信号，查看每个信号的完整详情，并跟踪信号从产生到执行的全生命周期。</p>
+
+<h2>谁用 · 何时用</h2>
+<p>所有交易者每天至少来看一次信号中心。手动交易者在这里筛选高评分信号作为入场参考；自动化交易者检查信号是否正确产生和执行。适合在每日交易循环中作为"信号检查"环节使用——在开盘前后和主要市场事件后查看最新信号。</p>
+
+<h2>页面解剖</h2>
+<svg class="diagram" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="320" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- ① Filter bar -->
+  <text x="12" y="22" fill="#e8eaee" font-family="monospace" font-size="9" font-weight="bold">SOURCE</text>
+  <rect x="60" y="10" width="36" height="16" fill="rgba(0,255,157,0.08)" rx="2"/>
+  <text x="66" y="22" fill="#00ff9d" font-family="monospace" font-size="8">All</text>
+  <rect x="102" y="10" width="72" height="16" fill="rgba(255,255,255,0.04)" rx="2"/>
+  <text x="108" y="22" fill="#9ca0a8" font-family="monospace" font-size="8">AI Research</text>
+  <rect x="180" y="10" width="80" height="16" fill="rgba(255,255,255,0.04)" rx="2"/>
+  <text x="186" y="22" fill="#9ca0a8" font-family="monospace" font-size="8">Trading Agents</text>
+
+  <text x="12" y="42" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2460; 过滤栏：按来源（All / AI Research / Trading Agents / Manual / Canvas）和方向（All / Long / Short / Hold）过滤</text>
+
+  <!-- ② Fused signal card -->
+  <rect x="12" y="50" width="576" height="90" fill="rgba(0,255,157,0.04)" rx="4"/>
+  <rect x="12" y="50" width="576" height="90" stroke="#00ff9d" stroke-width="1" fill="none" rx="4"/>
+
+  <text x="24" y="68" fill="#e8eaee" font-family="monospace" font-size="11" font-weight="bold">BTC/USDT</text>
+  <text x="130" y="68" fill="#00ff9d" font-family="monospace" font-size="11" font-weight="bold">LONG</text>
+  <rect x="200" y="58" width="60" height="18" fill="rgba(0,255,157,0.1)" rx="3"/>
+  <text x="208" y="71" fill="#00ff9d" font-family="monospace" font-size="9">Score 4.2</text>
+
+  <!-- Sub-bars: source contributions -->
+  <text x="24" y="90" fill="#9ca0a8" font-family="monospace" font-size="8">Sources:</text>
+  <rect x="80" y="80" width="120" height="8" fill="rgba(255,255,255,0.04)" rx="2"/>
+  <rect x="80" y="80" width="60" height="8" fill="rgba(0,255,157,0.4)" rx="2"/>
+  <text x="204" y="88" fill="#00ff9d" font-family="monospace" font-size="7">AI Research · 72%</text>
+
+  <rect x="80" y="92" width="120" height="8" fill="rgba(255,255,255,0.04)" rx="2"/>
+  <rect x="80" y="92" width="40" height="8" fill="rgba(80,180,255,0.4)" rx="2"/>
+  <text x="204" y="100" fill="#50b4ff" font-family="monospace" font-size="7">Tech Analyst · 48%</text>
+
+  <rect x="80" y="104" width="120" height="8" fill="rgba(255,255,255,0.04)" rx="2"/>
+  <rect x="80" y="104" width="35" height="8" fill="rgba(245,197,66,0.4)" rx="2"/>
+  <text x="204" y="112" fill="#f5c542" font-family="monospace" font-size="7">Sentiment Scout · 42%</text>
+
+  <!-- Risk badge -->
+  <rect x="400" y="68" width="40" height="16" fill="rgba(245,197,66,0.1)" rx="3"/>
+  <text x="406" y="80" fill="#f5c542" font-family="monospace" font-size="8">中</text>
+
+  <text x="400" y="100" fill="#9ca0a8" font-family="monospace" font-size="7">2026-06-10 08:30</text>
+
+  <text x="12" y="150" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2461; 融合信号卡片：标的 + 方向 + 综合分数 + 子条显示各来源策略的贡献权重。右侧显示风险等级和时间戳</text>
+
+  <!-- ③ Detail sheet -->
+  <rect x="12" y="160" width="576" height="140" fill="rgba(255,255,255,0.02)" rx="4"/>
+  <rect x="12" y="160" width="576" height="140" stroke="rgba(255,255,255,0.08)" stroke-width="1" fill="none" rx="4"/>
+  <text x="24" y="180" fill="#e8eaee" font-family="monospace" font-size="10" font-weight="bold">BTC/USDT · 信号详情</text>
+
+  <text x="24" y="198" fill="#9ca0a8" font-family="monospace" font-size="8">Source: AI Research Room</text>
+  <text x="24" y="212" fill="#9ca0a8" font-family="monospace" font-size="8">Reasoning: 综合技术面看多 + 链上增持 + 情绪偏乐观</text>
+  <text x="24" y="226" fill="#9ca0a8" font-family="monospace" font-size="8">Target: 72,500 · Stop: 65,000</text>
+
+  <!-- Score breakdown -->
+  <rect x="24" y="238" width="80" height="14" fill="rgba(0,255,157,0.06)" rx="2"/>
+  <text x="30" y="249" fill="#00ff9d" font-family="monospace" font-size="7">可验证 4.5</text>
+  <rect x="120" y="238" width="80" height="14" fill="rgba(80,180,255,0.06)" rx="2"/>
+  <text x="126" y="249" fill="#50b4ff" font-family="monospace" font-size="7">证据 3.8</text>
+  <rect x="216" y="238" width="80" height="14" fill="rgba(245,197,66,0.06)" rx="2"/>
+  <text x="222" y="249" fill="#f5c542" font-family="monospace" font-size="7">具体性 4.2</text>
+  <rect x="312" y="238" width="80" height="14" fill="rgba(255,155,61,0.06)" rx="2"/>
+  <text x="318" y="249" fill="#ff9b3d" font-family="monospace" font-size="7">新颖性 3.0</text>
+  <rect x="408" y="238" width="80" height="14" fill="rgba(255,84,112,0.06)" rx="2"/>
+  <text x="414" y="249" fill="#ff5470" font-family="monospace" font-size="7">风险 2.5</text>
+
+  <text x="12" y="295" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2462; 信号详情面板：来源、推理逻辑、目标/止损价位 + 五维评分分解</text>
+</svg>
+<ol>
+  <li><strong>① 过滤栏</strong> — 按信号来源（AI 投研室 / Trading Agents / 手动 / Canvas 策略）、方向（做多 / 做空 / 观望）和风险等级（低 / 中 / 高 / 极高）过滤信号列表。</li>
+  <li><strong>② 融合信号卡片</strong> — 每个信号以卡片形式展示：标的名、方向（绿色做多 / 红色做空 / 黄色观望）、综合融合分数（0-5 分）、各来源子条贡献权重。分数越高且方向一致时，优先级越高。</li>
+  <li><strong>③ 信号详情面板</strong> — 点击卡片打开玻璃态模态面板，查看完整信息：信号来源、推理逻辑、目标价和止损价、五维评分分解（可验证性、证据充分性、具体性、新颖性、风险意识）。可在此面板中执行或取消信号。</li>
+</ol>
+
+<h2>关键指标怎么读</h2>
+<ul>
+  <li><strong>融合分数（Score）</strong> — 0-5 分，由五维评分加权得出（可验证性 30% + 证据 25% + 具体性 20% + 新颖性 10% + 风险 15%）。3.5 分以上值得关注，4.0 分以上是强信号。</li>
+  <li><strong>来源子条</strong> — 每个来源策略近 30 天的表现权重。一个来源的权重越高，说明其历史信号准确率越好。子条越长表示该来源对此融合分数的贡献越大。</li>
+  <li><strong>风险等级</strong> — 基于信号中的止损设置和仓位建议综合评定。低风险信号通常带有明确的止损和目标价位。</li>
+  <li><strong>方向</strong> — Long（看多）、Short（看空）、Hold（观望）。注意不要反向操作——信号已经经过多源融合，逆势操作风险很大。</li>
+</ul>
+
+<h2>常见操作 · 一步步</h2>
+<ol>
+  <li>打开信号中心，浏览最近的信号列表。默认按时间倒序排列。</li>
+  <li>使用过滤栏缩小范围：例如只看 AI Research 来源的信号，或只看做多信号。</li>
+  <li>注意融合分数高的信号（4.0 以上）——这些信号经过了多源验证，可靠性更高。</li>
+  <li>点击感兴趣的信号卡片打开详情面板，查看推理逻辑和目标/止损价位。</li>
+  <li>检查五维评分分解：可验证性高意味着信号有明确的目标和止损；证据充分性高说明有充足的理由支撑。</li>
+  <li>如果决定执行此信号，点击"执行"按钮进入下单流程。如果信号已过时，点击"忽略"将其标记。</li>
+</ol>
+
+<h2>幕后</h2>
+<p>所有信号通过 <code>/api/signals-v2</code> 接口创建和查询。信号来源包括 AI 投研室、代理平台、Canvas 策略和手动输入。每个信号进入系统后，<code>signal_scoring.py</code> 从五个维度进行评分：可验证性（是否有明确的标的和方向）、证据充分性（文本长度和推理关键词）、具体性（是否包含数字目标）、新颖性（新信号获得基础分）、风险意识（是否包含止损和仓位管理）。融合权重根据每个来源策略近 30 天的信号准确率动态调整——表现好的来源权重上升，表现差的下降。</p>
+
+<h2>相关</h2>
+<ul>
+  <li><a href="#/concepts/10-ai-roles">概念 · AlphaLoop 中的 AI 角色</a></li>
+  <li><a href="#/pages/ai-research/ai-research-room">页面 · AI 投研室</a></li>
+  <li><a href="#/pages/ai-research/agent-platform">页面 · 代理平台</a></li>
+  <li><a href="#/walkthroughs/daily-trading-loop">情景 · 每日交易循环</a></li>
+</ul>
