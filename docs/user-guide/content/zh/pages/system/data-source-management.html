@@ -1,0 +1,116 @@
+<h1>数据源管理</h1>
+<p class="chapter-meta">页面 · 系统 · 5 分钟</p>
+
+<blockquote class="lede">管理所有接入 AlphaLoop 的数据管道——行情 K 线、订单簿、资金费率、链上数据、新闻与社交情绪——集中监控延迟、新鲜度，支持启用/禁用和连接测试。</blockquote>
+
+<h2>TL;DR</h2>
+<p>数据源管理页面是 AlphaLoop 所有数据管道的控制中心。它按类别（行情 K 线、订单簿、资金费率、持仓量、新闻、巨鲸、链上数据、研究报告、社交情绪）对数据源分组，每张卡片展示延迟、新鲜度、最后获取时间和状态。顶部汇总卡片显示总数、活跃数、异常数和分类数。你可以测试单个连接、批量测试所有活跃数据源，或一键切换启用/禁用。</p>
+
+<h2>谁用 · 何时用</h2>
+<p>配置新交易所或数据提供商后，来这里确认连接正常。当策略信号基于某个数据源但结果异常时，检查该数据源是否过期或状态异常。也适合在系统迁移后批量测试所有数据源连通性。</p>
+
+<h2>页面解剖</h2>
+<svg class="diagram" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="320" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- ① Summary cards row -->
+  <rect x="12" y="8" width="130" height="48" fill="rgba(0,255,157,0.06)" rx="4" stroke="rgba(0,255,157,0.2)" stroke-width="1"/>
+  <text x="24" y="26" fill="#9ca0a8" font-family="monospace" font-size="7">总数据源</text>
+  <text x="24" y="46" fill="#e8eaee" font-family="monospace" font-size="16">12</text>
+
+  <rect x="150" y="8" width="130" height="48" fill="rgba(0,255,157,0.06)" rx="4" stroke="rgba(0,255,157,0.2)" stroke-width="1"/>
+  <text x="162" y="26" fill="#9ca0a8" font-family="monospace" font-size="7">活跃</text>
+  <text x="162" y="46" fill="#00ff9d" font-family="monospace" font-size="16">9</text>
+
+  <rect x="288" y="8" width="130" height="48" fill="rgba(255,84,112,0.06)" rx="4" stroke="rgba(255,84,112,0.2)" stroke-width="1"/>
+  <text x="300" y="26" fill="#9ca0a8" font-family="monospace" font-size="7">异常</text>
+  <text x="300" y="46" fill="#ff5470" font-family="monospace" font-size="16">1</text>
+
+  <rect x="426" y="8" width="130" height="48" fill="rgba(80,180,255,0.06)" rx="4" stroke="rgba(80,180,255,0.2)" stroke-width="1"/>
+  <text x="438" y="26" fill="#9ca0a8" font-family="monospace" font-size="7">分类数</text>
+  <text x="438" y="46" fill="#50b4ff" font-family="monospace" font-size="16">7</text>
+
+  <!-- ① callout -->
+  <text x="12" y="74" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2460; 汇总卡片：总数据源、活跃、异常、分类数，一目了然</text>
+
+  <!-- ② Category filter chips -->
+  <rect x="12" y="84" width="60" height="22" fill="rgba(0,255,157,0.10)" rx="11" stroke="rgba(0,255,157,0.3)" stroke-width="1"/>
+  <text x="26" y="98" fill="#00ff9d" font-family="monospace" font-size="8">全部</text>
+  <rect x="78" y="84" width="80" height="22" fill="rgba(255,255,255,0.04)" rx="11" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="90" y="98" fill="#9ca0a8" font-family="monospace" font-size="8">行情K线</text>
+  <rect x="164" y="84" width="70" height="22" fill="rgba(255,255,255,0.04)" rx="11" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="176" y="98" fill="#9ca0a8" font-family="monospace" font-size="8">订单簿</text>
+  <rect x="240" y="84" width="80" height="22" fill="rgba(255,255,255,0.04)" rx="11" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="252" y="98" fill="#9ca0a8" font-family="monospace" font-size="8">链上数据</text>
+  <rect x="326" y="84" width="60" height="22" fill="rgba(255,255,255,0.04)" rx="11" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="338" y="98" fill="#9ca0a8" font-family="monospace" font-size="8">新闻</text>
+
+  <text x="12" y="122" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2461; 分类筛选：点击切换查看不同类别的数据源</text>
+
+  <!-- ③ Data source cards grid (2x2) -->
+  <rect x="12" y="132" width="280" height="88" fill="rgba(0,255,157,0.04)" rx="4" stroke="rgba(0,255,157,0.15)" stroke-width="1"/>
+  <circle cx="28" cy="148" r="6" fill="#00ff9d"/>
+  <text x="40" y="152" fill="#e8eaee" font-family="monospace" font-size="9">Binance Kline</text>
+  <text x="220" y="148" fill="#5e636d" font-family="monospace" font-size="7">活跃</text>
+  <text x="24" y="172" fill="#9ca0a8" font-family="monospace" font-size="7">延迟 45ms · 新鲜</text>
+  <text x="220" y="172" fill="#5e636d" font-family="monospace" font-size="7">刚刚</text>
+  <text x="24" y="190" fill="#00ff9d" font-family="monospace" font-size="7">[测试]</text>
+  <text x="72" y="190" fill="#ff9b3d" font-family="monospace" font-size="7">[禁用]</text>
+  <text x="120" y="190" fill="#9ca0a8" font-family="monospace" font-size="7">provider: Binance</text>
+
+  <rect x="308" y="132" width="280" height="88" fill="rgba(255,84,112,0.04)" rx="4" stroke="rgba(255,84,112,0.15)" stroke-width="1"/>
+  <circle cx="324" cy="148" r="6" fill="#ff5470"/>
+  <text x="336" y="152" fill="#e8eaee" font-family="monospace" font-size="9">OKX Kline</text>
+  <text x="510" y="148" fill="#5e636d" font-family="monospace" font-size="7">异常</text>
+  <text x="320" y="172" fill="#9ca0a8" font-family="monospace" font-size="7">延迟 — · 过期</text>
+  <text x="510" y="172" fill="#5e636d" font-family="monospace" font-size="7">2小时前</text>
+  <text x="320" y="190" fill="#ff5470" font-family="monospace" font-size="7">rate_limit_exceeded</text>
+
+  <text x="12" y="240" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2462; 数据源卡片：每张卡片包含名称、状态、延迟、新鲜度、最后获取时间和操作按钮</text>
+
+  <!-- ④ Status banner -->
+  <rect x="12" y="252" width="576" height="24" fill="rgba(255,155,61,0.08)" rx="3"/>
+  <circle cx="24" cy="264" r="4" fill="#ff9b3d"/>
+  <text x="36" y="268" fill="#ff9b3d" font-family="monospace" font-size="8">部分数据源异常</text>
+  <text x="180" y="268" fill="#9ca0a8" font-family="monospace" font-size="8">OKX 限流，Binance 连接正常</text>
+
+  <text x="12" y="294" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2463; 状态警告横幅：当存在异常或降级数据源时显示</text>
+
+  <!-- ⑤ Test All button -->
+  <rect x="12" y="304" width="120" height="16" fill="rgba(0,255,157,0.1)" rx="8"/>
+  <text x="24" y="316" fill="#00ff9d" font-family="monospace" font-size="8">测试所有连接</text>
+</svg>
+<ol>
+  <li><strong>① 汇总卡片</strong> — 总数据源数、活跃数、异常数、分类数。异常数 > 0 时应优先排查。</li>
+  <li><strong>② 分类筛选</strong> — 按类别过滤数据源。支持行情 K 线、订单簿、资金费率、持仓量、新闻、巨鲸、链上数据、研究报告、社交情绪。</li>
+  <li><strong>③ 数据源卡片</strong> — 每张卡片展示：名称、状态指示、提供商、延迟（ms）、新鲜度（新鲜/陈旧/过期）、最后获取时间。底部有"测试"和"启用/禁用"按钮。</li>
+  <li><strong>④ 状态警告横幅</strong> — 当有数据源状态异常时自动显示，列出异常原因码以便快速定位。</li>
+  <li><strong>⑤ 批量测试</strong> — 页面标题旁的"测试所有连接"按钮，逐一对所有活跃数据源执行连通性测试。</li>
+</ol>
+
+<h2>关键指标怎么读</h2>
+<ul>
+  <li><strong>延迟 (Latency)</strong> — 从发送请求到收到响应的耗时。绿色 < 100ms，黄色 100-300ms，橙色 > 300ms。持续高延迟可能需要检查网络或提供商状态。</li>
+  <li><strong>新鲜度 (Freshness)</strong> — 最近一次数据获取距今的时间。绿色 = 新鲜（数据及时），黄色 = 陈旧（略有延迟），红色 = 过期（数据不可信）。过期数据会导致策略信号失真。</li>
+  <li><strong>状态 (Status)</strong> — 活跃（正常采集）、已禁用（手动关闭）、异常（连接失败）、限流（触发频率限制）。异常和限流需要人工介入。</li>
+  <li><strong>最后获取时间</strong> — 相对时间显示（刚刚 / 5 分钟前 / 2 小时前），帮助你判断数据是否仍在流动。</li>
+</ul>
+
+<h2>常见操作 · 一步步</h2>
+<ol>
+  <li>新增数据源后，在对应分类下找到新卡片，点击"测试"验证连接成功。</li>
+  <li>如测试失败，检查 API Key 是否有效、网络是否可达、提供商是否限流。</li>
+  <li>暂时不需要的数据源可点击"禁用"关闭，避免无效请求浪费资源。</li>
+  <li>批量操作：点击"测试所有连接"逐一验证所有活跃数据源。</li>
+  <li>查看异常数据源的原因码（如 rate_limit_exceeded），按提示处理。</li>
+</ol>
+
+<h2>幕后</h2>
+<p>页面数据通过 ViewModel 的 <code>load()</code> 方法获取，调用后端 API 返回所有数据源的状态和指标。每次"测试"操作触发独立的连通性检测请求，结果实时更新在卡片上。"测试所有连接"按顺序逐一对活跃数据源执行测试。启用/禁用切换调用后端更新数据源配置。分类筛选是本地过滤，不触发新网络请求。</p>
+
+<h2>相关</h2>
+<ul>
+  <li><a href="#/pages/system/service-management">页面 · 服务管理</a></li>
+  <li><a href="#/pages/overview/live-readiness">页面 · 实盘就绪</a></li>
+  <li><a href="#/concepts/09-dryrun-vs-live">概念 · 回测 / 干跑 / 实盘</a></li>
+</ul>

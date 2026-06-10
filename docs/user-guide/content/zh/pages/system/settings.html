@@ -1,0 +1,128 @@
+<h1>设置</h1>
+<p class="chapter-meta">页面 · 系统 · 5 分钟</p>
+
+<blockquote class="lede">AlphaLoop 所有偏好的集中配置中心——语言、个人资料、交易所、风控、通知、API 密钥、MCP 服务、数据清理和高级操作。</blockquote>
+
+<h2>TL;DR</h2>
+<p>设置页面使用顶部 Tab 栏组织为 7 个分区：通用（语言切换 + 个人资料）、交易（交易所配置 + 风控参数）、通知（Telegram 集成 + 事件开关）、API（第三方 API 密钥）、服务（MCP 服务器状态与审计日志）、数据（数据清理/归档）、高级（数据导出与账户删除）。每个 Tab 切换带动画滑动指示器。所有设置支持本地修改和云端持久化。</p>
+
+<h2>谁用 · 何时用</h2>
+<p>每个用户都会用到。首次启动时配置语言、交易所和 API 密钥。风控参数在策略上线前设定。通知配置在需要 Telegram 告警时设置。数据清理在存储接近上限时执行。高级操作仅管理员使用。</p>
+
+<h2>页面解剖</h2>
+<svg class="diagram" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="320" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- ① Tab bar -->
+  <rect x="12" y="8" width="576" height="28" fill="rgba(255,255,255,0.02)" rx="4" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+
+  <text x="30" y="27" fill="#00ff9d" font-family="monospace" font-size="9" font-weight="bold">&#x2699; 通用</text>
+  <text x="90" y="27" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2194; 交易</text>
+  <text x="145" y="27" fill="#9ca0a8" font-family="monospace" font-size="9">&#x1F514; 通知</text>
+  <text x="200" y="27" fill="#9ca0a8" font-family="monospace" font-size="9">&#x1F511; API</text>
+  <text x="245" y="27" fill="#9ca0a8" font-family="monospace" font-size="9">&#x1F4E1; 服务</text>
+  <text x="300" y="27" fill="#9ca0a8" font-family="monospace" font-size="9">&#x1F4BE; 数据</text>
+  <text x="345" y="27" fill="#9ca0a8" font-family="monospace" font-size="9">&#x26A0; 高级</text>
+
+  <rect x="26" y="32" width="48" height="2" fill="#00ff9d" rx="1"/>
+
+  <!-- ① callout -->
+  <text x="12" y="52" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2460; Tab 栏：7 个设置分区，选中项有绿色滑动指示器</text>
+
+  <!-- ② Left column: General settings form -->
+  <rect x="12" y="62" width="280" height="150" fill="rgba(255,255,255,0.02)" rx="4" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+
+  <text x="24" y="80" fill="#e8eaee" font-family="monospace" font-size="9">通用设置</text>
+
+  <text x="24" y="100" fill="#9ca0a8" font-family="monospace" font-size="8">语言</text>
+  <rect x="80" y="88" width="100" height="18" fill="rgba(0,255,157,0.08)" rx="9"/>
+  <text x="98" y="101" fill="#00ff9d" font-family="monospace" font-size="8">简体中文 &#x25BC;</text>
+
+  <text x="24" y="124" fill="#9ca0a8" font-family="monospace" font-size="8">用户名</text>
+  <rect x="80" y="112" width="160" height="18" fill="rgba(255,255,255,0.04)" rx="2" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="88" y="125" fill="#e8eaee" font-family="monospace" font-size="8">TraderAlpha</text>
+
+  <text x="24" y="148" fill="#9ca0a8" font-family="monospace" font-size="8">邮箱</text>
+  <rect x="80" y="136" width="160" height="18" fill="rgba(255,255,255,0.04)" rx="2" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="88" y="149" fill="#e8eaee" font-family="monospace" font-size="8">alpha@example.com</text>
+
+  <text x="24" y="172" fill="#9ca0a8" font-family="monospace" font-size="8">时区</text>
+  <text x="80" y="172" fill="#e8eaee" font-family="monospace" font-size="8">Asia/Shanghai</text>
+
+  <text x="24" y="196" fill="#9ca0a8" font-family="monospace" font-size="8">2FA</text>
+  <rect x="80" y="186" width="56" height="16" fill="rgba(94,99,109,0.2)" rx="8"/>
+  <text x="92" y="198" fill="#9ca0a8" font-family="monospace" font-size="7">未启用</text>
+
+  <!-- ③ Right column: Exchange settings form -->
+  <rect x="308" y="62" width="280" height="150" fill="rgba(255,255,255,0.02)" rx="4" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+
+  <text x="320" y="80" fill="#e8eaee" font-family="monospace" font-size="9">交易所配置</text>
+
+  <text x="320" y="100" fill="#9ca0a8" font-family="monospace" font-size="8">交易所</text>
+  <rect x="380" y="88" width="100" height="18" fill="rgba(255,255,255,0.04)" rx="2" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="398" y="101" fill="#e8eaee" font-family="monospace" font-size="8">Binance &#x25BC;</text>
+
+  <text x="320" y="124" fill="#9ca0a8" font-family="monospace" font-size="8">交易模式</text>
+  <rect x="380" y="112" width="100" height="18" fill="rgba(0,255,157,0.08)" rx="2"/>
+  <text x="398" y="125" fill="#00ff9d" font-family="monospace" font-size="8">模拟交易</text>
+
+  <text x="320" y="148" fill="#9ca0a8" font-family="monospace" font-size="8">API Key</text>
+  <rect x="380" y="136" width="160" height="18" fill="rgba(255,255,255,0.04)" rx="2" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="388" y="149" fill="#5e636d" font-family="monospace" font-size="8">••••••••••••••••</text>
+
+  <text x="320" y="172" fill="#9ca0a8" font-family="monospace" font-size="8">API Secret</text>
+  <rect x="380" y="160" width="160" height="18" fill="rgba(255,255,255,0.04)" rx="2" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="388" y="173" fill="#5e636d" font-family="monospace" font-size="8">••••••••••••••••</text>
+
+  <text x="12" y="228" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2461; 通用设置（左）+ 交易所配置（右）：Tab 切换时内容面板平滑过渡</text>
+
+  <!-- ④ Save indicator -->
+  <rect x="12" y="240" width="576" height="20" fill="rgba(0,255,157,0.06)" rx="3"/>
+  <text x="24" y="254" fill="#00ff9d" font-family="monospace" font-size="8">&#x2713; 设置已保存到云端（2 秒防抖自动保存）</text>
+
+  <text x="12" y="280" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2462; 自动保存：修改后 2 秒内无新变更时推送到后端持久化</text>
+
+  <!-- ⑤ Danger zone callout -->
+  <rect x="12" y="292" width="576" height="20" fill="rgba(255,84,112,0.06)" rx="3" stroke="rgba(255,84,112,0.2)" stroke-width="1"/>
+  <text x="24" y="306" fill="#ff5470" font-family="monospace" font-size="8">&#x26A0; 高级 Tab 包含数据导出与账户删除，操作不可撤销</text>
+
+  <text x="12" y="320" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2463; 高级操作：独立分区，破坏性操作需二次确认</text>
+</svg>
+<ol>
+  <li><strong>① Tab 栏</strong> — 7 个分区 Tab：通用、交易、通知、API、服务、数据、高级。选中 Tab 有绿色滑动指示器和发光阴影。</li>
+  <li><strong>② 通用设置</strong> — 语言切换（简体中文 / English，即时生效）、个人资料（用户名、邮箱、角色、时区、2FA 状态）。</li>
+  <li><strong>③ 交易所配置</strong> — 选择交易所（Binance/OKX/Bybit 等）、交易模式（现货/合约）、模拟交易开关、API Key/Secret 输入。</li>
+  <li><strong>④ 自动保存</strong> — 设置修改后 2 秒防抖自动保存到后端。离线时使用本地默认值，不影响操作。</li>
+  <li><strong>⑤ 高级操作</strong> — 数据导出（策略和交易记录）和账户删除。删除操作需弹窗二次确认。</li>
+</ol>
+
+<h2>关键设置详解</h2>
+<ul>
+  <li><strong>语言切换</strong> — 在简体中文和 English 之间切换。更改后所有页面即时响应新语言，无需重启。</li>
+  <li><strong>模拟交易 (Dry Run)</strong> — 开启后交易所 API 仅用于获取行情，订单不会真实发送。适合策略验证期。</li>
+  <li><strong>风控参数</strong> — 单笔最大亏损（默认 5%）、最大回撤（15%）、日回撤上限（8%）、自动暂停。超过阈值时系统自动停止开仓。</li>
+  <li><strong>通知配置</strong> — Telegram Bot Token 和 Chat ID 用于发送交易执行、风险事件、每日摘要和系统告警通知。</li>
+  <li><strong>MCP 服务</strong> — 查看 MCP 服务器状态（绑定地址、请求计数）、审计日志（每次工具调用的响应状态码和延迟），支持 Token 轮换。</li>
+  <li><strong>数据清理 (Vacuum)</strong> — 扫描并归档过期信号数据，释放存储空间。可查看清理历史记录（已扫描数和已归档数）。</li>
+</ul>
+
+<h2>常见操作 · 一步步</h2>
+<ol>
+  <li>首次使用：切到"通用"Tab 选择语言，填写个人资料。切到"交易"Tab 配置交易所和 API 密钥，确认模拟交易已开启。</li>
+  <li>配置风控：在"交易"Tab 设定单笔最大亏损和最大回撤，打开自动暂停开关。</li>
+  <li>连接 Telegram：在"通知"Tab 输入 Bot Token 和 Chat ID，勾选你感兴趣的事件类型。</li>
+  <li>配置 AI 服务：在"API"Tab 填入 OpenAI 或 Anthropic 的 API Key。在"服务"Tab 查看 MCP 审计日志。</li>
+  <li>数据清理：当存储空间不足时，在"数据"Tab 点击"执行清理"。可在清理历史中查看执行结果。</li>
+  <li>恢复默认风控参数：在"交易"Tab 底部点击"恢复默认"。所有风控值回到出厂设置。</li>
+</ol>
+
+<h2>幕后</h2>
+<p>设置状态由 <code>SettingsState</code> 管理（单例，通过依赖注入初始化）。首次启动时调用 <code>/auth/settings</code> 从后端拉取已保存的设置并覆盖本地默认值。每次修改触发 <code>scheduleSave()</code>——2 秒防抖窗口内无新变更时推送 <code>/auth/settings</code> 更新。语言切换通过 <code>L10n</code> 系统全局生效，视图通过 <code>.id(settings.language)</code> 强制刷新。离线时所有设置保留本地默认值，不阻塞用户操作。</p>
+
+<h2>相关</h2>
+<ul>
+  <li><a href="#/pages/system/service-management">页面 · 服务管理</a></li>
+  <li><a href="#/pages/system/data-source-management">页面 · 数据源管理</a></li>
+  <li><a href="#/pages/risk/risk-center">页面 · 风控中心</a></li>
+  <li><a href="#/pages/ai-research/agent-platform">页面 · AI Agent 平台</a></li>
+</ul>

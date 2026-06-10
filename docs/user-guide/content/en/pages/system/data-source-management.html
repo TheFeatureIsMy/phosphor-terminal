@@ -1,0 +1,115 @@
+<h1>Data Source Management</h1>
+<p class="chapter-meta">Page · System · 5 min</p>
+
+<blockquote class="lede">Central management for every data pipeline feeding into AlphaLoop — market kline, order book, funding rates, on-chain data, news, and social sentiment — with latency, freshness monitoring, enable/disable toggles, and connection testing.</blockquote>
+
+<h2>TL;DR</h2>
+<p>Data Source Management is the control center for all of AlphaLoop's data pipelines. Sources are organized by category (Kline, Order Book, Funding Rate, Open Interest, News, Whale, On-Chain, Research, Social Sentiment), with each source displayed as a card showing latency, freshness, last fetch time, and status. Summary cards at the top show totals for all sources, active count, errors, and categories. You can test individual connections, batch-test all active sources, or toggle sources on and off.</p>
+
+<h2>Who uses it & when</h2>
+<p>Anyone configuring a new exchange or data provider who needs to verify connectivity. Also useful when a strategy's signals look off — check whether the relevant data source has expired or entered an error state. Good for post-migration verification by batch-testing all active sources.</p>
+
+<h2>Page Anatomy</h2>
+<svg class="diagram" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="320" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- ① Summary cards row -->
+  <rect x="12" y="8" width="130" height="48" fill="rgba(0,255,157,0.06)" rx="4" stroke="rgba(0,255,157,0.2)" stroke-width="1"/>
+  <text x="24" y="26" fill="#9ca0a8" font-family="monospace" font-size="7">Total Sources</text>
+  <text x="24" y="46" fill="#e8eaee" font-family="monospace" font-size="16">12</text>
+
+  <rect x="150" y="8" width="130" height="48" fill="rgba(0,255,157,0.06)" rx="4" stroke="rgba(0,255,157,0.2)" stroke-width="1"/>
+  <text x="162" y="26" fill="#9ca0a8" font-family="monospace" font-size="7">Active</text>
+  <text x="162" y="46" fill="#00ff9d" font-family="monospace" font-size="16">9</text>
+
+  <rect x="288" y="8" width="130" height="48" fill="rgba(255,84,112,0.06)" rx="4" stroke="rgba(255,84,112,0.2)" stroke-width="1"/>
+  <text x="300" y="26" fill="#9ca0a8" font-family="monospace" font-size="7">Error</text>
+  <text x="300" y="46" fill="#ff5470" font-family="monospace" font-size="16">1</text>
+
+  <rect x="426" y="8" width="130" height="48" fill="rgba(80,180,255,0.06)" rx="4" stroke="rgba(80,180,255,0.2)" stroke-width="1"/>
+  <text x="438" y="26" fill="#9ca0a8" font-family="monospace" font-size="7">Categories</text>
+  <text x="438" y="46" fill="#50b4ff" font-family="monospace" font-size="16">7</text>
+
+  <text x="12" y="74" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2460; Summary cards: total sources, active, error, and category count at a glance</text>
+
+  <!-- ② Category filter chips -->
+  <rect x="12" y="84" width="60" height="22" fill="rgba(0,255,157,0.10)" rx="11" stroke="rgba(0,255,157,0.3)" stroke-width="1"/>
+  <text x="26" y="98" fill="#00ff9d" font-family="monospace" font-size="8">All</text>
+  <rect x="78" y="84" width="80" height="22" fill="rgba(255,255,255,0.04)" rx="11" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="90" y="98" fill="#9ca0a8" font-family="monospace" font-size="8">Kline</text>
+  <rect x="164" y="84" width="70" height="22" fill="rgba(255,255,255,0.04)" rx="11" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="176" y="98" fill="#9ca0a8" font-family="monospace" font-size="8">Order Book</text>
+  <rect x="240" y="84" width="80" height="22" fill="rgba(255,255,255,0.04)" rx="11" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="252" y="98" fill="#9ca0a8" font-family="monospace" font-size="8">On-Chain</text>
+  <rect x="326" y="84" width="60" height="22" fill="rgba(255,255,255,0.04)" rx="11" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="338" y="98" fill="#9ca0a8" font-family="monospace" font-size="8">News</text>
+
+  <text x="12" y="122" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2461; Category filter chips: click to filter sources by category</text>
+
+  <!-- ③ Data source cards grid (2x2) -->
+  <rect x="12" y="132" width="280" height="88" fill="rgba(0,255,157,0.04)" rx="4" stroke="rgba(0,255,157,0.15)" stroke-width="1"/>
+  <circle cx="28" cy="148" r="6" fill="#00ff9d"/>
+  <text x="40" y="152" fill="#e8eaee" font-family="monospace" font-size="9">Binance Kline</text>
+  <text x="220" y="148" fill="#5e636d" font-family="monospace" font-size="7">Active</text>
+  <text x="24" y="172" fill="#9ca0a8" font-family="monospace" font-size="7">Latency 45ms · Fresh</text>
+  <text x="220" y="172" fill="#5e636d" font-family="monospace" font-size="7">Just now</text>
+  <text x="24" y="190" fill="#00ff9d" font-family="monospace" font-size="7">[Test]</text>
+  <text x="72" y="190" fill="#ff9b3d" font-family="monospace" font-size="7">[Disable]</text>
+  <text x="120" y="190" fill="#9ca0a8" font-family="monospace" font-size="7">provider: Binance</text>
+
+  <rect x="308" y="132" width="280" height="88" fill="rgba(255,84,112,0.04)" rx="4" stroke="rgba(255,84,112,0.15)" stroke-width="1"/>
+  <circle cx="324" cy="148" r="6" fill="#ff5470"/>
+  <text x="336" y="152" fill="#e8eaee" font-family="monospace" font-size="9">OKX Kline</text>
+  <text x="510" y="148" fill="#5e636d" font-family="monospace" font-size="7">Error</text>
+  <text x="320" y="172" fill="#9ca0a8" font-family="monospace" font-size="7">Latency — · Expired</text>
+  <text x="510" y="172" fill="#5e636d" font-family="monospace" font-size="7">2hr ago</text>
+  <text x="320" y="190" fill="#ff5470" font-family="monospace" font-size="7">rate_limit_exceeded</text>
+
+  <text x="12" y="240" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2462; Data source cards: name, status, latency, freshness, last fetch, and action buttons</text>
+
+  <!-- ④ Status banner -->
+  <rect x="12" y="252" width="576" height="24" fill="rgba(255,155,61,0.08)" rx="3"/>
+  <circle cx="24" cy="264" r="4" fill="#ff9b3d"/>
+  <text x="36" y="268" fill="#ff9b3d" font-family="monospace" font-size="8">Some data sources degraded</text>
+  <text x="200" y="268" fill="#9ca0a8" font-family="monospace" font-size="8">OKX rate limited, Binance OK</text>
+
+  <text x="12" y="294" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2463; Status warning banner: shown when sources are in error or degraded state</text>
+
+  <!-- ⑤ Test All button -->
+  <rect x="12" y="304" width="120" height="16" fill="rgba(0,255,157,0.1)" rx="8"/>
+  <text x="24" y="316" fill="#00ff9d" font-family="monospace" font-size="8">Test All Connections</text>
+</svg>
+<ol>
+  <li><strong>① Summary cards</strong> — Total source count, active, errors, and category count. Investigate when the error count is above zero.</li>
+  <li><strong>② Category filter chips</strong> — Filter sources by category: Kline, Order Book, Funding Rate, Open Interest, News, Whale, On-Chain, Research, Social Sentiment.</li>
+  <li><strong>③ Data source cards</strong> — Each card shows name, status indicator, provider, latency (ms), freshness (fresh/stale/expired), and last fetch time. Action buttons for "Test" and "Enable/Disable" at the bottom.</li>
+  <li><strong>④ Status warning banner</strong> — Automatically shown when any data source has an error or degraded state, listing reason codes for quick diagnosis.</li>
+  <li><strong>⑤ Batch test</strong> — "Test All Connections" button in the page header runs connectivity checks on every active source sequentially.</li>
+</ol>
+
+<h2>Reading the Key Metrics</h2>
+<ul>
+  <li><strong>Latency</strong> — Round-trip time for data requests. Green < 100ms, yellow 100-300ms, orange > 300ms. Consistently high latency may indicate network issues or provider problems.</li>
+  <li><strong>Freshness</strong> — Time since the last successful data fetch. Green = fresh (timely data), yellow = stale (slight delay), red = expired (data is unreliable). Expired data can distort strategy signals.</li>
+  <li><strong>Status</strong> — Active (collecting normally), Disabled (manually turned off), Error (connection failed), Rate Limited (frequency cap hit). Error and rate-limited states need human intervention.</li>
+  <li><strong>Last Fetch</strong> — Relative time display (just now / 5 min ago / 2 hr ago) helps you judge whether data is still flowing.</li>
+</ul>
+
+<h2>Common Actions, Step by Step</h2>
+<ol>
+  <li>After adding a new data source, find its card under the relevant category and click "Test" to verify the connection.</li>
+  <li>If the test fails, check whether the API key is valid, the network is reachable, and the provider has rate limits.</li>
+  <li>Click "Disable" on sources you do not currently need to avoid wasting resources on unnecessary requests.</li>
+  <li>For bulk operations, click "Test All Connections" to verify all active sources at once.</li>
+  <li>Read the reason codes on error-state sources (e.g. rate_limit_exceeded) and take the suggested action.</li>
+</ol>
+
+<h2>Behind the Scenes</h2>
+<p>Page data is fetched via the ViewModel's <code>load()</code> method, calling the backend API to return all data source states and metrics. Each "Test" operation triggers an independent connectivity check, with results updating the card in real time. "Test All Connections" iterates through active sources sequentially. The enable/disable toggle updates the source configuration on the backend. Category filtering is local and does not trigger new network requests.</p>
+
+<h2>See Also</h2>
+<ul>
+  <li><a href="#/pages/system/service-management">Page · Service Management</a></li>
+  <li><a href="#/pages/overview/live-readiness">Page · Live Readiness</a></li>
+  <li><a href="#/concepts/09-dryrun-vs-live">Concept · Backtest / Dry-Run / Live</a></li>
+</ul>

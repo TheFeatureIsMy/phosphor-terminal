@@ -1,0 +1,116 @@
+<h1>服务管理</h1>
+<p class="chapter-meta">页面 · 系统 · 5 分钟</p>
+
+<blockquote class="lede">一站式监控所有后端服务的健康状态——Freqtrade、Redis、PostgreSQL、AI Provider，并管理推理任务与隐私策略。</blockquote>
+
+<h2>TL;DR</h2>
+<p>服务管理页面聚合了整个 AlphaLoop 系统的运行状态。它分为两大板块：上方是 AI 服务管理（Provider 总览、任务路由矩阵、模型运行状态、推理队列、隐私策略），下方通过 Dashboard 上的服务健康卡片快速反映 Freqtrade、Redis、PostgreSQL 等基础设施的连通性。当某个服务出现延迟或宕机时，颜色会从绿色变为黄色或红色，让你在交易前就能发现问题。</p>
+
+<h2>谁用 · 何时用</h2>
+<p>运维人员或在实盘前检查系统状态的交易者。每天早上启动 AlphaLoop 后，先看一眼服务管理确认所有依赖都在线。当 AI 信号生成异常慢或交易执行不响应时，也来这里排查是哪个环节出了问题——Freqtrade 断连、AI Provider 限流、还是模型 OOM。</p>
+
+<h2>页面解剖</h2>
+<svg class="diagram" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="320" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- ① Service status pills grid -->
+  <rect x="12" y="8" width="576" height="100" fill="rgba(255,255,255,0.02)" rx="4" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+
+  <circle cx="40" cy="24" r="5" fill="#00ff9d"/>
+  <text x="52" y="28" fill="#e8eaee" font-family="monospace" font-size="9">Freqtrade</text>
+  <text x="140" y="28" fill="#9ca0a8" font-family="monospace" font-size="7">12ms</text>
+
+  <circle cx="220" cy="24" r="5" fill="#00ff9d"/>
+  <text x="232" y="28" fill="#e8eaee" font-family="monospace" font-size="9">Redis</text>
+  <text x="300" y="28" fill="#9ca0a8" font-family="monospace" font-size="7">2ms</text>
+
+  <circle cx="380" cy="24" r="5" fill="#00ff9d"/>
+  <text x="392" y="28" fill="#e8eaee" font-family="monospace" font-size="9">PostgreSQL</text>
+  <text x="480" y="28" fill="#9ca0a8" font-family="monospace" font-size="7">OK</text>
+
+  <circle cx="40" cy="50" r="5" fill="#00ff9d"/>
+  <text x="52" y="54" fill="#e8eaee" font-family="monospace" font-size="9">Binance API</text>
+  <text x="160" y="54" fill="#9ca0a8" font-family="monospace" font-size="7">45ms</text>
+
+  <circle cx="220" cy="50" r="5" fill="#f5c542"/>
+  <text x="232" y="54" fill="#e8eaee" font-family="monospace" font-size="9">OpenAI API</text>
+  <text x="320" y="54" fill="#9ca0a8" font-family="monospace" font-size="7">1.2s</text>
+
+  <circle cx="380" cy="50" r="5" fill="#00ff9d"/>
+  <text x="392" y="54" fill="#e8eaee" font-family="monospace" font-size="9">Claude API</text>
+  <text x="480" y="54" fill="#9ca0a8" font-family="monospace" font-size="7">320ms</text>
+
+  <text x="12" y="80" fill="#5e636d" font-family="monospace" font-size="8">5/6 在线  ·  1 降级  ·  0 宕机</text>
+  <text x="400" y="80" fill="#9ca0a8" font-family="monospace" font-size="8">最后更新: 刚刚</text>
+
+  <!-- ① callout -->
+  <text x="12" y="116" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2460; 服务状态网格：每个圆形指示灯代表一个依赖服务，绿=健康，黄=降级，红=宕机</text>
+
+  <!-- ② Provider overview card -->
+  <rect x="12" y="126" width="576" height="60" fill="rgba(80,180,255,0.06)" rx="4" stroke="rgba(80,180,255,0.2)" stroke-width="1"/>
+  <text x="24" y="144" fill="#e8eaee" font-family="monospace" font-size="9">Provider 总览</text>
+  <rect x="24" y="152" width="120" height="22" fill="rgba(0,255,157,0.12)" rx="2"/>
+  <text x="36" y="167" fill="#00ff9d" font-family="monospace" font-size="8">Ollama &#x25CF; 本地</text>
+  <rect x="152" y="152" width="120" height="22" fill="rgba(0,255,157,0.12)" rx="2"/>
+  <text x="164" y="167" fill="#00ff9d" font-family="monospace" font-size="8">OpenAI &#x25CF; 云端</text>
+  <rect x="280" y="152" width="120" height="22" fill="rgba(0,255,157,0.12)" rx="2"/>
+  <text x="292" y="167" fill="#00ff9d" font-family="monospace" font-size="8">Anthropic &#x25CF; 云端</text>
+
+  <!-- ② callout -->
+  <text x="12" y="200" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2461; AI Provider 总览：列出所有已配置的 AI 服务及在线状态、延迟、模型数</text>
+
+  <!-- ③ Routing matrix + ④ Inference queue -->
+  <rect x="12" y="210" width="280" height="50" fill="rgba(255,255,255,0.02)" rx="4" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="24" y="226" fill="#e8eaee" font-family="monospace" font-size="9">任务路由矩阵</text>
+  <text x="24" y="240" fill="#9ca0a8" font-family="monospace" font-size="7">生成 &#x2192; Ollama(主要) / OpenAI(备用)</text>
+  <text x="24" y="252" fill="#9ca0a8" font-family="monospace" font-size="7">分析 &#x2192; OpenAI(主要) / Anthropic(备用)</text>
+
+  <rect x="308" y="210" width="280" height="50" fill="rgba(245,197,66,0.06)" rx="4" stroke="rgba(245,197,66,0.2)" stroke-width="1"/>
+  <text x="320" y="226" fill="#e8eaee" font-family="monospace" font-size="9">推理队列</text>
+  <text x="320" y="240" fill="#f5c542" font-family="monospace" font-size="7">2 运行中  ·  3 排队中  ·  0 失败</text>
+  <text x="320" y="252" fill="#9ca0a8" font-family="monospace" font-size="7">claude-3-5-sonnet  ·  $0.08</text>
+
+  <text x="12" y="278" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2462; 路由矩阵（任务类型到 Provider 的映射） + &#x2463; 推理队列（实时任务监控）</text>
+
+  <!-- ⑤ Privacy policy -->
+  <rect x="12" y="290" width="576" height="20" fill="rgba(0,255,157,0.06)" rx="3"/>
+  <text x="24" y="304" fill="#00ff9d" font-family="monospace" font-size="9">&#x25B3; 隐私策略: 交易数据本地推理 &#x25CB; 研究数据云端允许 &#x25CB; 密钥本地推理 &#x25CB;</text>
+
+  <text x="12" y="318" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2464; 隐私策略矩阵：每类数据标记允许本地推理或云端 API 调用</text>
+</svg>
+<ol>
+  <li><strong>① 服务状态网格</strong> — 所有依赖服务的实时健康指示。绿点 = 正常响应，黄点 = 延迟升高，红点 = 服务不可用。旁边显示延迟毫秒数。</li>
+  <li><strong>② AI Provider 总览</strong> — 列出所有已配置的 AI 服务（Ollama、OpenAI、Anthropic 等），显示在线/离线状态、延迟、模型数和失败率。每张卡片有"测试"按钮可手动验证连通性。</li>
+  <li><strong>③ 任务路由矩阵</strong> — 定义每个 AI 任务类型（生成、分析、情绪、检索）的 Provider 路由策略。支持主/备路由和多种策略：failover、round-robin、local-only、cost-opt。</li>
+  <li><strong>④ 推理队列</strong> — 实时显示正在执行和排队的推理任务。每行显示模型名、任务类型、预估费用和状态。可取消排队中的任务。</li>
+  <li><strong>⑤ 隐私策略矩阵</strong> — 按数据类型标记是否允许本地推理和云端 API 调用。交易数据和密钥强制本地，研究数据可云端。</li>
+</ol>
+
+<h2>关键指标怎么读</h2>
+<ul>
+  <li><strong>服务状态颜色</strong> — 绿色 = 健康（延迟 < 100ms），黄色 = 降级（延迟 100ms-1s 或部分限流），红色 = 宕机（不可用）。如果 Freqtrade 变红，交易执行将中断。</li>
+  <li><strong>Provider 失败率</strong> — 反映 AI 服务调用失败的百分比。持续高于 5% 表示需要切换路由策略或检查 API Key 是否过期。</li>
+  <li><strong>推理队列积压</strong> — 排队中的任务数量持续增长说明当前 Provider 吞吐不足，应考虑添加备用 Provider 或升级模型实例。</li>
+  <li><strong>路由策略</strong> — failover（主路由失败自动切备用）、round-robin（轮询分摊负载）、local-only（仅本地推理）、cost-opt（优先选成本最低的可用 Provider）。</li>
+</ul>
+
+<h2>常见操作 · 一步步</h2>
+<ol>
+  <li>打开服务管理页面，快速扫视顶部服务状态网格——确认所有绿灯亮起。</li>
+  <li>如某个服务变黄或变红，点击对应服务的"测试"按钮确认是否瞬时波动。</li>
+  <li>切换到 Provider 总览区域，检查各 AI Provider 的失败率和延迟。如 OpenAI 持续高延迟，考虑将任务路由切换到 Anthropic 备用。</li>
+  <li>在任务路由矩阵中调整策略——例如将生成任务从 failover 改为 cost-opt 以降低费用。</li>
+  <li>查看推理队列，如有长时间排队的任务可取消或提升优先级。</li>
+  <li>检查隐私策略矩阵，确保敏感数据（交易数据、密钥）仅允许本地推理。</li>
+</ol>
+
+<h2>幕后</h2>
+<p>服务状态数据来自后端 <code>/api/system/status</code> 和 <code>/api/system/dependencies</code> 端点。Freqtrade 状态通过 REST API 查询实时交易引擎状态；Redis 和 PostgreSQL 通过后端连接池探活。AI Provider 数据通过 <code>APIAIProviders</code> 服务并行获取——Provider 列表、模型运行状态、路由规则和隐私策略各走独立请求。推理队列由 <code>APIInference</code> 管理，任务取消通过 <code>/api/inference/jobs/&lt;id&gt;/cancel</code> 触发。所有数据刷新通过页面顶部的刷新按钮手动触发。</p>
+
+<h2>相关</h2>
+<ul>
+  <li><a href="#/pages/system/data-source-management">页面 · 数据源管理</a></li>
+  <li><a href="#/pages/overview/live-readiness">页面 · 实盘就绪</a></li>
+  <li><a href="#/concepts/09-dryrun-vs-live">概念 · 回测 / 干跑 / 实盘</a></li>
+  <li><a href="#/walkthroughs/daily-trading-loop">情景 · 日常交易循环</a></li>
+</ul>

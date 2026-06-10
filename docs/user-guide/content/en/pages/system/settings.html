@@ -1,0 +1,127 @@
+<h1>Settings</h1>
+<p class="chapter-meta">Page · System · 5 min</p>
+
+<blockquote class="lede">Central configuration hub for all AlphaLoop preferences — language, profile, exchange, risk control, notifications, API keys, MCP server, data vacuum, and advanced operations.</blockquote>
+
+<h2>TL;DR</h2>
+<p>Settings is organized into 7 tabs: General (language toggle + profile), Trading (exchange config + risk parameters), Notifications (Telegram integration + event toggles), API (third-party API keys), Services (MCP server status + audit log), Data (data vacuum/archival), and Advanced (data export + account deletion). Each tab switch is animated with a sliding green indicator. All settings support local modification and cloud persistence.</p>
+
+<h2>Who uses it & when</h2>
+<p>Every user at some point. First launch: configure language, exchange, and API keys. Risk parameters are set before a strategy goes live. Notifications are configured when Telegram alerts are needed. Data vacuum runs when storage is running low. Advanced operations are reserved for administrators.</p>
+
+<h2>Page Anatomy</h2>
+<svg class="diagram" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="320" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- ① Tab bar -->
+  <rect x="12" y="8" width="576" height="28" fill="rgba(255,255,255,0.02)" rx="4" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+
+  <text x="30" y="27" fill="#00ff9d" font-family="monospace" font-size="9" font-weight="bold">&#x2699; General</text>
+  <text x="100" y="27" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2194; Trading</text>
+  <text x="165" y="27" fill="#9ca0a8" font-family="monospace" font-size="9">&#x1F514; Notif</text>
+  <text x="220" y="27" fill="#9ca0a8" font-family="monospace" font-size="9">&#x1F511; API</text>
+  <text x="265" y="27" fill="#9ca0a8" font-family="monospace" font-size="9">&#x1F4E1; Srv</text>
+  <text x="310" y="27" fill="#9ca0a8" font-family="monospace" font-size="9">&#x1F4BE; Data</text>
+  <text x="355" y="27" fill="#9ca0a8" font-family="monospace" font-size="9">&#x26A0; Adv</text>
+
+  <rect x="26" y="32" width="56" height="2" fill="#00ff9d" rx="1"/>
+
+  <text x="12" y="52" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2460; Tab bar: 7 setting sections, selected tab has a green sliding indicator</text>
+
+  <!-- ② Left column: General settings form -->
+  <rect x="12" y="62" width="280" height="150" fill="rgba(255,255,255,0.02)" rx="4" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+
+  <text x="24" y="80" fill="#e8eaee" font-family="monospace" font-size="9">General Settings</text>
+
+  <text x="24" y="100" fill="#9ca0a8" font-family="monospace" font-size="8">Language</text>
+  <rect x="90" y="88" width="100" height="18" fill="rgba(0,255,157,0.08)" rx="9"/>
+  <text x="108" y="101" fill="#00ff9d" font-family="monospace" font-size="8">English &#x25BC;</text>
+
+  <text x="24" y="124" fill="#9ca0a8" font-family="monospace" font-size="8">Username</text>
+  <rect x="90" y="112" width="160" height="18" fill="rgba(255,255,255,0.04)" rx="2" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="98" y="125" fill="#e8eaee" font-family="monospace" font-size="8">TraderAlpha</text>
+
+  <text x="24" y="148" fill="#9ca0a8" font-family="monospace" font-size="8">Email</text>
+  <rect x="90" y="136" width="160" height="18" fill="rgba(255,255,255,0.04)" rx="2" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="98" y="149" fill="#e8eaee" font-family="monospace" font-size="8">alpha@example.com</text>
+
+  <text x="24" y="172" fill="#9ca0a8" font-family="monospace" font-size="8">Timezone</text>
+  <text x="90" y="172" fill="#e8eaee" font-family="monospace" font-size="8">Asia/Shanghai</text>
+
+  <text x="24" y="196" fill="#9ca0a8" font-family="monospace" font-size="8">2FA</text>
+  <rect x="90" y="186" width="56" height="16" fill="rgba(94,99,109,0.2)" rx="8"/>
+  <text x="102" y="198" fill="#9ca0a8" font-family="monospace" font-size="7">Disabled</text>
+
+  <!-- ③ Right column: Exchange settings form -->
+  <rect x="308" y="62" width="280" height="150" fill="rgba(255,255,255,0.02)" rx="4" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+
+  <text x="320" y="80" fill="#e8eaee" font-family="monospace" font-size="9">Exchange Configuration</text>
+
+  <text x="320" y="100" fill="#9ca0a8" font-family="monospace" font-size="8">Exchange</text>
+  <rect x="390" y="88" width="100" height="18" fill="rgba(255,255,255,0.04)" rx="2" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="408" y="101" fill="#e8eaee" font-family="monospace" font-size="8">Binance &#x25BC;</text>
+
+  <text x="320" y="124" fill="#9ca0a8" font-family="monospace" font-size="8">Mode</text>
+  <rect x="390" y="112" width="100" height="18" fill="rgba(0,255,157,0.08)" rx="2"/>
+  <text x="408" y="125" fill="#00ff9d" font-family="monospace" font-size="8">Paper Trading</text>
+
+  <text x="320" y="148" fill="#9ca0a8" font-family="monospace" font-size="8">API Key</text>
+  <rect x="390" y="136" width="160" height="18" fill="rgba(255,255,255,0.04)" rx="2" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="398" y="149" fill="#5e636d" font-family="monospace" font-size="8">••••••••••••••••</text>
+
+  <text x="320" y="172" fill="#9ca0a8" font-family="monospace" font-size="8">API Secret</text>
+  <rect x="390" y="160" width="160" height="18" fill="rgba(255,255,255,0.04)" rx="2" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="398" y="173" fill="#5e636d" font-family="monospace" font-size="8">••••••••••••••••</text>
+
+  <text x="12" y="228" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2461; General (left) + Exchange config (right): content panel transitions smoothly between tabs</text>
+
+  <!-- ④ Save indicator -->
+  <rect x="12" y="240" width="576" height="20" fill="rgba(0,255,157,0.06)" rx="3"/>
+  <text x="24" y="254" fill="#00ff9d" font-family="monospace" font-size="8">&#x2713; Settings saved to cloud (2-second debounce auto-save)</text>
+
+  <text x="12" y="280" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2462; Auto-save: pushes to backend after 2 seconds of inactivity</text>
+
+  <!-- ⑤ Danger zone callout -->
+  <rect x="12" y="292" width="576" height="20" fill="rgba(255,84,112,0.06)" rx="3" stroke="rgba(255,84,112,0.2)" stroke-width="1"/>
+  <text x="24" y="306" fill="#ff5470" font-family="monospace" font-size="8">&#x26A0; Advanced tab contains data export and account deletion — irreversible actions</text>
+
+  <text x="12" y="320" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2463; Advanced operations: isolated section with confirmation dialogs for destructive actions</text>
+</svg>
+<ol>
+  <li><strong>① Tab bar</strong> — 7 section tabs: General, Trading, Notifications, API, Services, Data, Advanced. Active tab has a green sliding indicator with glow shadow.</li>
+  <li><strong>② General settings</strong> — Language toggle (简体中文 / English, instant effect), profile (username, email, role, timezone, 2FA status).</li>
+  <li><strong>③ Exchange configuration</strong> — Exchange selector (Binance/OKX/Bybit), trading mode (spot/futures), dry-run toggle, API Key/Secret fields.</li>
+  <li><strong>④ Auto-save</strong> — Settings are persisted to the backend with a 2-second debounce. Local defaults are used offline without blocking the user.</li>
+  <li><strong>⑤ Advanced operations</strong> — Data export (strategies + trade history) and account deletion. Deletion requires a confirmation dialog.</li>
+</ol>
+
+<h2>Key Settings Explained</h2>
+<ul>
+  <li><strong>Language toggle</strong> — Switch between Simplified Chinese and English. All pages respond instantly without restart.</li>
+  <li><strong>Dry Run (Paper Trading)</strong> — When enabled, the exchange API is used for market data only; no real orders are placed. Essential during strategy validation.</li>
+  <li><strong>Risk parameters</strong> — Max single loss (default 5%), max drawdown (15%), daily drawdown limit (8%), auto-pause. The system automatically halts new entries when thresholds are breached.</li>
+  <li><strong>Notification configuration</strong> — Telegram Bot Token and Chat ID for trade execution, risk events, daily summary, and system alert notifications.</li>
+  <li><strong>MCP service</strong> — View MCP server status (bind address, request count), audit log (response status codes and latency per tool call), and rotate access tokens.</li>
+  <li><strong>Data vacuum</strong> — Scan and archive expired signal data to free up storage. History shows scanned and archived counts per run.</li>
+</ul>
+
+<h2>Common Actions, Step by Step</h2>
+<ol>
+  <li>First use: open the General tab to choose a language and fill in your profile. Switch to the Trading tab to configure your exchange and API keys — confirm dry-run mode is enabled.</li>
+  <li>Configure risk controls: set max single loss and max drawdown in the Trading tab, and enable auto-pause.</li>
+  <li>Connect Telegram: enter your Bot Token and Chat ID in the Notifications tab, then toggle the event types you want to receive.</li>
+  <li>Configure AI services: enter OpenAI or Anthropic API keys in the API tab. Check MCP audit logs in the Services tab.</li>
+  <li>Run data vacuum: when storage is low, click "Run Vacuum" in the Data tab. Check the history for results.</li>
+  <li>Reset risk defaults: click "Reset Defaults" at the bottom of the risk parameters section to restore factory values.</li>
+</ol>
+
+<h2>Behind the Scenes</h2>
+<p>Settings state is managed by <code>SettingsState</code> (a singleton initialized with dependency injection). On first launch, it fetches saved settings from <code>/auth/settings</code> on the backend, overriding local defaults. Every modification triggers <code>scheduleSave()</code> — a 2-second debounce window pushes changes to <code>/auth/settings</code>. Language switching is global through the <code>L10n</code> system; views re-render via <code>.id(settings.language)</code>. When offline, all settings retain their local defaults without blocking the user.</p>
+
+<h2>See Also</h2>
+<ul>
+  <li><a href="#/pages/system/service-management">Page · Service Management</a></li>
+  <li><a href="#/pages/system/data-source-management">Page · Data Source Management</a></li>
+  <li><a href="#/pages/risk/risk-center">Page · Risk Center</a></li>
+  <li><a href="#/pages/ai-research/agent-platform">Page · AI Agent Platform</a></li>
+</ul>
