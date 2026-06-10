@@ -1,0 +1,110 @@
+<h1>SMC / ICT in 5 Minutes</h1>
+<p class="chapter-meta">Concept · 02 / 10 · 6 min</p>
+
+<blockquote class="lede">SMC (Smart Money Concepts) is a chart-reading method built around what large players are likely doing.</blockquote>
+
+<blockquote class="pull">
+  "SMC focuses on the actions of institutional traders — banks, hedge funds, market makers — rather than retail-friendly indicators like RSI or MACD. It reads price action through the lens of liquidity, order flow, and structural pivots."<cite>— TradeThePool<sup class="cite">[1]</sup></cite>
+</blockquote>
+
+<svg class="diagram" viewBox="0 0 600 240" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect x="0" y="0" width="600" height="240" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- Grid lines -->
+  <line x1="80" y1="30" x2="80" y2="210" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+  <line x1="270" y1="30" x2="270" y2="210" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+  <line x1="460" y1="30" x2="460" y2="210" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+  <line x1="30" y1="50" x2="570" y2="50" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+  <line x1="30" y1="95" x2="570" y2="95" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+  <line x1="30" y1="140" x2="570" y2="140" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+  <line x1="30" y1="185" x2="570" y2="185" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+
+  <!-- Phase labels -->
+  <text x="160" y="20" fill="#00ff9d" font-family="monospace" font-size="11" text-anchor="middle" font-weight="bold">ACCUMULATION</text>
+  <text x="350" y="20" fill="#f5c542" font-family="monospace" font-size="11" text-anchor="middle" font-weight="bold">MANIPULATION</text>
+  <text x="540" y="20" fill="#ff5470" font-family="monospace" font-size="11" text-anchor="middle" font-weight="bold">DISTRIBUTION</text>
+
+  <!-- Phase separator dashed lines -->
+  <line x1="240" y1="30" x2="240" y2="210" stroke="rgba(255,255,255,0.12)" stroke-width="1" stroke-dasharray="4,4"/>
+  <line x1="430" y1="30" x2="430" y2="210" stroke="rgba(255,255,255,0.12)" stroke-width="1" stroke-dasharray="4,4"/>
+
+  <!-- Accumulation candles (sideways to slight dip) -->
+  <rect x="95" y="95" width="12" height="40" fill="rgba(0,255,157,0.3)" stroke="#00ff9d" stroke-width="1"/>
+  <rect x="112" y="105" width="12" height="35" fill="rgba(0,255,157,0.3)" stroke="#00ff9d" stroke-width="1"/>
+  <rect x="129" y="100" width="12" height="42" fill="rgba(0,255,157,0.3)" stroke="#00ff9d" stroke-width="1"/>
+  <rect x="146" y="110" width="12" height="30" fill="rgba(0,255,157,0.3)" stroke="#00ff9d" stroke-width="1"/>
+  <rect x="163" y="108" width="12" height="38" fill="rgba(0,255,157,0.3)" stroke="#00ff9d" stroke-width="1"/>
+  <rect x="180" y="115" width="12" height="28" fill="rgba(0,255,157,0.3)" stroke="#00ff9d" stroke-width="1"/>
+  <rect x="197" y="102" width="12" height="36" fill="rgba(0,255,157,0.3)" stroke="#00ff9d" stroke-width="1"/>
+  <rect x="214" y="112" width="12" height="32" fill="rgba(0,255,157,0.3)" stroke="#00ff9d" stroke-width="1"/>
+
+  <!-- Manipulation candles (fake breakout down, sharp reversal) -->
+  <rect x="255" y="140" width="12" height="38" fill="rgba(245,197,66,0.3)" stroke="#f5c542" stroke-width="1"/>
+  <rect x="272" y="148" width="12" height="35" fill="rgba(245,197,66,0.3)" stroke="#f5c542" stroke-width="1"/>
+  <rect x="289" y="155" width="12" height="40" fill="rgba(245,197,66,0.3)" stroke="#f5c542" stroke-width="1"/>
+  <!-- Reversal candle (long wick down, body up) -->
+  <rect x="306" y="100" width="12" height="30" fill="rgba(245,197,66,0.3)" stroke="#f5c542" stroke-width="1"/>
+  <line x1="312" y1="170" x2="312" y2="130" stroke="#f5c542" stroke-width="1"/>
+  <rect x="323" y="95" width="12" height="28" fill="rgba(245,197,66,0.3)" stroke="#f5c542" stroke-width="1"/>
+  <rect x="340" y="90" width="12" height="32" fill="rgba(245,197,66,0.3)" stroke="#f5c542" stroke-width="1"/>
+  <rect x="357" y="82" width="12" height="35" fill="rgba(245,197,66,0.3)" stroke="#f5c542" stroke-width="1"/>
+  <rect x="374" y="75" width="12" height="30" fill="rgba(245,197,66,0.3)" stroke="#f5c542" stroke-width="1"/>
+  <rect x="391" y="65" width="12" height="35" fill="rgba(245,197,66,0.3)" stroke="#f5c542" stroke-width="1"/>
+  <rect x="408" y="58" width="12" height="32" fill="rgba(245,197,66,0.3)" stroke="#f5c542" stroke-width="1"/>
+
+  <!-- Distribution candles (selling into strength) -->
+  <rect x="445" y="60" width="12" height="35" fill="rgba(255,84,112,0.3)" stroke="#ff5470" stroke-width="1"/>
+  <rect x="462" y="65" width="12" height="32" fill="rgba(255,84,112,0.3)" stroke="#ff5470" stroke-width="1"/>
+  <rect x="479" y="72" width="12" height="38" fill="rgba(255,84,112,0.3)" stroke="#ff5470" stroke-width="1"/>
+  <rect x="496" y="80" width="12" height="35" fill="rgba(255,84,112,0.3)" stroke="#ff5470" stroke-width="1"/>
+  <rect x="513" y="90" width="12" height="32" fill="rgba(255,84,112,0.3)" stroke="#ff5470" stroke-width="1"/>
+  <rect x="530" y="100" width="12" height="35" fill="rgba(255,84,112,0.3)" stroke="#ff5470" stroke-width="1"/>
+  <rect x="547" y="110" width="12" height="32" fill="rgba(255,84,112,0.3)" stroke="#ff5470" stroke-width="1"/>
+
+  <!-- Phase arrows -->
+  <path d="M170 225 L170 218 L165 218 L170 210 L175 218 L170 218" fill="none" stroke="#00ff9d" stroke-width="1.5"/>
+  <path d="M350 225 L350 218 L345 218 L350 210 L355 218 L350 218" fill="none" stroke="#f5c542" stroke-width="1.5"/>
+  <path d="M530 225 L530 218 L525 218 L530 210 L535 218 L530 218" fill="none" stroke="#ff5470" stroke-width="1.5"/>
+
+  <!-- Phase bottom labels -->
+  <text x="170" y="238" fill="#9ca0a8" font-family="monospace" font-size="10" text-anchor="middle">Smart money builds positions</text>
+  <text x="350" y="238" fill="#9ca0a8" font-family="monospace" font-size="10" text-anchor="middle">Stop hunt / fake breakout</text>
+  <text x="530" y="238" fill="#9ca0a8" font-family="monospace" font-size="10" text-anchor="middle">Distribution to retail</text>
+</svg>
+
+<h2>Why It Matters</h2>
+<p>Most retail indicators — RSI, MACD, Bollinger Bands — are calculated from price itself. Large players know the formulas and can even manipulate them. SMC flips the script: instead of layering indicators on price, it reads price directly through its structure and behavior. The core assumption is that smart money (banks, market makers, hedge funds) leaves footprints on the chart, and your job is to learn how to spot them.</p>
+<p>The framework exploded in popularity after 2020 thanks to ICT (Inner Circle Trader) on YouTube. It has plenty of critics — academics will point out it lacks rigorous validation — but it offers a self-consistent, repeatable way to read charts that helps explain <em>why</em> price reverses at seemingly arbitrary levels.</p>
+
+<h2>How To Spot One</h2>
+<p>SMC breaks the market into three sequential phases:</p>
+<ol>
+  <li><strong>Accumulation</strong> — Price grinds sideways in a tight range on low conviction. Smart money is quietly building positions without drawing attention. Retail traders find this phase boring or directionless.</li>
+  <li><strong>Manipulation</strong> — Price suddenly breaks out of the range one direction (often down), triggering retail stop-losses, then reverses violently. This is the "stop hunt." On the chart it looks like a long wick or an engulfing reversal candle.</li>
+  <li><strong>Distribution</strong> — Price moves hard in the real intended direction. Smart money gradually exits into the move, selling (or buying) into the retail crowd that just piled in.</li>
+</ol>
+<p>These phases are clearest on higher timeframes (4H, daily). SMC doesn't predict <em>which</em> direction the market will go — it tells you what phase you are in and what typically comes next.</p>
+
+<h2>Common Pitfalls</h2>
+<ul>
+  <li><strong>SMC / ICT is not official theory.</strong> It's a community-driven framework, not peer-reviewed finance. Use it as a lens, not a law.</li>
+  <li><strong>Every teacher differs.</strong> ICT, TradeThePool, FluxCharts, LuxAlgo — each has slightly different terminology and rules. Pick one school and learn it deeply before mixing sources.</li>
+  <li><strong>Never judge from a single candle.</strong> SMC is about structure, not individual bars. Always look at a sequence of candles.</li>
+  <li><strong>Don't over-interpret.</strong> Not every breakout is "manipulation" — sometimes price just moves. The biggest risk of SMC is that you start seeing smart money everywhere. Stay skeptical.</li>
+</ul>
+
+<h2>In AlphaLoop</h2>
+<ul>
+  <li><a href="#/pages/structure/market-structure">Market Structure</a> — turns SMC's high/low analysis into computable BOS / CHoCH signals</li>
+  <li><a href="#/pages/structure/structure-matrix">Structure Matrix</a> — multi-timeframe SMC alignment, helping you identify which phase (accumulation / manipulation / distribution) is active</li>
+  <li><a href="#/concepts/03-market-structure">Market Structure: BOS &amp; CHoCH</a> — the core structural concepts behind SMC</li>
+</ul>
+
+<section class="sources">
+  <h3>Sources</h3>
+  <ol>
+    <li><a href="https://tradethepool.com/technical-skill/smart-money-concepts-terminology" target="_blank" rel="noreferrer noopener">TradeThePool — SMC Terminology</a></li>
+    <li><a href="https://dailypriceaction.com/blog/smart-money-concepts" target="_blank" rel="noreferrer noopener">DailyPriceAction — SMC Definitive Guide</a></li>
+  </ol>
+</section>
