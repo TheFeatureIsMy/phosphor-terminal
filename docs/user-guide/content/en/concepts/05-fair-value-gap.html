@@ -1,0 +1,99 @@
+<h1>Fair Value Gaps</h1>
+<p class="chapter-meta">Concept · 05 / 10 · 5 min</p>
+
+<blockquote class="lede">An FVG is a three-candle "price vacuum" — markets often return to fill it.</blockquote>
+
+<blockquote class="pull">
+  "A Fair Value Gap (FVG) forms when buying or selling pressure is so intense that consecutive candles do not overlap — creating a price window where no trading occurred. Markets have a tendency to return and fill these gaps."<cite>— DailyPriceAction<sup class="cite">[1]</sup></cite>
+</blockquote>
+
+<svg class="diagram" viewBox="0 0 600 220" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect x="0" y="0" width="600" height="220" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- Grid lines -->
+  <line x1="30" y1="40" x2="570" y2="40" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+  <line x1="30" y1="75" x2="570" y2="75" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+  <line x1="30" y1="110" x2="570" y2="110" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+  <line x1="30" y1="145" x2="570" y2="145" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+  <line x1="30" y1="180" x2="570" y2="180" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+
+  <!-- Candle 1: first bullish candle -->
+  <rect x="100" y="140" width="18" height="35" fill="rgba(0,255,157,0.3)" stroke="#00ff9d" stroke-width="1"/>
+  <text x="109" y="134" fill="#00ff9d" font-family="monospace" font-size="9" text-anchor="middle">1</text>
+
+  <!-- Candle 2: small gap candle -->
+  <rect x="160" y="110" width="18" height="28" fill="rgba(0,255,157,0.3)" stroke="#00ff9d" stroke-width="1"/>
+  <text x="169" y="104" fill="#00ff9d" font-family="monospace" font-size="9" text-anchor="middle">2</text>
+
+  <!-- Candle 3: strong bullish candle, no overlap with candle 1 -->
+  <rect x="220" y="78" width="18" height="35" fill="rgba(0,255,157,0.3)" stroke="#00ff9d" stroke-width="1"/>
+  <text x="229" y="72" fill="#00ff9d" font-family="monospace" font-size="9" text-anchor="middle">3</text>
+
+  <!-- FVG highlight zone: between candle 1 high and candle 3 low -->
+  <rect x="85" y="105" width="180" height="25" fill="rgba(245,197,66,0.15)" stroke="#f5c542" stroke-width="1" rx="2"/>
+
+  <!-- FVG label -->
+  <text x="175" y="101" fill="#f5c542" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">FVG (Fair Value Gap)</text>
+
+  <!-- Lines showing the gap -->
+  <line x1="90" y1="140" x2="90" y2="105" stroke="#f5c542" stroke-width="1" stroke-dasharray="3,2"/>
+  <line x1="260" y1="78" x2="260" y2="105" stroke="#f5c542" stroke-width="1" stroke-dasharray="3,2"/>
+
+  <!-- Candle 1 high label -->
+  <text x="82" y="143" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="end">High</text>
+  <!-- Candle 3 low label -->
+  <text x="268" y="82" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="start">Low</text>
+
+  <!-- Later: price returns to fill the gap -->
+  <rect x="350" y="115" width="14" height="28" fill="rgba(255,84,112,0.25)" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+  <rect x="370" y="120" width="14" height="25" fill="rgba(255,84,112,0.25)" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+  <rect x="390" y="110" width="14" height="30" fill="rgba(255,84,112,0.25)" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+  <rect x="410" y="108" width="14" height="32" fill="rgba(245,197,66,0.25)" stroke="#f5c542" stroke-width="1"/>
+  <!-- Price enters the FVG zone -->
+  <rect x="430" y="108" width="14" height="30" fill="rgba(245,197,66,0.35)" stroke="#f5c542" stroke-width="1.5"/>
+  <line x1="437" y1="108" x2="437" y2="125" stroke="#f5c542" stroke-width="0.8"/>
+
+  <!-- Fill arrow -->
+  <path d="M370 145 L410 130" stroke="#f5c542" stroke-width="1.2" stroke-dasharray="3,2"/>
+  <text x="375" y="152" fill="#f5c542" font-family="monospace" font-size="9">Price fills gap</text>
+
+  <!-- Bottom legend -->
+  <text x="55" y="210" fill="#9ca0a8" font-family="monospace" font-size="9" text-anchor="start">Candle 1 high &lt; Candle 3 low → gap formed</text>
+  <text x="380" y="210" fill="#9ca0a8" font-family="monospace" font-size="9" text-anchor="start">Price tends to return and fill it</text>
+</svg>
+
+<h2>Why It Matters</h2>
+<p>The Fair Value Gap (FVG) is probably the most intuitive concept in SMC and the easiest for beginners to grasp. The idea is simple: when price moves too fast, adjacent candles don't overlap, leaving a "gap" in the trading range. In a three-candle sequence, if the wicks of the middle candle don't overlap with the body of its neighbors, that empty space is an FVG.</p>
+<p>Why does it form? Because buying (or selling) pressure was so intense that price jumped through levels without pausing to trade at every tick. Those skipped price levels are like unfilled pits — markets have a natural tendency to return and "fill" them, seeking liquidity where orders were missed.</p>
+<p>FVGs can be used as entry zones (wait for price to retrace into the gap) or as reference levels for stop-loss placement (put your stop just beyond the far side of the gap).</p>
+
+<h2>How To Spot One</h2>
+<ol>
+  <li><strong>Find three consecutive candles</strong> — label them 1, 2, 3 left to right.</li>
+  <li><strong>Check candle 1's high against candle 3's low</strong> — if candle 1's high &lt; candle 3's low (bullish) or candle 1's low &gt; candle 3's high (bearish), you have an FVG.</li>
+  <li><strong>Mark the gap zone</strong> — the upper boundary is candle 1's high (bullish FVG), the lower boundary is candle 3's low. Reverse for bearish.</li>
+  <li><strong>Wait for a return</strong> — price will likely retrace into this zone. Look for a reversal signal when it does.</li>
+</ol>
+<p>FVG reliability decays with age. A gap formed 3-5 candles ago matters far more than one from 20 candles ago.</p>
+
+<h2>Common Pitfalls</h2>
+<ul>
+  <li><strong>FVGs don't always fill.</strong> Many gaps never get revisited, especially in strong trends. Don't wait indefinitely.</li>
+  <li><strong>Too many FVGs on low timeframes.</strong> The 5-minute chart is littered with them. Focus only on 1H, 4H, and daily FVGs.</li>
+  <li><strong>Ignoring volume context.</strong> An FVG formed on high volume carries more weight than one on thin volume. Volume confirms conviction.</li>
+  <li><strong>Using FVG as a precise stop level.</strong> FVG is a zone, not a point. Place your stop just beyond the zone boundary, not on it.</li>
+</ul>
+
+<h2>In AlphaLoop</h2>
+<ul>
+  <li><a href="#/pages/structure/structure-matrix">Structure Matrix</a> — multi-timeframe FVG detection and alignment</li>
+  <li><a href="#/pages/strategy/strategy-canvas">Strategy Canvas</a> — embed FVG detection logic as a strategy node in your automated strategies</li>
+</ul>
+
+<section class="sources">
+  <h3>Sources</h3>
+  <ol>
+    <li><a href="https://dailypriceaction.com/blog/smart-money-concepts" target="_blank" rel="noreferrer noopener">DailyPriceAction — SMC Definitive Guide</a></li>
+  </ol>
+</section>

@@ -1,0 +1,99 @@
+<h1>公允价值缺口 (FVG)</h1>
+<p class="chapter-meta">概念 · 05 / 10 · 5 分钟</p>
+
+<blockquote class="lede">FVG = 三根蜡烛形成的"价格真空",市场往往会回来"填补"。</blockquote>
+
+<blockquote class="pull">
+  "A Fair Value Gap (FVG) forms when buying or selling pressure is so intense that consecutive candles do not overlap — creating a price window where no trading occurred. Markets have a tendency to return and fill these gaps."<cite>— DailyPriceAction<sup class="cite">[1]</sup></cite>
+</blockquote>
+
+<svg class="diagram" viewBox="0 0 600 220" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect x="0" y="0" width="600" height="220" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- Grid lines -->
+  <line x1="30" y1="40" x2="570" y2="40" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+  <line x1="30" y1="75" x2="570" y2="75" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+  <line x1="30" y1="110" x2="570" y2="110" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+  <line x1="30" y1="145" x2="570" y2="145" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+  <line x1="30" y1="180" x2="570" y2="180" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+
+  <!-- Candle 1: first bullish candle -->
+  <rect x="100" y="140" width="18" height="35" fill="rgba(0,255,157,0.3)" stroke="#00ff9d" stroke-width="1"/>
+  <text x="109" y="134" fill="#00ff9d" font-family="monospace" font-size="9" text-anchor="middle">1</text>
+
+  <!-- Candle 2: small gap candle -->
+  <rect x="160" y="110" width="18" height="28" fill="rgba(0,255,157,0.3)" stroke="#00ff9d" stroke-width="1"/>
+  <text x="169" y="104" fill="#00ff9d" font-family="monospace" font-size="9" text-anchor="middle">2</text>
+
+  <!-- Candle 3: strong bullish candle, no overlap with candle 1 -->
+  <rect x="220" y="78" width="18" height="35" fill="rgba(0,255,157,0.3)" stroke="#00ff9d" stroke-width="1"/>
+  <text x="229" y="72" fill="#00ff9d" font-family="monospace" font-size="9" text-anchor="middle">3</text>
+
+  <!-- FVG highlight zone: between candle 1 high and candle 3 low -->
+  <rect x="85" y="105" width="180" height="25" fill="rgba(245,197,66,0.15)" stroke="#f5c542" stroke-width="1" rx="2"/>
+
+  <!-- FVG label -->
+  <text x="175" y="101" fill="#f5c542" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">FVG (公允价值缺口)</text>
+
+  <!-- Lines showing the gap -->
+  <line x1="90" y1="140" x2="90" y2="105" stroke="#f5c542" stroke-width="1" stroke-dasharray="3,2"/>
+  <line x1="260" y1="78" x2="260" y2="105" stroke="#f5c542" stroke-width="1" stroke-dasharray="3,2"/>
+
+  <!-- Candle 1 high label -->
+  <text x="82" y="143" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="end">高</text>
+  <!-- Candle 3 low label -->
+  <text x="268" y="82" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="start">低</text>
+
+  <!-- Later: price returns to fill the gap -->
+  <rect x="350" y="115" width="14" height="28" fill="rgba(255,84,112,0.25)" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+  <rect x="370" y="120" width="14" height="25" fill="rgba(255,84,112,0.25)" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+  <rect x="390" y="110" width="14" height="30" fill="rgba(255,84,112,0.25)" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+  <rect x="410" y="108" width="14" height="32" fill="rgba(245,197,66,0.25)" stroke="#f5c542" stroke-width="1"/>
+  <!-- Price enters the FVG zone -->
+  <rect x="430" y="108" width="14" height="30" fill="rgba(245,197,66,0.35)" stroke="#f5c542" stroke-width="1.5"/>
+  <line x1="437" y1="108" x2="437" y2="125" stroke="#f5c542" stroke-width="0.8"/>
+
+  <!-- Fill arrow -->
+  <path d="M370 145 L410 130" stroke="#f5c542" stroke-width="1.2" stroke-dasharray="3,2"/>
+  <text x="375" y="152" fill="#f5c542" font-family="monospace" font-size="9">价格回补</text>
+
+  <!-- Bottom legend -->
+  <text x="55" y="210" fill="#9ca0a8" font-family="monospace" font-size="9" text-anchor="start">K 线 1 的高点 &lt; K 线 3 的低点 → 形成缺口</text>
+  <text x="380" y="210" fill="#9ca0a8" font-family="monospace" font-size="9" text-anchor="start">价格通常回来填补</text>
+</svg>
+
+<h2>为什么重要</h2>
+<p>Fair Value Gap (FVG) 是 SMC 体系中最直观也最容易被新人掌握的概念。它的原理很简单：当价格移动太快，相邻的 K 线之间出现了"空隙"——三根 K 线中，中间那根的影线没有与前一根的实体重叠，这个空隙就是 FVG。</p>
+<p>为什么会形成 FVG？因为买盘（或卖盘）太强了，价格跳跃式前进，中间有些价位根本来不及成交。这些"没成交"的价位就像没有填实的坑，市场天生有一种"填补"的倾向——价格会回来在这些未成交的价位上寻找流动性。</p>
+<p>FVG 既可以作为入场依据（等价格回补到缺口区域时入场），也可以作为止损参考（把止损放在 FVG 的另一侧）。</p>
+
+<h2>怎么识别</h2>
+<ol>
+  <li><strong>找到三根连续的 K 线</strong>——从左到右标记为 1、2、3。</li>
+  <li><strong>检查 K 线 1 的最高价和 K 线 3 的最低价</strong>——如果 K 线 1 的最高价 &lt; K 线 3 的最低价（上升趋势），或者 K 线 1 的最低价 &gt; K 线 3 的最高价（下降趋势），中间就是 FVG。</li>
+  <li><strong>标记缺口区域</strong>——缺口的上边界是 K 线 1 的最高价（上升趋势），下边界是 K 线 3 的最低价。或者反过来。</li>
+  <li><strong>等待价格回补</strong>——价格大概率会回到这个区域。当价格进入 FVG 区域并出现反转信号时，可以考虑入场。</li>
+</ol>
+<p>注意：FVG 的可靠性随时间推移下降。新形成的 FVG（3-5 根 K 线内）远比 20 根 K 线之前的 FVG 有意义。</p>
+
+<h2>常见坑</h2>
+<ul>
+  <li><strong>FVG 不等于"一定会回补"。</strong>很多 FVG 永远不会被填满，尤其是在非常强趋势的市场中。不要死等一个 FVG 回补。</li>
+  <li><strong>低时间周期 FVG 太多。</strong>5 分钟图上到处都是 FVG。如果每个都关注，你会疯掉。只关注高时间周期（1 小时以上）的 FVG。</li>
+  <li><strong>忽略成交量。</strong>FVG + 高成交量 = 更有意义的缺口。如果 FVG 是在低成交量下形成的，它的"吸引力"弱得多。</li>
+  <li><strong>把 FVG 当精确止损位。</strong>FVG 是一个区域，不是一个精确的点。把止损放在 FVG 边界刚好超出一点的位置，而不是边界上。</li>
+</ul>
+
+<h2>在 AlphaLoop 中</h2>
+<ul>
+  <li><a href="#/pages/structure/structure-matrix">结构矩阵</a>——多周期 FVG 检测与对齐</li>
+  <li><a href="#/pages/strategy/strategy-canvas">策略画布</a>——将 FVG 检测逻辑作为策略节点嵌入自动化策略</li>
+</ul>
+
+<section class="sources">
+  <h3>引用</h3>
+  <ol>
+    <li><a href="https://dailypriceaction.com/blog/smart-money-concepts" target="_blank" rel="noreferrer noopener">DailyPriceAction — SMC Definitive Guide</a></li>
+  </ol>
+</section>
