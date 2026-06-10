@@ -1,0 +1,101 @@
+<h1>操纵雷达</h1>
+<p class="chapter-meta">页面 · 结构 · 5 分钟</p>
+
+<blockquote class="lede">扫描任意交易对，检测市场操纵信号——止损猎杀、持仓集中、拉盘砸盘和流动性陷阱，获得综合风险评分和交易建议。</blockquote>
+
+<h2>TL;DR</h2>
+<p>操纵雷达是一个可交互的市场操纵检测工具。输入交易对点击扫描，页面会返回一个综合操纵评分（0-100）以及四个子评分：止损猎杀、持仓集中、拉盘砸盘和流动性陷阱。每个评分结果可以展开查看详细的证据类别（K 线异常、成交量异常、资金费率/OI 异常、链上/钱包异动、新闻/KOL 协调），并给出交易建议（允许、减仓、仅模拟或拒绝）。</p>
+
+<h2>谁用 · 何时用</h2>
+<p>所有交易者——特别是山寨币和低流动性币种的交易者。在决定交易一个不熟悉的标的之前，先用操纵雷达扫描一遍。也适合在发现异常价格行为时用来排查：刚才的急涨急跌是正常波动还是人为操纵？</p>
+
+<h2>页面解剖</h2>
+<svg class="diagram" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="320" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- ① Header -->
+  <text x="16" y="30" fill="#e8eaee" font-family="monospace" font-size="16" font-weight="bold">操纵雷达</text>
+  <circle cx="16" cy="42" r="3" fill="#00ff9d"/>
+  <text x="24" y="46" fill="#9ca0a8" font-family="monospace" font-size="10">市场状态正常</text>
+
+  <text x="16" y="66" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2460; 页面标题 + 整体状态指示</text>
+
+  <!-- ② Scan bar -->
+  <rect x="16" y="76" width="568" height="36" fill="rgba(255,255,255,0.02)" rx="4"/>
+  <rect x="16" y="76" width="568" height="36" stroke="rgba(255,255,255,0.08)" stroke-width="1" fill="none" rx="4"/>
+  <text x="30" y="100" fill="#9ca0a8" font-family="monospace" font-size="11">&#x1F50D; 输入交易对（如 BTC/USDT）</text>
+  <rect x="500" y="82" width="72" height="24" fill="rgba(0,255,157,0.15)" rx="4"/>
+  <text x="512" y="99" fill="#00ff9d" font-family="monospace" font-size="11">扫描</text>
+
+  <text x="16" y="132" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2461; 搜索栏：输入交易对名称，按回车或点击"扫描"</text>
+
+  <!-- ③ Summary cards -->
+  <rect x="16" y="144" width="140" height="50" fill="rgba(80,180,255,0.06)" rx="4" stroke="rgba(80,180,255,0.15)" stroke-width="1"/>
+  <text x="28" y="162" fill="#5e636d" font-family="monospace" font-size="8">已扫描</text>
+  <text x="28" y="185" fill="#50b4ff" font-family="monospace" font-size="18" font-weight="bold">5</text>
+
+  <rect x="170" y="144" width="140" height="50" fill="rgba(255,84,112,0.06)" rx="4" stroke="rgba(255,84,112,0.15)" stroke-width="1"/>
+  <text x="182" y="162" fill="#5e636d" font-family="monospace" font-size="8">高风险</text>
+  <text x="182" y="185" fill="#ff5470" font-family="monospace" font-size="18" font-weight="bold">2</text>
+
+  <rect x="324" y="144" width="140" height="50" fill="rgba(255,155,61,0.06)" rx="4" stroke="rgba(255,155,61,0.15)" stroke-width="1"/>
+  <text x="336" y="162" fill="#5e636d" font-family="monospace" font-size="8">已拦截</text>
+  <text x="336" y="185" fill="#ff9b3d" font-family="monospace" font-size="18" font-weight="bold">1</text>
+
+  <text x="16" y="212" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2462; 统计卡片：已扫描总数、高风险数量、被拦截（严重风险）数量</text>
+
+  <!-- ④ Score row -->
+  <rect x="16" y="224" width="568" height="80" fill="rgba(255,255,255,0.02)" rx="4"/>
+  <rect x="16" y="224" width="568" height="80" stroke="rgba(255,255,255,0.08)" stroke-width="1" fill="none" rx="4"/>
+
+  <text x="28" y="246" fill="#e8eaee" font-family="monospace" font-size="13" font-weight="bold">SOL/USDT</text>
+  <rect x="100" y="235" width="44" height="16" fill="rgba(255,84,112,0.15)" rx="3"/>
+  <text x="106" y="247" fill="#ff5470" font-family="monospace" font-size="8">高危</text>
+  <rect x="150" y="235" width="36" height="16" fill="rgba(255,84,112,0.15)" rx="3"/>
+  <text x="154" y="247" fill="#ff5470" font-family="monospace" font-size="8">拒绝</text>
+
+  <rect x="28" y="258" width="250" height="4" fill="rgba(255,255,255,0.06)" rx="2"/>
+  <rect x="28" y="258" width="175" height="4" fill="#ff5470" rx="2"/>
+  <text x="28" y="275" fill="#5e636d" font-family="monospace" font-size="8">操纵评分</text>
+  <text x="100" y="275" fill="#ff5470" font-family="monospace" font-size="8">72</text>
+
+  <text x="28" y="295" fill="#9ca0a8" font-family="monospace" font-size="8">止损猎杀 55  持仓集中 80  拉盘砸盘 65  流动性陷阱 45</text>
+
+  <text x="16" y="318" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2463; 评分行：交易对名称 + 风险等级 Badge + 建议 Badge + 综合评分条 + 四个子评分</text>
+</svg>
+<ol>
+  <li><strong>① 页面标题</strong> — 显示"操纵雷达"和当前整体状态（正常/检测到异常信号）。</li>
+  <li><strong>② 搜索栏</strong> — 输入交易对名称（如 SOL/USDT），按回车或点击"扫描"发起检测。</li>
+  <li><strong>③ 统计卡片</strong> — 三张卡片分别显示已扫描总数、高风险数量和已拦截数量（严重风险自动拦截）。</li>
+  <li><strong>④ 评分行</strong> — 每个已扫描的交易对显示为一行。包含交易对名称、风险等级 Badge、建议 Badge、综合操纵评分条（0-100），以及四个子评分：止损猎杀、持仓集中、拉盘砸盘、流动性陷阱。</li>
+</ol>
+
+<h2>关键指标怎么读</h2>
+<ul>
+  <li><strong>综合操纵评分</strong> — 0-100。70+ 表示高度疑似操纵，40-70 表示需谨慎，低于 40 表示正常。评分基于四个子评分的加权组合。</li>
+  <li><strong>止损猎杀</strong> — 检测价格是否反复在关键流动性区域急拉急跌，收割止损单。高分意味着价格行为带有明显的"猎杀"特征。</li>
+  <li><strong>持仓集中</strong> — 分析链上持仓分布。如果前几名地址持有极高比例的流通量，巨鲸有能力操纵价格。</li>
+  <li><strong>拉盘砸盘</strong> — 检测短时间内是否存在异常放量的急涨急跌模式，伴随成交量突增。典型 PnD 特征。</li>
+  <li><strong>流动性陷阱</strong> — 检测是否存在制造虚假流动性深度后撤单的行为。高分表示做市商可能设置了欺骗性挂单。</li>
+  <li><strong>建议 Badge</strong> — 允许 = 可以正常交易；减仓 = 降低仓位规模；仅模拟 = 只用模拟盘；拒绝 = 禁止交易该标的。</li>
+</ul>
+
+<h2>常见操作 · 一步步</h2>
+<ol>
+  <li>在搜索栏输入你想检查的交易对名称（如 AVAX/USDT），然后按回车或点击"扫描"。</li>
+  <li>等待几秒钟——后端会分析多个数据源（K 线、成交量、持仓分布、链上转账、社交媒体情绪）。</li>
+  <li>查看综合操纵评分和风险等级 Badge。如果显示"高危"或"严重"，仔细阅读子评分了解具体风险来源。</li>
+  <li>点击评分行上的"展开证据"查看详细证据类别。每个证据有 0-3 的严重度指示条。</li>
+  <li>根据建议采取行动：如果建议"拒绝"，不要在实盘中交易该标的。如果建议"仅模拟"，先在模拟盘中观察。</li>
+</ol>
+
+<h2>幕后</h2>
+<p>数据来自 <code>/api/manipulation/scores</code>（获取列表）和 <code>/api/manipulation/scan</code>（发起扫描）端点。后端从多个维度收集数据：交易所 K 线数据用于 PnD 检测和止损猎杀模式识别；链上数据（通过区块链 API）用于持仓集中度分析；订单簿快照用于流动性陷阱检测；社交媒体/NLP 用于 KOL 协调喊单检测。评分结果按风险等级排序（严重 &gt; 高危 &gt; 中等 &gt; 低风险）。Mock 客户端提供示例数据用于演示和测试。</p>
+
+<h2>相关</h2>
+<ul>
+  <li><a href="#/concepts/03-market-structure">概念 · 市场结构: BOS &amp; CHoCH</a></li>
+  <li><a href="#/pages/structure/structure-matrix">页面 · 结构矩阵: HTF Tribunal</a></li>
+  <li><a href="#/pages/structure/market-structure">页面 · 市场结构</a></li>
+  <li><a href="#/walkthroughs/risk-incident">情景 · 风险事件处理走查</a></li>
+</ul>

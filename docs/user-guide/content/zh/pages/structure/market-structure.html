@@ -1,0 +1,104 @@
+<h1>市场结构</h1>
+<p class="chapter-meta">页面 · 结构 · 5 分钟</p>
+
+<blockquote class="lede">将当前市场的"故事"可视化——你处在什么市场状态、价格如何走到这里、哪些区域和流动性池正在等待价格反应。</blockquote>
+
+<h2>TL;DR</h2>
+<p>市场结构页把 SMC（Smart Money Concepts）分析浓缩为一个因果叙事面板。顶部显示市场状态（趋势/震荡/高波动/恐慌）和结构评分。往下是结构事件时间线（BoS、CHoCH、Sweep、FVG Fill），再往下是当前活跃的价格区域和流动性池。选一个交易对和一个时间周期，页面会告诉你价格结构的完整故事。</p>
+
+<h2>谁用 · 何时用</h2>
+<p>日常做 SMC 分析的交易者。每天开盘前或每个交易时段开始时打开，快速了解标的是否处于健康的趋势结构、是否有值得关注的失衡区域。也适合在出现大幅波动后查看——检查是否发生了结构反转（CHoCH）或流动性扫除。</p>
+
+<h2>页面解剖</h2>
+<svg class="diagram" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="320" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- ① Header bar -->
+  <rect x="16" y="10" width="568" height="38" fill="rgba(0,255,157,0.06)" rx="4"/>
+  <rect x="16" y="10" width="568" height="38" stroke="rgba(255,255,255,0.08)" stroke-width="1" fill="none" rx="4"/>
+  <text x="26" y="34" fill="#e8eaee" font-family="monospace" font-size="12" font-weight="bold">&#x3B1; SMC RESEARCH</text>
+  <text x="420" y="34" fill="#00ff9d" font-family="monospace" font-size="10">BTC/USDT &#x2318;K</text>
+  <rect x="496" y="22" width="30" height="16" fill="rgba(0,255,157,0.15)" rx="3"/>
+  <text x="499" y="34" fill="#e8eaee" font-family="monospace" font-size="9">5m</text>
+  <rect x="530" y="22" width="30" height="16" fill="rgba(80,180,255,0.12)" rx="3"/>
+  <text x="533" y="34" fill="#50b4ff" font-family="monospace" font-size="9">1h</text>
+
+  <!-- ① callout -->
+  <text x="16" y="70" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2460; 标头部：选择交易对和时间周期</text>
+
+  <!-- ② Regime + meters -->
+  <rect x="16" y="80" width="568" height="60" fill="rgba(255,255,255,0.02)" rx="4"/>
+  <rect x="16" y="80" width="568" height="60" stroke="rgba(255,255,255,0.08)" stroke-width="1" fill="none" rx="4"/>
+  <text x="30" y="108" fill="#00ff9d" font-family="monospace" font-size="20" font-weight="bold">上升趋势</text>
+  <text x="135" y="100" fill="#9ca0a8" font-family="monospace" font-size="9">HTF 摆动逐次抬高</text>
+  <rect x="300" y="88" width="90" height="44" fill="rgba(0,255,157,0.08)" rx="3"/>
+  <text x="308" y="103" fill="#5e636d" font-family="monospace" font-size="8">结构评分</text>
+  <text x="308" y="125" fill="#00ff9d" font-family="monospace" font-size="16" font-weight="bold">78</text>
+  <text x="335" y="125" fill="#5e636d" font-family="monospace" font-size="9">/ 100</text>
+  <rect x="400" y="88" width="90" height="44" fill="rgba(0,255,157,0.08)" rx="3"/>
+  <text x="408" y="103" fill="#5e636d" font-family="monospace" font-size="8">溢价/折价</text>
+  <text x="408" y="125" fill="#00ff9d" font-family="monospace" font-size="14" font-weight="bold">折价</text>
+  <rect x="500" y="88" width="76" height="44" fill="rgba(0,255,157,0.08)" rx="3"/>
+  <text x="508" y="103" fill="#5e636d" font-family="monospace" font-size="8">活跃区域</text>
+  <text x="508" y="125" fill="#00ff9d" font-family="monospace" font-size="14" font-weight="bold">3z 2p</text>
+
+  <text x="16" y="162" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2461; 市场状态 + 指标仪表盘：当前市场状态词、结构评分、溢价/折价、活跃区域数</text>
+
+  <!-- ③ Event thread -->
+  <circle cx="36" cy="192" r="4" fill="#00ff9d" opacity="0.9"/>
+  <line x1="36" y1="196" x2="36" y2="222" stroke="rgba(0,255,157,0.4)" stroke-width="1.5"/>
+  <circle cx="36" cy="228" r="4" fill="#f5c542" opacity="0.9"/>
+  <line x1="36" y1="232" x2="36" y2="248" stroke="rgba(245,197,66,0.4)" stroke-width="1.5"/>
+  <circle cx="36" cy="254" r="4" fill="#ff5470" opacity="0.9"/>
+  <text x="50" y="196" fill="#e8eaee" font-family="monospace" font-size="11">BoS</text>
+  <text x="80" y="196" fill="#e8eaee" font-family="monospace" font-size="11">68500.0</text>
+  <text x="140" y="196" fill="#9ca0a8" font-family="monospace" font-size="9">突破前高 · 趋势延续</text>
+  <text x="50" y="232" fill="#e8eaee" font-family="monospace" font-size="11">CHoCH</text>
+  <text x="100" y="232" fill="#e8eaee" font-family="monospace" font-size="11">67200.0</text>
+  <text x="155" y="232" fill="#9ca0a8" font-family="monospace" font-size="9">结构反转 · 趋势可能转向</text>
+  <text x="50" y="258" fill="#e8eaee" font-family="monospace" font-size="11">Sweep</text>
+  <text x="95" y="258" fill="#e8eaee" font-family="monospace" font-size="11">66980.0</text>
+  <text x="155" y="258" fill="#9ca0a8" font-family="monospace" font-size="9">买方流动性被横扫</text>
+
+  <text x="16" y="285" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2462; 结构事件时间线：BoS &#x2192; CHoCH &#x2192; Sweep，从旧到新排列</text>
+
+  <!-- ③ callout -->
+  <text x="290" y="285" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2463; 活跃区域网格 + &#x2464; 流动性池列表（下方未绘出）</text>
+</svg>
+<ol>
+  <li><strong>① 标头部</strong> — 通过 &#x2318;K 切换交易对，用分段按钮选择分析时间周期（5m / 15m / 1h / 4h）。</li>
+  <li><strong>② 市场状态 + 仪表盘</strong> — 一个大号文字告诉你当前市场状态（上升趋势、下降趋势、震荡、高波动、恐慌），配上叙事描述。旁边的三个仪表盘显示结构评分（0-100）、溢价/折价判断和活跃区域计数。</li>
+  <li><strong>③ 结构事件时间线</strong> — 从旧到新排列的近期结构事件，每个事件用圆点+连线表示。类型包括：BoS（突破结构，趋势延续）、CHoCH（结构反转，趋势可能转向）、Sweep（流动性扫除）、FVG Fill（缺口回补）。</li>
+  <li><strong>④ 活跃区域</strong> — 价格尚未完全反应的 SMC 区域，按距离排序。每个区域显示与现价的百分比距离、区域类型（OB / FVG / LP）、方向（需求/供给）、强度条和填充率（仅 FVG）。</li>
+  <li><strong>⑤ 流动性池</strong> — 止损聚集的价格位，按买入/卖出侧分组。显示价格水平、触碰次数和强度。</li>
+</ol>
+
+<h2>关键指标怎么读</h2>
+<ul>
+  <li><strong>结构评分</strong> — 0-100 的综合评分。70+ 为健康趋势结构，40-70 为震荡或模糊，低于 40 表示结构破碎或高波动。</li>
+  <li><strong>溢价 / 折价</strong> — 价格相对于最近主要摆动高/低点的位置。溢价（红色）表示价格在高位，折价（绿色）表示价格在低位。在折价区域找买入机会，在溢价区域找卖出机会。</li>
+  <li><strong>区域强度</strong> — 0-100% 的进度条。强度高的区域更可能被价格尊重。FVG 还有填充率指标——填充率接近 100% 的缺口吸引力降低。</li>
+  <li><strong>BoS vs CHoCH</strong> — BoS（Break of Structure）确认当前趋势延续；CHoCH（Change of Character）暗示趋势可能反转。连续出现 CHoCH 时提高警惕。</li>
+</ul>
+
+<h2>常见操作 · 一步步</h2>
+<ol>
+  <li>按 &#x2318;K 打开交易对搜索面板，输入或选择你要分析的标的。</li>
+  <li>点击时间周期分段按钮切换分析粒度（5m 适合短线，1h/4h 适合趋势判断）。</li>
+  <li>看顶部市场状态词和结构评分，判断当前是否适合交易。</li>
+  <li>滚动事件时间线，了解价格从过去到现在经历了哪些结构事件。</li>
+  <li>查看活跃区域列表——注意距离现价最近且强度最高的区域，这些是最可能的反转/反应位。</li>
+  <li>检查流动性池位置，了解止损聚集在哪里——这些通常是价格的"磁石"。</li>
+</ol>
+
+<h2>幕后</h2>
+<p>页面数据来自 <code>/api/structure/market-view</code> BFF 端点，后端根据 K 线数据计算市场状态、结构评分、事件序列、区域和流动性池。ViewModel（<code>MarketStructureViewModel</code>）调用 <code>APIMarketStructure</code> 获取数据。遵循 Redis &#x2192; 服务计算 &#x2192; mock 数据的回退模式。区域识别算法基于摆动检测和 SMC 规则引擎。</p>
+
+<h2>相关</h2>
+<ul>
+  <li><a href="#/concepts/03-market-structure">概念 · 市场结构: BOS &amp; CHoCH</a></li>
+  <li><a href="#/concepts/04-order-block">概念 · 订单块</a></li>
+  <li><a href="#/concepts/05-fvg">概念 · 公允价值缺口</a></li>
+  <li><a href="#/pages/structure/structure-matrix">页面 · 结构矩阵: HTF Tribunal</a></li>
+  <li><a href="#/pages/structure/manipulation-radar">页面 · 操纵雷达</a></li>
+</ul>

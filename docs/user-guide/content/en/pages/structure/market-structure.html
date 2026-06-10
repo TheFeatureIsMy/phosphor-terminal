@@ -1,0 +1,101 @@
+<h1>Market Structure</h1>
+<p class="chapter-meta">Page · Structure · 5 min</p>
+
+<blockquote class="lede">Tells the "story" of where the market is right now — what regime you are in, how price got here, and which zones and liquidity pools are waiting for a reaction.</blockquote>
+
+<h2>TL;DR</h2>
+<p>The Market Structure page distills Smart Money Concepts (SMC) analysis into a single causal storyboard. A header shows the market regime and structure score. Below it, a timeline of structural events (BoS, CHoCH, Sweep, FVG Fill) traces how price arrived at its current position. Two more sections list active price zones and liquidity pools ranked by distance. Pick a symbol and timeframe, and the page tells you the full structural story.</p>
+
+<h2>Who uses it &amp; when</h2>
+<p>Any trader who works with SMC analysis. Open it at the start of a trading session to quickly assess whether a symbol is in a healthy trend structure, ranging, or showing signs of reversal. Also useful after a sharp move to check for structural breaks or liquidity sweeps.</p>
+
+<h2>Page Anatomy</h2>
+<svg class="diagram" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="320" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- ① Header bar -->
+  <rect x="16" y="10" width="568" height="38" fill="rgba(0,255,157,0.06)" rx="4"/>
+  <rect x="16" y="10" width="568" height="38" stroke="rgba(255,255,255,0.08)" stroke-width="1" fill="none" rx="4"/>
+  <text x="26" y="34" fill="#e8eaee" font-family="monospace" font-size="12" font-weight="bold">&#x3B1; SMC RESEARCH</text>
+  <text x="420" y="34" fill="#00ff9d" font-family="monospace" font-size="10">BTC/USDT &#x2318;K</text>
+  <rect x="496" y="22" width="30" height="16" fill="rgba(0,255,157,0.15)" rx="3"/>
+  <text x="499" y="34" fill="#e8eaee" font-family="monospace" font-size="9">5m</text>
+  <rect x="530" y="22" width="30" height="16" fill="rgba(80,180,255,0.12)" rx="3"/>
+  <text x="533" y="34" fill="#50b4ff" font-family="monospace" font-size="9">1h</text>
+
+  <text x="16" y="70" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2460; Header bar: pick a symbol and timeframe</text>
+
+  <!-- ② Regime + meters -->
+  <rect x="16" y="80" width="568" height="60" fill="rgba(255,255,255,0.02)" rx="4"/>
+  <rect x="16" y="80" width="568" height="60" stroke="rgba(255,255,255,0.08)" stroke-width="1" fill="none" rx="4"/>
+  <text x="30" y="108" fill="#00ff9d" font-family="monospace" font-size="20" font-weight="bold">TRENDING &#x2191;</text>
+  <text x="145" y="100" fill="#9ca0a8" font-family="monospace" font-size="9">HTF swings stepping higher</text>
+  <rect x="300" y="88" width="90" height="44" fill="rgba(0,255,157,0.08)" rx="3"/>
+  <text x="308" y="103" fill="#5e636d" font-family="monospace" font-size="8">SCORE</text>
+  <text x="308" y="125" fill="#00ff9d" font-family="monospace" font-size="16" font-weight="bold">78</text>
+  <text x="335" y="125" fill="#5e636d" font-family="monospace" font-size="9">/ 100</text>
+  <rect x="400" y="88" width="90" height="44" fill="rgba(0,255,157,0.08)" rx="3"/>
+  <text x="408" y="103" fill="#5e636d" font-family="monospace" font-size="8">P/D</text>
+  <text x="408" y="125" fill="#00ff9d" font-family="monospace" font-size="14" font-weight="bold">DISCOUNT</text>
+  <rect x="500" y="88" width="76" height="44" fill="rgba(0,255,157,0.08)" rx="3"/>
+  <text x="508" y="103" fill="#5e636d" font-family="monospace" font-size="8">ACTIVE</text>
+  <text x="508" y="125" fill="#00ff9d" font-family="monospace" font-size="14" font-weight="bold">3z 2p</text>
+
+  <text x="16" y="162" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2461; Regime word + meter dashboard: score, premium/discount, zone and pool counts</text>
+
+  <!-- ③ Event thread -->
+  <circle cx="36" cy="192" r="4" fill="#00ff9d" opacity="0.9"/>
+  <line x1="36" y1="196" x2="36" y2="222" stroke="rgba(0,255,157,0.4)" stroke-width="1.5"/>
+  <circle cx="36" cy="228" r="4" fill="#f5c542" opacity="0.9"/>
+  <line x1="36" y1="232" x2="36" y2="248" stroke="rgba(245,197,66,0.4)" stroke-width="1.5"/>
+  <circle cx="36" cy="254" r="4" fill="#ff5470" opacity="0.9"/>
+  <text x="50" y="196" fill="#e8eaee" font-family="monospace" font-size="11">BoS</text>
+  <text x="80" y="196" fill="#e8eaee" font-family="monospace" font-size="11">68500.0</text>
+  <text x="140" y="196" fill="#9ca0a8" font-family="monospace" font-size="9">broke prior swing, trend continues</text>
+  <text x="50" y="232" fill="#e8eaee" font-family="monospace" font-size="11">CHoCH</text>
+  <text x="100" y="232" fill="#e8eaee" font-family="monospace" font-size="11">67200.0</text>
+  <text x="155" y="232" fill="#9ca0a8" font-family="monospace" font-size="9">structure flipped, trend may rotate</text>
+  <text x="50" y="258" fill="#e8eaee" font-family="monospace" font-size="11">Sweep</text>
+  <text x="95" y="258" fill="#e8eaee" font-family="monospace" font-size="11">66980.0</text>
+  <text x="155" y="258" fill="#9ca0a8" font-family="monospace" font-size="9">buy-side liquidity swept</text>
+
+  <text x="16" y="285" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2462; Event timeline: BoS &#x2192; CHoCH &#x2192; Sweep, oldest first</text>
+  <text x="290" y="285" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2463; Active zones grid + &#x2464; Liquidity pools (below, not drawn)</text>
+</svg>
+<ol>
+  <li><strong>① Header bar</strong> — Switch symbols with &#x2318;K, pick the analysis timeframe with the segmented control (5m / 15m / 1h / 4h).</li>
+  <li><strong>② Regime + dashboard</strong> — A large regime word tells you the market condition at a glance (trending up, trending down, ranging, volatile, panic) with a short narrative. Three meter tiles show the structure score (0-100), premium/discount assessment, and active zone/pool counts.</li>
+  <li><strong>③ Event timeline</strong> — Recent structural events in chronological order, each rendered as a dot on a vertical thread. Types include BoS (trend continuation), CHoCH (trend may reverse), Sweep (liquidity harvested), and FVG Fill (imbalance rebalanced).</li>
+  <li><strong>④ Active zones</strong> — SMC zones that price has not yet fully reacted to, sorted by distance. Each card shows % distance from current price, zone type (OB / FVG / LP), direction (demand / supply), strength bar, and fill ratio (for FVGs).</li>
+  <li><strong>⑤ Liquidity pools</strong> — Price levels where stops cluster, grouped by buy-side and sell-side. Each row shows the price level, pool type, touch count, and strength bar.</li>
+</ol>
+
+<h2>Reading the Key Metrics</h2>
+<ul>
+  <li><strong>Structure Score</strong> — A composite 0-100 metric. Above 70 means a healthy trending structure, 40-70 means ranging or ambiguous, below 40 means broken structure or high volatility.</li>
+  <li><strong>Premium / Discount</strong> — Where price sits relative to the recent major swing high/low. Premium (red) means price is elevated; discount (green) means it is low. Look for buys in discount and sells in premium.</li>
+  <li><strong>Zone Strength</strong> — A 0-100% progress bar. Higher strength means the zone is more likely to be respected by price. For FVGs, the fill ratio tells you how much of the gap has been closed — above 80% the zone loses relevance.</li>
+  <li><strong>BoS vs CHoCH</strong> — BoS confirms the current trend is intact. CHoCH signals a potential trend reversal. Consecutive CHoCH events warrant caution.</li>
+</ul>
+
+<h2>Common Actions, Step by Step</h2>
+<ol>
+  <li>Press &#x2318;K to open the symbol picker, then type or select the symbol you want to analyze.</li>
+  <li>Click a timeframe segment to switch granularity (5m for scalping, 1h/4h for trend context).</li>
+  <li>Check the regime word and structure score at the top for a quick go/no-go assessment.</li>
+  <li>Scroll through the event timeline to understand how price arrived at its current level.</li>
+  <li>Review the active zones list — pay attention to zones closest to current price with the highest strength.</li>
+  <li>Check liquidity pool locations to see where stop hunts are likely.</li>
+</ol>
+
+<h2>Behind the Scenes</h2>
+<p>Data comes from the <code>/api/structure/market-view</code> BFF endpoint. The backend computes market regime, structure score, event sequences, zones, and liquidity pools from OHLCV data. The ViewModel (<code>MarketStructureViewModel</code>) fetches through <code>APIMarketStructure</code>. Follows the standard Redis &#x2192; service computation &#x2192; mock data fallback pattern. Zone identification uses swing-point detection and a rule-based SMC engine.</p>
+
+<h2>See Also</h2>
+<ul>
+  <li><a href="#/concepts/03-market-structure">Concepts: Market Structure — BOS &amp; CHoCH</a></li>
+  <li><a href="#/concepts/04-order-block">Concepts: Order Block</a></li>
+  <li><a href="#/concepts/05-fvg">Concepts: Fair Value Gap</a></li>
+  <li><a href="#/pages/structure/structure-matrix">Page: Structure Matrix — HTF Tribunal</a></li>
+  <li><a href="#/pages/structure/manipulation-radar">Page: Manipulation Radar</a></li>
+</ul>

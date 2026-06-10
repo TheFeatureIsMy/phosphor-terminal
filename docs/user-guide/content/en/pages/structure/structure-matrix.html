@@ -1,0 +1,125 @@
+<h1>Structure Matrix &middot; HTF Tribunal</h1>
+<p class="chapter-meta">Page · Structure · 5 min</p>
+
+<blockquote class="lede">The central battleground of multi-timeframe structure defense — a 4x3 evidence matrix that shows every symbol's structural integrity across timeframes and zone types, governed by the 8-state MTF Guard state machine.</blockquote>
+
+<h2>TL;DR</h2>
+<p>The Structure Matrix (also called the HTF Tribunal) visualizes multi-timeframe structural analysis as a grid. Rows are timeframes (5m / 15m / 1H / 4H), columns are zone types (OB / FVG / LP). Each cell shows strength and status for that timeframe-zone pair. Above the matrix is a countdown ring showing remaining time on the slowest candle. The verdict panel to the right issues one of five rulings: Allow, Observe, Require Confirmation, Reduce Size, or Block Entry. Below the matrix sit the Shadow Windows panel, charges list, and hearings timeline.</p>
+
+<h2>Who uses it &amp; when</h2>
+<p>Quantitative traders managing multiple strategies who need multi-timeframe confirmation before execution. Open it after a signal fires but before placing the order — the MTF Guard reviews the symbol's structural integrity across timeframes to ensure the trade direction aligns with higher-timeframe structure. Also useful during live positions to periodically check whether the structure is still valid.</p>
+
+<h2>Page Anatomy</h2>
+<svg class="diagram" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="320" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- ① Fast Track Health bar -->
+  <rect x="12" y="8" width="576" height="20" fill="rgba(80,180,255,0.06)" rx="3"/>
+  <circle cx="24" cy="18" r="3" fill="#00ff9d"/>
+  <text x="32" y="22" fill="#9ca0a8" font-family="monospace" font-size="8">LATENCY 45ms DATA 1.2s REDIS OK</text>
+
+  <text x="12" y="44" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2460; Fast Track Health: data freshness and system status</text>
+
+  <!-- ② MTF Grid (4 rows x 3 cols) -->
+  <rect x="12" y="52" width="376" height="160" fill="rgba(255,255,255,0.02)" rx="4"/>
+  <rect x="12" y="52" width="376" height="160" stroke="rgba(255,255,255,0.08)" stroke-width="1" fill="none" rx="4"/>
+
+  <!-- Column headers -->
+  <text x="48" y="70" fill="#5e636d" font-family="monospace" font-size="8" text-anchor="middle">OB</text>
+  <text x="168" y="70" fill="#5e636d" font-family="monospace" font-size="8" text-anchor="middle">FVG</text>
+  <text x="288" y="70" fill="#5e636d" font-family="monospace" font-size="8" text-anchor="middle">LP</text>
+  <line x1="12" y1="74" x2="388" y2="74" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+
+  <!-- Row 1: 4H -->
+  <text x="18" y="92" fill="#e8eaee" font-family="monospace" font-size="9">4H</text>
+  <rect x="32" y="78" width="110" height="30" fill="rgba(0,255,157,0.12)" rx="2"/>
+  <text x="60" y="97" fill="#00ff9d" font-family="monospace" font-size="9">85%</text>
+  <rect x="152" y="78" width="110" height="30" fill="rgba(80,180,255,0.12)" rx="2"/>
+  <text x="180" y="97" fill="#50b4ff" font-family="monospace" font-size="9">50%</text>
+  <rect x="272" y="78" width="110" height="30" fill="rgba(0,255,157,0.12)" rx="2"/>
+  <text x="300" y="97" fill="#00ff9d" font-family="monospace" font-size="9">72%</text>
+
+  <!-- Row 2: 1H -->
+  <text x="18" y="124" fill="#e8eaee" font-family="monospace" font-size="9">1H</text>
+  <rect x="32" y="110" width="110" height="30" fill="rgba(0,255,157,0.12)" rx="2"/>
+  <text x="60" y="129" fill="#00ff9d" font-family="monospace" font-size="9">78%</text>
+  <rect x="152" y="110" width="110" height="30" fill="rgba(245,197,66,0.12)" rx="2"/>
+  <text x="180" y="129" fill="#f5c542" font-family="monospace" font-size="9">62%</text>
+  <rect x="272" y="110" width="110" height="30" fill="rgba(255,84,112,0.12)" rx="2"/>
+  <text x="300" y="129" fill="#ff5470" font-family="monospace" font-size="9">45%</text>
+
+  <!-- Row 3: 15m -->
+  <text x="18" y="156" fill="#e8eaee" font-family="monospace" font-size="9">15m</text>
+  <rect x="32" y="142" width="110" height="30" fill="rgba(245,197,66,0.12)" rx="2"/>
+  <text x="60" y="161" fill="#f5c542" font-family="monospace" font-size="9">55%</text>
+  <rect x="152" y="142" width="110" height="30" fill="rgba(0,255,157,0.12)" rx="2"/>
+  <text x="180" y="161" fill="#00ff9d" font-family="monospace" font-size="9">70%</text>
+  <rect x="272" y="142" width="110" height="30" fill="rgba(0,255,157,0.12)" rx="2"/>
+  <text x="300" y="161" fill="#00ff9d" font-family="monospace" font-size="9">68%</text>
+
+  <!-- Row 4: 5m -->
+  <text x="18" y="188" fill="#e8eaee" font-family="monospace" font-size="9">5m</text>
+  <rect x="32" y="174" width="110" height="30" fill="rgba(255,84,112,0.12)" rx="2"/>
+  <text x="60" y="193" fill="#ff5470" font-family="monospace" font-size="9">30%</text>
+  <rect x="152" y="174" width="110" height="30" fill="rgba(0,255,157,0.12)" rx="2"/>
+  <text x="180" y="193" fill="#00ff9d" font-family="monospace" font-size="9">65%</text>
+  <rect x="272" y="174" width="110" height="30" fill="rgba(245,197,66,0.12)" rx="2"/>
+  <text x="300" y="193" fill="#f5c542" font-family="monospace" font-size="9">58%</text>
+
+  <text x="12" y="228" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2461; Evidence matrix: rows = timeframes, cols = zone types, color reflects strength</text>
+
+  <!-- ③ Countdown ring + ④ Verdict -->
+  <circle cx="430" cy="130" r="32" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="4"/>
+  <path d="M 430 98 A 32 32 0 0 1 453 147" fill="none" stroke="#f5c542" stroke-width="4" stroke-linecap="round"/>
+  <text x="430" y="134" fill="#e8eaee" font-family="monospace" font-size="14" font-weight="bold" text-anchor="middle">42:15</text>
+  <text x="430" y="146" fill="#5e636d" font-family="monospace" font-size="7" text-anchor="middle">1H candle closes in</text>
+
+  <rect x="470" y="78" width="118" height="100" fill="rgba(245,197,66,0.06)" rx="4" stroke="rgba(245,197,66,0.25)" stroke-width="1"/>
+  <text x="480" y="98" fill="#f5c542" font-family="monospace" font-size="18" font-weight="bold">OBSERVE</text>
+  <text x="480" y="115" fill="#9ca0a8" font-family="monospace" font-size="8">Do not trade yet</text>
+  <text x="480" y="135" fill="#e8eaee" font-family="monospace" font-size="8" font-style="italic">"5m entered 4H OB zone"</text>
+
+  <text x="12" y="258" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2462; Countdown ring + &#x2463; Verdict panel (Allow/Observe/Confirm/Reduce/Block)</text>
+
+  <!-- ⑤ Shadow Window indicator callout -->
+  <rect x="12" y="270" width="576" height="20" fill="rgba(255,155,61,0.08)" rx="3"/>
+  <text x="24" y="284" fill="#ff9b3d" font-family="monospace" font-size="9">&#x25B3; Shadow window active: 5m &#x2192; 1H structure violation pending confirmation</text>
+
+  <text x="12" y="306" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2464; Shadow window indicator: fires when fast-TF price invades a slow-TF zone</text>
+</svg>
+<ol>
+  <li><strong>① Fast Track Health</strong> — A status bar showing data latency, data age, and Redis connectivity. Green means the verdict is trustworthy; orange means data may be stale.</li>
+  <li><strong>② Evidence Matrix</strong> — 4 rows (timeframes) by 3 columns (zone types). Each cell shows the strength percentage and status. Green = healthy, yellow = caution, red = broken. Cells with diagonal orange stripes are in a shadow window (fast-TF price invaded a slow-TF zone).</li>
+  <li><strong>③ Countdown Ring</strong> — Shows remaining time until the slowest candle (e.g. 1H) closes. The ring fills as the candle progresses. When the candle closes, the MTF Guard issues its final verdict.</li>
+  <li><strong>④ Verdict Panel</strong> — The MTF Guard's ruling: Allow, Observe, Require Confirmation, Reduce Size, or Block Entry. A button lets you apply the verdict directly to the order form.</li>
+  <li><strong>⑤ Shadow Windows</strong> — Active observation windows triggered when fast-TF price enters a slow-TF zone. Each card shows the fast-to-slow pair, violation count, reclaim count, and a candle progress bar.</li>
+</ol>
+
+<h2>Reading the Key Metrics</h2>
+<ul>
+  <li><strong>Cell Colors</strong> — Green (strength >= 70%) means the structure is solid; yellow (40-70%) means caution; red (&lt; 40%) means the structure may be broken. If a whole column (e.g. OB) is green from 4H down to 5m, the zone is respected across all timeframes — a highly reliable signal.</li>
+  <li><strong>Shadow Window Marker</strong> — Orange diagonal stripes with an "IN SHADOW" label indicate the fast-TF price has invaded a slow-TF structure zone. This is a temporary state — the verdict is pending until the slow candle closes.</li>
+  <li><strong>Verdict Verbs</strong> — Allow = trade freely; Observe = wait, do not act yet; Require Confirmation = need additional confirmation before entry; Reduce Size = trade but with reduced position size; Block Entry = prevent any new positions.</li>
+  <li><strong>Charges List</strong> — Problematic cells are summarized as numbered "charges" in Roman numerals. Each charge includes the timeframe, zone type, and a machine-readable reason code (e.g. <code>fast_tf_entered_htf_zone</code>).</li>
+</ul>
+
+<h2>Common Actions, Step by Step</h2>
+<ol>
+  <li>Select your symbol and base timeframe at the top (usually the strategy's primary timeframe).</li>
+  <li>Check the Fast Track Health bar — do not trust the verdict if data is stale.</li>
+  <li>Scan the evidence matrix: is your trade direction consistently supported across timeframes? If 4H and 1H are green but 5m is red, it may just be short-term noise.</li>
+  <li>Read the verdict panel — if it says "Block Entry", do not force a trade.</li>
+  <li>If shadow windows are active, watch the countdown ring. Return when it expires to see if the verdict changes.</li>
+  <li>Tap any cell to open the detail drawer with full metrics: strength, fill ratio, status, and reason codes.</li>
+</ol>
+
+<h2>Behind the Scenes</h2>
+<p>Data loads through five parallel requests: <code>/api/structure/matrix</code> (grid data), <code>/api/structure/shadow-windows</code>, <code>/api/structure/mtf-guard</code> (guard state and verdict), <code>/api/structure/mtf-guard/events</code> (history), and <code>/api/structure/fast-track-health</code>. The ViewModel uses <code>async let</code> for concurrent fetching. Follows the Redis &#x2192; service computation &#x2192; mock data fallback pattern. The backend MTF Guard state machine (<code>MTFTemporalGuardService</code>) manages 8 states (Inactive, Watching, Temporary Violation, Reclaim Pending, Pending HTF Close, Confirmed, Invalidated, Expired) and 6 actions (Allow, Observe, Require Confirm, Block Entry, Reduce Size, Ignore). The Shadow Window service (<code>ShadowWindowService</code>) tracks fast-TF candle progression within each observation window.</p>
+
+<h2>See Also</h2>
+<ul>
+  <li><a href="#/concepts/07-multi-timeframe">Concepts: Multi-Timeframe &amp; Shadow Window</a></li>
+  <li><a href="#/concepts/03-market-structure">Concepts: Market Structure — BOS &amp; CHoCH</a></li>
+  <li><a href="#/pages/structure/market-structure">Page: Market Structure</a></li>
+  <li><a href="#/walkthroughs/htf-tribunal-flow">Walkthrough: HTF Tribunal Flow</a></li>
+</ul>

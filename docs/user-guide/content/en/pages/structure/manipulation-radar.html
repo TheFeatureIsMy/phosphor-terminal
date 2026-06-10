@@ -1,0 +1,101 @@
+<h1>Manipulation Radar</h1>
+<p class="chapter-meta">Page · Structure · 5 min</p>
+
+<blockquote class="lede">Scan any trading pair for market manipulation signals — stop hunting, holder concentration, pump &amp; dump, and liquidity traps — and get a composite risk score with a clear trading recommendation.</blockquote>
+
+<h2>TL;DR</h2>
+<p>The Manipulation Radar is an interactive market manipulation detection tool. Enter a symbol and hit Scan to get a composite manipulation score (0-100) plus four sub-scores: Stop Hunt, Holder Concentration, Pump &amp; Dump, and Liquidity Trap. Each result can be expanded to reveal detailed evidence across five categories (candlestick anomaly, volume anomaly, funding/OI anomaly, on-chain/wallet activity, and news/KOL coordination), along with a trading recommendation (Allow, Reduce, Paper Only, or Reject).</p>
+
+<h2>Who uses it &amp; when</h2>
+<p>Every trader — especially those trading altcoins and low-liquidity pairs. Scan an unfamiliar symbol before deciding to trade it. Also useful when you spot unusual price action: was that sudden spike a normal move or engineered manipulation?</p>
+
+<h2>Page Anatomy</h2>
+<svg class="diagram" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="320" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- ① Header -->
+  <text x="16" y="30" fill="#e8eaee" font-family="monospace" font-size="16" font-weight="bold">Manipulation Radar</text>
+  <circle cx="16" cy="42" r="3" fill="#00ff9d"/>
+  <text x="24" y="46" fill="#9ca0a8" font-family="monospace" font-size="10">Market conditions normal</text>
+
+  <text x="16" y="66" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2460; Page title + overall status indicator</text>
+
+  <!-- ② Scan bar -->
+  <rect x="16" y="76" width="568" height="36" fill="rgba(255,255,255,0.02)" rx="4"/>
+  <rect x="16" y="76" width="568" height="36" stroke="rgba(255,255,255,0.08)" stroke-width="1" fill="none" rx="4"/>
+  <text x="30" y="100" fill="#9ca0a8" font-family="monospace" font-size="11">&#x1F50D; Enter trading pair (e.g. BTC/USDT)</text>
+  <rect x="500" y="82" width="72" height="24" fill="rgba(0,255,157,0.15)" rx="4"/>
+  <text x="512" y="99" fill="#00ff9d" font-family="monospace" font-size="11">Scan</text>
+
+  <text x="16" y="132" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2461; Search bar: type a symbol and hit Enter or click Scan</text>
+
+  <!-- ③ Summary cards -->
+  <rect x="16" y="144" width="140" height="50" fill="rgba(80,180,255,0.06)" rx="4" stroke="rgba(80,180,255,0.15)" stroke-width="1"/>
+  <text x="28" y="162" fill="#5e636d" font-family="monospace" font-size="8">SCANNED</text>
+  <text x="28" y="185" fill="#50b4ff" font-family="monospace" font-size="18" font-weight="bold">5</text>
+
+  <rect x="170" y="144" width="140" height="50" fill="rgba(255,84,112,0.06)" rx="4" stroke="rgba(255,84,112,0.15)" stroke-width="1"/>
+  <text x="182" y="162" fill="#5e636d" font-family="monospace" font-size="8">HIGH RISK</text>
+  <text x="182" y="185" fill="#ff5470" font-family="monospace" font-size="18" font-weight="bold">2</text>
+
+  <rect x="324" y="144" width="140" height="50" fill="rgba(255,155,61,0.06)" rx="4" stroke="rgba(255,155,61,0.15)" stroke-width="1"/>
+  <text x="336" y="162" fill="#5e636d" font-family="monospace" font-size="8">BLOCKED</text>
+  <text x="336" y="185" fill="#ff9b3d" font-family="monospace" font-size="18" font-weight="bold">1</text>
+
+  <text x="16" y="212" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2462; Stat cards: total scanned, high risk count, blocked (critical risk) count</text>
+
+  <!-- ④ Score row -->
+  <rect x="16" y="224" width="568" height="80" fill="rgba(255,255,255,0.02)" rx="4"/>
+  <rect x="16" y="224" width="568" height="80" stroke="rgba(255,255,255,0.08)" stroke-width="1" fill="none" rx="4"/>
+
+  <text x="28" y="246" fill="#e8eaee" font-family="monospace" font-size="13" font-weight="bold">SOL/USDT</text>
+  <rect x="100" y="235" width="44" height="16" fill="rgba(255,84,112,0.15)" rx="3"/>
+  <text x="106" y="247" fill="#ff5470" font-family="monospace" font-size="8">HIGH</text>
+  <rect x="150" y="235" width="50" height="16" fill="rgba(255,84,112,0.15)" rx="3"/>
+  <text x="154" y="247" fill="#ff5470" font-family="monospace" font-size="8">REJECT</text>
+
+  <rect x="28" y="258" width="250" height="4" fill="rgba(255,255,255,0.06)" rx="2"/>
+  <rect x="28" y="258" width="175" height="4" fill="#ff5470" rx="2"/>
+  <text x="28" y="275" fill="#5e636d" font-family="monospace" font-size="8">Manipulation Score</text>
+  <text x="130" y="275" fill="#ff5470" font-family="monospace" font-size="8">72</text>
+
+  <text x="28" y="295" fill="#9ca0a8" font-family="monospace" font-size="8">Stop Hunt 55  Concentration 80  Pump &amp; Dump 65  Liquidity Trap 45</text>
+
+  <text x="16" y="318" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2463; Score row: symbol + risk badge + suggestion badge + composite bar + four sub-scores</text>
+</svg>
+<ol>
+  <li><strong>① Page title</strong> — Displays "Manipulation Radar" and the current overall status (normal or anomalous signals detected).</li>
+  <li><strong>② Search bar</strong> — Type a symbol (e.g. SOL/USDT) and press Enter or click Scan to initiate detection.</li>
+  <li><strong>③ Stat cards</strong> — Three cards show total scanned, high risk count, and blocked count (critical risk auto-blocks trading).</li>
+  <li><strong>④ Score row</strong> — Each scanned symbol appears as a row showing: symbol name, risk level badge, suggestion badge, composite manipulation score bar (0-100), and four sub-scores (Stop Hunt, Holder Concentration, Pump &amp; Dump, Liquidity Trap).</li>
+</ol>
+
+<h2>Reading the Key Metrics</h2>
+<ul>
+  <li><strong>Composite Manipulation Score</strong> — 0-100. Above 70 indicates highly suspicious manipulation, 40-70 means caution, below 40 is normal. The score is a weighted combination of four sub-scores.</li>
+  <li><strong>Stop Hunt</strong> — Detects whether price repeatedly spikes to critical liquidity levels to harvest stop-loss orders. A high score means the price action has a clear "hunting" pattern.</li>
+  <li><strong>Holder Concentration</strong> — Analyzes on-chain holder distribution. If the top few addresses hold a very high percentage of the circulating supply, whales have the power to manipulate price.</li>
+  <li><strong>Pump &amp; Dump</strong> — Detects abnormal volume spikes accompanied by rapid price surges and dumps within short time windows. Classic PnD pattern.</li>
+  <li><strong>Liquidity Trap</strong> — Detects spoofing behavior where large orders are placed to create false depth and then canceled. A high score suggests the market maker may be setting deceptive orders.</li>
+  <li><strong>Suggestion Badge</strong> — Allowed = trade freely; Reduce = lower position size; Paper Only = use paper trading only; Reject = do not trade this symbol at all.</li>
+</ul>
+
+<h2>Common Actions, Step by Step</h2>
+<ol>
+  <li>Type a symbol in the search bar (e.g. AVAX/USDT) and press Enter or click Scan.</li>
+  <li>Wait a few seconds — the backend analyzes multiple data sources (candles, volume, holder distribution, on-chain transfers, social sentiment).</li>
+  <li>Check the composite manipulation score and risk level badge. If it says "High" or "Critical", review the sub-scores to understand where the risk comes from.</li>
+  <li>Click "Expand Evidence" on a score row to see detailed evidence across five categories, each with a 0-3 severity bar.</li>
+  <li>Follow the suggestion badge: if it says "Reject", do not trade this symbol live. If "Paper Only", observe in paper trading first.</li>
+</ol>
+
+<h2>Behind the Scenes</h2>
+<p>Data comes from the <code>/api/manipulation/scores</code> (list) and <code>/api/manipulation/scan</code> (scan) endpoints. The backend collects data from multiple dimensions: exchange OHLCV data for PnD and stop-hunt pattern detection; on-chain data (via blockchain APIs) for holder concentration analysis; order book snapshots for liquidity trap detection; and social media / NLP for coordinated KOL shilling detection. Results are sorted by risk level (Critical &gt; High &gt; Medium &gt; Low). The mock client provides sample data for demonstration and testing.</p>
+
+<h2>See Also</h2>
+<ul>
+  <li><a href="#/concepts/03-market-structure">Concepts: Market Structure — BOS &amp; CHoCH</a></li>
+  <li><a href="#/pages/structure/structure-matrix">Page: Structure Matrix — HTF Tribunal</a></li>
+  <li><a href="#/pages/structure/market-structure">Page: Market Structure</a></li>
+  <li><a href="#/walkthroughs/risk-incident">Walkthrough: Risk Incident Handling</a></li>
+</ul>

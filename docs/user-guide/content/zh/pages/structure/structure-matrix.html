@@ -1,0 +1,126 @@
+<h1>结构矩阵 · HTF Tribunal</h1>
+<p class="chapter-meta">页面 · 结构 · 5 分钟</p>
+
+<blockquote class="lede">多周期结构防御的核心战场——用 4×4 矩阵呈现每个交易对在每个时间周期、每种结构区域上的状态，由 8 状态 MTF Guard 状态机给出最终裁决。</blockquote>
+
+<h2>TL;DR</h2>
+<p>结构矩阵（又称 HTF Tribunal）把多周期结构分析做成一个可视化的证据矩阵。行是时间周期（5m / 15m / 1H / 4H），列是结构区域类型（OB / FVG / LP）。每个格子显示该周期该区域的结构强度和状态。矩阵上方有一个倒计时环——显示当前最慢 K 线剩余时间。右侧是裁决面板：允许、观察、要求确认、减仓、或阻止开仓。下方还有影子窗口面板、指控列表和听证时间线。</p>
+
+<h2>谁用 · 何时用</h2>
+<p>管理多条策略、需要多周期一致性确认的量化交易者。适合在信号产生后、执行前打开——让 MTF Guard 对信号涉及的标的进行多周期结构审查，确保入场方向与 HTF 结构一致。也适合在持仓期间定期检查结构是否仍有效。</p>
+
+<h2>页面解剖</h2>
+<svg class="diagram" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="320" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- ① Fast Track Health bar -->
+  <rect x="12" y="8" width="576" height="20" fill="rgba(80,180,255,0.06)" rx="3"/>
+  <circle cx="24" cy="18" r="3" fill="#00ff9d"/>
+  <text x="32" y="22" fill="#9ca0a8" font-family="monospace" font-size="8">LATENCY 45ms DATA 1.2s REDIS OK</text>
+
+  <text x="12" y="44" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2460; Fast Track Health：数据新鲜度与系统状态</text>
+
+  <!-- ② MTF Grid (4 rows x 3 cols) -->
+  <rect x="12" y="52" width="376" height="160" fill="rgba(255,255,255,0.02)" rx="4"/>
+  <rect x="12" y="52" width="376" height="160" stroke="rgba(255,255,255,0.08)" stroke-width="1" fill="none" rx="4"/>
+
+  <!-- Column headers -->
+  <text x="48" y="70" fill="#5e636d" font-family="monospace" font-size="8" text-anchor="middle">OB</text>
+  <text x="168" y="70" fill="#5e636d" font-family="monospace" font-size="8" text-anchor="middle">FVG</text>
+  <text x="288" y="70" fill="#5e636d" font-family="monospace" font-size="8" text-anchor="middle">LP</text>
+  <line x1="12" y1="74" x2="388" y2="74" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+
+  <!-- Row 1: 4H -->
+  <text x="18" y="92" fill="#e8eaee" font-family="monospace" font-size="9">4H</text>
+  <rect x="32" y="78" width="110" height="30" fill="rgba(0,255,157,0.12)" rx="2"/>
+  <text x="60" y="97" fill="#00ff9d" font-family="monospace" font-size="9">85%</text>
+  <rect x="152" y="78" width="110" height="30" fill="rgba(80,180,255,0.12)" rx="2"/>
+  <text x="180" y="97" fill="#50b4ff" font-family="monospace" font-size="9">50%</text>
+  <rect x="272" y="78" width="110" height="30" fill="rgba(0,255,157,0.12)" rx="2"/>
+  <text x="300" y="97" fill="#00ff9d" font-family="monospace" font-size="9">72%</text>
+
+  <!-- Row 2: 1H -->
+  <text x="18" y="124" fill="#e8eaee" font-family="monospace" font-size="9">1H</text>
+  <rect x="32" y="110" width="110" height="30" fill="rgba(0,255,157,0.12)" rx="2"/>
+  <text x="60" y="129" fill="#00ff9d" font-family="monospace" font-size="9">78%</text>
+  <rect x="152" y="110" width="110" height="30" fill="rgba(245,197,66,0.12)" rx="2"/>
+  <text x="180" y="129" fill="#f5c542" font-family="monospace" font-size="9">62%</text>
+  <rect x="272" y="110" width="110" height="30" fill="rgba(255,84,112,0.12)" rx="2"/>
+  <text x="300" y="129" fill="#ff5470" font-family="monospace" font-size="9">45%</text>
+
+  <!-- Row 3: 15m -->
+  <text x="18" y="156" fill="#e8eaee" font-family="monospace" font-size="9">15m</text>
+  <rect x="32" y="142" width="110" height="30" fill="rgba(245,197,66,0.12)" rx="2"/>
+  <text x="60" y="161" fill="#f5c542" font-family="monospace" font-size="9">55%</text>
+  <rect x="152" y="142" width="110" height="30" fill="rgba(0,255,157,0.12)" rx="2"/>
+  <text x="180" y="161" fill="#00ff9d" font-family="monospace" font-size="9">70%</text>
+  <rect x="272" y="142" width="110" height="30" fill="rgba(0,255,157,0.12)" rx="2"/>
+  <text x="300" y="161" fill="#00ff9d" font-family="monospace" font-size="9">68%</text>
+
+  <!-- Row 4: 5m -->
+  <text x="18" y="188" fill="#e8eaee" font-family="monospace" font-size="9">5m</text>
+  <rect x="32" y="174" width="110" height="30" fill="rgba(255,84,112,0.12)" rx="2"/>
+  <text x="60" y="193" fill="#ff5470" font-family="monospace" font-size="9">30%</text>
+  <rect x="152" y="174" width="110" height="30" fill="rgba(0,255,157,0.12)" rx="2"/>
+  <text x="180" y="193" fill="#00ff9d" font-family="monospace" font-size="9">65%</text>
+  <rect x="272" y="174" width="110" height="30" fill="rgba(245,197,66,0.12)" rx="2"/>
+  <text x="300" y="193" fill="#f5c542" font-family="monospace" font-size="9">58%</text>
+
+  <!-- ② callout -->
+  <text x="12" y="228" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2461; 证据矩阵：行 = 时间周期，列 = 区域类型，颜色反映结构强度</text>
+
+  <!-- ③ Countdown ring + ④ Verdict -->
+  <circle cx="430" cy="130" r="32" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="4"/>
+  <path d="M 430 98 A 32 32 0 0 1 453 147" fill="none" stroke="#f5c542" stroke-width="4" stroke-linecap="round"/>
+  <text x="430" y="134" fill="#e8eaee" font-family="monospace" font-size="14" font-weight="bold" text-anchor="middle">42:15</text>
+  <text x="430" y="146" fill="#5e636d" font-family="monospace" font-size="7" text-anchor="middle">1H 收盘倒计时</text>
+
+  <rect x="470" y="78" width="118" height="100" fill="rgba(245,197,66,0.06)" rx="4" stroke="rgba(245,197,66,0.25)" stroke-width="1"/>
+  <text x="480" y="98" fill="#f5c542" font-family="monospace" font-size="18" font-weight="bold">OBSERVE</text>
+  <text x="480" y="115" fill="#9ca0a8" font-family="monospace" font-size="8">暂不交易 · 等待裁决</text>
+  <text x="480" y="135" fill="#e8eaee" font-family="monospace" font-size="8" font-style="italic">"5m 进入 4H OB 区域"</text>
+
+  <text x="12" y="258" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2462; 倒计时环（剩余时间）+ &#x2463; 裁决面板（允许/观察/确认/减仓/阻止）</text>
+
+  <!-- ⑤ Shadow Window indicator callout -->
+  <rect x="12" y="270" width="576" height="20" fill="rgba(255,155,61,0.08)" rx="3"/>
+  <text x="24" y="284" fill="#ff9b3d" font-family="monospace" font-size="9">&#x25B3; 影子窗口活跃 · 5m &#x2192; 1H 结构违规待确认</text>
+
+  <text x="12" y="306" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2464; 影子窗口指示条：快周期违反慢周期区域时亮起，显示违规计数和回补进度</text>
+</svg>
+<ol>
+  <li><strong>① Fast Track Health</strong> — 显示数据延迟、数据新鲜度和 Redis 连接状态。绿色表示数据可信，橙色表示数据可能过时。</li>
+  <li><strong>② 证据矩阵</strong> — 4 行（时间周期）× 3 列（区域类型）。每个格子显示该周期该区域的强度百分比和状态。绿色 = 结构健康，黄色 = 警示，红色 = 已破坏。带有阴影斜线的格子表示正处于影子窗口中（快周期已侵入慢周期区域）。</li>
+  <li><strong>③ 倒计时环</strong> — 显示当前最慢 K 线（如 1H）的剩余收盘时间。环的进度代表蜡烛已走完的比例。时间到意味着 MTF Guard 将做出最终裁决。</li>
+  <li><strong>④ 裁决面板</strong> — MTF Guard 的最终决定：Allow（允许交易）、Observe（观察）、Require Confirmation（需要确认）、Reduce Size（减仓）、Block Entry（阻止开仓）。可一键将裁决应用到订单表单。</li>
+  <li><strong>⑤ 影子窗口</strong> — 快周期价格进入慢周期结构区域时触发。影子窗口面板显示哪些周期对正在被监控、违规次数和回补进度。</li>
+</ol>
+
+<h2>关键指标怎么读</h2>
+<ul>
+  <li><strong>格子颜色</strong> — 绿色（强度 ≥ 70%）表示结构稳固；黄色（40-70%）表示需谨慎；红色（&lt; 40%）表示结构可能已破坏。如果同一列（如 OB）从 4H 到 5m 都是绿色，说明该区域在各周期均被尊重——信号可靠性高。</li>
+  <li><strong>Shadow Window 标记</strong> — 格子上的橙色斜线 + "IN SHADOW" 标签表示快周期价格已侵入慢周期结构区域。这是一个临时状态——慢蜡烛收盘后裁决会确认或驳回。</li>
+  <li><strong>裁决动词</strong> — Allow = 可以交易；Observe = 等待但暂不行动；Require Confirmation = 需要额外确认才可入场；Reduce Size = 允许交易但减仓；Block Entry = 阻止任何新开仓。</li>
+  <li><strong>指控列表</strong> — 证据矩阵中每个格子的问题区域被汇总为"指控"，用罗马数字编号。每条指控包含时间周期、区域类型和原因码（如 <code>fast_tf_entered_htf_zone</code>）。</li>
+</ul>
+
+<h2>常见操作 · 一步步</h2>
+<ol>
+  <li>在顶部选择交易对和基准时间周期（通常选策略使用的主周期）。</li>
+  <li>检查 Fast Track Health 是否为绿色——数据过期时裁决不可信。</li>
+  <li>扫视证据矩阵：你的交易方向是否在各周期得到一致支持？如果 4H 和 1H 是绿色但 5m 是红色，可能只是短线噪音。</li>
+  <li>查看裁决面板——如果显示 Block Entry，不要强行开仓。</li>
+  <li>如有影子窗口活跃，关注倒计时环。时间到后回来看裁决是否变化。</li>
+  <li>点击格子打开详情抽屉，查看该格子的完整数据（强度、填充率、状态、原因码）。</li>
+</ol>
+
+<h2>幕后</h2>
+<p>页面数据通过 5 个并行请求加载：<code>/api/structure/matrix</code>（矩阵数据）、<code>/api/structure/shadow-windows</code>（影子窗口）、<code>/api/structure/mtf-guard</code>（MTF Guard 状态和裁决）、<code>/api/structure/mtf-guard/events</code>（历史事件）、<code>/api/structure/fast-track-health</code>（健康检查）。ViewModel 用 <code>async let</code> 并行获取。数据流遵循 Redis &#x2192; 服务计算 &#x2192; mock 回退的三层模式。MTF Guard 后端状态机（<code>MTFTemporalGuardService</code>）管理 8 个状态（Inactive &#x2192; Watching &#x2192; Temporary Violation &#x2192; Reclaim Pending &#x2192; Pending HTF Close &#x2192; Confirmed / Invalidated / Expired）和 6 种动作（Allow / Observe / Require Confirm / Block Entry / Reduce Size / Ignore）。影子窗口服务（<code>ShadowWindowService</code>）跟踪快周期内 K 线进度。</p>
+
+<h2>相关</h2>
+<ul>
+  <li><a href="#/concepts/07-multi-timeframe">概念 · 多周期与影子窗口</a></li>
+  <li><a href="#/concepts/03-market-structure">概念 · 市场结构: BOS &amp; CHoCH</a></li>
+  <li><a href="#/pages/structure/market-structure">页面 · 市场结构</a></li>
+  <li><a href="#/walkthroughs/htf-tribunal-flow">情景 · HTF Tribunal 走查</a></li>
+</ul>
