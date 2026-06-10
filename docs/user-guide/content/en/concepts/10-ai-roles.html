@@ -1,0 +1,82 @@
+<h1>AI Roles in AlphaLoop</h1>
+<p class="chapter-meta">Concept · 10 / 10 · 6 min</p>
+
+<blockquote class="lede">AI in AlphaLoop isn't one all-knowing model — it's four specialized roles, each doing one thing, chained into a pipeline.</blockquote>
+
+<svg class="diagram" viewBox="0 0 600 240" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="240" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <text x="300" y="22" fill="#9ca0a8" font-family="monospace" font-size="11" text-anchor="middle">AI ROLES PIPELINE</text>
+
+  <rect x="20"  y="50" width="125" height="100" fill="rgba(0,255,157,0.12)" stroke="#00ff9d" stroke-width="1.5" rx="8"/>
+  <rect x="160" y="50" width="125" height="100" fill="rgba(80,180,255,0.12)" stroke="#50b4ff" stroke-width="1.5" rx="8"/>
+  <rect x="300" y="50" width="125" height="100" fill="rgba(245,197,66,0.12)" stroke="#f5c542" stroke-width="1.5" rx="8"/>
+  <rect x="440" y="50" width="140" height="100" fill="rgba(255,84,112,0.12)" stroke="#ff5470" stroke-width="1.5" rx="8"/>
+
+  <text x="82"  y="78" fill="#00ff9d" font-family="monospace" font-size="20" text-anchor="middle" font-weight="bold">①</text>
+  <text x="222" y="78" fill="#50b4ff" font-family="monospace" font-size="20" text-anchor="middle" font-weight="bold">②</text>
+  <text x="362" y="78" fill="#f5c542" font-family="monospace" font-size="20" text-anchor="middle" font-weight="bold">③</text>
+  <text x="510" y="78" fill="#ff5470" font-family="monospace" font-size="20" text-anchor="middle" font-weight="bold">④</text>
+
+  <text x="82"  y="100" fill="#e8eaee" font-family="monospace" font-size="12" text-anchor="middle" font-weight="bold">RESEARCH</text>
+  <text x="222" y="100" fill="#e8eaee" font-family="monospace" font-size="12" text-anchor="middle" font-weight="bold">GENERATION</text>
+  <text x="362" y="100" fill="#e8eaee" font-family="monospace" font-size="12" text-anchor="middle" font-weight="bold">FUSION</text>
+  <text x="510" y="100" fill="#e8eaee" font-family="monospace" font-size="12" text-anchor="middle" font-weight="bold">SENTIMENT</text>
+
+  <text x="82"  y="120" fill="#9ca0a8" font-family="monospace" font-size="9" text-anchor="middle">reads papers / reports</text>
+  <text x="82"  y="132" fill="#9ca0a8" font-family="monospace" font-size="9" text-anchor="middle">extracts tradeable ideas</text>
+
+  <text x="222" y="120" fill="#9ca0a8" font-family="monospace" font-size="9" text-anchor="middle">writes strategy code</text>
+  <text x="222" y="132" fill="#9ca0a8" font-family="monospace" font-size="9" text-anchor="middle">params / backtest</text>
+
+  <text x="362" y="120" fill="#9ca0a8" font-family="monospace" font-size="9" text-anchor="middle">multi-signal fusion</text>
+  <text x="362" y="132" fill="#9ca0a8" font-family="monospace" font-size="9" text-anchor="middle">scoring / ranking</text>
+
+  <text x="510" y="120" fill="#9ca0a8" font-family="monospace" font-size="9" text-anchor="middle">news / social sentiment</text>
+  <text x="510" y="132" fill="#9ca0a8" font-family="monospace" font-size="9" text-anchor="middle">FinBERT scoring</text>
+
+  <line x1="145" y1="100" x2="158" y2="100" stroke="#9ca0a8" stroke-width="1.5" marker-end="url(#arrow-ai)"/>
+  <line x1="285" y1="100" x2="298" y2="100" stroke="#9ca0a8" stroke-width="1.5" marker-end="url(#arrow-ai)"/>
+  <line x1="425" y1="100" x2="438" y2="100" stroke="#9ca0a8" stroke-width="1.5" marker-end="url(#arrow-ai)"/>
+  <defs>
+    <marker id="arrow-ai" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#9ca0a8"/>
+    </marker>
+  </defs>
+
+  <text x="82"  y="170" fill="#9ca0a8" font-family="monospace" font-size="10" text-anchor="middle">idea →</text>
+  <text x="222" y="170" fill="#9ca0a8" font-family="monospace" font-size="10" text-anchor="middle">→ strategy →</text>
+  <text x="362" y="170" fill="#9ca0a8" font-family="monospace" font-size="10" text-anchor="middle">→ signal →</text>
+  <text x="510" y="170" fill="#9ca0a8" font-family="monospace" font-size="10" text-anchor="middle">→ weighted filter</text>
+
+  <rect x="200" y="195" width="200" height="32" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.2)" stroke-width="1" rx="6"/>
+  <text x="300" y="216" fill="#00ff9d" font-family="monospace" font-size="11" text-anchor="middle" font-weight="bold">→ an actionable trade decision</text>
+</svg>
+
+<h2>Why It Matters</h2>
+<p>A common misconception about AI in quant: one big model can "give me a strategy" or "tell me what to buy." Reality: <strong>large models aren't good enough at any single step</strong>. Ask GPT to write strategy code directly and it produces something that runs but is wildly overfit; ask it to analyze markets and it hallucinates about real-time data it can't see.</p>
+<p>AlphaLoop's design principle: split AI into <strong>4 small roles</strong>, each doing only what it's best at, leaving the rest (precise math, real-time data, rigorous backtesting) to traditional tools. This harnesses the inductive power of LLMs without letting them do anything unreliable.</p>
+
+<h2>The Four Roles</h2>
+<ul>
+  <li><strong>① Research</strong> — Reads papers, reports, blogs, and distills them into concrete, tradeable rules. E.g. reading an SMC paper produces "after a 4H BOS, wait for pullback into the 1H Order Block, then long." Powered by the TradingAgents multi-agent framework.</li>
+  <li><strong>② Generation</strong> — Translates that description into a Freqtrade-runnable Python strategy and runs a quick backtest for sanity. This step also runs <strong>static code safety checks</strong> (no eval / no network / no file writes) to prevent generated code from doing anything unexpected.</li>
+  <li><strong>③ Fusion</strong> — At any moment multiple strategies / signals will say "buy BTC" while others disagree. The fusion layer scores each signal (by that strategy's last 30 days) and produces a weighted consensus. High score + directional agreement = top priority.</li>
+  <li><strong>④ Sentiment</strong> — Uses <strong>FinBERT</strong> (a BERT model trained on financial text) to score real-time news and Twitter, giving each asset a sentiment score from -1 to +1. Sentiment aligned with structural signals increases size; misalignment requires a stronger entry case.</li>
+</ul>
+
+<h2>Common Pitfalls</h2>
+<ul>
+  <li><strong>Treating AI as an oracle</strong> — it isn't. Each role makes errors; the pipeline design ensures single-point failures don't directly lose money (signals have score thresholds, code has safety checks, sentiment is a modifier only).</li>
+  <li><strong>Skipping human review</strong> — AI-generated strategies must be eyeballed (code logic + backtest curve) before going live. Don't blind-trust.</li>
+  <li><strong>Trading sentiment contrarianly</strong> — FinBERT isn't a crystal ball; by the time sentiment is extreme, markets often already reflect it. Use sentiment to <strong>strengthen or weaken</strong> existing signals — never as a standalone trigger.</li>
+  <li><strong>Assuming AI replaces thinking</strong> — AI is an amplifier: right judgment, amplified results; wrong judgment, amplified losses, faster.</li>
+</ul>
+
+<h2>In AlphaLoop</h2>
+<ul>
+  <li><a href="#/pages/ai-research/ai-research-room">AI Research Room</a> — upload PDFs / reports, let the research agent extract strategies</li>
+  <li><a href="#/pages/ai-research/agent-platform">Agent Platform</a> — configure and monitor multiple AI agents</li>
+  <li><a href="#/pages/ai-research/signal-center">Signal Center</a> — view fused signals and their raw inputs</li>
+  <li><a href="#/pages/ai-research/market-sentiment">Market Sentiment</a> — FinBERT sentiment heatmap</li>
+</ul>

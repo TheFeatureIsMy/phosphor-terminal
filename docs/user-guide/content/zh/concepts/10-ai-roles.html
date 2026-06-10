@@ -1,0 +1,89 @@
+<h1>AlphaLoop 中的 AI 角色</h1>
+<p class="chapter-meta">概念 · 10 / 10 · 6 分钟</p>
+
+<blockquote class="lede">AlphaLoop 里的 AI 不是一个"无所不知的大模型",而是四个分工明确的角色,各自负责一件事,串成一条流水线。</blockquote>
+
+<svg class="diagram" viewBox="0 0 600 240" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="240" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <text x="300" y="22" fill="#9ca0a8" font-family="monospace" font-size="11" text-anchor="middle">AI ROLES PIPELINE</text>
+
+  <!-- 4 role boxes in a row -->
+  <rect x="20"  y="50" width="125" height="100" fill="rgba(0,255,157,0.12)" stroke="#00ff9d" stroke-width="1.5" rx="8"/>
+  <rect x="160" y="50" width="125" height="100" fill="rgba(80,180,255,0.12)" stroke="#50b4ff" stroke-width="1.5" rx="8"/>
+  <rect x="300" y="50" width="125" height="100" fill="rgba(245,197,66,0.12)" stroke="#f5c542" stroke-width="1.5" rx="8"/>
+  <rect x="440" y="50" width="140" height="100" fill="rgba(255,84,112,0.12)" stroke="#ff5470" stroke-width="1.5" rx="8"/>
+
+  <!-- Role icons / numbers -->
+  <text x="82"  y="78" fill="#00ff9d" font-family="monospace" font-size="20" text-anchor="middle" font-weight="bold">①</text>
+  <text x="222" y="78" fill="#50b4ff" font-family="monospace" font-size="20" text-anchor="middle" font-weight="bold">②</text>
+  <text x="362" y="78" fill="#f5c542" font-family="monospace" font-size="20" text-anchor="middle" font-weight="bold">③</text>
+  <text x="510" y="78" fill="#ff5470" font-family="monospace" font-size="20" text-anchor="middle" font-weight="bold">④</text>
+
+  <!-- Role titles -->
+  <text x="82"  y="100" fill="#e8eaee" font-family="monospace" font-size="12" text-anchor="middle" font-weight="bold">RESEARCH</text>
+  <text x="222" y="100" fill="#e8eaee" font-family="monospace" font-size="12" text-anchor="middle" font-weight="bold">GENERATION</text>
+  <text x="362" y="100" fill="#e8eaee" font-family="monospace" font-size="12" text-anchor="middle" font-weight="bold">FUSION</text>
+  <text x="510" y="100" fill="#e8eaee" font-family="monospace" font-size="12" text-anchor="middle" font-weight="bold">SENTIMENT</text>
+
+  <!-- Role description -->
+  <text x="82"  y="120" fill="#9ca0a8" font-family="monospace" font-size="9" text-anchor="middle">读论文 / 报告</text>
+  <text x="82"  y="132" fill="#9ca0a8" font-family="monospace" font-size="9" text-anchor="middle">提炼可交易点</text>
+
+  <text x="222" y="120" fill="#9ca0a8" font-family="monospace" font-size="9" text-anchor="middle">生成策略代码</text>
+  <text x="222" y="132" fill="#9ca0a8" font-family="monospace" font-size="9" text-anchor="middle">参数 / 回测</text>
+
+  <text x="362" y="120" fill="#9ca0a8" font-family="monospace" font-size="9" text-anchor="middle">多路信号融合</text>
+  <text x="362" y="132" fill="#9ca0a8" font-family="monospace" font-size="9" text-anchor="middle">打分 / 排序</text>
+
+  <text x="510" y="120" fill="#9ca0a8" font-family="monospace" font-size="9" text-anchor="middle">新闻 / 社媒情绪</text>
+  <text x="510" y="132" fill="#9ca0a8" font-family="monospace" font-size="9" text-anchor="middle">FinBERT 评分</text>
+
+  <!-- Arrows between -->
+  <line x1="145" y1="100" x2="158" y2="100" stroke="#9ca0a8" stroke-width="1.5" marker-end="url(#arrow-ai)"/>
+  <line x1="285" y1="100" x2="298" y2="100" stroke="#9ca0a8" stroke-width="1.5" marker-end="url(#arrow-ai)"/>
+  <line x1="425" y1="100" x2="438" y2="100" stroke="#9ca0a8" stroke-width="1.5" marker-end="url(#arrow-ai)"/>
+  <defs>
+    <marker id="arrow-ai" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#9ca0a8"/>
+    </marker>
+  </defs>
+
+  <!-- Bottom label row -->
+  <text x="82"  y="170" fill="#9ca0a8" font-family="monospace" font-size="10" text-anchor="middle">想法 →</text>
+  <text x="222" y="170" fill="#9ca0a8" font-family="monospace" font-size="10" text-anchor="middle">→ 策略 →</text>
+  <text x="362" y="170" fill="#9ca0a8" font-family="monospace" font-size="10" text-anchor="middle">→ 信号 →</text>
+  <text x="510" y="170" fill="#9ca0a8" font-family="monospace" font-size="10" text-anchor="middle">→ 加权过滤</text>
+
+  <!-- Final output -->
+  <rect x="200" y="195" width="200" height="32" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.2)" stroke-width="1" rx="6"/>
+  <text x="300" y="216" fill="#00ff9d" font-family="monospace" font-size="11" text-anchor="middle" font-weight="bold">→ 给你一个可执行的交易决策</text>
+</svg>
+
+<h2>为什么重要</h2>
+<p>很多人对 AI 在量化里的角色有误解,以为一个大模型就能"给我个策略"或者"告诉我买什么"。真实情况是<strong>大模型在每个环节都不够好</strong>: 让 GPT 直接生成策略代码,会写出能跑但完全过拟合的东西;让它分析行情,它对自己看不到的实时数据胡编乱造。</p>
+<p>AlphaLoop 的设计原则是把 AI 拆成 <strong>4 个小角色</strong>,每个角色只做它最擅长的一件事,把不擅长的事(比如精确数学、实时数据、严格回测)交给传统工具。这样既利用了大模型的归纳能力,又避免让它做不可靠的事。</p>
+
+<h2>四个角色</h2>
+<ul>
+  <li><strong>① Research · 研究员</strong> — 读论文、研报、博客,提炼出可以变成策略的具体规则。比如读完一篇 SMC 论文,产出"在 4H 出现 BOS 后,等回踩到 1H Order Block 内做多"这种可执行的描述。背后用的是 TradingAgents 多代理框架。</li>
+  <li><strong>② Generation · 代码生成器</strong> — 把上面那段描述翻译成 Freqtrade 可运行的 Python 策略代码,跑一遍快速回测看是否合理。这一步会做<strong>静态代码安全检查</strong>(禁止 eval / 网络请求 / 文件写入),防止生成的代码做意料之外的事。</li>
+  <li><strong>③ Fusion · 信号融合</strong> — 同一时间会有多个策略 / 信号都说"买 BTC",也有反对的。融合层给每个信号打分(根据该策略最近 30 天表现),加权得到一个共识信号。打分高且方向一致的,优先级最高。</li>
+  <li><strong>④ Sentiment · 情绪分析</strong> — 用 <strong>FinBERT</strong>(专门为金融文本训练的 BERT 模型)实时分析新闻和 Twitter,给每个币种一个 -1 ~ +1 的情绪分。情绪和结构信号方向一致时,加仓;反向时,要求更强的入场理由。</li>
+</ul>
+
+<h2>常见坑</h2>
+<ul>
+  <li><strong>把 AI 当神</strong>——它不是。每个角色都会出错,流水线设计让单点错误不至于直接亏钱(信号有分数门槛,代码有安全检查,情绪只是加分项)。</li>
+  <li><strong>跳过人工审核</strong>——AI 生成的策略,上实盘前必须人看一眼代码逻辑和回测曲线,别盲信。</li>
+  <li><strong>用情绪信号反向操作</strong>——FinBERT 不是水晶球,情绪极端时市场往往已经反映了情绪,反向赌情绪反转风险极高。情绪只用来<strong>加强或削弱</strong>已有信号,不要独立用。</li>
+  <li><strong>觉得 AI 替代了思考</strong>——AI 是放大器: 你的判断对,它能放大效果;你的判断错,它会更快地放大错误。</li>
+</ul>
+
+<h2>在 AlphaLoop 中</h2>
+<ul>
+  <li><a href="#/pages/ai-research/ai-research-room">AI 研究室</a> — 上传研报 / PDF,让研究员代理提炼策略</li>
+  <li><a href="#/pages/ai-research/agent-platform">代理平台</a> — 配置 / 监控多个 AI 代理</li>
+  <li><a href="#/pages/ai-research/signal-center">信号中心</a> — 看融合后的信号 + 各路原始信号</li>
+  <li><a href="#/pages/ai-research/market-sentiment">市场情绪</a> — FinBERT 情绪热力图</li>
+</ul>
