@@ -7,6 +7,7 @@ struct SettingsView: View {
     @State private var selectedTab: SettingsTab = .general
     @Environment(PulseColors.self) private var colors
     @Environment(SettingsState.self) private var settings
+    @AppStorage("hideLearnAlphaLoopCard") private var hideLearnAlphaLoopCard: Bool = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -39,6 +40,7 @@ struct SettingsView: View {
         case .general:
             VStack(spacing: PulseSpacing.lg) {
                 languageSection
+                helpSection
                 ProfileSettingsView()
             }
         case .trading:
@@ -82,6 +84,52 @@ struct SettingsView: View {
                 .onChange(of: settings.language) { _, _ in
                     settings.scheduleSave()
                 }
+            }
+        }
+        .cardStyle()
+    }
+
+    // MARK: - 帮助
+
+    private var helpSection: some View {
+        VStack(alignment: .leading, spacing: PulseSpacing.sm) {
+            TerminalLabel(text: L10n.Guide.title)
+
+            HStack {
+                Button {
+                    UserGuide.open()
+                } label: {
+                    HStack(spacing: PulseSpacing.xxs) {
+                        Image(systemName: "book.closed")
+                            .font(.system(size: 11))
+                        Text(L10n.Guide.dashboardTitle)
+                            .font(PulseFonts.body)
+                    }
+                    .foregroundStyle(colors.textPrimary)
+                }
+                .buttonStyle(.plain)
+                .hoverGlassStyle(cornerRadius: PulseRadii.sm)
+
+                Spacer()
+
+                Image(systemName: "arrow.up.right")
+                    .font(.system(size: 10))
+                    .foregroundStyle(colors.textMuted)
+            }
+
+            HStack {
+                Text(L10n.Guide.restoreCard)
+                    .font(PulseFonts.body)
+                    .foregroundStyle(colors.textPrimary)
+
+                Spacer()
+
+                Toggle("", isOn: Binding(
+                    get: { !hideLearnAlphaLoopCard },
+                    set: { hideLearnAlphaLoopCard = !$0 }
+                ))
+                .labelsHidden()
+                .toggleStyle(.switch)
             }
         }
         .cardStyle()

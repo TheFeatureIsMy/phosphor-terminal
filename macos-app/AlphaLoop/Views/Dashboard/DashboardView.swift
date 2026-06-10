@@ -735,6 +735,9 @@ struct DashboardView: View {
 
     private var mainContent: some View {
         VStack(spacing: PulseSpacing.lg) {
+            LearnAlphaLoopCard()
+                .staggeredAppearance(index: 0)
+
             TradingWorkflowRailView(workflow: viewModel.dailyWorkflow)
                 .staggeredAppearance(index: 0)
 

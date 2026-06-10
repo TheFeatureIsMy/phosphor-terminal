@@ -55,6 +55,10 @@ struct SidebarView: View {
     // MARK: - 底部：Logo + 产品名 + 折叠/主题切换
     private var sidebarFooter: some View {
         VStack(spacing: 0) {
+            SidebarUserGuideLink()
+                .padding(.horizontal, 6)
+                .padding(.bottom, PulseSpacing.xxs)
+
             Divider().foregroundStyle(colors.border).opacity(0.5)
 
             if appState.sidebarCollapsed {
