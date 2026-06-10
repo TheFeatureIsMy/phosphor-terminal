@@ -1,0 +1,145 @@
+<h1>策略画布</h1>
+<p class="chapter-meta">页面 · 策略 · 5 分钟</p>
+
+<blockquote class="lede">用拖拽的方式可视化构建交易策略 — 不用写一行代码，也能搭建专业级的量化策略逻辑。</blockquote>
+
+<h2>TL;DR</h2>
+<p>策略画布是一个基于 React Flow 的可视化 DAG（有向无环图）编辑器，嵌入在 macOS 应用的 WKWebView 中。左侧节点面板列出所有可用组件（信号输入、指标条件、过滤器、仓位管理、风控策略、执行输出等），拖拽到画布上，用连线连接它们，就构成了完整的策略逻辑。右侧可打开 DSL 代码预览面板，实时查看图形转化后的 JSON 规则。底部的验证状态栏告诉你当前策略是否通过校验。</p>
+
+<h2>谁用 · 何时用</h2>
+<p>适合视觉思维者 — 不想手写 DSL JSON 时，在画布上拖拽节点更直观。策略详情页的"画布"标签页进入当前策略的画布，也可以从侧边栏打开独立的画布页面，切换不同策略。模板库提供 RSI 均值回归、布林带突破、MACD 趋势跟踪等预制模板，一键加载到画布上作为起点。</p>
+
+<h2>页面解剖</h2>
+<svg class="diagram" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="320" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- Header bar -->
+  <rect x="12" y="10" width="576" height="32" fill="rgba(255,255,255,0.04)" rx="4"/>
+  <text x="20" y="30" fill="#00ff9d" font-family="monospace" font-size="10" font-weight="bold">策略画布 Strategy Canvas</text>
+  <!-- Status badge -->
+  <rect x="200" y="16" width="60" height="18" fill="rgba(0,255,157,0.08)" rx="3"/>
+  <circle cx="210" cy="25" r="3" fill="#00ff9d"/>
+  <text x="218" y="29" fill="#e8eaee" font-family="monospace" font-size="8">趋势跟踪 v3</text>
+  <!-- Buttons -->
+  <rect x="420" y="16" width="50" height="20" fill="rgba(255,255,255,0.04)" rx="3" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="445" y="30" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">模板</text>
+  <rect x="474" y="16" width="50" height="20" fill="rgba(255,255,255,0.04)" rx="3" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="499" y="30" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">验证</text>
+  <rect x="528" y="16" width="52" height="20" fill="#00ff9d" rx="3"/>
+  <text x="554" y="30" fill="#000" font-family="monospace" font-size="8" font-weight="bold" text-anchor="middle">保存</text>
+
+  <!-- ① Node Palette (left sidebar) -->
+  <rect x="12" y="48" width="100" height="220" fill="rgba(255,255,255,0.03)" rx="4" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="20" y="66" fill="#00ff9d" font-family="monospace" font-size="8" font-weight="bold">节点</text>
+  <rect x="18" y="72" width="88" height="22" fill="rgba(80,180,255,0.1)" rx="3"/>
+  <text x="26" y="87" fill="#50b4ff" font-family="monospace" font-size="8">信号输入</text>
+  <rect x="18" y="98" width="88" height="22" fill="rgba(191,90,242,0.1)" rx="3"/>
+  <text x="26" y="113" fill="#bf5af2" font-family="monospace" font-size="8">指标条件</text>
+  <rect x="18" y="124" width="88" height="22" fill="rgba(255,159,10,0.1)" rx="3"/>
+  <text x="26" y="139" fill="#ff9f0a" font-family="monospace" font-size="8">过滤器</text>
+  <rect x="18" y="150" width="88" height="22" fill="rgba(48,209,88,0.1)" rx="3"/>
+  <text x="26" y="165" fill="#30d158" font-family="monospace" font-size="8">仓位管理</text>
+  <rect x="18" y="176" width="88" height="22" fill="rgba(255,69,58,0.1)" rx="3"/>
+  <text x="26" y="191" fill="#ff453a" font-family="monospace" font-size="8">风控策略</text>
+  <rect x="18" y="202" width="88" height="22" fill="rgba(94,92,230,0.1)" rx="3"/>
+  <text x="26" y="217" fill="#5e5ce6" font-family="monospace" font-size="8">执行输出</text>
+  <rect x="18" y="228" width="88" height="22" fill="rgba(0,255,157,0.1)" rx="3"/>
+  <text x="26" y="243" fill="#00ff9d" font-family="monospace" font-size="8">MTF Guard</text>
+
+  <!-- ② Canvas area (center) -->
+  <rect x="118" y="48" width="340" height="220" fill="rgba(255,255,255,0.01)" rx="4"/>
+
+  <!-- Nodes on canvas -->
+  <!-- Signal Input node -->
+  <rect x="130" y="60" width="90" height="40" fill="rgba(80,180,255,0.08)" rx="6" stroke="#50b4ff" stroke-width="1"/>
+  <text x="175" y="74" fill="#e8eaee" font-family="monospace" font-size="8" text-anchor="middle" font-weight="bold">信号输入</text>
+  <text x="175" y="90" fill="#9ca0a8" font-family="monospace" font-size="7" text-anchor="middle">BTC/USDT 1h</text>
+  <!-- Output port -->
+  <circle cx="220" cy="80" r="4" fill="#00ff9d"/>
+
+  <!-- Edge -->
+  <line x1="220" y1="80" x2="260" y2="110" stroke="#00ff9d" stroke-width="1.5" opacity="0.5"/>
+
+  <!-- Indicator Condition node -->
+  <rect x="250" y="100" width="100" height="40" fill="rgba(191,90,242,0.08)" rx="6" stroke="#bf5af2" stroke-width="1"/>
+  <text x="300" y="114" fill="#e8eaee" font-family="monospace" font-size="8" text-anchor="middle" font-weight="bold">RSI < 30</text>
+  <text x="300" y="130" fill="#9ca0a8" font-family="monospace" font-size="7" text-anchor="middle">指标条件</text>
+  <!-- Input port -->
+  <circle cx="250" cy="120" r="4" fill="#9ca0a8"/>
+  <!-- Output port -->
+  <circle cx="350" cy="120" r="4" fill="#00ff9d"/>
+
+  <!-- Edge 2 -->
+  <line x1="350" y1="120" x2="370" y2="180" stroke="#00ff9d" stroke-width="1.5" opacity="0.5"/>
+
+  <!-- Execution Output node -->
+  <rect x="360" y="170" width="90" height="40" fill="rgba(94,92,230,0.08)" rx="6" stroke="#5e5ce6" stroke-width="1"/>
+  <text x="405" y="184" fill="#e8eaee" font-family="monospace" font-size="8" text-anchor="middle" font-weight="bold">执行输出</text>
+  <text x="405" y="200" fill="#9ca0a8" font-family="monospace" font-size="7" text-anchor="middle">做多</text>
+  <!-- Input port -->
+  <circle cx="360" cy="190" r="4" fill="#9ca0a8"/>
+
+  <!-- ③ Node config panel (right) -->
+  <rect x="464" y="48" width="124" height="220" fill="rgba(255,255,255,0.03)" rx="4" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="472" y="66" fill="#f5c542" font-family="monospace" font-size="8" font-weight="bold">配置</text>
+  <text x="472" y="84" fill="#9ca0a8" font-family="monospace" font-size="8">核心参数</text>
+  <text x="472" y="100" fill="#9ca0a8" font-family="monospace" font-size="7">周期 14</text>
+  <text x="472" y="116" fill="#9ca0a8" font-family="monospace" font-size="7">操作符 &lt;</text>
+  <text x="472" y="132" fill="#9ca0a8" font-family="monospace" font-size="7">值 30</text>
+  <text x="472" y="150" fill="#5e636d" font-family="monospace" font-size="8">端口连线</text>
+  <text x="472" y="166" fill="#9ca0a8" font-family="monospace" font-size="7">← 信号输入</text>
+
+  <!-- ④ Status bar (bottom) -->
+  <rect x="12" y="274" width="576" height="24" fill="rgba(255,255,255,0.03)" rx="3"/>
+  <circle cx="24" cy="286" r="4" fill="#00ff9d"/>
+  <text x="34" y="290" fill="#00ff9d" font-family="monospace" font-size="8">验证通过</text>
+  <text x="480" y="290" fill="#9ca0a8" font-family="monospace" font-size="8">3 节点 · 2 连线</text>
+
+  <!-- Callouts -->
+  <circle cx="8" cy="60" r="7" fill="#00ff9d" opacity="0.9"/>
+  <text x="8" y="64" fill="#000" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">①</text>
+  <circle cx="8" cy="160" r="7" fill="#00ff9d" opacity="0.9"/>
+  <text x="8" y="164" fill="#000" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">③</text>
+  <circle cx="112" cy="60" r="7" fill="#f5c542" opacity="0.9"/>
+  <text x="112" y="64" fill="#000" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">②</text>
+  <circle cx="112" cy="160" r="7" fill="#ff9b3d" opacity="0.9"/>
+  <text x="112" y="164" fill="#000" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">④</text>
+  <circle cx="460" cy="60" r="7" fill="#50b4ff" opacity="0.9"/>
+  <text x="460" y="64" fill="#000" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">⑤</text>
+</svg>
+
+<ol>
+  <li><strong>① 节点面板（左侧）</strong> — 列出所有可用的策略组件：信号输入、指标条件、过滤器、仓位管理、风控策略、执行输出、MTF Guard、结构防御等。点击节点将其添加到画布，或拖拽到画布上。可按类别筛选或搜索。收藏的节点出现在顶部。</li>
+  <li><strong>② 画布区域（中间）</strong> — 基于 React Flow 的无限画布。节点显示为彩色卡片，端口（圆形小点）在左右两侧。从一个节点的输出端口拖拽到另一个节点的输入端口建立连线。支持缩放、平移、多选（Cmd+点击）和键盘删除。右下角有小地图帮助导航。</li>
+  <li><strong>③ 节点配置面板（右侧）</strong> — 点击画布上的节点后打开。显示该节点的核心参数（如 RSI 周期、阈值）、端口连线状态、高级选项（名称、备注、执行条件）。参数变更实时生效。</li>
+  <li><strong>④ 底部状态栏</strong> — 显示验证状态（通过/失败/未验证）和画布统计（节点数、连线数）。右侧有"DSL 预览"切换按钮。</li>
+  <li><strong>⑤ DSL 预览面板（可选）</strong> — 点击"DSL 预览"后在右侧滑出，实时显示画布图形转化后的 JSON 策略规则。支持复制到剪贴板。</li>
+</ol>
+
+<h2>关键指标怎么读</h2>
+<ul>
+  <li><strong>验证状态</strong> — 绿色"验证通过"表示画布中的节点和连线构成完整的、可编译的策略逻辑。红色"验证失败"并显示错误数，需修复后保存。</li>
+  <li><strong>节点与连线数</strong> — 底部状态栏显示节点和连线的数量。更复杂的策略通常节点更多，但好的策略应该是"足够简单"的。</li>
+  <li><strong>端口状态</strong> — 在配置面板中，已连线的端口显示绿色圆点和对端节点名；未连线的显示灰色，必填端口标有红色星号。</li>
+</ul>
+
+<h2>常见操作 · 一步步</h2>
+<ol>
+  <li><strong>添加节点</strong> — 在左侧节点面板中，点击（或拖拽）一个节点类型（如"指标条件"）。节点出现在画布中央区域。</li>
+  <li><strong>连接节点</strong> — 从节点的输出端口（右侧圆点）拖拽到另一个节点的输入端口（左侧圆点）。连线自动使用平滑路径风格。</li>
+  <li><strong>配置节点参数</strong> — 点击画布上的节点，右侧配置面板自动打开。调整参数（如 RSI 周期=14，阈值&lt;30），变更立即反映在 DSL 预览中。</li>
+  <li><strong>验证并保存</strong> — 点击顶部"验证"按钮检查策略合法性。验证通过后点击"保存"将画布内容保存为策略的新版本。</li>
+  <li><strong>加载模板</strong> — 点击"模板库"，从预设模板中选择一个（如"RSI 均值回归"），模板的节点和连线自动加载到画布上。</li>
+  <li><strong>查看 DSL 代码</strong> — 点击底部"DSL 预览"按钮，右侧面板显示画布转换后的 JSON 规则。点击复制图标可复制到剪贴板。</li>
+</ol>
+
+<h2>幕后</h2>
+<p>画布在 macOS 应用中通过 WKWebView 嵌入一个 React 应用。该 React 应用使用 <code>@xyflow/react</code> 库实现 DAG 编辑器。节点和连线的变更通过 <code>CanvasBridge</code>（WKScriptMessageHandler）发送到 Swift 端。图形到 DSL 的转换由 <code>graphToDsl()</code> 函数在前端完成，将节点和边映射为 <code>StrategyRuleDSL v2.5</code> 格式的 JSON。保存操作通过 <code>APICanvas.save()</code> 写入后端，同时通过 <code>APIStrategiesV2.saveVersion()</code> 创建新的策略版本。版本历史可在详情页的"版本"标签页中查看。</p>
+
+<h2>相关</h2>
+<ul>
+  <li><a href="#/pages/strategy/strategy-workspace">策略工作区</a> — 创建和管理策略的入口</li>
+  <li><a href="#/pages/strategy/backtest-simulation">回测与模拟</a> — 画布保存后在"回测"标签页中验证策略表现</li>
+  <li><a href="#/concepts/02-strategy-dsl">策略 DSL</a> — 理解画布背后的 JSON 规则语言</li>
+  <li><a href="#/walkthroughs/first-strategy">从零创建第一个策略</a> — 使用画布创建策略的完整演练</li>
+</ul>

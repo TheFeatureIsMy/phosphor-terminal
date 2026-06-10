@@ -1,0 +1,127 @@
+<h1>Backtest & Simulation</h1>
+<p class="chapter-meta">Page · Strategy · 5 min</p>
+
+<blockquote class="lede">Validate your strategy against historical data before committing real capital, or observe its real-time behavior in a paper trading environment.</blockquote>
+
+<h2>TL;DR</h2>
+<p>Backtest and Simulation are the two stages of strategy validation. Backtesting replays your strategy against historical data over a configurable date range with specified initial capital and trading pairs. It computes key metrics: Total Return, Sharpe Ratio, Max Drawdown, Win Rate, Profit Factor, and Total Trades, plus an equity curve and trade-by-trade breakdown. Paper Trading (simulation) runs the strategy against live market data without placing real orders. Both are accessible from the strategy detail page's "Backtest" and "Paper Trading" tabs. Backtesting uses a Command Bus polling pattern — the task runs asynchronously on the backend, and the frontend polls every 3 seconds for completion.</p>
+
+<h2>Who uses it & when</h2>
+<p>Every strategy author. Backtesting is mandatory before going live — run it after every DSL or canvas change. Paper trading is the final step after satisfactory backtest results: let the strategy run in simulation for days or weeks to observe real-market behavior. The standalone page (from the sidebar) offers a more complete backtest engine interface with a history of recent runs.</p>
+
+<h2>Page Anatomy</h2>
+<svg class="diagram" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="320" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- Tab bar -->
+  <rect x="12" y="10" width="576" height="28" fill="rgba(255,255,255,0.03)" rx="4"/>
+  <rect x="12" y="10" width="100" height="28" fill="rgba(0,255,157,0.08)" rx="4"/>
+  <text x="62" y="30" fill="#00ff9d" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">Backtest Engine</text>
+  <rect x="112" y="10" width="120" height="28" fill="rgba(255,255,255,0.02)" rx="4"/>
+  <text x="172" y="30" fill="#9ca0a8" font-family="monospace" font-size="9" text-anchor="middle">Paper Trading Monitor</text>
+
+  <!-- ① Config section -->
+  <rect x="12" y="46" width="576" height="120" fill="rgba(255,255,255,0.03)" rx="6" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="20" y="66" fill="#00ff9d" font-family="monospace" font-size="10" font-weight="bold">$ Backtest Configuration</text>
+
+  <!-- Date range -->
+  <text x="20" y="88" fill="#9ca0a8" font-family="monospace" font-size="8">Date Range</text>
+  <rect x="20" y="94" width="150" height="22" fill="rgba(255,255,255,0.04)" rx="3" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="26" y="110" fill="#e8eaee" font-family="monospace" font-size="9">2025-01-01</text>
+  <text x="180" y="108" fill="#5e636d" font-family="monospace" font-size="9">→</text>
+  <rect x="200" y="94" width="150" height="22" fill="rgba(255,255,255,0.04)" rx="3" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="206" y="110" fill="#e8eaee" font-family="monospace" font-size="9">2026-06-01</text>
+
+  <!-- Initial capital + symbols -->
+  <text x="20" y="140" fill="#9ca0a8" font-family="monospace" font-size="8">Initial Capital (USDT)</text>
+  <rect x="20" y="146" width="100" height="22" fill="rgba(255,255,255,0.04)" rx="3" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="26" y="162" fill="#e8eaee" font-family="monospace" font-size="9">100,000</text>
+
+  <text x="140" y="140" fill="#9ca0a8" font-family="monospace" font-size="8">Trading Pairs</text>
+  <rect x="140" y="146" width="160" height="22" fill="rgba(255,255,255,0.04)" rx="3" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="146" y="162" fill="#e8eaee" font-family="monospace" font-size="9">BTC/USDT, ETH/USDT</text>
+
+  <!-- Run button -->
+  <rect x="460" y="146" width="120" height="24" fill="#00ff9d" rx="4"/>
+  <text x="520" y="164" fill="#000" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">Start Backtest</text>
+
+  <!-- ② Results -->
+  <rect x="12" y="174" width="576" height="138" fill="rgba(255,255,255,0.03)" rx="6" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="20" y="194" fill="#f5c542" font-family="monospace" font-size="10" font-weight="bold">Backtest Results</text>
+
+  <!-- KPI cells -->
+  <rect x="16" y="202" width="135" height="44" fill="rgba(255,255,255,0.02)" rx="4"/>
+  <text x="84" y="216" fill="#00ff9d" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">+42.50%</text>
+  <text x="84" y="236" fill="#9ca0a8" font-family="monospace" font-size="7" text-anchor="middle">Total Return</text>
+
+  <rect x="157" y="202" width="135" height="44" fill="rgba(255,255,255,0.02)" rx="4"/>
+  <text x="225" y="216" fill="#f5c542" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">1.85</text>
+  <text x="225" y="236" fill="#9ca0a8" font-family="monospace" font-size="7" text-anchor="middle">Sharpe Ratio</text>
+
+  <rect x="298" y="202" width="135" height="44" fill="rgba(255,255,255,0.02)" rx="4"/>
+  <text x="366" y="216" fill="#ff5470" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">-12.30%</text>
+  <text x="366" y="236" fill="#9ca0a8" font-family="monospace" font-size="7" text-anchor="middle">Max Drawdown</text>
+
+  <rect x="439" y="202" width="135" height="44" fill="rgba(255,255,255,0.02)" rx="4"/>
+  <text x="507" y="216" fill="#00ff9d" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">58.2%</text>
+  <text x="507" y="236" fill="#9ca0a8" font-family="monospace" font-size="7" text-anchor="middle">Win Rate</text>
+
+  <!-- Equity curve area -->
+  <rect x="16" y="252" width="280" height="52" fill="rgba(255,255,255,0.01)" rx="4"/>
+  <text x="20" y="268" fill="#9ca0a8" font-family="monospace" font-size="7">Equity Curve</text>
+  <rect x="16" y="278" width="6" height="20" fill="rgba(0,255,157,0.4)" rx="1"/>
+  <rect x="24" y="282" width="6" height="16" fill="rgba(0,255,157,0.4)" rx="1"/>
+  <rect x="32" y="286" width="6" height="12" fill="rgba(255,84,112,0.4)" rx="1"/>
+  <rect x="40" y="280" width="6" height="18" fill="rgba(0,255,157,0.4)" rx="1"/>
+  <rect x="48" y="276" width="6" height="22" fill="rgba(0,255,157,0.5)" rx="1"/>
+  <rect x="56" y="284" width="6" height="14" fill="rgba(255,84,112,0.4)" rx="1"/>
+  <rect x="64" y="278" width="6" height="20" fill="rgba(0,255,157,0.5)" rx="1"/>
+  <rect x="72" y="274" width="6" height="24" fill="rgba(0,255,157,0.6)" rx="1"/>
+  <rect x="80" y="272" width="6" height="26" fill="rgba(0,255,157,0.6)" rx="1"/>
+  <rect x="88" y="276" width="6" height="22" fill="rgba(0,255,157,0.5)" rx="1"/>
+  <rect x="96" y="286" width="6" height="12" fill="rgba(255,84,112,0.4)" rx="1"/>
+  <rect x="104" y="280" width="6" height="18" fill="rgba(0,255,157,0.4)" rx="1"/>
+  <rect x="112" y="270" width="6" height="28" fill="rgba(0,255,157,0.7)" rx="1"/>
+  <rect x="120" y="274" width="6" height="24" fill="rgba(0,255,157,0.5)" rx="1"/>
+
+  <circle cx="8" cy="56" r="7" fill="#00ff9d" opacity="0.9"/>
+  <text x="8" y="60" fill="#000" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">①</text>
+  <circle cx="8" cy="184" r="7" fill="#f5c542" opacity="0.9"/>
+  <text x="8" y="188" fill="#000" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">②</text>
+  <circle cx="8" cy="260" r="7" fill="#50b4ff" opacity="0.9"/>
+  <text x="8" y="264" fill="#000" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">③</text>
+</svg>
+
+<ol>
+  <li><strong>① Backtest configuration</strong> — Set the date range (YYYY-MM-DD format), initial capital in USDT, and trading pairs (comma-separated). The strategy version is auto-selected from the current strategy. Click "Start Backtest" to submit the task.</li>
+  <li><strong>② Results metric cards</strong> — After completion, 8 core metrics are displayed: Total Return (green/red), Sharpe Ratio (green if >=1.5), Max Drawdown (always red), Win Rate (green if >=50%), Profit Factor (green if >=1.5), Total Trades, Initial Capital, and Trading Pairs. Each metric is color-coded for quick assessment.</li>
+  <li><strong>③ Equity curve & trade list</strong> — A simplified bar chart shows capital trend (green bars = profitable days, red = losing days). Below, a table lists recent trades with time, side, price, quantity, and P&L.</li>
+</ol>
+
+<h2>Reading the Key Metrics</h2>
+<ul>
+  <li><strong>Total Return</strong> — The percentage profit over the backtest period. Green for positive, red for negative. Always evaluate alongside Max Drawdown: 40% return with 5% drawdown is much better than 40% with 25%.</li>
+  <li><strong>Sharpe Ratio</strong> — Risk-adjusted return. >=1.5 is excellent (green), 1.0-1.5 is acceptable (yellow), &lt;1.0 is low. It tells you how much excess return you earn per unit of volatility.</li>
+  <li><strong>Max Drawdown</strong> — The largest peak-to-trough decline during the backtest. Always shown in red. For crypto strategies, 20-40% drawdowns are common but depend on the strategy type.</li>
+  <li><strong>Win Rate</strong> — The proportion of profitable trades. >=50% is green. But higher isn't always better — a high win rate with a low profit factor may underperform a lower win rate with a high profit factor.</li>
+  <li><strong>Profit Factor</strong> — Gross profit / gross loss. >=1.5 is green. If the profit factor is high, the strategy can still be profitable even with a 40% win rate.</li>
+</ul>
+
+<h2>Common Actions, Step by Step</h2>
+<ol>
+  <li><strong>Run a backtest</strong> — Go to the "Backtest" tab inside the strategy detail page (or open the standalone backtest engine from the sidebar). Make sure the strategy has a saved version (save one in DSL Rules first). Fill in the date range, initial capital, and trading pairs. Click "Start Backtest".</li>
+  <li><strong>Review results</strong> — The backtest runs asynchronously; the frontend polls every 3 seconds for status. Once complete, the metric cards and equity curve appear automatically. Check the Sharpe Ratio and Max Drawdown to decide if the strategy needs optimization.</li>
+  <li><strong>Start paper trading</strong> — Go to the "Paper Trading" tab inside the strategy detail page. The system lists active simulation runs for this strategy. Each run card shows mode, status, and start time. "Running" (green) means the strategy is generating signals in a simulated environment.</li>
+  <li><strong>Browse backtest history</strong> — On the standalone backtest engine page, the bottom section lists the 10 most recent runs. Each row shows trading pairs, date range, return, and Sharpe ratio. Click to view detailed results.</li>
+</ol>
+
+<h2>Behind the Scenes</h2>
+<p>Backtesting runs asynchronously via the Command Bus. When you click "Start Backtest", the frontend calls <code>api.startBacktest()</code> and receives a <code>commandId</code>. It then polls <code>api.backtestStatus(commandId:)</code> every 3 seconds. When <code>commandStatus</code> becomes <code>completed</code>, the result is parsed into a <code>BacktestRunV2</code> object and displayed in <code>BacktestResultCardView</code>. Paper trading runs are fetched via <code>APIStrategyRuns.listRuns(mode: "dryrun")</code> filtered by strategy ID. Run statuses (running / completed / stopped / failed) are updated by the backend in real time.</p>
+
+<h2>See Also</h2>
+<ul>
+  <li><a href="#/pages/strategy/strategy-workspace">Strategy Workspace</a> — Create and manage strategies</li>
+  <li><a href="#/pages/strategy/strategy-canvas">Strategy Canvas</a> — Visually edit a strategy then run a backtest</li>
+  <li><a href="#/pages/execution/execution-center">Execution Center</a> — Going live after backtesting</li>
+  <li><a href="#/walkthroughs/first-strategy">Build Your First Strategy</a> — Full backtest walkthrough</li>
+</ul>

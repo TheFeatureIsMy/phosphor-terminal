@@ -1,0 +1,112 @@
+<h1>Strategy Workspace</h1>
+<p class="chapter-meta">Page · Strategy · 5 min</p>
+
+<blockquote class="lede">The central hub for managing all your quantitative strategies — create, browse, rename, delete, and dive into the detail page for deep editing.</blockquote>
+
+<h2>TL;DR</h2>
+<p>The Strategy Workspace is where you start in AlphaLoop. It shows a grid of strategy cards, each displaying the name, status (draft / active / paused / archived), type, and source. Click a card to enter the detail page; the "New Strategy" button in the top right opens a creation panel. After creation, you are taken directly to the detail page where you can write DSL rules, open the canvas, run backtests, or start paper trading.</p>
+
+<h2>Who uses it & when</h2>
+<p>Every user begins here. The first time, the list is empty with an onboarding message and a create button. Each time you return to AlphaLoop, this workspace is your home base — pick a strategy to edit, or clean up old ones. The status badges (Total / Draft / Active) at the top give you a quick snapshot of your portfolio.</p>
+
+<h2>Page Anatomy</h2>
+<svg class="diagram" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="320" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- Header bar -->
+  <rect x="20" y="16" width="560" height="40" fill="rgba(255,255,255,0.04)" rx="4"/>
+  <text x="28" y="42" fill="#e8eaee" font-family="monospace" font-size="14" font-weight="bold">Strategy Manager</text>
+  <rect x="280" y="26" width="50" height="20" fill="rgba(255,255,255,0.04)" rx="3"/>
+  <text x="286" y="40" fill="#9ca0a8" font-family="monospace" font-size="9">Total 8</text>
+  <rect x="336" y="26" width="50" height="20" fill="rgba(80,180,255,0.12)" rx="3"/>
+  <text x="342" y="40" fill="#50b4ff" font-family="monospace" font-size="9">Draft 3</text>
+  <rect x="392" y="26" width="60" height="20" fill="rgba(0,255,157,0.12)" rx="3"/>
+  <text x="398" y="40" fill="#00ff9d" font-family="monospace" font-size="9">Active 2</text>
+  <rect x="480" y="24" width="92" height="26" fill="#00ff9d" rx="4"/>
+  <text x="526" y="42" fill="#000" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">+ New Strategy</text>
+
+  <!-- Card 1 -->
+  <rect x="20" y="68" width="170" height="120" fill="rgba(255,255,255,0.04)" rx="6" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <circle cx="32" cy="84" r="4" fill="#00ff9d"/>
+  <text x="42" y="88" fill="#e8eaee" font-family="monospace" font-size="11" font-weight="bold">Trend Follow v3</text>
+  <rect x="150" y="78" width="30" height="16" fill="rgba(255,255,255,0.04)" rx="3"/>
+  <text x="165" y="90" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">Custom</text>
+  <text x="32" y="108" fill="#9ca0a8" font-family="monospace" font-size="9">Trend · EMA + MACD</text>
+  <text x="32" y="124" fill="#9ca0a8" font-family="monospace" font-size="9">Backtest +42.5%</text>
+
+  <!-- Card 2 -->
+  <rect x="206" y="68" width="170" height="120" fill="rgba(255,255,255,0.04)" rx="6" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <circle cx="218" cy="84" r="4" fill="#f5c542"/>
+  <text x="228" y="88" fill="#e8eaee" font-family="monospace" font-size="11" font-weight="bold">RSI Mean Rev</text>
+  <text x="218" y="108" fill="#9ca0a8" font-family="monospace" font-size="9">Draft · from Template</text>
+
+  <!-- Card 3 -->
+  <rect x="392" y="68" width="170" height="120" fill="rgba(255,255,255,0.04)" rx="6" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <circle cx="404" cy="84" r="4" fill="#00ff9d"/>
+  <text x="414" y="88" fill="#e8eaee" font-family="monospace" font-size="11" font-weight="bold">Grid BTC</text>
+  <text x="404" y="108" fill="#9ca0a8" font-family="monospace" font-size="9">Active · Grid Trading</text>
+
+  <!-- Card 4 -->
+  <rect x="20" y="202" width="170" height="100" fill="rgba(255,255,255,0.04)" rx="6" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <circle cx="32" cy="218" r="4" fill="#9ca0a8"/>
+  <text x="42" y="222" fill="#e8eaee" font-family="monospace" font-size="11" font-weight="bold">Bollinger Break</text>
+  <text x="32" y="242" fill="#9ca0a8" font-family="monospace" font-size="9">Archived · Bollinger</text>
+
+  <!-- Create panel overlay -->
+  <rect x="100" y="50" width="400" height="180" fill="rgba(0,0,0,0.75)" rx="8" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="116" y="76" fill="#00ff9d" font-family="monospace" font-size="10" font-weight="bold">$ New Strategy</text>
+  <text x="116" y="100" fill="#9ca0a8" font-family="monospace" font-size="9">Strategy Name</text>
+  <rect x="116" y="106" width="300" height="22" fill="rgba(255,255,255,0.04)" rx="3" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="122" y="122" fill="#5e636d" font-family="monospace" font-size="9">Enter strategy name...</text>
+  <rect x="116" y="140" width="368" height="28" fill="rgba(245,197,66,0.04)" rx="3" stroke="rgba(245,197,66,0.08)" stroke-width="1"/>
+  <text x="124" y="158" fill="#f5c542" font-family="monospace" font-size="8">Define strategy logic in the DSL Rules tab after creation</text>
+  <rect x="320" y="182" width="80" height="26" fill="rgba(255,255,255,0.04)" rx="4" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="360" y="200" fill="#9ca0a8" font-family="monospace" font-size="9" text-anchor="middle">Cancel</text>
+  <rect x="410" y="182" width="80" height="26" fill="#00ff9d" rx="4"/>
+  <text x="450" y="200" fill="#000" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">Create</text>
+
+  <circle cx="12" cy="78" r="8" fill="#00ff9d" opacity="0.9"/>
+  <text x="12" y="82" fill="#000" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">①</text>
+  <circle cx="12" cy="220" r="8" fill="#00ff9d" opacity="0.9"/>
+  <text x="12" y="224" fill="#000" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">③</text>
+  <circle cx="92" cy="46" r="8" fill="#f5c542" opacity="0.9"/>
+  <text x="92" y="50" fill="#000" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">②</text>
+  <circle cx="92" cy="190" r="8" fill="#ff9b3d" opacity="0.9"/>
+  <text x="92" y="194" fill="#000" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">④</text>
+
+  <path d="M580 130 L590 130 L590 200 L580 200" fill="none" stroke="#00ff9d" stroke-width="1.2" stroke-dasharray="3,2"/>
+  <text x="592" y="168" fill="#00ff9d" font-family="monospace" font-size="8" writing-mode="tb">Click to enter detail</text>
+</svg>
+
+<ol>
+  <li><strong>① Strategy card grid</strong> — Each card shows the name, status indicator (green=active, yellow=draft, gray=archived), type badge, and a short description. Right-click to open the context menu for rename or delete. Click the card to enter the detail page.</li>
+  <li><strong>② Status badges</strong> — The header shows Total, Draft, and Active counts. A quick glance at your portfolio health.</li>
+  <li><strong>③ Create panel (overlay)</strong> — Slides in from the top when you click "New Strategy". Enter a name and click create. The panel uses a frosted glass background and closes when you tap outside.</li>
+  <li><strong>④ Detail page</strong> — After creation or clicking a card, you land on the strategy detail page with 10 tabs: Overview, DSL Rules, Canvas, Backtest, Versions, Runs, Signals, Paper Trading, Risk, and Growth.</li>
+</ol>
+
+<h2>Reading the Key Metrics</h2>
+<ul>
+  <li><strong>Status indicator</strong> — Green = active (connected to the exchange and executing), yellow = draft (still being edited), orange = paused, gray = archived (retired).</li>
+  <li><strong>Strategy type</strong> — The algorithmic category (trend following, mean reversion, grid, arbitrage, etc.) helps you sort and filter.</li>
+  <li><strong>Source</strong> — How the strategy was created: Custom (hand-written), Template (from the template library), or AI Generated.</li>
+</ul>
+
+<h2>Common Actions, Step by Step</h2>
+<ol>
+  <li><strong>Create a strategy</strong> — Click "New Strategy" in the top right, type a name (e.g. "Trend Follow v4"), and click "Create Strategy". You are taken to the detail page automatically.</li>
+  <li><strong>Enter the detail page</strong> — Click any strategy card in the grid. The detail page shows the name, status, type, source at the top, and 10 functional tabs below.</li>
+  <li><strong>Rename a strategy</strong> — Right-click a card, choose "Rename", enter the new name in the sheet, and save.</li>
+  <li><strong>Delete a strategy</strong> — Right-click a card, choose "Delete", and confirm in the dialog. This action cannot be undone.</li>
+</ol>
+
+<h2>Behind the Scenes</h2>
+<p>The strategy list is fetched via <code>APIStrategiesV2.list()</code> from the backend, returning an array of <code>StrategyV2</code> objects. Creation calls <code>api.create(name:)</code> and updates <code>AppState</code> routing to navigate to the detail page on success. Status counts (draft/active) are computed client-side by filtering the <code>viewModel.strategies</code> array — no extra requests needed. The list refreshes via <code>.task { await viewModel.load() }</code> when the view appears.</p>
+
+<h2>See Also</h2>
+<ul>
+  <li><a href="#/pages/strategy/strategy-canvas">Strategy Canvas</a> — Visual editing in the "Canvas" tab of the detail page</li>
+  <li><a href="#/pages/strategy/backtest-simulation">Backtest & Simulation</a> — Verify strategy performance in the "Backtest" and "Paper Trading" tabs</li>
+  <li><a href="#/concepts/01-what-is-quant">What is Quant Trading</a> — Foundational concepts</li>
+  <li><a href="#/walkthroughs/first-strategy">Build Your First Strategy</a> — End-to-end walkthrough from creation to backtest</li>
+</ul>

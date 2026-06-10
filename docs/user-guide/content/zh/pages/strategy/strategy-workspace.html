@@ -1,0 +1,118 @@
+<h1>策略工作区</h1>
+<p class="chapter-meta">页面 · 策略 · 5 分钟</p>
+
+<blockquote class="lede">集中管理所有量化策略的地方 — 创建、浏览、重命名、删除，然后进入详情页进行深度编辑。</blockquote>
+
+<h2>TL;DR</h2>
+<p>策略工作区是进入 AlphaLoop 的第一步。左侧是策略列表（卡片网格），每张卡片显示策略名称、状态（草稿/运行中/已暂停）、类型和来源。点击卡片进入详情页；右上角"新建策略"按钮打开创建面板。创建后自动跳转到详情页，你可以在那里编写 DSL 规则、打开画布、运行回测或启动模拟。</p>
+
+<h2>谁用 · 何时用</h2>
+<p>每个用户都会从这里开始。首次使用时，列表为空，你会看到引导文案和一个"新建策略"按钮。之后每次回到 AlphaLoop，策略工作区是你的"基地"——在这里选择要编辑的策略，或者清理不再需要的旧策略。策略数量较多时，顶部的状态统计（总计/草稿/运行中）可以帮你快速了解全局。</p>
+
+<h2>页面解剖</h2>
+<svg class="diagram" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="320" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- Header bar -->
+  <rect x="20" y="16" width="560" height="40" fill="rgba(255,255,255,0.04)" rx="4"/>
+  <text x="28" y="42" fill="#e8eaee" font-family="monospace" font-size="14" font-weight="bold">策略管理 Strategy Manager</text>
+  <!-- Badges: Total 8 / Draft 3 / Active 2 -->
+  <rect x="280" y="26" width="50" height="20" fill="rgba(255,255,255,0.04)" rx="3"/>
+  <text x="286" y="40" fill="#9ca0a8" font-family="monospace" font-size="9">总计 8</text>
+  <rect x="336" y="26" width="50" height="20" fill="rgba(80,180,255,0.12)" rx="3"/>
+  <text x="342" y="40" fill="#50b4ff" font-family="monospace" font-size="9">草稿 3</text>
+  <rect x="392" y="26" width="60" height="20" fill="rgba(0,255,157,0.12)" rx="3"/>
+  <text x="398" y="40" fill="#00ff9d" font-family="monospace" font-size="9">运行中 2</text>
+  <!-- New Strategy button -->
+  <rect x="480" y="24" width="92" height="26" fill="#00ff9d" rx="4"/>
+  <text x="526" y="42" fill="#000" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">+ 新建策略</text>
+
+  <!-- ① Card grid -->
+  <!-- Card 1 -->
+  <rect x="20" y="68" width="170" height="120" fill="rgba(255,255,255,0.04)" rx="6" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <circle cx="32" cy="84" r="4" fill="#00ff9d"/>
+  <text x="42" y="88" fill="#e8eaee" font-family="monospace" font-size="11" font-weight="bold">趋势跟踪 v3</text>
+  <rect x="150" y="78" width="30" height="16" fill="rgba(255,255,255,0.04)" rx="3"/>
+  <text x="165" y="90" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">自定义</text>
+  <text x="32" y="108" fill="#9ca0a8" font-family="monospace" font-size="9">趋势 · EMA + MACD</text>
+  <text x="32" y="124" fill="#9ca0a8" font-family="monospace" font-size="9">回测收益 +42.5%</text>
+  <text x="176" y="180" fill="#5e636d" font-family="monospace" font-size="9" text-anchor="end">❯</text>
+
+  <!-- Card 2 -->
+  <rect x="206" y="68" width="170" height="120" fill="rgba(255,255,255,0.04)" rx="6" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <circle cx="218" cy="84" r="4" fill="#f5c542"/>
+  <text x="228" y="88" fill="#e8eaee" font-family="monospace" font-size="11" font-weight="bold">RSI 均值回归</text>
+  <text x="218" y="108" fill="#9ca0a8" font-family="monospace" font-size="9">草稿 · 来自模板</text>
+
+  <!-- Card 3 -->
+  <rect x="392" y="68" width="170" height="120" fill="rgba(255,255,255,0.04)" rx="6" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <circle cx="404" cy="84" r="4" fill="#00ff9d"/>
+  <text x="414" y="88" fill="#e8eaee" font-family="monospace" font-size="11" font-weight="bold">网格 BTC</text>
+  <text x="404" y="108" fill="#9ca0a8" font-family="monospace" font-size="9">运行中 · 网格交易</text>
+
+  <!-- Card 4 -->
+  <rect x="20" y="202" width="170" height="100" fill="rgba(255,255,255,0.04)" rx="6" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <circle cx="32" cy="218" r="4" fill="#9ca0a8"/>
+  <text x="42" y="222" fill="#e8eaee" font-family="monospace" font-size="11" font-weight="bold">布林带突破</text>
+  <text x="32" y="242" fill="#9ca0a8" font-family="monospace" font-size="9">已归档 · 布林带</text>
+
+  <!-- ② Create panel (overlay) -->
+  <rect x="100" y="50" width="400" height="180" fill="rgba(0,0,0,0.75)" rx="8" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="116" y="76" fill="#00ff9d" font-family="monospace" font-size="10" font-weight="bold">$ 新建策略</text>
+  <text x="116" y="100" fill="#9ca0a8" font-family="monospace" font-size="9">策略名称</text>
+  <rect x="116" y="106" width="300" height="22" fill="rgba(255,255,255,0.04)" rx="3" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="122" y="122" fill="#5e636d" font-family="monospace" font-size="9">输入策略名称...</text>
+  <rect x="116" y="140" width="368" height="28" fill="rgba(245,197,66,0.04)" rx="3" stroke="rgba(245,197,66,0.08)" stroke-width="1"/>
+  <text x="124" y="158" fill="#f5c542" font-family="monospace" font-size="8">创建后进入详情页，在 DSL 规则中编写策略逻辑</text>
+  <rect x="320" y="182" width="80" height="26" fill="rgba(255,255,255,0.04)" rx="4" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="360" y="200" fill="#9ca0a8" font-family="monospace" font-size="9" text-anchor="middle">取消</text>
+  <rect x="410" y="182" width="80" height="26" fill="#00ff9d" rx="4"/>
+  <text x="450" y="200" fill="#000" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">创建策略</text>
+
+  <!-- Callout numbers -->
+  <circle cx="12" cy="78" r="8" fill="#00ff9d" opacity="0.9"/>
+  <text x="12" y="82" fill="#000" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">①</text>
+  <circle cx="12" cy="220" r="8" fill="#00ff9d" opacity="0.9"/>
+  <text x="12" y="224" fill="#000" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">③</text>
+  <circle cx="92" cy="46" r="8" fill="#f5c542" opacity="0.9"/>
+  <text x="92" y="50" fill="#000" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">②</text>
+  <circle cx="92" cy="190" r="8" fill="#ff9b3d" opacity="0.9"/>
+  <text x="92" y="194" fill="#000" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">④</text>
+
+  <!-- Arrow to detail -->
+  <path d="M580 130 L590 130 L590 200 L580 200" fill="none" stroke="#00ff9d" stroke-width="1.2" stroke-dasharray="3,2"/>
+  <text x="592" y="168" fill="#00ff9d" font-family="monospace" font-size="8" writing-mode="tb">点击进入详情</text>
+</svg>
+
+<ol>
+  <li><strong>① 策略卡片网格</strong> — 每张卡片展示策略名称、状态指示灯（绿色=运行中、黄色=草稿、灰色=已归档）、类型标签和简短描述。右键打开上下文菜单可重命名或删除。点击卡片进入详情页。</li>
+  <li><strong>② 状态统计栏</strong> — 顶部显示总计、草稿、运行中三个计数徽章。一眼掌握策略组合整体状态。</li>
+  <li><strong>③ 新建策略面板</strong> — 点击右上角按钮后从顶部滑入的覆层面板。输入策略名称，点击创建即跳转到详情页。面板采用液态玻璃背景，点击外部可关闭。</li>
+  <li><strong>④ 详情页导航</strong> — 创建或点击卡片后进入策略详情页，在那里你可以看到概览、DSL 规则、画布、回测、版本、信号、模拟、风控等 10 个标签页。</li>
+</ol>
+
+<h2>关键指标怎么读</h2>
+<ul>
+  <li><strong>状态指示灯</strong> — 绿色=运行中（策略已连接交易所并持续执行），黄色=草稿（仍在编辑，未上线），橙色=已暂停，灰色=已归档（不再使用）。</li>
+  <li><strong>策略类型</strong> — 显示策略的算法类别（趋势跟踪、均值回归、网格、套利等），帮助快速筛选。</li>
+  <li><strong>来源</strong> — 表明策略是如何创建的：自定义（手动编写）、模板（从模板库选用）或 AI 生成。</li>
+</ul>
+
+<h2>常见操作 · 一步步</h2>
+<ol>
+  <li><strong>创建新策略</strong> — 点击右上角"新建策略"按钮，输入名称（如"趋势跟踪 v4"），点击"创建策略"。创建后自动进入详情页。</li>
+  <li><strong>进入策略详情</strong> — 在卡片网格中点击任意策略卡片，跳转到详情页。详情页顶部显示策略名称、状态、类型和来源，下方是 10 个功能标签页。</li>
+  <li><strong>重命名策略</strong> — 右键点击策略卡片，选择"重命名"，在弹出窗口中输入新名称并保存。</li>
+  <li><strong>删除策略</strong> — 右键点击策略卡片，选择"删除"，在确认对话框中确认。删除不可撤销。</li>
+</ol>
+
+<h2>幕后</h2>
+<p>策略列表通过 <code>APIStrategiesV2.list()</code> 从后端加载，返回 <code>StrategyV2</code> 数组。创建操作调用 <code>api.create(name:)</code> 后端接口，成功后更新 <code>AppState</code> 中的路由状态，使页面自动跳转到详情页。状态统计（草稿/运行中计数）在前端通过 <code>viewModel.strategies</code> 数组的 <code>filter</code> 计算得出，无需额外请求。列表刷新由 <code>.task { await viewModel.load() }</code> 在视图出现时触发。</p>
+
+<h2>相关</h2>
+<ul>
+  <li><a href="#/pages/strategy/strategy-canvas">策略画布</a> — 进入详情页后在"画布"标签页中可视化编辑策略</li>
+  <li><a href="#/pages/strategy/backtest-simulation">回测与模拟</a> — 在详情页的"回测"和"模拟"标签页中验证策略表现</li>
+  <li><a href="#/concepts/01-what-is-quant">什么是量化交易</a> — 了解量化交易基础概念</li>
+  <li><a href="#/walkthroughs/first-strategy">从零创建第一个策略</a> — 完整的策略创建到回测演练</li>
+</ul>

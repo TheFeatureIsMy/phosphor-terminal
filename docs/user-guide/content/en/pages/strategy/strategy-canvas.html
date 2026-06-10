@@ -1,0 +1,135 @@
+<h1>Strategy Canvas</h1>
+<p class="chapter-meta">Page · Strategy · 5 min</p>
+
+<blockquote class="lede">Visually build your trading strategy by dragging and dropping nodes — create professional-grade quant logic without writing a single line of code.</blockquote>
+
+<h2>TL;DR</h2>
+<p>The Strategy Canvas is a visual DAG (directed acyclic graph) editor built on React Flow, embedded inside the macOS app via WKWebView. A node palette on the left lists all available components (Signal Input, Indicator Condition, Filter, Position Sizing, Risk Policy, Execution Output, MTF Guard, etc.). Drag nodes onto the canvas and connect them to build your strategy. A DSL preview panel on the right shows the generated JSON in real time. The validation status bar at the bottom tells you whether the strategy is valid before saving.</p>
+
+<h2>Who uses it & when</h2>
+<p>Perfect for visual thinkers — when writing DSL JSON by hand feels tedious, the canvas makes strategy construction intuitive. Open it from the "Canvas" tab inside a strategy's detail page, or from the sidebar as a standalone page where you can switch between strategies. The Template Library provides preset blueprints (RSI Mean Reversion, Bollinger Breakout, MACD Trend Following, etc.) that load onto the canvas as a starting point.</p>
+
+<h2>Page Anatomy</h2>
+<svg class="diagram" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="320" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- Header bar -->
+  <rect x="12" y="10" width="576" height="32" fill="rgba(255,255,255,0.04)" rx="4"/>
+  <text x="20" y="30" fill="#00ff9d" font-family="monospace" font-size="10" font-weight="bold">Strategy Canvas</text>
+  <rect x="200" y="16" width="90" height="18" fill="rgba(0,255,157,0.08)" rx="3"/>
+  <circle cx="210" cy="25" r="3" fill="#00ff9d"/>
+  <text x="218" y="29" fill="#e8eaee" font-family="monospace" font-size="8">Trend Follow v3</text>
+  <rect x="420" y="16" width="50" height="20" fill="rgba(255,255,255,0.04)" rx="3" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="445" y="30" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">Templates</text>
+  <rect x="474" y="16" width="50" height="20" fill="rgba(255,255,255,0.04)" rx="3" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="499" y="30" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">Validate</text>
+  <rect x="528" y="16" width="52" height="20" fill="#00ff9d" rx="3"/>
+  <text x="554" y="30" fill="#000" font-family="monospace" font-size="8" font-weight="bold" text-anchor="middle">Save</text>
+
+  <!-- ① Node Palette -->
+  <rect x="12" y="48" width="100" height="220" fill="rgba(255,255,255,0.03)" rx="4" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="20" y="66" fill="#00ff9d" font-family="monospace" font-size="8" font-weight="bold">Nodes</text>
+  <rect x="18" y="72" width="88" height="22" fill="rgba(80,180,255,0.1)" rx="3"/>
+  <text x="26" y="87" fill="#50b4ff" font-family="monospace" font-size="8">Signal Input</text>
+  <rect x="18" y="98" width="88" height="22" fill="rgba(191,90,242,0.1)" rx="3"/>
+  <text x="26" y="113" fill="#bf5af2" font-family="monospace" font-size="8">Indicator Cond</text>
+  <rect x="18" y="124" width="88" height="22" fill="rgba(255,159,10,0.1)" rx="3"/>
+  <text x="26" y="139" fill="#ff9f0a" font-family="monospace" font-size="8">Filter</text>
+  <rect x="18" y="150" width="88" height="22" fill="rgba(48,209,88,0.1)" rx="3"/>
+  <text x="26" y="165" fill="#30d158" font-family="monospace" font-size="8">Position Sizing</text>
+  <rect x="18" y="176" width="88" height="22" fill="rgba(255,69,58,0.1)" rx="3"/>
+  <text x="26" y="191" fill="#ff453a" font-family="monospace" font-size="8">Risk Policy</text>
+  <rect x="18" y="202" width="88" height="22" fill="rgba(94,92,230,0.1)" rx="3"/>
+  <text x="26" y="217" fill="#5e5ce6" font-family="monospace" font-size="8">Execution Output</text>
+
+  <!-- ② Canvas -->
+  <rect x="118" y="48" width="340" height="220" fill="rgba(255,255,255,0.01)" rx="4"/>
+
+  <!-- Signal Input node -->
+  <rect x="130" y="60" width="90" height="40" fill="rgba(80,180,255,0.08)" rx="6" stroke="#50b4ff" stroke-width="1"/>
+  <text x="175" y="74" fill="#e8eaee" font-family="monospace" font-size="8" text-anchor="middle" font-weight="bold">Signal Input</text>
+  <text x="175" y="90" fill="#9ca0a8" font-family="monospace" font-size="7" text-anchor="middle">BTC/USDT 1h</text>
+  <circle cx="220" cy="80" r="4" fill="#00ff9d"/>
+
+  <!-- Edge -->
+  <line x1="220" y1="80" x2="260" y2="110" stroke="#00ff9d" stroke-width="1.5" opacity="0.5"/>
+
+  <!-- Indicator Condition node -->
+  <rect x="250" y="100" width="100" height="40" fill="rgba(191,90,242,0.08)" rx="6" stroke="#bf5af2" stroke-width="1"/>
+  <text x="300" y="114" fill="#e8eaee" font-family="monospace" font-size="8" text-anchor="middle" font-weight="bold">RSI < 30</text>
+  <text x="300" y="130" fill="#9ca0a8" font-family="monospace" font-size="7" text-anchor="middle">Indicator Condition</text>
+  <circle cx="250" cy="120" r="4" fill="#9ca0a8"/>
+  <circle cx="350" cy="120" r="4" fill="#00ff9d"/>
+
+  <!-- Edge 2 -->
+  <line x1="350" y1="120" x2="370" y2="180" stroke="#00ff9d" stroke-width="1.5" opacity="0.5"/>
+
+  <!-- Execution Output node -->
+  <rect x="360" y="170" width="90" height="40" fill="rgba(94,92,230,0.08)" rx="6" stroke="#5e5ce6" stroke-width="1"/>
+  <text x="405" y="184" fill="#e8eaee" font-family="monospace" font-size="8" text-anchor="middle" font-weight="bold">Execution Output</text>
+  <text x="405" y="200" fill="#9ca0a8" font-family="monospace" font-size="7" text-anchor="middle">Long</text>
+  <circle cx="360" cy="190" r="4" fill="#9ca0a8"/>
+
+  <!-- ③ Config panel -->
+  <rect x="464" y="48" width="124" height="220" fill="rgba(255,255,255,0.03)" rx="4" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="472" y="66" fill="#f5c542" font-family="monospace" font-size="8" font-weight="bold">Config</text>
+  <text x="472" y="84" fill="#9ca0a8" font-family="monospace" font-size="8">Core Parameters</text>
+  <text x="472" y="100" fill="#9ca0a8" font-family="monospace" font-size="7">Period 14</text>
+  <text x="472" y="116" fill="#9ca0a8" font-family="monospace" font-size="7">Operator &lt;</text>
+  <text x="472" y="132" fill="#9ca0a8" font-family="monospace" font-size="7">Value 30</text>
+  <text x="472" y="150" fill="#5e636d" font-family="monospace" font-size="8">Port Connections</text>
+  <text x="472" y="166" fill="#9ca0a8" font-family="monospace" font-size="7">← Signal Input</text>
+
+  <!-- ④ Status bar -->
+  <rect x="12" y="274" width="576" height="24" fill="rgba(255,255,255,0.03)" rx="3"/>
+  <circle cx="24" cy="286" r="4" fill="#00ff9d"/>
+  <text x="34" y="290" fill="#00ff9d" font-family="monospace" font-size="8">Validation Passed</text>
+  <text x="480" y="290" fill="#9ca0a8" font-family="monospace" font-size="8">3 nodes · 2 edges</text>
+
+  <circle cx="8" cy="60" r="7" fill="#00ff9d" opacity="0.9"/>
+  <text x="8" y="64" fill="#000" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">①</text>
+  <circle cx="8" cy="160" r="7" fill="#00ff9d" opacity="0.9"/>
+  <text x="8" y="164" fill="#000" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">③</text>
+  <circle cx="112" cy="60" r="7" fill="#f5c542" opacity="0.9"/>
+  <text x="112" y="64" fill="#000" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">②</text>
+  <circle cx="112" cy="160" r="7" fill="#ff9b3d" opacity="0.9"/>
+  <text x="112" y="164" fill="#000" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">④</text>
+  <circle cx="460" cy="60" r="7" fill="#50b4ff" opacity="0.9"/>
+  <text x="460" y="64" fill="#000" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">⑤</text>
+</svg>
+
+<ol>
+  <li><strong>① Node palette (left)</strong> — Lists all available components: Signal Input, Indicator Condition, Filter, Position Sizing, Risk Policy, Execution Output, MTF Guard, Structure Defense. Click a node to add it to the canvas, or drag and drop. Filter by category or search by name. Favorited nodes appear at the top.</li>
+  <li><strong>② Canvas area (center)</strong> — An infinite canvas built on React Flow. Nodes appear as colored cards with circular ports on the left (input) and right (output). Drag from an output port to an input port to create an edge. Supports zoom, pan, multi-select (Cmd+click), and keyboard delete. A minimap in the bottom-right corner helps with navigation.</li>
+  <li><strong>③ Node config panel (right)</strong> — Opens when you click a node on the canvas. Shows core parameters (e.g. RSI period, threshold), port connection status, and advanced options (name, notes, execution condition). Changes take effect immediately.</li>
+  <li><strong>④ Status bar (bottom)</strong> — Shows validation status (Passed / Failed / Not Validated) and canvas statistics (node count, edge count). The "DSL Preview" toggle button is on the right.</li>
+  <li><strong>⑤ DSL Preview panel (optional)</strong> — Slides in from the right when you toggle "DSL Preview". Shows the real-time JSON output of your canvas graph. Supports copy to clipboard.</li>
+</ol>
+
+<h2>Reading the Key Metrics</h2>
+<ul>
+  <li><strong>Validation status</strong> — Green "Validation Passed" means the canvas graph forms a complete, compilable strategy. Red "Validation Failed" with an error count means you need to fix issues before saving.</li>
+  <li><strong>Node and edge count</strong> — Shown in the status bar. More complex strategies have more nodes, but good strategies tend to be "as simple as possible."</li>
+  <li><strong>Port status</strong> — In the config panel, connected ports show a green dot and the peer node name; unconnected ports are gray; required ports have a red asterisk.</li>
+</ul>
+
+<h2>Common Actions, Step by Step</h2>
+<ol>
+  <li><strong>Add a node</strong> — In the left palette, click (or drag) a node type such as "Indicator Condition". It appears in the center of the canvas.</li>
+  <li><strong>Connect nodes</strong> — Drag from a node's output port (right-side circle) to another node's input port (left-side circle). Edges use a smooth step path style.</li>
+  <li><strong>Configure a node</strong> — Click a node on the canvas; the right panel opens automatically. Adjust parameters (e.g. RSI period=14, threshold &lt;30). Changes reflect immediately in the DSL preview.</li>
+  <li><strong>Validate and save</strong> — Click "Validate" in the top bar to check strategy legality. Once passed, click "Save" to persist the canvas as a new strategy version.</li>
+  <li><strong>Load a template</strong> — Click "Templates" and pick from preset blueprints (e.g. "RSI Mean Reversion"). The template's nodes and edges load onto the canvas automatically.</li>
+  <li><strong>View DSL code</strong> — Click "DSL Preview" in the status bar. The right panel shows the generated JSON. Click the copy icon to copy it to your clipboard.</li>
+</ol>
+
+<h2>Behind the Scenes</h2>
+<p>The canvas is a React application embedded in the macOS app via WKWebView. It uses <code>@xyflow/react</code> for the DAG editor. Node and edge changes are sent to the Swift side through <code>CanvasBridge</code> (a WKScriptMessageHandler). The graph-to-DSL conversion is done client-side by <code>graphToDsl()</code>, which maps nodes and edges to the <code>StrategyRuleDSL v2.5</code> JSON format. Saving calls <code>APICanvas.save()</code> to persist the graph state and <code>APIStrategiesV2.saveVersion()</code> to create a new strategy version. Version history is viewable in the "Versions" tab of the strategy detail page.</p>
+
+<h2>See Also</h2>
+<ul>
+  <li><a href="#/pages/strategy/strategy-workspace">Strategy Workspace</a> — Entry point for creating and managing strategies</li>
+  <li><a href="#/pages/strategy/backtest-simulation">Backtest & Simulation</a> — Validate strategy performance after saving the canvas</li>
+  <li><a href="#/concepts/02-strategy-dsl">Strategy DSL</a> — Understanding the JSON rule language behind the canvas</li>
+  <li><a href="#/walkthroughs/first-strategy">Build Your First Strategy</a> — Full walkthrough using the canvas</li>
+</ul>

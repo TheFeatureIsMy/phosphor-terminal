@@ -1,0 +1,129 @@
+<h1>回测与模拟</h1>
+<p class="chapter-meta">页面 · 策略 · 5 分钟</p>
+
+<blockquote class="lede">在投入真金白银之前，用历史数据检验你的策略表现，或在模拟环境中观察它的实时行为。</blockquote>
+
+<h2>TL;DR</h2>
+<p>回测与模拟是验证策略的两个阶段。回测使用历史数据（可指定时间范围、初始资金、交易对）运行策略，计算总收益率、夏普比率、最大回撤、胜率等指标，并展示权益曲线和逐笔交易明细。模拟（纸交易）让策略在实时市场中运行但不下真实订单，你可以观察它的表现和信号。两者都在策略详情页的"回测"和"模拟"标签页中操作。回测支持 Command Bus 轮询模式 — 提交后系统异步执行，前端每 3 秒轮询一次状态。</p>
+
+<h2>谁用 · 何时用</h2>
+<p>所有策略作者。回测是上线前的必由之路 — 每次修改 DSL 规则或画布后，都应该运行一次回测。模拟则是在回测结果满意后、上线前的最后一步：让策略在模拟环境中运行几天到几周，观察实际市场下的表现。独立页面（从侧边栏进入）提供更完整的回测引擎界面，包含历史回测记录列表。</p>
+
+<h2>页面解剖</h2>
+<svg class="diagram" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="320" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- Tab bar -->
+  <rect x="12" y="10" width="576" height="28" fill="rgba(255,255,255,0.03)" rx="4"/>
+  <rect x="12" y="10" width="100" height="28" fill="rgba(0,255,157,0.08)" rx="4"/>
+  <text x="62" y="30" fill="#00ff9d" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">回测引擎</text>
+  <rect x="112" y="10" width="100" height="28" fill="rgba(255,255,255,0.02)" rx="4"/>
+  <text x="162" y="30" fill="#9ca0a8" font-family="monospace" font-size="9" text-anchor="middle">模拟监控</text>
+
+  <!-- ① Config section -->
+  <rect x="12" y="46" width="576" height="120" fill="rgba(255,255,255,0.03)" rx="6" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="20" y="66" fill="#00ff9d" font-family="monospace" font-size="10" font-weight="bold">$ 回测配置</text>
+
+  <!-- Date range -->
+  <text x="20" y="88" fill="#9ca0a8" font-family="monospace" font-size="8">时间范围</text>
+  <rect x="20" y="94" width="150" height="22" fill="rgba(255,255,255,0.04)" rx="3" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="26" y="110" fill="#e8eaee" font-family="monospace" font-size="9">2025-01-01</text>
+  <text x="180" y="108" fill="#5e636d" font-family="monospace" font-size="9">→</text>
+  <rect x="200" y="94" width="150" height="22" fill="rgba(255,255,255,0.04)" rx="3" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="206" y="110" fill="#e8eaee" font-family="monospace" font-size="9">2026-06-01</text>
+
+  <!-- Initial capital + symbols -->
+  <text x="20" y="140" fill="#9ca0a8" font-family="monospace" font-size="8">初始资金 (USDT)</text>
+  <rect x="20" y="146" width="100" height="22" fill="rgba(255,255,255,0.04)" rx="3" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="26" y="162" fill="#e8eaee" font-family="monospace" font-size="9">100,000</text>
+
+  <text x="140" y="140" fill="#9ca0a8" font-family="monospace" font-size="8">交易标的</text>
+  <rect x="140" y="146" width="160" height="22" fill="rgba(255,255,255,0.04)" rx="3" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="146" y="162" fill="#e8eaee" font-family="monospace" font-size="9">BTC/USDT, ETH/USDT</text>
+
+  <!-- Run button -->
+  <rect x="460" y="146" width="120" height="24" fill="#00ff9d" rx="4"/>
+  <text x="520" y="164" fill="#000" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">启动回测</text>
+
+  <!-- ② Results grid -->
+  <rect x="12" y="174" width="576" height="138" fill="rgba(255,255,255,0.03)" rx="6" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="20" y="194" fill="#f5c542" font-family="monospace" font-size="10" font-weight="bold">回测结果</text>
+
+  <!-- KPI cells -->
+  <rect x="16" y="202" width="135" height="44" fill="rgba(255,255,255,0.02)" rx="4"/>
+  <text x="84" y="216" fill="#00ff9d" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">+42.50%</text>
+  <text x="84" y="236" fill="#9ca0a8" font-family="monospace" font-size="7" text-anchor="middle">总收益率</text>
+
+  <rect x="157" y="202" width="135" height="44" fill="rgba(255,255,255,0.02)" rx="4"/>
+  <text x="225" y="216" fill="#f5c542" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">1.85</text>
+  <text x="225" y="236" fill="#9ca0a8" font-family="monospace" font-size="7" text-anchor="middle">Sharpe 比率</text>
+
+  <rect x="298" y="202" width="135" height="44" fill="rgba(255,255,255,0.02)" rx="4"/>
+  <text x="366" y="216" fill="#ff5470" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">-12.30%</text>
+  <text x="366" y="236" fill="#9ca0a8" font-family="monospace" font-size="7" text-anchor="middle">最大回撤</text>
+
+  <rect x="439" y="202" width="135" height="44" fill="rgba(255,255,255,0.02)" rx="4"/>
+  <text x="507" y="216" fill="#00ff9d" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">58.2%</text>
+  <text x="507" y="236" fill="#9ca0a8" font-family="monospace" font-size="7" text-anchor="middle">胜率</text>
+
+  <!-- Equity curve area -->
+  <rect x="16" y="252" width="280" height="52" fill="rgba(255,255,255,0.01)" rx="4"/>
+  <text x="20" y="268" fill="#9ca0a8" font-family="monospace" font-size="7">权益曲线</text>
+  <!-- Simple bars -->
+  <rect x="16" y="278" width="6" height="20" fill="rgba(0,255,157,0.4)" rx="1"/>
+  <rect x="24" y="282" width="6" height="16" fill="rgba(0,255,157,0.4)" rx="1"/>
+  <rect x="32" y="286" width="6" height="12" fill="rgba(255,84,112,0.4)" rx="1"/>
+  <rect x="40" y="280" width="6" height="18" fill="rgba(0,255,157,0.4)" rx="1"/>
+  <rect x="48" y="276" width="6" height="22" fill="rgba(0,255,157,0.5)" rx="1"/>
+  <rect x="56" y="284" width="6" height="14" fill="rgba(255,84,112,0.4)" rx="1"/>
+  <rect x="64" y="278" width="6" height="20" fill="rgba(0,255,157,0.5)" rx="1"/>
+  <rect x="72" y="274" width="6" height="24" fill="rgba(0,255,157,0.6)" rx="1"/>
+  <rect x="80" y="272" width="6" height="26" fill="rgba(0,255,157,0.6)" rx="1"/>
+  <rect x="88" y="276" width="6" height="22" fill="rgba(0,255,157,0.5)" rx="1"/>
+  <rect x="96" y="286" width="6" height="12" fill="rgba(255,84,112,0.4)" rx="1"/>
+  <rect x="104" y="280" width="6" height="18" fill="rgba(0,255,157,0.4)" rx="1"/>
+  <rect x="112" y="270" width="6" height="28" fill="rgba(0,255,157,0.7)" rx="1"/>
+  <rect x="120" y="274" width="6" height="24" fill="rgba(0,255,157,0.5)" rx="1"/>
+
+  <!-- Callouts -->
+  <circle cx="8" cy="56" r="7" fill="#00ff9d" opacity="0.9"/>
+  <text x="8" y="60" fill="#000" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">①</text>
+  <circle cx="8" cy="184" r="7" fill="#f5c542" opacity="0.9"/>
+  <text x="8" y="188" fill="#000" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">②</text>
+  <circle cx="8" cy="260" r="7" fill="#50b4ff" opacity="0.9"/>
+  <text x="8" y="264" fill="#000" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">③</text>
+</svg>
+
+<ol>
+  <li><strong>① 回测配置区</strong> — 设置时间范围（YYYYMMDD-YYYYMMDD 格式）、初始资金（USDT）、交易标的（逗号分隔）。策略版本从当前策略自动获取。点击"启动回测"提交任务。</li>
+  <li><strong>② 回测结果指标卡</strong> — 运行完成后显示 8 项核心指标：总收益率（绿/红）、夏普比率（≥1.5 绿）、最大回撤（红色标注）、胜率（≥50% 绿）、盈亏比（≥1.5 绿）、总交易数、初始资金、交易对。每个指标用颜色区分好坏。</li>
+  <li><strong>③ 权益曲线与交易明细</strong> — 简化的条形图显示资金变化趋势（绿色=盈利日，红色=亏损日）。下方表格列出最近交易的时间、方向、价格、数量和盈亏。</li>
+</ol>
+
+<h2>关键指标怎么读</h2>
+<ul>
+  <li><strong>总收益率 (Total Return)</strong> — 回测期间的总盈利百分比。正值为绿色，负值为红色。结合最大回撤一起看：40% 的收益配 5% 的回撤比 40% 配 25% 好得多。</li>
+  <li><strong>夏普比率 (Sharpe Ratio)</strong> — 衡量风险调整后收益。≥1.5 优秀（绿色），1.0-1.5 可接受（黄色），&lt;1.0 偏低。它告诉你在承受每单位波动时获得了多少超额收益。</li>
+  <li><strong>最大回撤 (Max Drawdown)</strong> — 回测期间从峰值到谷底的最大跌幅。总是显示为红色。加密货币策略通常回撤 20-40% 可接受，但取决于策略类型。</li>
+  <li><strong>胜率 (Win Rate)</strong> — 盈利交易占总交易的比例。≥50% 为绿色。但胜率并非越高越好 — 高胜率搭配低盈亏比可能还不如低胜率高盈亏比。</li>
+  <li><strong>盈亏比 (Profit Factor)</strong> — 总盈利 / 总亏损。≥1.5 为绿色。如果盈亏比高，即使胜率只有 40%，策略仍然可能盈利。</li>
+</ul>
+
+<h2>常见操作 · 一步步</h2>
+<ol>
+  <li><strong>运行回测</strong> — 在策略详情页进入"回测"标签页（或从侧边栏进入独立的回测引擎页面）。确认策略已有保存的版本（没有则先在 DSL 规则中保存）。填写时间范围、初始资金、交易对。点击"启动回测"。</li>
+  <li><strong>查看结果</strong> — 回测异步执行，前端每 3 秒轮询一次状态。完成后指标卡和权益曲线自动出现。查看 Sharpe 比率和最大回撤来判断策略是否值得进一步优化。</li>
+  <li><strong>启动模拟运行</strong> — 在策略详情页进入"模拟"标签页。系统自动列出该策略的活跃模拟运行。每个运行卡片显示模式、状态、开始时间。运行中（绿色）表示策略在模拟环境中实时产生信号。</li>
+  <li><strong>查看历史回测</strong> — 在独立的回测引擎页面，底部显示最近 10 次回测记录。每行显示交易对、时间范围、收益率和 Sharpe 比率。点击可查看详细结果。</li>
+</ol>
+
+<h2>幕后</h2>
+<p>回测通过 Command Bus 异步执行。点击"启动回测"后，前端调用 <code>api.startBacktest()</code> 提交任务，后端返回一个 <code>commandId</code>。前端随后每 3 秒调用 <code>api.backtestStatus(commandId:)</code> 轮询状态。当 <code>commandStatus</code> 变为 <code>completed</code> 时，结果被解析为 <code>BacktestRunV2</code> 对象并在 <code>BacktestResultCardView</code> 中显示。模拟运行通过 <code>APIStrategyRuns.listRuns(mode: "dryrun")</code> 获取，过滤出当前策略的运行记录。模拟状态（运行中/已完成/已停止/失败）由后端实时更新。</p>
+
+<h2>相关</h2>
+<ul>
+  <li><a href="#/pages/strategy/strategy-workspace">策略工作区</a> — 创建和管理策略</li>
+  <li><a href="#/pages/strategy/strategy-canvas">策略画布</a> — 可视化编辑策略后运行回测验证</li>
+  <li><a href="#/pages/execution/execution-center">执行中心</a> — 回测通过后的上线执行</li>
+  <li><a href="#/walkthroughs/first-strategy">从零创建第一个策略</a> — 完整回测演练</li>
+</ul>
