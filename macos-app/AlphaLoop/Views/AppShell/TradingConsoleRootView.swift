@@ -42,7 +42,7 @@ struct TradingConsoleRootView: View {
                 LoadingView(type: .detail)
             }
         case .liveReadiness:
-            LiveReadinessView()
+            LiveReadinessView(viewModel: LiveReadinessViewModel(client: networkClient))
         case .marketStructure:
             MarketStructureView()
         case .structureMatrix:

@@ -12,6 +12,7 @@ struct AppShellView: View {
     @Environment(ErrorHandler.self) private var errorHandler
 
     @State private var dashboardVM: DashboardViewModel?
+    @State private var liveReadinessVM: LiveReadinessViewModel?
     @State private var strategiesVM: StrategiesViewModel?
     @State private var previousWorkspaceIndex: Int = 0
 
@@ -61,6 +62,9 @@ struct AppShellView: View {
         .onAppear {
             if dashboardVM == nil {
                 dashboardVM = DashboardViewModel(client: networkClient)
+            if liveReadinessVM == nil {
+                liveReadinessVM = LiveReadinessViewModel(client: networkClient)
+            }
             }
             dashboardVM?.errorHandler = errorHandler
             if strategiesVM == nil {
@@ -87,7 +91,7 @@ struct AppShellView: View {
                 LoadingView(type: .detail)
             }
         case .liveReadiness:
-            LiveReadinessView()
+            if let vm = liveReadinessVM { LiveReadinessView(viewModel: vm) } else { LoadingView(type: .detail) }
         // STRATEGY
         case .strategyWorkspace:
             if let vm = strategiesVM {

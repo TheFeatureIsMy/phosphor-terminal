@@ -1,20 +1,13 @@
 // UserGuide.swift — 打开本地用户指南站点
 //
-// 用户指南是一个静态站点 (docs/user-guide/) ，章节通过 fetch() 异步加载。
-// file:// 协议下浏览器禁止 fetch 本地资源 (CORS) ，所以必须用一个本地 HTTP server 提供。
-//
-// 流程：
-//   1. 检查 4178 端口是否已经有 server (我们之前启的，或者用户自己跑的)
-//   2. 没有就 spawn `python3 -m http.server 4178` 在 docs/user-guide/ 目录
-//   3. 等端口起来，打开 http://localhost:4178/#/<anchor>
-//   4. app 退出时把 server 干掉
+// 用户指南是一个静态站点 (docs/user-guide/)。
+// file:// 下浏览器禁止 fetch 本地资源，所以用 python3 http.server 提供。
 
 import AppKit
 import Foundation
 
 @MainActor
 enum UserGuide {
-    /// 用户指南站点中的锚点路径，对应 hash 路由（不带 `#/`）。
     enum Anchor: String {
         case welcome           = "welcome"
         case concepts          = "concepts/01-what-is-quant"
@@ -25,34 +18,50 @@ enum UserGuide {
     private static let port: Int = 4178
     private static var serverProcess: Process?
     private static var terminationObserver: NSObjectProtocol?
+    private(set) static var isStarting = false
 
-    /// 打开指南站点。anchor 为 nil 时打开首页。
     @discardableResult
     static func open(anchor: Anchor? = nil) -> Bool {
-        guard ensureServerRunning() else { return false }
+        guard !isStarting else { return true }
 
+        if isServerLiveSync() {
+            return openBrowser(anchor: anchor)
+        }
+
+        isStarting = true
+        Task {
+            let success = await startServerAsync()
+            isStarting = false
+            if success {
+                openBrowser(anchor: anchor)
+            } else {
+                NSLog("[UserGuide] failed to start server")
+            }
+        }
+        return true
+    }
+
+    @discardableResult
+    private static func openBrowser(anchor: Anchor? = nil) -> Bool {
         var components = URLComponents()
         components.scheme = "http"
         components.host = "localhost"
         components.port = port
         components.path = "/"
         if let anchor { components.fragment = "/\(anchor.rawValue)" }
-
         guard let url = components.url else { return false }
         return NSWorkspace.shared.open(url)
     }
 
-    // MARK: - Server lifecycle
+    // MARK: - Async server startup
 
-    private static func ensureServerRunning() -> Bool {
-        if isServerLive() { return true }
-
+    private static func startServerAsync() async -> Bool {
         guard let guideDir = locateGuideDirectory() else {
             NSLog("[UserGuide] could not locate docs/user-guide directory")
             return false
         }
         guard let python = locatePython() else {
-            NSLog("[UserGuide] python3 not found in known locations")
+            NSLog("[UserGuide] python3 not found")
             return false
         }
 
@@ -73,42 +82,47 @@ enum UserGuide {
         serverProcess = process
         registerTerminationCleanup()
 
-        // python http.server binds within ~100ms; poll up to 2s
         for _ in 0..<20 {
-            Thread.sleep(forTimeInterval: 0.1)
-            if isServerLive() { return true }
+            try? await Task.sleep(for: .milliseconds(100))
+            if await checkServerLive() { return true }
         }
 
-        // didn't come up — kill the orphan and bail
         process.terminate()
         serverProcess = nil
         return false
     }
 
-    /// 同步 HTTP GET 探测端口；超时 0.4s
-    private static func isServerLive() -> Bool {
+    private static func checkServerLive() async -> Bool {
         guard let url = URL(string: "http://127.0.0.1:\(port)/index.html") else { return false }
-        let semaphore = DispatchSemaphore(value: 0)
-        let result = ProbeResult()
-
         let config = URLSessionConfiguration.ephemeral
-        config.timeoutIntervalForRequest = 0.4
-        config.timeoutIntervalForResource = 0.4
+        config.timeoutIntervalForRequest = 0.5
         let session = URLSession(configuration: config)
-
-        let task = session.dataTask(with: url) { _, response, _ in
+        do {
+            let (_, response) = try await session.data(from: url)
             if let http = response as? HTTPURLResponse, http.statusCode == 200 {
-                result.ok = true
+                return true
             }
-            semaphore.signal()
-        }
-        task.resume()
-        _ = semaphore.wait(timeout: .now() + 0.6)
-        return result.ok
+        } catch {}
+        return false
     }
 
-    private final class ProbeResult: @unchecked Sendable {
-        var ok = false
+    /// Quick non-blocking check (for when server might already be running)
+    private static func isServerLiveSync() -> Bool {
+        let sock = socket(AF_INET, SOCK_STREAM, 0)
+        guard sock >= 0 else { return false }
+        defer { close(sock) }
+
+        var addr = sockaddr_in()
+        addr.sin_family = sa_family_t(AF_INET)
+        addr.sin_port = UInt16(port).bigEndian
+        addr.sin_addr.s_addr = inet_addr("127.0.0.1")
+
+        let result = withUnsafePointer(to: &addr) { ptr in
+            ptr.withMemoryRebound(to: sockaddr.self, capacity: 1) { sockPtr in
+                connect(sock, sockPtr, socklen_t(MemoryLayout<sockaddr_in>.size))
+            }
+        }
+        return result == 0
     }
 
     private static func registerTerminationCleanup() {
@@ -118,10 +132,8 @@ enum UserGuide {
             object: nil,
             queue: .main
         ) { _ in
-            Task { @MainActor in
-                if let p = serverProcess, p.isRunning {
-                    p.terminate()
-                }
+            if let p = serverProcess, p.isRunning {
+                p.terminate()
             }
         }
     }
@@ -129,35 +141,21 @@ enum UserGuide {
     // MARK: - Location helpers
 
     private static func locatePython() -> String? {
-        let candidates = [
-            "/usr/bin/python3",
-            "/opt/homebrew/bin/python3",
-            "/usr/local/bin/python3",
-        ]
-        for path in candidates where FileManager.default.isExecutableFile(atPath: path) {
-            return path
+        for path in ["/usr/bin/python3", "/opt/homebrew/bin/python3", "/usr/local/bin/python3"] {
+            if FileManager.default.isExecutableFile(atPath: path) { return path }
         }
         return nil
     }
 
     private static func locateGuideDirectory() -> URL? {
-        // 1) bundle (future: when guide gets shipped inside the app)
-        if let bundled = Bundle.main.url(
-            forResource: "index",
-            withExtension: "html",
-            subdirectory: "user-guide"
-        ) {
+        if let bundled = Bundle.main.url(forResource: "index", withExtension: "html", subdirectory: "user-guide") {
             return bundled.deletingLastPathComponent()
         }
 
-        // 2) walk up from executable + cwd looking for docs/user-guide/index.html
         for root in candidateRepoRoots() {
-            let dir = root
-                .appendingPathComponent("docs")
-                .appendingPathComponent("user-guide")
-            let index = dir.appendingPathComponent("index.html")
+            let index = root.appendingPathComponent("docs/user-guide/index.html")
             if FileManager.default.fileExists(atPath: index.path) {
-                return dir
+                return index.deletingLastPathComponent()
             }
         }
         return nil
@@ -168,7 +166,7 @@ enum UserGuide {
 
         if let executable = Bundle.main.executableURL {
             var dir = executable.deletingLastPathComponent()
-            for _ in 0..<10 {
+            for _ in 0..<12 {
                 roots.append(dir)
                 dir = dir.deletingLastPathComponent()
             }
@@ -176,10 +174,14 @@ enum UserGuide {
 
         let cwd = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
         var dir = cwd
-        for _ in 0..<10 {
+        for _ in 0..<8 {
             roots.append(dir)
             dir = dir.deletingLastPathComponent()
         }
+
+        // Direct known path as last resort
+        let home = FileManager.default.homeDirectoryForCurrentUser
+        roots.append(home.appendingPathComponent("workspace/phosphor-terminal"))
 
         return roots
     }
