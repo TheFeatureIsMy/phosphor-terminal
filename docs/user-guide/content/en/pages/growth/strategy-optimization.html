@@ -1,0 +1,126 @@
+<h1>Strategy Optimization</h1>
+<p class="chapter-meta">Page · Growth · 5 min</p>
+
+<blockquote class="lede">Turn AI-discovered improvement ideas into executable strategy versions through a safety workflow that progressively advances them toward live trading.</blockquote>
+
+<h2>TL;DR</h2>
+<p>The Strategy Optimization page manages the full upgrade pipeline from "AI Suggestion" to "Small-Size Live." After the Growth Review and Failure Clustering identify weak points, the system generates candidate strategies (as DSL patches). Each candidate must pass through a seven-step safety workflow: AI Suggestion → Draft → DSL Validation → Backtest → Paper Trading → Manual Approval → Small-Size Live. Candidates are organized into three status tabs: Pending Review, Confirmed, and Rejected. Every step is mandatory — no candidate can skip directly to live deployment.</p>
+
+<h2>Who uses it & when</h2>
+<p>Advanced users who need to iteratively optimize their strategies. Open this page after the Growth Review or Failure Clustering has identified improvement opportunities. Also check it regularly (e.g., weekly) to review pending candidates and decide whether to approve or reject AI-generated suggestions. Beginners can read and understand the workflow, but should not confirm candidates without understanding each validation step.</p>
+
+<h2>Page Anatomy</h2>
+<svg class="diagram" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="320" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- Header -->
+  <text x="16" y="28" fill="#e8eaee" font-family="monospace" font-size="14" font-weight="bold">Strategy Optimization</text>
+  <text x="16" y="44" fill="#9ca0a8" font-family="monospace" font-size="9">● Online · AI-Powered Improvement Recommendations</text>
+
+  <!-- Summary cards -->
+  <rect x="12" y="54" width="135" height="40" fill="rgba(255,255,255,0.03)" rx="6" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="80" y="70" fill="#f5c542" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">3</text>
+  <text x="80" y="84" fill="#5e636d" font-family="monospace" font-size="7" text-anchor="middle">Pending</text>
+
+  <rect x="153" y="54" width="135" height="40" fill="rgba(255,255,255,0.03)" rx="6" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="221" y="70" fill="#00ff9d" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">1</text>
+  <text x="221" y="84" fill="#5e636d" font-family="monospace" font-size="7" text-anchor="middle">Confirmed</text>
+
+  <rect x="294" y="54" width="135" height="40" fill="rgba(255,255,255,0.03)" rx="6" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="362" y="70" fill="#ff5470" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">2</text>
+  <text x="362" y="84" fill="#5e636d" font-family="monospace" font-size="7" text-anchor="middle">Rejected</text>
+
+  <!-- Safety workflow pipeline -->
+  <rect x="12" y="100" width="576" height="130" fill="rgba(255,255,255,0.03)" rx="6" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="20" y="120" fill="#00ff9d" font-family="monospace" font-size="10" font-weight="bold">Safety Workflow — 7-Step Pipeline</text>
+
+  <!-- Step 1 -->
+  <circle cx="50" cy="160" r="14" fill="rgba(128,90,213,0.15)" stroke="rgba(128,90,213,0.4)" stroke-width="1.5"/>
+  <text x="50" y="164" fill="#805ad5" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">①</text>
+  <text x="50" y="190" fill="#9ca0a8" font-family="monospace" font-size="7" text-anchor="middle">AI Sugg.</text>
+
+  <line x1="64" y1="160" x2="94" y2="160" stroke="rgba(128,90,213,0.2)" stroke-width="1.5"/>
+
+  <!-- Step 2 -->
+  <circle cx="110" cy="160" r="14" fill="rgba(80,180,255,0.15)" stroke="rgba(80,180,255,0.4)" stroke-width="1.5"/>
+  <text x="110" y="164" fill="#50b4ff" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">②</text>
+  <text x="110" y="190" fill="#9ca0a8" font-family="monospace" font-size="7" text-anchor="middle">Draft</text>
+
+  <line x1="124" y1="160" x2="154" y2="160" stroke="rgba(80,180,255,0.2)" stroke-width="1.5"/>
+
+  <!-- Step 3 -->
+  <circle cx="170" cy="160" r="14" fill="rgba(0,188,212,0.15)" stroke="rgba(0,188,212,0.4)" stroke-width="1.5"/>
+  <text x="170" y="164" fill="#00bcd4" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">③</text>
+  <text x="170" y="190" fill="#9ca0a8" font-family="monospace" font-size="7" text-anchor="middle">DSL Val.</text>
+
+  <line x1="184" y1="160" x2="214" y2="160" stroke="rgba(0,188,212,0.2)" stroke-width="1.5"/>
+
+  <!-- Step 4 -->
+  <circle cx="230" cy="160" r="14" fill="rgba(245,197,66,0.15)" stroke="rgba(245,197,66,0.4)" stroke-width="1.5"/>
+  <text x="230" y="164" fill="#f5c542" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">④</text>
+  <text x="230" y="190" fill="#9ca0a8" font-family="monospace" font-size="7" text-anchor="middle">Backtest</text>
+
+  <line x1="244" y1="160" x2="274" y2="160" stroke="rgba(245,197,66,0.2)" stroke-width="1.5"/>
+
+  <!-- Step 5 -->
+  <circle cx="290" cy="160" r="14" fill="rgba(0,255,157,0.15)" stroke="rgba(0,255,157,0.4)" stroke-width="1.5"/>
+  <text x="290" y="164" fill="#00ff9d" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">⑤</text>
+  <text x="290" y="190" fill="#9ca0a8" font-family="monospace" font-size="7" text-anchor="middle">Paper Tr.</text>
+
+  <line x1="304" y1="160" x2="334" y2="160" stroke="rgba(0,255,157,0.2)" stroke-width="1.5"/>
+
+  <!-- Step 6 -->
+  <circle cx="350" cy="160" r="14" fill="rgba(255,155,61,0.15)" stroke="rgba(255,155,61,0.4)" stroke-width="1.5"/>
+  <text x="350" y="164" fill="#ff9b3d" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">⑥</text>
+  <text x="350" y="190" fill="#9ca0a8" font-family="monospace" font-size="7" text-anchor="middle">Approval</text>
+
+  <line x1="364" y1="160" x2="394" y2="160" stroke="rgba(255,155,61,0.2)" stroke-width="1.5"/>
+
+  <!-- Step 7 -->
+  <circle cx="410" cy="160" r="14" fill="rgba(0,200,83,0.15)" stroke="rgba(0,200,83,0.4)" stroke-width="1.5"/>
+  <text x="410" y="164" fill="#00c853" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">⑦</text>
+  <text x="410" y="190" fill="#9ca0a8" font-family="monospace" font-size="7" text-anchor="middle">Small Live</text>
+
+  <!-- Warning banner -->
+  <rect x="16" y="206" width="568" height="20" fill="rgba(245,197,66,0.06)" rx="3" stroke="rgba(245,197,66,0.12)" stroke-width="1"/>
+  <text x="22" y="220" fill="#f5c542" font-family="monospace" font-size="7">▲ Candidates must pass the full review pipeline; no step may be skipped before live deployment</text>
+
+  <!-- Callouts -->
+  <circle cx="8" cy="110" r="7" fill="#00ff9d" opacity="0.9"/>
+  <text x="8" y="114" fill="#000" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">①</text>
+  <circle cx="8" cy="240" r="7" fill="#50b4ff" opacity="0.9"/>
+  <text x="8" y="244" fill="#000" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">②</text>
+</svg>
+
+<ol>
+  <li><strong>① Safety Workflow Pipeline</strong> — Seven mandatory steps from AI suggestion to small-size live. Each step has independent status (pending/passed/failed/running). Connector arrows show sequential dependency — no skipping allowed. The system auto-generates the DSL patch at step 1 (AI Suggestion); subsequent steps require manual triggering or automatic validation completion.</li>
+  <li><strong>② Candidate Strategy List</strong> — Organized into three tabs by status: Pending Review (awaiting your decision), Confirmed (approved and ready for the next pipeline step), and Rejected (archived rejections). Each card shows the strategy name, trading symbol, confidence score, source type (AI-generated or manual), backtest metrics (win rate, Sharpe ratio), and AI reasoning. Pending cards have "Backtest," "Reject," and "Confirm" action buttons.</li>
+</ol>
+
+<h2>Reading the Key Metrics</h2>
+<ul>
+  <li><strong>Confidence</strong> — AI's confidence score for the candidate's expected effectiveness. ≥70% green, 40-70% yellow (amber), &lt;40% red. Confidence is a guide only — even high-confidence candidates must pass the full safety workflow.</li>
+  <li><strong>Win Rate / Sharpe Ratio</strong> — Backtest performance metrics for the candidate. Not a guarantee of future results — actual performance may differ due to changing market conditions. Use these to make initial comparisons between candidates.</li>
+  <li><strong>AI Reasoning</strong> — The purple-highlighted area on each card explains why the AI proposed this change. Reading the reasoning helps you make a more informed decision during the manual approval step.</li>
+  <li><strong>Pipeline Status</strong> — Each candidate's current stage in the safety workflow. Status badges (Pending Review, Backtesting, Confirmed, etc.) use distinct colors for quick scanning and prioritization.</li>
+</ul>
+
+<h2>Common Actions, Step by Step</h2>
+<ol>
+  <li><strong>Review a candidate</strong> — Browse the "Pending Review" tab. Read the strategy name, DSL preview, and AI reasoning. If the change seems reasonable, click "Confirm" to enter the safety workflow. If not, click "Reject" to archive it.</li>
+  <li><strong>Run a backtest</strong> — Click "Backtest" on a candidate card. The system runs a backtest using the candidate's DSL configuration over the specified time range. Results (win rate, Sharpe, return, etc.) update on the card to help you decide whether to proceed.</li>
+  <li><strong>Confirm a candidate → new strategy version</strong> — Click "Confirm" to create a new strategy version from the candidate DSL (version number auto-increments). The candidate status changes to "Confirmed" and the new version enters the next safety workflow step (DSL Validation).</li>
+  <li><strong>Review confirmed/rejected history</strong> — Switch to the corresponding tab to browse history. Confirmed candidates can be traced back to their source Growth Report. Rejected candidates preserve the rejection context for future reference.</li>
+</ol>
+
+<h2>Behind the Scenes</h2>
+<p>Candidates are created by GrowthService.generate_candidate. The method reads metrics and findings from a Growth Report, calls candidate_generator to produce a DSL patch, and persists a StrategyCandidate record. When confirmed, confirm_candidate uses StrategyRepository to create a new StrategyVersion with an incremented version_no, setting the candidate DSL as the version's rule_dsl. DSLHashService computes a hash for integrity verification. The new version starts in "draft" status and enters the safety workflow. Each pipeline step (DSL Validation → Backtest → Paper Trading → Manual Approval) is handled by its own dedicated service, auto-advancing on success. Manual Approval is the only step requiring human intervention — all prior steps can run automatically.</p>
+
+<h2>See Also</h2>
+<ul>
+  <li><a href="#/pages/growth/growth-review">Growth Review</a> — Identify performance issues and generate candidates</li>
+  <li><a href="#/pages/growth/failure-clustering">Failure Clustering</a> — Deep-dive into loss patterns that trigger shadow strategies</li>
+  <li><a href="#/pages/strategy/backtest-simulation">Backtest &amp; Simulation</a> — Details on the backtest and paper trading pipeline steps</li>
+  <li><a href="#/pages/execution/execution-center">Execution Center</a> — Trade execution after small-size live deployment</li>
+  <li><a href="#/walkthroughs/improve-strategy">Walkthrough: Iterative Strategy Improvement</a> — The full optimization flow</li>
+</ul>

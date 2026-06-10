@@ -1,0 +1,105 @@
+<h1>增长回顾</h1>
+<p class="chapter-meta">页面 · 成长 · 5 分钟</p>
+
+<blockquote class="lede">每周审视策略表现：哪些策略在赚钱，哪些在亏钱，以及下一步该优化什么。</blockquote>
+
+<h2>TL;DR</h2>
+<p>增长回顾页面是策略绩效的中央仪表盘。你可以运行日报或周报，查看每笔交易的盈亏分解，评估各信号源的准确性，并分析 AI 发现的候选优化策略。页面分四个标签页：分析报告、候选策略、SHAP 特征重要性、信号有效性。选择一个时间周期（日/周/月），系统自动汇总该周期内的交易数据，计算关键指标并生成改进建议。</p>
+
+<h2>谁用 · 何时用</h2>
+<p>所有运行实盘或模拟盘的策略作者。建议每周至少打开一次增长回顾，评估策略表现。当发现策略连续亏损或收益率下降时，从这里开始诊断。如果只是快速查看当日表现，选择"日"周期即可看到最新数据。</p>
+
+<h2>页面解剖</h2>
+<svg class="diagram" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="320" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- Header area -->
+  <text x="16" y="28" fill="#e8eaee" font-family="monospace" font-size="14" font-weight="bold">增长回顾</text>
+  <text x="16" y="44" fill="#9ca0a8" font-family="monospace" font-size="9">● 在线 · 策略绩效诊断</text>
+
+  <!-- Period selector -->
+  <rect x="380" y="14" width="40" height="22" fill="rgba(0,255,157,0.08)" rx="4"/>
+  <text x="400" y="30" fill="#00ff9d" font-family="monospace" font-size="9" text-anchor="middle">周</text>
+  <rect x="424" y="14" width="40" height="22" fill="rgba(255,255,255,0.03)" rx="4"/>
+  <text x="444" y="30" fill="#9ca0a8" font-family="monospace" font-size="9" text-anchor="middle">月</text>
+
+  <!-- Tab bar -->
+  <rect x="12" y="56" width="576" height="28" fill="rgba(255,255,255,0.03)" rx="4"/>
+  <rect x="12" y="56" width="100" height="28" fill="rgba(0,255,157,0.08)" rx="4"/>
+  <text x="62" y="74" fill="#00ff9d" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">① 分析报告</text>
+
+  <!-- ① Reports area -->
+  <rect x="12" y="92" width="576" height="100" fill="rgba(255,255,255,0.03)" rx="6" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="20" y="112" fill="#00ff9d" font-family="monospace" font-size="10" font-weight="bold">$ 分析报告</text>
+
+  <!-- Report card 1 -->
+  <rect x="16" y="122" width="560" height="60" fill="rgba(255,255,255,0.02)" rx="4"/>
+  <rect x="22" y="130" width="60" height="16" fill="rgba(0,255,157,0.12)" rx="3"/>
+  <text x="52" y="142" fill="#00ff9d" font-family="monospace" font-size="8" text-anchor="middle">周报</text>
+  <text x="88" y="142" fill="#5e636d" font-family="monospace" font-size="8">已审查策略: 5 · 发现候选: 2</text>
+  <text x="22" y="160" fill="#9ca0a8" font-family="monospace" font-size="8">日期: 2026-06-08 · 最佳策略: MeanReversionV3</text>
+  <rect x="490" y="130" width="60" height="16" fill="rgba(0,255,157,0.1)" rx="3"/>
+  <text x="520" y="142" fill="#00ff9d" font-family="monospace" font-size="8" text-anchor="middle">已完成</text>
+
+  <!-- ② KPI summary -->
+  <rect x="12" y="200" width="576" height="112" fill="rgba(255,255,255,0.03)" rx="6" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="20" y="220" fill="#f5c542" font-family="monospace" font-size="10" font-weight="bold">关键指标摘要</text>
+
+  <rect x="16" y="232" width="130" height="36" fill="rgba(255,255,255,0.02)" rx="4"/>
+  <text x="81" y="248" fill="#00ff9d" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">+8.32%</text>
+  <text x="81" y="262" fill="#9ca0a8" font-family="monospace" font-size="7" text-anchor="middle">总收益率</text>
+
+  <rect x="152" y="232" width="130" height="36" fill="rgba(255,255,255,0.02)" rx="4"/>
+  <text x="217" y="248" fill="#00ff9d" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">64.7%</text>
+  <text x="217" y="262" fill="#9ca0a8" font-family="monospace" font-size="7" text-anchor="middle">胜率</text>
+
+  <rect x="288" y="232" width="130" height="36" fill="rgba(255,255,255,0.02)" rx="4"/>
+  <text x="353" y="248" fill="#f5c542" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">1.42</text>
+  <text x="353" y="262" fill="#9ca0a8" font-family="monospace" font-size="7" text-anchor="middle">Sharpe</text>
+
+  <rect x="424" y="232" width="130" height="36" fill="rgba(255,255,255,0.02)" rx="4"/>
+  <text x="489" y="248" fill="#ff5470" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">-5.12%</text>
+  <text x="489" y="262" fill="#9ca0a8" font-family="monospace" font-size="7" text-anchor="middle">最大回撤</text>
+
+  <!-- Callouts -->
+  <circle cx="8" cy="66" r="7" fill="#00ff9d" opacity="0.9"/>
+  <text x="8" y="70" fill="#000" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">①</text>
+  <circle cx="8" cy="210" r="7" fill="#f5c542" opacity="0.9"/>
+  <text x="8" y="214" fill="#000" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">②</text>
+  <circle cx="8" y="280" cy="280" r="7" fill="#50b4ff" opacity="0.9"/>
+  <text x="8" y="284" fill="#000" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">③</text>
+</svg>
+
+<ol>
+  <li><strong>① 分析报告列表</strong> — 显示已生成的日报/周报/绩效报告卡片。每张卡片包含报告类型、时间、摘要预览（已审查策略数、发现候选数、最佳策略等）和运行状态。点击"运行日报"按钮生成新的分析报告。</li>
+  <li><strong>② 关键指标摘要</strong> — 每份报告展开后显示核心绩效指标：总收益率、胜率、夏普比率、最大回撤。绿色表示良好，黄色为警戒，红色为风险。各策略的盈亏贡献一目了然。</li>
+  <li><strong>③ 发现与建议</strong> — 报告底部列出 AI 分析发现的问题和改进建议。每条发现附带严重等级，建议可直接生成候选策略进行后续优化。</li>
+</ol>
+
+<h2>关键指标怎么读</h2>
+<ul>
+  <li><strong>总收益率 (Total Return)</strong> — 选定周期内的总盈利百分比。正值绿色，负值红色。查看单个策略的收益率分解，找出拖累整体表现的问题策略。</li>
+  <li><strong>夏普比率 (Sharpe Ratio)</strong> — 风险调整后收益。≥1.5 优秀（绿色），1.0-1.5 可接受（黄色），&lt;1.0 偏低。夏普下降趋势说明策略的风险回报特征在恶化。</li>
+  <li><strong>胜率 (Win Rate)</strong> — 盈利交易占比。≥50% 绿色。结合盈亏比一起看 — 胜率低但盈亏比高的策略可能仍然盈利。</li>
+  <li><strong>最大回撤 (Max Drawdown)</strong> — 周期内从峰值到谷底的最大跌幅。总是红色。突然扩大的回撤值得警惕。</li>
+  <li><strong>信号准确率 (Signal Accuracy)</strong> — 在信号有效性标签页中，按信号源（AI Research、技术指标、KOL 等）列出准确率。准确率 &gt;65% 绿色，50-65% 黄色，&lt;50% 红色。</li>
+</ul>
+
+<h2>常见操作 · 一步步</h2>
+<ol>
+  <li><strong>运行日报/周报</strong> — 在分析报告标签页点击"运行日报"按钮。系统自动拉取选定周期内所有已关闭交易，计算指标并生成报告。约几秒后新报告出现在列表顶部。</li>
+  <li><strong>选择时间周期</strong> — 点击顶部周期选择器（日/周/月），切换视图范围。不同周期的指标会重新计算，适合观察策略在不同时间尺度上的表现。</li>
+  <li><strong>查看候选策略</strong> — 切换到"候选策略"标签页。AI 从绩效报告中提炼出的改进建议以策略 DSL 形式呈现。每条候选附带置信度评分和 DSL 预览。点击"回测"验证，或"确认"将其转为正式策略版本。</li>
+  <li><strong>分析 SHAP 特征重要性</strong> — 在 SHAP 标签页中查看影响策略决策的关键因素排名。条形越长表示该特征对最终信号影响越大。了解哪些市场条件（如波动率、成交量、支撑/阻力距离）在驱动你的交易信号。</li>
+</ol>
+
+<h2>幕后</h2>
+<p>点击"运行日报"后，前端调用 GrowthService，服务从 ExecutionLedger 读取指定时间段内所有 status=closed 的交易记录。trade_analyzer 计算各项指标（收益率、胜率、夏普、回撤等），report_builder 生成发现和改进建议。候选策略由 candidate_generator 基于报告中的弱点和改进方向生成 DSL 补丁。SHAP 分析在后端通过预先计算的特征重要性模型完成，结果缓存在 Redis 中。所有报告和候选策略持久化到数据库，供后续查看和确认。</p>
+
+<h2>相关</h2>
+<ul>
+  <li><a href="#/pages/growth/failure-clustering">失败聚类</a> — 深入分析亏损交易模式</li>
+  <li><a href="#/pages/growth/strategy-optimization">策略优化</a> — 将候选策略投入安全工作流</li>
+  <li><a href="#/walkthroughs/improve-strategy">情景 · 迭代优化策略</a> — 完整的优化流程</li>
+  <li><a href="#/pages/ai-research/signal-center">信号中心</a> — 查看信号源的原始输出</li>
+</ul>

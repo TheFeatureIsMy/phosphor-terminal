@@ -1,0 +1,127 @@
+<h1>策略优化</h1>
+<p class="chapter-meta">页面 · 成长 · 5 分钟</p>
+
+<blockquote class="lede">将 AI 发现的改进建议转化为可执行的策略版本，通过安全工作流逐步推向实盘。</blockquote>
+
+<h2>TL;DR</h2>
+<p>策略优化页面管理从"AI 建议"到"实盘小仓"的完整升级流水线。当增长回顾和失败聚类发现策略的薄弱环节后，系统生成候选策略（DSL 补丁形式）。这些候选需要经过七步安全工作流：AI 建议 → 草稿 → DSL 校验 → 回测 → 模拟盘 → 人工审批 → 小仓实盘。页面按待审核、已确认、已拒绝三个状态标签页组织候选策略。每一步都不可跳过，确保每次改动都经过充分验证。</p>
+
+<h2>谁用 · 何时用</h2>
+<p>需要迭代优化策略的进阶用户。当你从增长回顾或失败聚类中看到改进方向后，进入策略优化页面管理整个升级流程。也适合定期（如每周）检查待审核的候选策略，决定是否批准或拒绝 AI 生成的改进建议。新手可以先阅读和了解流程，但不要随意确认候选策略 — 确保每步验证都已完成。</p>
+
+<h2>页面解剖</h2>
+<svg class="diagram" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="320" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- Header -->
+  <text x="16" y="28" fill="#e8eaee" font-family="monospace" font-size="14" font-weight="bold">策略优化</text>
+  <text x="16" y="44" fill="#9ca0a8" font-family="monospace" font-size="9">● 在线 · AI 驱动的策略改进建议</text>
+
+  <!-- Summary cards -->
+  <rect x="12" y="54" width="135" height="40" fill="rgba(255,255,255,0.03)" rx="6" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="80" y="70" fill="#f5c542" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">3</text>
+  <text x="80" y="84" fill="#5e636d" font-family="monospace" font-size="7" text-anchor="middle">待审核</text>
+
+  <rect x="153" y="54" width="135" height="40" fill="rgba(255,255,255,0.03)" rx="6" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="221" y="70" fill="#00ff9d" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">1</text>
+  <text x="221" y="84" fill="#5e636d" font-family="monospace" font-size="7" text-anchor="middle">已确认</text>
+
+  <rect x="294" y="54" width="135" height="40" fill="rgba(255,255,255,0.03)" rx="6" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="362" y="70" fill="#ff5470" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">2</text>
+  <text x="362" y="84" fill="#5e636d" font-family="monospace" font-size="7" text-anchor="middle">已拒绝</text>
+
+  <!-- Safety workflow pipeline -->
+  <rect x="12" y="100" width="576" height="130" fill="rgba(255,255,255,0.03)" rx="6" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="20" y="120" fill="#00ff9d" font-family="monospace" font-size="10" font-weight="bold">安全工作流 — 7 步流水线</text>
+
+  <!-- Pipeline steps -->
+  <!-- Step 1 -->
+  <circle cx="50" cy="160" r="14" fill="rgba(128,90,213,0.15)" stroke="rgba(128,90,213,0.4)" stroke-width="1.5"/>
+  <text x="50" y="164" fill="#805ad5" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">①</text>
+  <text x="50" y="190" fill="#9ca0a8" font-family="monospace" font-size="7" text-anchor="middle">AI 建议</text>
+
+  <line x1="64" y1="160" x2="94" y2="160" stroke="rgba(128,90,213,0.2)" stroke-width="1.5"/>
+
+  <!-- Step 2 -->
+  <circle cx="110" cy="160" r="14" fill="rgba(80,180,255,0.15)" stroke="rgba(80,180,255,0.4)" stroke-width="1.5"/>
+  <text x="110" y="164" fill="#50b4ff" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">②</text>
+  <text x="110" y="190" fill="#9ca0a8" font-family="monospace" font-size="7" text-anchor="middle">草稿</text>
+
+  <line x1="124" y1="160" x2="154" y2="160" stroke="rgba(80,180,255,0.2)" stroke-width="1.5"/>
+
+  <!-- Step 3 -->
+  <circle cx="170" cy="160" r="14" fill="rgba(0,188,212,0.15)" stroke="rgba(0,188,212,0.4)" stroke-width="1.5"/>
+  <text x="170" y="164" fill="#00bcd4" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">③</text>
+  <text x="170" y="190" fill="#9ca0a8" font-family="monospace" font-size="7" text-anchor="middle">DSL 校验</text>
+
+  <line x1="184" y1="160" x2="214" y2="160" stroke="rgba(0,188,212,0.2)" stroke-width="1.5"/>
+
+  <!-- Step 4 -->
+  <circle cx="230" cy="160" r="14" fill="rgba(245,197,66,0.15)" stroke="rgba(245,197,66,0.4)" stroke-width="1.5"/>
+  <text x="230" y="164" fill="#f5c542" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">④</text>
+  <text x="230" y="190" fill="#9ca0a8" font-family="monospace" font-size="7" text-anchor="middle">回测</text>
+
+  <line x1="244" y1="160" x2="274" y2="160" stroke="rgba(245,197,66,0.2)" stroke-width="1.5"/>
+
+  <!-- Step 5 -->
+  <circle cx="290" cy="160" r="14" fill="rgba(0,255,157,0.15)" stroke="rgba(0,255,157,0.4)" stroke-width="1.5"/>
+  <text x="290" y="164" fill="#00ff9d" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">⑤</text>
+  <text x="290" y="190" fill="#9ca0a8" font-family="monospace" font-size="7" text-anchor="middle">模拟盘</text>
+
+  <line x1="304" y1="160" x2="334" y2="160" stroke="rgba(0,255,157,0.2)" stroke-width="1.5"/>
+
+  <!-- Step 6 -->
+  <circle cx="350" cy="160" r="14" fill="rgba(255,155,61,0.15)" stroke="rgba(255,155,61,0.4)" stroke-width="1.5"/>
+  <text x="350" y="164" fill="#ff9b3d" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">⑥</text>
+  <text x="350" y="190" fill="#9ca0a8" font-family="monospace" font-size="7" text-anchor="middle">人工审批</text>
+
+  <line x1="364" y1="160" x2="394" y2="160" stroke="rgba(255,155,61,0.2)" stroke-width="1.5"/>
+
+  <!-- Step 7 -->
+  <circle cx="410" cy="160" r="14" fill="rgba(0,200,83,0.15)" stroke="rgba(0,200,83,0.4)" stroke-width="1.5"/>
+  <text x="410" y="164" fill="#00c853" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">⑦</text>
+  <text x="410" y="190" fill="#9ca0a8" font-family="monospace" font-size="7" text-anchor="middle">小仓实盘</text>
+
+  <!-- Warning banner -->
+  <rect x="16" y="206" width="568" height="20" fill="rgba(245,197,66,0.06)" rx="3" stroke="rgba(245,197,66,0.12)" stroke-width="1"/>
+  <text x="22" y="220" fill="#f5c542" font-family="monospace" font-size="7">▲ 候选策略必须经过完整流程审核，不可跳过任何步骤直接部署至实盘</text>
+
+  <!-- Callouts -->
+  <circle cx="8" cy="110" r="7" fill="#00ff9d" opacity="0.9"/>
+  <text x="8" y="114" fill="#000" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">①</text>
+  <circle cx="8" cy="240" r="7" fill="#50b4ff" opacity="0.9"/>
+  <text x="8" y="244" fill="#000" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">②</text>
+</svg>
+
+<ol>
+  <li><strong>① 安全工作流流水线</strong> — 七步强制流程，从 AI 建议到小仓实盘。每一步有独立的状态指示（待处理/通过/失败/运行中）。箭头连接器表示顺序依赖，不可跳跃。系统会在第一步（AI 建议）自动生成候选策略的 DSL 补丁；后续步骤需要你手动触发或等待自动验证完成。</li>
+  <li><strong>② 候选策略列表</strong> — 按状态分三个标签页：待审核（等待你决策的候选）、已确认（已批准并可进一步操作的候选）、已拒绝（被驳回的候选归档）。每张卡片显示策略名称、交易标的、置信度评分、来源类型（AI 生成或手动）、回测指标（胜率、Sharpe 比率）和 AI 推理说明。待审核卡片下方有"回测"、"拒绝"、"确认"三个操作按钮。</li>
+</ol>
+
+<h2>关键指标怎么读</h2>
+<ul>
+  <li><strong>置信度 (Confidence)</strong> — AI 对该候选策略效果的信心评分。≥70% 绿色，40-70% 黄色（琥珀色），&lt;40% 红色。置信度仅供参考 — 即使置信度高，也必须走完完整安全工作流。</li>
+  <li><strong>胜率 / Sharpe 比率</strong> — 候选策略在回测中的表现。不是最终保证 — 实际表现可能因市场变化而有差异。使用这些指标在候选之间做初步筛选。</li>
+  <li><strong>AI 推理说明</strong> — 候选卡片底部的紫色区域，解释 AI 为什么提出这个改动。阅读推理说明有助于理解改动的逻辑，在人工审批阶段做出更明智的决定。</li>
+  <li><strong>流水线状态</strong> — 每个候选策略在安全工作流中的当前阶段。状态标签（待审核/回测中/已确认等）用不同颜色标识，方便快速筛选和处理。</li>
+</ul>
+
+<h2>常见操作 · 一步步</h2>
+<ol>
+  <li><strong>审核候选策略</strong> — 在"待审核"标签页中浏览 AI 生成的候选。阅读策略名称、DSL 预览和 AI 推理说明。如果改动看起来合理，点击"确认"进入安全工作流；如果不认可，点击"拒绝"将其归档。</li>
+  <li><strong>运行回测验证</strong> — 在候选卡片上点击"回测"按钮。系统使用候选的 DSL 配置在指定时间范围内运行回测。结果（胜率、Sharpe、收益率等）会更新在卡片上，帮助你判断是否值得继续推进。</li>
+  <li><strong>确认候选 → 新策略版本</strong> — 点击"确认"后，系统将候选 DSL 创建为当前策略的新版本（版本号自动递增）。候选状态变为"已确认"，新版本进入安全工作流的下一步（DSL 校验）。</li>
+  <li><strong>查看已确认/已拒绝历史</strong> — 切换到对应的标签页查看历史记录。已确认的候选可以追溯到其来源增长报告；已拒绝的候选保留拒绝时的上下文，方便日后参考。</li>
+</ol>
+
+<h2>幕后</h2>
+<p>候选策略由 GrowthService.generate_candidate 创建。该方法读取增长报告的指标和发现，调用 candidate_generator 生成 DSL 补丁，然后创建 StrategyCandidate 记录。确认候选时，confirm_candidate 使用 StrategyRepository 创建新的 StrategyVersion（version_no 递增），将候选 DSL 设为新版本的 rule_dsl。DSLHashService 计算哈希以确保完整性。新版本初始状态为 draft，随后进入安全工作流。安全工作流的每一步（DSL 校验 → 回测 → 模拟盘 → 人工审批）由各自的独立服务处理，每步通过后自动推进到下一步。人工审批是唯一需要人类操作的步骤 — 在此之前所有步骤都可以自动化运行。</p>
+
+<h2>相关</h2>
+<ul>
+  <li><a href="#/pages/growth/growth-review">增长回顾</a> — 发现绩效问题，生成候选策略</li>
+  <li><a href="#/pages/growth/failure-clustering">失败聚类</a> — 深入分析亏损模式，触发影子策略生成</li>
+  <li><a href="#/pages/strategy/backtest-simulation">回测与模拟</a> — 安全工作流中的回测和模拟盘步骤详情</li>
+  <li><a href="#/pages/execution/execution-center">执行中心</a> — 小仓实盘后的交易执行</li>
+  <li><a href="#/walkthroughs/improve-strategy">情景 · 迭代优化策略</a> — 完整的优化流程</li>
+</ul>

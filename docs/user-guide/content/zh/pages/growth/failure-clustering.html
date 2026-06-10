@@ -1,0 +1,113 @@
+<h1>失败聚类</h1>
+<p class="chapter-meta">页面 · 成长 · 5 分钟</p>
+
+<blockquote class="lede">把相似的亏损交易归为一类，找出模式背后的共同原因，精准定位策略的薄弱环节。</blockquote>
+
+<h2>TL;DR</h2>
+<p>失败聚类页面将你的亏损交易按特征自动分组，揭示隐藏的模式：比如"所有亏损都发生在低流动性时段"或"止损距离过近导致被频繁扫出"。页面分为三个标签页：失败聚类（展示聚类卡片，含交易数、总亏损、严重等级和建议修复）、Regime 矩阵（市场体制 x 失败类型的交叉热度表）、拒单原因（交易被系统拒绝的统计）。每个聚类卡片附带一条 AI 建议的修复方案，可直接生成影子策略。</p>
+
+<h2>谁用 · 何时用</h2>
+<p>所有希望系统性改进策略的交易者。当你从增长回顾中发现某策略持续亏损，或直觉上觉得亏损有共同特征时，打开失败聚类页面。也适合定期（例如每周）检查一次，确保没有新的失败模式悄悄形成。聚类数量越多说明亏损越分散，需要关注；如果聚类数量少但单个聚类亏损大，则针对性修复效果最好。</p>
+
+<h2>页面解剖</h2>
+<svg class="diagram" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="320" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- Header -->
+  <text x="16" y="28" fill="#e8eaee" font-family="monospace" font-size="14" font-weight="bold">失败聚类</text>
+  <text x="16" y="44" fill="#9ca0a8" font-family="monospace" font-size="9">● 在线 · 发现策略失败模式</text>
+
+  <!-- Summary cards -->
+  <rect x="12" y="54" width="135" height="40" fill="rgba(255,255,255,0.03)" rx="6" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="80" y="70" fill="#ff9b3d" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">47</text>
+  <text x="80" y="84" fill="#5e636d" font-family="monospace" font-size="7" text-anchor="middle">总亏损交易</text>
+
+  <rect x="153" y="54" width="135" height="40" fill="rgba(255,255,255,0.03)" rx="6" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="221" y="70" fill="#ff5470" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">-$1,280</text>
+  <text x="221" y="84" fill="#5e636d" font-family="monospace" font-size="7" text-anchor="middle">总亏损金额</text>
+
+  <rect x="294" y="54" width="135" height="40" fill="rgba(255,255,255,0.03)" rx="6" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="362" y="70" fill="#f5c542" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">低流动性</text>
+  <text x="362" y="84" fill="#5e636d" font-family="monospace" font-size="7" text-anchor="middle">Top 聚类</text>
+
+  <rect x="435" y="54" width="135" height="40" fill="rgba(255,255,255,0.03)" rx="6" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="503" y="70" fill="#50b4ff" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">3</text>
+  <text x="503" y="84" fill="#5e636d" font-family="monospace" font-size="7" text-anchor="middle">聚类数量</text>
+
+  <!-- Tab bar -->
+  <rect x="12" y="100" width="576" height="28" fill="rgba(255,255,255,0.03)" rx="4"/>
+  <rect x="12" y="100" width="100" height="28" fill="rgba(0,255,157,0.08)" rx="4"/>
+  <text x="62" y="118" fill="#00ff9d" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">① 失败聚类</text>
+
+  <!-- Scatter / cluster diagram -->
+  <rect x="12" y="136" width="576" height="176" fill="rgba(255,255,255,0.03)" rx="6" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="20" y="156" fill="#50b4ff" font-family="monospace" font-size="10" font-weight="bold">聚类散点图</text>
+
+  <!-- Cluster A (low liquidity) — left cluster -->
+  <circle cx="110" cy="210" r="8" fill="rgba(255,84,112,0.25)" stroke="#ff5470" stroke-width="1"/>
+  <circle cx="125" cy="200" r="6" fill="rgba(255,84,112,0.2)" stroke="#ff5470" stroke-width="0.8"/>
+  <circle cx="95" cy="220" r="7" fill="rgba(255,84,112,0.2)" stroke="#ff5470" stroke-width="0.8"/>
+  <circle cx="130" cy="215" r="5" fill="rgba(255,84,112,0.15)" stroke="#ff5470" stroke-width="0.5"/>
+  <circle cx="105" cy="195" r="5" fill="rgba(255,84,112,0.15)" stroke="#ff5470" stroke-width="0.5"/>
+  <ellipse cx="113" cy="208" rx="35" ry="28" fill="none" stroke="#ff5470" stroke-width="1.5" stroke-dasharray="3,2"/>
+  <text x="113" y="248" fill="#ff5470" font-family="monospace" font-size="8" text-anchor="middle">低流动性时段</text>
+
+  <!-- Cluster B (stop too tight) — right cluster -->
+  <circle cx="380" cy="190" r="9" fill="rgba(255,155,61,0.25)" stroke="#ff9b3d" stroke-width="1"/>
+  <circle cx="400" cy="205" r="7" fill="rgba(255,155,61,0.2)" stroke="#ff9b3d" stroke-width="0.8"/>
+  <circle cx="370" cy="215" r="6" fill="rgba(255,155,61,0.2)" stroke="#ff9b3d" stroke-width="0.8"/>
+  <circle cx="395" cy="185" r="5" fill="rgba(255,155,61,0.15)" stroke="#ff9b3d" stroke-width="0.5"/>
+  <circle cx="410" cy="195" r="4" fill="rgba(255,155,61,0.15)" stroke="#ff9b3d" stroke-width="0.5"/>
+  <ellipse cx="390" cy="198" rx="35" ry="28" fill="none" stroke="#ff9b3d" stroke-width="1.5" stroke-dasharray="3,2"/>
+  <text x="390" y="248" fill="#ff9b3d" font-family="monospace" font-size="8" text-anchor="middle">止损距离过近</text>
+
+  <!-- Cluster C (news shock) — bottom-center -->
+  <circle cx="250" cy="250" r="7" fill="rgba(245,197,66,0.25)" stroke="#f5c542" stroke-width="1"/>
+  <circle cx="265" cy="240" r="5" fill="rgba(245,197,66,0.2)" stroke="#f5c542" stroke-width="0.8"/>
+  <circle cx="240" cy="245" r="4" fill="rgba(245,197,66,0.15)" stroke="#f5c542" stroke-width="0.5"/>
+  <ellipse cx="252" cy="245" rx="30" ry="20" fill="none" stroke="#f5c542" stroke-width="1.5" stroke-dasharray="3,2"/>
+  <text x="252" y="275" fill="#f5c542" font-family="monospace" font-size="8" text-anchor="middle">突发消息冲击</text>
+
+  <!-- Axes labels -->
+  <text x="20" y="298" fill="#5e636d" font-family="monospace" font-size="7">亏损金额 →</text>
+  <text x="8" y="180" fill="#5e636d" font-family="monospace" font-size="7" transform="rotate(-90,8,180)">频率 →</text>
+
+  <!-- Callouts -->
+  <circle cx="8" cy="110" r="7" fill="#00ff9d" opacity="0.9"/>
+  <text x="8" y="114" fill="#000" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">①</text>
+  <circle cx="8" cy="146" r="7" fill="#50b4ff" opacity="0.9"/>
+  <text x="8" y="150" fill="#000" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">②</text>
+</svg>
+
+<ol>
+  <li><strong>① 聚类卡片列表</strong> — 每个聚类代表一类失败模式，包含标签、严重等级（严重/高/中/低）、交易数、总亏损和平均亏损百分比。底部显示亏损量条形图（最严重的聚类占满宽度）和 AI 建议的修复方案。点击"示例"标签可查看该聚类中的代表性交易 ID。</li>
+  <li><strong>② Regime 矩阵</strong> — 市场体制（趋势/震荡/高波动/恐慌等）与失败类型的交叉热度表。颜色越深表示亏损越大。快速判断：你的策略在哪种市场条件下最容易亏损？例如在"高波动"体制下频繁出现"止损被扫"问题，说明止损策略需要调整。</li>
+  <li><strong>③ 拒单原因统计</strong> — 按原因列出交易被系统拒绝的频次。常见原因包括：日亏损上限触发、快照过期、AI 缓存过期、持仓上限、波动率过高。高频拒单可能说明策略风控参数或基础设施配置需要调整。</li>
+</ol>
+
+<h2>关键指标怎么读</h2>
+<ul>
+  <li><strong>聚类严重等级</strong> — 基于亏损金额和交易数综合评定。严重（Critical）聚类需要立即关注；高（High）应在下次优化中处理；中（Medium）和低（Low）可监控但无需紧急行动。</li>
+  <li><strong>聚类亏损占比</strong> — 每个聚类亏损占最大聚类亏损的比例（条形图宽度）。聚焦占比最高的 1-2 个聚类，修复效果最明显。</li>
+  <li><strong>Regime 矩阵颜色深度</strong> — 颜色越深表示该体制+失败类型的组合亏损越大。如果某个交叉格颜色显著深于其他，这就是优先修复方向。</li>
+  <li><strong>拒单频次</strong> — 高频拒单可能说明策略过于激进或系统配置有问题。例如"日亏损上限"频繁触发说明风险预算不合理；"快照过期"频繁出现则需检查网络/Redis 稳定性。</li>
+</ul>
+
+<h2>常见操作 · 一步步</h2>
+<ol>
+  <li><strong>查看聚类详情</strong> — 在"失败聚类"标签页中，滚动浏览各聚类卡片。关注严重等级为"高"或"严重"的聚类。阅读 AI 建议的修复方案，了解该模式产生的原因和可能的改进方向。</li>
+  <li><strong>分析 Regime 矩阵</strong> — 切换到"Regime 矩阵"标签页。查看哪些市场体制与哪些失败类型相关。例如，如果在"高波动 + 止损被扫"格中看到深色，说明策略在高波动市场中的止损设置需要放宽。</li>
+  <li><strong>生成影子策略</strong> — 在聚类卡片底部，点击"生成影子策略"（如果可用）。系统自动创建一个包含 DSL 补丁的影子策略草稿，用于修复该聚类对应的失败模式。影子策略需经过校验、回测、模拟盘等完整流程才能上线。</li>
+  <li><strong>检查拒单原因</strong> — 切换到"拒单原因"标签页。查看各原因的发生频次。如果某个原因频次异常高，考虑调整相应的风控参数或排查基础设施问题。</li>
+</ol>
+
+<h2>幕后</h2>
+<p>失败聚类由 failure_clustering 服务在每次增长回顾运行时触发。系统从 ExecutionLedger 读取所有亏损交易（profit_pct < 0），通过标签系统将相似亏损归入同一聚类。标签系统分析多个维度：交易时间（低流动性时段）、市场体制（高波动/震荡）、止损距离、持仓时间、AI 缓存状态等。聚类结果存入 failure_clusters 表，旧聚类自动归档。影子策略生成器（shadow_strategy_generator）读取活跃聚类，结合目标策略的最新 DSL 版本，由 DSLPatchService 生成 JSON Patch 补丁，最终创建 ShadowStrategyDraft 记录。整个流程无需人工干预，聚类结果实时更新。</p>
+
+<h2>相关</h2>
+<ul>
+  <li><a href="#/pages/growth/growth-review">增长回顾</a> — 发现绩效问题后进入失败聚类深入分析</li>
+  <li><a href="#/pages/growth/strategy-optimization">策略优化</a> — 将影子策略投入安全工作流</li>
+  <li><a href="#/concepts/08-risk-basics">风险管理基础</a> — 理解止损、回撤和风控参数</li>
+  <li><a href="#/walkthroughs/improve-strategy">情景 · 迭代优化策略</a> — 完整的优化流程</li>
+</ul>

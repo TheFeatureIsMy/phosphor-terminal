@@ -1,0 +1,105 @@
+<h1>Growth Review</h1>
+<p class="chapter-meta">Page · Growth · 5 min</p>
+
+<blockquote class="lede">Review strategy performance each week: which strategies are winning, which are losing, and what to optimize next.</blockquote>
+
+<h2>TL;DR</h2>
+<p>The Growth Review page is the central dashboard for strategy performance. Run daily or weekly reviews, decompose P&amp;L by individual strategy, evaluate signal source accuracy, and review AI-discovered optimization candidates. The page has four tabs: Analysis Reports, Candidate Strategies, SHAP Feature Importance, and Signal Validity. Select a time period (day/week/month) and the system aggregates trades from that window, computes key metrics, and generates improvement suggestions.</p>
+
+<h2>Who uses it & when</h2>
+<p>Every strategy author running live or paper trades. Open the Growth Review at least once a week to assess performance. Start here when you notice a losing streak or declining returns. For a quick daily check, select the "day" period to see the latest snapshot.</p>
+
+<h2>Page Anatomy</h2>
+<svg class="diagram" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="320" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- Header area -->
+  <text x="16" y="28" fill="#e8eaee" font-family="monospace" font-size="14" font-weight="bold">Growth Review</text>
+  <text x="16" y="44" fill="#9ca0a8" font-family="monospace" font-size="9">● Online · Strategy Performance Diagnostics</text>
+
+  <!-- Period selector -->
+  <rect x="380" y="14" width="40" height="22" fill="rgba(0,255,157,0.08)" rx="4"/>
+  <text x="400" y="30" fill="#00ff9d" font-family="monospace" font-size="9" text-anchor="middle">Week</text>
+  <rect x="424" y="14" width="40" height="22" fill="rgba(255,255,255,0.03)" rx="4"/>
+  <text x="444" y="30" fill="#9ca0a8" font-family="monospace" font-size="9" text-anchor="middle">Month</text>
+
+  <!-- Tab bar -->
+  <rect x="12" y="56" width="576" height="28" fill="rgba(255,255,255,0.03)" rx="4"/>
+  <rect x="12" y="56" width="110" height="28" fill="rgba(0,255,157,0.08)" rx="4"/>
+  <text x="67" y="74" fill="#00ff9d" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">① Analysis Reports</text>
+
+  <!-- ① Reports area -->
+  <rect x="12" y="92" width="576" height="100" fill="rgba(255,255,255,0.03)" rx="6" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="20" y="112" fill="#00ff9d" font-family="monospace" font-size="10" font-weight="bold">$ Analysis Reports</text>
+
+  <!-- Report card 1 -->
+  <rect x="16" y="122" width="560" height="60" fill="rgba(255,255,255,0.02)" rx="4"/>
+  <rect x="22" y="130" width="60" height="16" fill="rgba(0,255,157,0.12)" rx="3"/>
+  <text x="52" y="142" fill="#00ff9d" font-family="monospace" font-size="8" text-anchor="middle">Weekly</text>
+  <text x="88" y="142" fill="#5e636d" font-family="monospace" font-size="8">Reviewed: 5 · Candidates: 2</text>
+  <text x="22" y="160" fill="#9ca0a8" font-family="monospace" font-size="8">Date: 2026-06-08 · Top: MeanReversionV3</text>
+  <rect x="490" y="130" width="60" height="16" fill="rgba(0,255,157,0.1)" rx="3"/>
+  <text x="520" y="142" fill="#00ff9d" font-family="monospace" font-size="8" text-anchor="middle">Completed</text>
+
+  <!-- ② KPI summary -->
+  <rect x="12" y="200" width="576" height="112" fill="rgba(255,255,255,0.03)" rx="6" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="20" y="220" fill="#f5c542" font-family="monospace" font-size="10" font-weight="bold">Key Metric Summary</text>
+
+  <rect x="16" y="232" width="130" height="36" fill="rgba(255,255,255,0.02)" rx="4"/>
+  <text x="81" y="248" fill="#00ff9d" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">+8.32%</text>
+  <text x="81" y="262" fill="#9ca0a8" font-family="monospace" font-size="7" text-anchor="middle">Total Return</text>
+
+  <rect x="152" y="232" width="130" height="36" fill="rgba(255,255,255,0.02)" rx="4"/>
+  <text x="217" y="248" fill="#00ff9d" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">64.7%</text>
+  <text x="217" y="262" fill="#9ca0a8" font-family="monospace" font-size="7" text-anchor="middle">Win Rate</text>
+
+  <rect x="288" y="232" width="130" height="36" fill="rgba(255,255,255,0.02)" rx="4"/>
+  <text x="353" y="248" fill="#f5c542" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">1.42</text>
+  <text x="353" y="262" fill="#9ca0a8" font-family="monospace" font-size="7" text-anchor="middle">Sharpe</text>
+
+  <rect x="424" y="232" width="130" height="36" fill="rgba(255,255,255,0.02)" rx="4"/>
+  <text x="489" y="248" fill="#ff5470" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">-5.12%</text>
+  <text x="489" y="262" fill="#9ca0a8" font-family="monospace" font-size="7" text-anchor="middle">Max DD</text>
+
+  <!-- Callouts -->
+  <circle cx="8" cy="66" r="7" fill="#00ff9d" opacity="0.9"/>
+  <text x="8" y="70" fill="#000" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">①</text>
+  <circle cx="8" cy="210" r="7" fill="#f5c542" opacity="0.9"/>
+  <text x="8" y="214" fill="#000" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">②</text>
+  <circle cx="8" cy="280" r="7" fill="#50b4ff" opacity="0.9"/>
+  <text x="8" y="284" fill="#000" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">③</text>
+</svg>
+
+<ol>
+  <li><strong>① Analysis Reports List</strong> — Shows generated daily/weekly/performance report cards. Each card shows the report type, date, summary preview (strategies reviewed, candidates found, top performer), and run status. Click "Run Daily Review" to generate a new report.</li>
+  <li><strong>② Key Metric Summary</strong> — Core performance indicators per report: total return, win rate, Sharpe ratio, max drawdown. Green is good, yellow is cautionary, red signals risk. The P&amp;L contribution of each strategy is visible at a glance.</li>
+  <li><strong>③ Findings &amp; Suggestions</strong> — AI-identified issues and improvement suggestions at the bottom of each report. Each finding has a severity level; suggestions can be turned into candidate strategies for further optimization.</li>
+</ol>
+
+<h2>Reading the Key Metrics</h2>
+<ul>
+  <li><strong>Total Return</strong> — Total profit percentage over the selected period. Positive is green, negative is red. Decompose by individual strategy to find the laggards dragging overall performance.</li>
+  <li><strong>Sharpe Ratio</strong> — Risk-adjusted return. ≥1.5 is excellent (green), 1.0-1.5 is acceptable (yellow), &lt;1.0 is low. A declining Sharpe trend means the strategy's risk/reward profile is deteriorating.</li>
+  <li><strong>Win Rate</strong> — Percentage of profitable trades. ≥50% is green. Always read alongside profit factor — a low win rate with high profit factor can still be profitable.</li>
+  <li><strong>Max Drawdown</strong> — Peak-to-trough decline in the period. Always shown in red. A sudden drawdown expansion warrants attention.</li>
+  <li><strong>Signal Accuracy</strong> — In the Signal Validity tab, accuracy is broken down by source (AI Research, technical indicators, KOL, etc.). &gt;65% green, 50-65% yellow, &lt;50% red.</li>
+</ul>
+
+<h2>Common Actions, Step by Step</h2>
+<ol>
+  <li><strong>Run a daily/weekly review</strong> — In the Analysis Reports tab, click "Run Daily Review". The system fetches all closed trades in the period, computes metrics, and generates a report. A new report appears at the top of the list within seconds.</li>
+  <li><strong>Select a time period</strong> — Click the period selector (day/week/month) to switch the view. Metrics are recalculated for each window, helping you observe strategy behavior at different time scales.</li>
+  <li><strong>Review candidate strategies</strong> — Switch to the "Candidates" tab. AI-generated improvement ideas are presented as strategy DSL snippets. Each candidate shows a confidence score and DSL preview. Click "Backtest" to validate or "Confirm" to promote it to a formal strategy version.</li>
+  <li><strong>Analyze SHAP feature importance</strong> — In the SHAP tab, see which market factors most influence your strategy's decisions. Longer bars mean greater impact on the final signal. Understand which conditions (volatility, volume, support/resistance distance, etc.) are driving your trades.</li>
+</ol>
+
+<h2>Behind the Scenes</h2>
+<p>When you click "Run Daily Review," the frontend calls GrowthService, which reads all closed trades from the ExecutionLedger within the specified window. The trade_analyzer computes metrics (return, win rate, Sharpe, drawdown, etc.), and report_builder generates findings and suggestions. Candidate strategies are produced by candidate_generator, which creates DSL patches based on identified weaknesses. SHAP analysis uses pre-computed feature importance models on the backend, cached in Redis. All reports and candidates are persisted to the database for later review and confirmation.</p>
+
+<h2>See Also</h2>
+<ul>
+  <li><a href="#/pages/growth/failure-clustering">Failure Clustering</a> — Deep-dive into losing trade patterns</li>
+  <li><a href="#/pages/growth/strategy-optimization">Strategy Optimization</a> — Put candidates through the safety workflow</li>
+  <li><a href="#/walkthroughs/improve-strategy">Walkthrough: Iterative Strategy Improvement</a> — The full optimization flow</li>
+  <li><a href="#/pages/ai-research/signal-center">Signal Center</a> — Raw signal source output</li>
+</ul>

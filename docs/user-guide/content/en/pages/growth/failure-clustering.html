@@ -1,0 +1,113 @@
+<h1>Failure Clustering</h1>
+<p class="chapter-meta">Page · Growth · 5 min</p>
+
+<blockquote class="lede">Group similar losing trades together, identify the common root cause, and pinpoint your strategy's weakest link.</blockquote>
+
+<h2>TL;DR</h2>
+<p>The Failure Clustering page automatically groups your losing trades by shared characteristics, revealing hidden patterns such as "all losses occurred during low-liquidity hours" or "stop-loss was too tight and got swept repeatedly." The page has three tabs: Loss Patterns (cluster cards with trade count, total loss, severity level, and suggested fixes), Regime Matrix (market regime x failure type heat map), and Rejection Reasons (why trades were blocked by the system). Each cluster card includes an AI-suggested fix that can be turned into a shadow strategy draft.</p>
+
+<h2>Who uses it & when</h2>
+<p>Every trader who wants to systematically improve their strategies. Open this page when the Growth Review shows persistent losses for a strategy, or when you have a hunch that losses share a common cause. Also check it periodically (e.g., weekly) to catch new failure patterns early. Many small clusters suggest diffuse losses needing broad attention; a few large clusters mean targeted fixes will have the highest impact.</p>
+
+<h2>Page Anatomy</h2>
+<svg class="diagram" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="320" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <!-- Header -->
+  <text x="16" y="28" fill="#e8eaee" font-family="monospace" font-size="14" font-weight="bold">Failure Clustering</text>
+  <text x="16" y="44" fill="#9ca0a8" font-family="monospace" font-size="9">● Online · Identify Loss Patterns</text>
+
+  <!-- Summary cards -->
+  <rect x="12" y="54" width="135" height="40" fill="rgba(255,255,255,0.03)" rx="6" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="80" y="70" fill="#ff9b3d" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">47</text>
+  <text x="80" y="84" fill="#5e636d" font-family="monospace" font-size="7" text-anchor="middle">Losing Trades</text>
+
+  <rect x="153" y="54" width="135" height="40" fill="rgba(255,255,255,0.03)" rx="6" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="221" y="70" fill="#ff5470" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">-$1,280</text>
+  <text x="221" y="84" fill="#5e636d" font-family="monospace" font-size="7" text-anchor="middle">Total Loss</text>
+
+  <rect x="294" y="54" width="135" height="40" fill="rgba(255,255,255,0.03)" rx="6" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="362" y="70" fill="#f5c542" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">Low Liq.</text>
+  <text x="362" y="84" fill="#5e636d" font-family="monospace" font-size="7" text-anchor="middle">Top Cluster</text>
+
+  <rect x="435" y="54" width="135" height="40" fill="rgba(255,255,255,0.03)" rx="6" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="503" y="70" fill="#50b4ff" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">3</text>
+  <text x="503" y="84" fill="#5e636d" font-family="monospace" font-size="7" text-anchor="middle">Clusters</text>
+
+  <!-- Tab bar -->
+  <rect x="12" y="100" width="576" height="28" fill="rgba(255,255,255,0.03)" rx="4"/>
+  <rect x="12" y="100" width="110" height="28" fill="rgba(0,255,157,0.08)" rx="4"/>
+  <text x="67" y="118" fill="#00ff9d" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">① Loss Patterns</text>
+
+  <!-- Scatter / cluster diagram -->
+  <rect x="12" y="136" width="576" height="176" fill="rgba(255,255,255,0.03)" rx="6" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="20" y="156" fill="#50b4ff" font-family="monospace" font-size="10" font-weight="bold">Cluster Scatter Plot</text>
+
+  <!-- Cluster A (low liquidity) — left cluster -->
+  <circle cx="110" cy="210" r="8" fill="rgba(255,84,112,0.25)" stroke="#ff5470" stroke-width="1"/>
+  <circle cx="125" cy="200" r="6" fill="rgba(255,84,112,0.2)" stroke="#ff5470" stroke-width="0.8"/>
+  <circle cx="95" cy="220" r="7" fill="rgba(255,84,112,0.2)" stroke="#ff5470" stroke-width="0.8"/>
+  <circle cx="130" cy="215" r="5" fill="rgba(255,84,112,0.15)" stroke="#ff5470" stroke-width="0.5"/>
+  <circle cx="105" cy="195" r="5" fill="rgba(255,84,112,0.15)" stroke="#ff5470" stroke-width="0.5"/>
+  <ellipse cx="113" cy="208" rx="35" ry="28" fill="none" stroke="#ff5470" stroke-width="1.5" stroke-dasharray="3,2"/>
+  <text x="113" y="248" fill="#ff5470" font-family="monospace" font-size="8" text-anchor="middle">Low Liquidity</text>
+
+  <!-- Cluster B (stop too tight) — right cluster -->
+  <circle cx="380" cy="190" r="9" fill="rgba(255,155,61,0.25)" stroke="#ff9b3d" stroke-width="1"/>
+  <circle cx="400" cy="205" r="7" fill="rgba(255,155,61,0.2)" stroke="#ff9b3d" stroke-width="0.8"/>
+  <circle cx="370" cy="215" r="6" fill="rgba(255,155,61,0.2)" stroke="#ff9b3d" stroke-width="0.8"/>
+  <circle cx="395" cy="185" r="5" fill="rgba(255,155,61,0.15)" stroke="#ff9b3d" stroke-width="0.5"/>
+  <circle cx="410" cy="195" r="4" fill="rgba(255,155,61,0.15)" stroke="#ff9b3d" stroke-width="0.5"/>
+  <ellipse cx="390" cy="198" rx="35" ry="28" fill="none" stroke="#ff9b3d" stroke-width="1.5" stroke-dasharray="3,2"/>
+  <text x="390" y="248" fill="#ff9b3d" font-family="monospace" font-size="8" text-anchor="middle">Stop Too Tight</text>
+
+  <!-- Cluster C (news shock) — bottom-center -->
+  <circle cx="250" cy="250" r="7" fill="rgba(245,197,66,0.25)" stroke="#f5c542" stroke-width="1"/>
+  <circle cx="265" cy="240" r="5" fill="rgba(245,197,66,0.2)" stroke="#f5c542" stroke-width="0.8"/>
+  <circle cx="240" cy="245" r="4" fill="rgba(245,197,66,0.15)" stroke="#f5c542" stroke-width="0.5"/>
+  <ellipse cx="252" cy="245" rx="30" ry="20" fill="none" stroke="#f5c542" stroke-width="1.5" stroke-dasharray="3,2"/>
+  <text x="252" y="275" fill="#f5c542" font-family="monospace" font-size="8" text-anchor="middle">News Shock</text>
+
+  <!-- Axes labels -->
+  <text x="20" y="298" fill="#5e636d" font-family="monospace" font-size="7">Loss Amount →</text>
+  <text x="8" y="180" fill="#5e636d" font-family="monospace" font-size="7" transform="rotate(-90,8,180)">Frequency →</text>
+
+  <!-- Callouts -->
+  <circle cx="8" cy="110" r="7" fill="#00ff9d" opacity="0.9"/>
+  <text x="8" y="114" fill="#000" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">①</text>
+  <circle cx="8" cy="146" r="7" fill="#50b4ff" opacity="0.9"/>
+  <text x="8" y="150" fill="#000" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">②</text>
+</svg>
+
+<ol>
+  <li><strong>① Cluster Cards List</strong> — Each cluster represents one failure pattern with a label, severity level (Critical/High/Medium/Low), trade count, total loss, and average loss percentage. A loss magnitude bar shows relative size (worst cluster fills the full width). The AI-suggested fix appears below each bar. Click example trade IDs to inspect representative losing trades.</li>
+  <li><strong>② Regime Matrix</strong> — Cross-table of market regimes (trending, ranging, high-volatility, panic, etc.) versus failure types. Darker cells mean larger losses. Quickly identify which market conditions are most dangerous for your strategy. For example, frequent "stop swept" failures in "high volatility" regime suggests stop parameters need adjustment.</li>
+  <li><strong>③ Rejection Reason Statistics</strong> — Frequency of trade rejections grouped by reason code. Common reasons: daily loss limit reached, stale snapshot, AI cache expired, max position reached, volatility too high. A high frequency of any reason may indicate misconfigured risk parameters or infrastructure issues.</li>
+</ol>
+
+<h2>Reading the Key Metrics</h2>
+<ul>
+  <li><strong>Cluster Severity</strong> — Composite rating based on loss amount and trade count. Critical clusters need immediate attention; High should be addressed in the next optimization cycle; Medium and Low can be monitored.</li>
+  <li><strong>Cluster Loss Share</strong> — The bar width shows each cluster's loss relative to the worst cluster. Focus on the top 1-2 clusters for the highest improvement ROI.</li>
+  <li><strong>Regime Matrix Color Depth</strong> — Darker cells indicate larger losses for that regime + failure type combination. The darkest cell is your top priority for fixing.</li>
+  <li><strong>Rejection Frequency</strong> — Frequent rejections of the same type suggest a systemic issue. "Daily loss limit reached" means risk budget is too tight; "stale snapshot" means infrastructure needs attention.</li>
+</ul>
+
+<h2>Common Actions, Step by Step</h2>
+<ol>
+  <li><strong>Review cluster details</strong> — In the Loss Patterns tab, browse cluster cards. Focus on High and Critical severity clusters. Read the AI-suggested fix to understand the root cause and improvement direction.</li>
+  <li><strong>Analyze the Regime Matrix</strong> — Switch to the Regime Matrix tab. Check which market regimes correlate with which failure types. A dark cell at "high volatility + stop swept" means your stop-loss is too tight in volatile markets.</li>
+  <li><strong>Generate a shadow strategy</strong> — On a cluster card, click "Generate Shadow Strategy" (if available). The system creates a draft with a DSL patch targeting that specific failure pattern. The shadow strategy must go through validation, backtesting, paper trading, and manual approval before going live.</li>
+  <li><strong>Check rejection reasons</strong> — Switch to the Rejection Reasons tab. Review frequency per reason. If one reason dominates, adjust the relevant risk parameter or investigate the infrastructure issue.</li>
+</ol>
+
+<h2>Behind the Scenes</h2>
+<p>Failure clustering runs as part of each Growth Review cycle. The failure_clustering service reads all losing trades (profit_pct < 0) from the ExecutionLedger and groups them by shared labels. The labeling system analyzes multiple dimensions: trade time (low-liquidity hours), market regime (high volatility, ranging), stop distance, holding period, AI cache state, and more. Clusters are persisted to the failure_clusters table; old clusters are archived automatically. The shadow_strategy_generator reads active clusters, resolves the target strategy's latest DSL version, and uses DSLPatchService to produce a JSON Patch. The result is a ShadowStrategyDraft record. The entire pipeline runs without human intervention, and cluster results update in real time.</p>
+
+<h2>See Also</h2>
+<ul>
+  <li><a href="#/pages/growth/growth-review">Growth Review</a> — Start here, then dive into failure clustering</li>
+  <li><a href="#/pages/growth/strategy-optimization">Strategy Optimization</a> — Put shadow strategies through the safety workflow</li>
+  <li><a href="#/concepts/08-risk-basics">Risk Basics</a> — Understand stops, drawdown, and risk parameters</li>
+  <li><a href="#/walkthroughs/improve-strategy">Walkthrough: Iterative Strategy Improvement</a> — The full optimization flow</li>
+</ul>
