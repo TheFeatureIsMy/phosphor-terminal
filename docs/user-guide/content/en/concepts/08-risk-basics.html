@@ -1,0 +1,76 @@
+<h1>Risk Basics</h1>
+<p class="chapter-meta">Concept · 08 / 10 · 6 min</p>
+
+<blockquote class="lede">Risk management isn't "be careful" — it's a concrete set of numbers: max loss per trade, total exposure, how many losses before you stop.</blockquote>
+
+<svg class="diagram" viewBox="0 0 600 240" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="240" fill="rgba(255,255,255,0.02)" rx="8"/>
+
+  <text x="300" y="22" fill="#9ca0a8" font-family="monospace" font-size="11" text-anchor="middle">RISK BUDGET</text>
+
+  <rect x="40"  y="40" width="130" height="40" fill="rgba(0,255,157,0.25)" stroke="#00ff9d" stroke-width="1" rx="4"/>
+  <rect x="175" y="40" width="130" height="40" fill="rgba(245,197,66,0.25)" stroke="#f5c542" stroke-width="1" rx="4"/>
+  <rect x="310" y="40" width="130" height="40" fill="rgba(255,155,61,0.25)" stroke="#ff9b3d" stroke-width="1" rx="4"/>
+  <rect x="445" y="40" width="115" height="40" fill="rgba(255,84,112,0.25)" stroke="#ff5470" stroke-width="1" rx="4"/>
+
+  <text x="105" y="62" fill="#e8eaee" font-family="monospace" font-size="11" text-anchor="middle">Position size</text>
+  <text x="105" y="76" fill="#00ff9d" font-family="monospace" font-size="13" text-anchor="middle" font-weight="bold">2%</text>
+  <text x="240" y="62" fill="#e8eaee" font-family="monospace" font-size="11" text-anchor="middle">Stop loss</text>
+  <text x="240" y="76" fill="#f5c542" font-family="monospace" font-size="13" text-anchor="middle" font-weight="bold">-1R</text>
+  <text x="375" y="62" fill="#e8eaee" font-family="monospace" font-size="11" text-anchor="middle">Daily drawdown</text>
+  <text x="375" y="76" fill="#ff9b3d" font-family="monospace" font-size="13" text-anchor="middle" font-weight="bold">-8%</text>
+  <text x="502" y="62" fill="#e8eaee" font-family="monospace" font-size="11" text-anchor="middle">Breaker</text>
+  <text x="502" y="76" fill="#ff5470" font-family="monospace" font-size="13" text-anchor="middle" font-weight="bold">HALT</text>
+
+  <text x="105" y="100" fill="#9ca0a8" font-family="monospace" font-size="10" text-anchor="middle">max % per trade</text>
+  <text x="240" y="100" fill="#9ca0a8" font-family="monospace" font-size="10" text-anchor="middle">exit on touch</text>
+  <text x="375" y="100" fill="#9ca0a8" font-family="monospace" font-size="10" text-anchor="middle">pause for the day</text>
+  <text x="502" y="100" fill="#9ca0a8" font-family="monospace" font-size="10" text-anchor="middle">full stop</text>
+
+  <line x1="40" y1="170" x2="560" y2="170" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+  <text x="40" y="160" fill="#9ca0a8" font-family="monospace" font-size="10">trade #1</text>
+  <text x="560" y="160" fill="#9ca0a8" font-family="monospace" font-size="10" text-anchor="end">trade #N</text>
+
+  <circle cx="80"  cy="170" r="5" fill="#00ff9d"/>
+  <circle cx="120" cy="170" r="5" fill="#00ff9d"/>
+  <circle cx="160" cy="170" r="5" fill="#f5c542"/>
+  <circle cx="200" cy="170" r="5" fill="#00ff9d"/>
+  <circle cx="240" cy="170" r="5" fill="#f5c542"/>
+  <circle cx="280" cy="170" r="5" fill="#f5c542"/>
+  <circle cx="320" cy="170" r="5" fill="#ff9b3d"/>
+  <circle cx="360" cy="170" r="5" fill="#f5c542"/>
+  <circle cx="400" cy="170" r="5" fill="#ff9b3d"/>
+  <circle cx="440" cy="170" r="5" fill="#ff9b3d"/>
+  <circle cx="480" cy="170" r="6" fill="#ff5470" stroke="#ff5470" stroke-width="2"/>
+
+  <line x1="480" y1="190" x2="480" y2="210" stroke="#ff5470" stroke-width="1.5"/>
+  <text x="480" y="225" fill="#ff5470" font-family="monospace" font-size="11" text-anchor="middle" font-weight="bold">breaker tripped → halt</text>
+</svg>
+
+<h2>Why It Matters</h2>
+<p>Even a great strategy loses. Losing isn't the problem; the problem is <strong>"one big loss wiping out ten small wins"</strong> or <strong>"losing the capital you need for the next trade."</strong> Risk management installs layered guardrails: stop-loss per trade, drawdown per day, circuit breaker over time. As long as no single layer fails alone, you stay in the game.</p>
+<p>Professional traders think in <strong>R-multiples</strong>. 1R = the dollar amount you're willing to risk on this trade. If a trade risks -1R and targets +2R, a 40% win rate still nets you money long-term. Every risk rule is ultimately about defending that R.</p>
+
+<h2>Key Metrics</h2>
+<ul>
+  <li><strong>Position Size</strong> — usually 1%–2% of account per trade. Cranking it to 5% sounds bolder, but it turns -1R into -5% of equity. Four losing trades in a row = -20%.</li>
+  <li><strong>Stop Loss</strong> — defined as a price or ATR multiple, executed automatically on touch. A "mental stop" is no stop.</li>
+  <li><strong>Max Drawdown</strong> — the largest peak-to-trough equity drop. A -8% intraday drawdown usually means strategy and regime are misaligned: stop for the day, review.</li>
+  <li><strong>Circuit Breaker</strong> — N consecutive losses, daily loss over threshold, abnormal volatility — any of these triggers a full halt. Once set, don't override manually.</li>
+</ul>
+
+<h2>Common Pitfalls</h2>
+<ul>
+  <li><strong>"Just hold a bit longer"</strong> is how small losses become big ones. A triggered stop is a triggered stop.</li>
+  <li><strong>Treating the backtest's max drawdown as a ceiling.</strong> Live is almost always harder than backtest. Leave 2x buffer.</li>
+  <li><strong>Running N strategies on the same 2% risk budget.</strong> Exposures add up: five strategies at 2% each = 10%.</li>
+  <li><strong>Restarting immediately after a breaker.</strong> The breaker exists to make you stop and think — review before resuming.</li>
+</ul>
+
+<h2>In AlphaLoop</h2>
+<ul>
+  <li><a href="#/pages/risk/risk-center">Risk Center</a> — live exposures, limits, current consumption</li>
+  <li><a href="#/pages/risk/stop-protection">Stop Protection</a> — configure stops (fixed / ATR / trailing)</li>
+  <li><a href="#/pages/risk/circuit-breakers">Circuit Breakers</a> — daily / streak / volatility breakers</li>
+  <li><a href="#/walkthroughs/risk-incident">Walkthrough · Risk Incident</a> — what to do when a breaker trips</li>
+</ul>
