@@ -36,7 +36,7 @@ struct NavigationTests {
 
     @Test func sidebarVisibleRoutesCount() {
         let visible = AppRoute.allCases.filter(\.sidebarVisible)
-        #expect(visible.count == 24)
+        #expect(visible.count == 23)
     }
 
     @Test func strategyDetailIsNotSidebarVisible() {
@@ -44,7 +44,7 @@ struct NavigationTests {
     }
 
     @Test func totalRouteCount() {
-        #expect(AppRoute.allCases.count == 25)
+        #expect(AppRoute.allCases.count == 24)
     }
 
     @Test func overviewSectionRoutes() {
@@ -56,9 +56,8 @@ struct NavigationTests {
 
     @Test func strategySectionRoutes() {
         let strategyRoutes = AppRoute.allCases.filter { $0.section == .strategy }
-        #expect(strategyRoutes.count == 4)
+        #expect(strategyRoutes.count == 3)
         #expect(strategyRoutes.contains(.strategyWorkspace))
-        #expect(strategyRoutes.contains(.strategyCanvas))
         #expect(strategyRoutes.contains(.backtestSimulation))
         #expect(strategyRoutes.contains(.strategyDetail))
     }

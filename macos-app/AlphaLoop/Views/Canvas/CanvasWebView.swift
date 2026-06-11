@@ -18,8 +18,15 @@ struct CanvasWebView: NSViewRepresentable {
         webView.navigationDelegate = context.coordinator
         webView.setValue(false, forKey: "drawsBackground")
 
+        // canvas-web is copied as a directory (see Package.swift `.copy("Resources/canvas-web")`),
+        // so the bundle contains canvas-web/index.html + canvas-web/assets/* with original layout,
+        // and the HTML's relative `./assets/...` references resolve correctly.
         if let htmlURL = Bundle.module.url(forResource: "index", withExtension: "html", subdirectory: "canvas-web") {
             webView.loadFileURL(htmlURL, allowingReadAccessTo: htmlURL.deletingLastPathComponent())
+        } else {
+            #if DEBUG
+            print("[CanvasWebView] canvas-web/index.html not found in Bundle.module — verify Package.swift uses .copy(\"Resources/canvas-web\")")
+            #endif
         }
 
         viewModel.webView = webView

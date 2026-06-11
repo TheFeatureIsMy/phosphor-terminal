@@ -83,6 +83,28 @@ final class APIStrategiesV2: @unchecked Sendable {
         )
     }
 
+    /// PATCH /api/v2/strategies/{sid}/versions/{vid}/status — drives backend lifecycle state machine.
+    /// Throws on disallowed/system-only transition (409/403 from server).
+    func transitionVersionStatus(strategyId: String, versionId: String, toStatus: String) async throws -> StrategyVersionV2 {
+        try await client.patch(
+            "/api/v2/strategies/\(strategyId)/versions/\(versionId)/status",
+            body: ["to_status": toStatus],
+            mock: {
+                StrategyVersionV2(
+                    id: versionId,
+                    strategyId: strategyId,
+                    versionNo: 1,
+                    status: toStatus,
+                    dslVersion: "2.5",
+                    ruleDsl: [:],
+                    dslHash: "mock",
+                    createdBy: "user",
+                    createdAt: ISO8601DateFormatter().string(from: Date())
+                )
+            }
+        )
+    }
+
     // MARK: - DSL Validation
 
     func validateDSL(_ dsl: [String: Any]) async throws -> DSLValidationReport {

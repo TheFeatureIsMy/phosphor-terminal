@@ -34,15 +34,9 @@ struct StrategyLabRootView: View {
     private var content: some View {
         switch appState.selectedRoute {
         case .strategyWorkspace:
-            if let vm = strategiesVM {
-                StrategiesListView(viewModel: vm)
-            } else {
-                LoadingView(type: .detail)
-            }
-        case .strategyCanvas:
-            StrategyCanvasPageView()
+            StrategyWorkspaceConsoleView()
         case .backtestSimulation:
-            BacktestDryrunView()
+            BacktestLabView()
         case .aiResearchRoom:
             AIStudioView()
         case .agentPlatform:

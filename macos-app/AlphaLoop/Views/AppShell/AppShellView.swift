@@ -94,15 +94,9 @@ struct AppShellView: View {
             if let vm = liveReadinessVM { LiveReadinessView(viewModel: vm) } else { LoadingView(type: .detail) }
         // STRATEGY
         case .strategyWorkspace:
-            if let vm = strategiesVM {
-                StrategiesListView(viewModel: vm)
-            } else {
-                LoadingView(type: .detail)
-            }
-        case .strategyCanvas:
-            StrategyCanvasPageView()
+            StrategyWorkspaceConsoleView()
         case .backtestSimulation:
-            BacktestDryrunView()
+            BacktestLabView()
         // STRUCTURE
         case .marketStructure:
             MarketStructureView()

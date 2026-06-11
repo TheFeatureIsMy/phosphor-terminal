@@ -256,7 +256,6 @@ enum AppRoute: String, CaseIterable, Identifiable {
     case liveReadiness
     // STRATEGY
     case strategyWorkspace
-    case strategyCanvas
     case backtestSimulation
     // STRUCTURE
     case marketStructure
@@ -293,7 +292,6 @@ enum AppRoute: String, CaseIterable, Identifiable {
         case .dashboard: return "square.grid.2x2"
         case .liveReadiness: return "checkmark.shield"
         case .strategyWorkspace: return "cpu"
-        case .strategyCanvas: return "paintbrush.pointed"
         case .backtestSimulation: return "clock.arrow.circlepath"
         case .marketStructure: return "chart.bar.xaxis"
         case .structureMatrix: return "tablecells"
@@ -323,7 +321,6 @@ enum AppRoute: String, CaseIterable, Identifiable {
         case .dashboard: return L10n.Nav.dashboard
         case .liveReadiness: return L10n.Nav.liveReadiness
         case .strategyWorkspace: return L10n.Nav.strategyWorkspace
-        case .strategyCanvas: return L10n.Nav.strategyCanvas
         case .backtestSimulation: return L10n.Nav.backtestSimulation
         case .marketStructure: return L10n.Nav.marketStructure
         case .structureMatrix: return L10n.Nav.structureMatrix
@@ -351,7 +348,7 @@ enum AppRoute: String, CaseIterable, Identifiable {
     var section: SidebarSection {
         switch self {
         case .dashboard, .liveReadiness: return .overview
-        case .strategyWorkspace, .strategyCanvas, .backtestSimulation: return .strategy
+        case .strategyWorkspace, .backtestSimulation: return .strategy
         case .marketStructure, .structureMatrix, .manipulationRadar: return .structure
         case .executionCenter, .ordersPositions, .reconciliationBus: return .execution
         case .riskCenter, .stopProtection, .circuitBreakers: return .risk
@@ -373,7 +370,7 @@ enum AppRoute: String, CaseIterable, Identifiable {
              .executionCenter, .ordersPositions, .reconciliationBus,
              .riskCenter, .stopProtection, .circuitBreakers:
             return .tradingConsole
-        case .strategyWorkspace, .strategyCanvas, .backtestSimulation,
+        case .strategyWorkspace, .backtestSimulation,
              .aiResearchRoom, .signalCenter, .marketSentiment,
              .growthReview, .failureClustering, .strategyOptimization,
              .strategyDetail:

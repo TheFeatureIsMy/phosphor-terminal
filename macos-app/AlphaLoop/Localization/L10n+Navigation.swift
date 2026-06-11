@@ -16,7 +16,6 @@ extension L10n {
         static var dashboard: String { zh("总览控制台", en: "Dashboard") }
         static var liveReadiness: String { zh("实盘准入", en: "Go-Live Checklist") }
         static var strategyWorkspace: String { zh("策略工作台", en: "Strategies") }
-        static var strategyCanvas: String { zh("策略画布", en: "Strategy Canvas") }
         static var backtestSimulation: String { zh("回测 / 模拟", en: "Backtest & Paper") }
         static var marketStructure: String { zh("市场结构", en: "Market Structure") }
         static var structureMatrix: String { zh("结构矩阵", en: "Correlation Matrix") }

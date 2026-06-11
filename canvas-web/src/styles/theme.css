@@ -608,3 +608,195 @@ input::placeholder {
   min-width: 32px;
   text-align: right;
 }
+
+/* ═════════════════════════════════════════════════════════ */
+/*  LAUNCH CONSOLE NODE OVERRIDE — 2026-06-11                */
+/*  覆盖默认 Apple 节点样式，统一为发射控制台金属/磷光语言     */
+/* ═════════════════════════════════════════════════════════ */
+
+:root {
+  --lc-accent: #00FF9D;
+  --lc-cyan: #5BD4FF;
+  --lc-amber: #FFB547;
+  --lc-purple: #A877FF;
+  --lc-danger: #FF5A6E;
+  --lc-bg-node: rgba(14, 18, 22, 0.92);
+  --lc-bg-node-elev: rgba(19, 25, 34, 0.95);
+  --lc-border: rgba(31, 39, 49, 1);
+  --lc-border-hot: rgba(0, 255, 157, 0.35);
+}
+
+/* Reset background for cleaner mission-control look */
+.react-flow,
+.react-flow__background,
+.react-flow__pane {
+  background: #07090C !important;
+}
+.react-flow__background pattern circle {
+  fill: rgba(91, 212, 255, 0.06) !important;
+}
+
+/* Fixed-width 220 node with metallic frame */
+.canvas-node {
+  background: var(--lc-bg-node) !important;
+  backdrop-filter: blur(18px) saturate(1.4) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(1.4) !important;
+  border: 1px solid var(--lc-border) !important;
+  border-radius: 10px !important;
+  width: 220px !important;
+  min-width: 220px !important;
+  font-family: 'IBM Plex Mono', 'SF Mono', 'JetBrains Mono', monospace !important;
+  font-size: 11px !important;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.04) inset,
+    0 8px 24px rgba(0,0,0,0.55) !important;
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 120ms ease !important;
+  position: relative;
+  overflow: hidden;
+}
+.canvas-node::before {
+  /* top gradient highlight (metallic) */
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255,255,255,0.06) 30%,
+    rgba(255,255,255,0.10) 50%,
+    rgba(255,255,255,0.06) 70%,
+    transparent 100%);
+}
+.canvas-node:hover {
+  border-color: rgba(91, 212, 255, 0.40) !important;
+  transform: translateY(-1px) !important;
+}
+.canvas-node.selected {
+  border-color: var(--lc-border-hot) !important;
+  box-shadow:
+    0 0 0 1px var(--lc-border-hot),
+    0 0 24px rgba(0,255,157,0.18),
+    0 12px 32px rgba(0,0,0,0.55) !important;
+}
+.canvas-node.has-error {
+  border-color: var(--lc-danger) !important;
+}
+.canvas-node.has-error::after {
+  /* left red rail for error */
+  content: "";
+  position: absolute;
+  top: 0; bottom: 0; left: 0;
+  width: 3px;
+  background: var(--lc-danger);
+  box-shadow: 0 0 8px var(--lc-danger);
+}
+
+/* Header strip — 12px tall + category color */
+.node-header {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 8px 12px !important;
+  border-bottom: 1px solid var(--lc-border) !important;
+  border-radius: 0 !important;
+  font-weight: 600 !important;
+  font-size: 10px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.10em !important;
+  position: relative;
+}
+.node-header::before {
+  /* 2px color strip pinned to top */
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 2px;
+}
+.node-header.signal      { background: rgba(91,212,255,0.08) !important; color: var(--lc-cyan) !important; }
+.node-header.signal::before      { background: var(--lc-cyan); box-shadow: 0 0 8px var(--lc-cyan); }
+.node-header.condition   { background: rgba(91,212,255,0.06) !important; color: var(--lc-cyan) !important; }
+.node-header.condition::before   { background: var(--lc-cyan); }
+.node-header.filter      { background: rgba(91,212,255,0.06) !important; color: var(--lc-cyan) !important; }
+.node-header.filter::before      { background: var(--lc-cyan); }
+.node-header.sizing      { background: rgba(0,255,157,0.08) !important; color: var(--lc-accent) !important; }
+.node-header.sizing::before      { background: var(--lc-accent); box-shadow: 0 0 8px var(--lc-accent); }
+.node-header.output      { background: rgba(0,255,157,0.08) !important; color: var(--lc-accent) !important; }
+.node-header.output::before      { background: var(--lc-accent); box-shadow: 0 0 8px var(--lc-accent); }
+.node-header.risk        { background: rgba(255,181,71,0.08) !important; color: var(--lc-amber) !important; }
+.node-header.risk::before        { background: var(--lc-amber); }
+.node-header.structure-defense { background: rgba(255,181,71,0.08) !important; color: var(--lc-amber) !important; }
+.node-header.structure-defense::before { background: var(--lc-amber); }
+.node-header.account-risk { background: rgba(255,181,71,0.08) !important; color: var(--lc-amber) !important; }
+.node-header.account-risk::before { background: var(--lc-amber); }
+.node-header.mtf-guard   { background: rgba(168,119,255,0.08) !important; color: var(--lc-purple) !important; }
+.node-header.mtf-guard::before   { background: var(--lc-purple); box-shadow: 0 0 8px var(--lc-purple); }
+
+.node-icon { font-size: 11px !important; opacity: 0.9; }
+.node-title { flex: 1 !important; font-size: 10px !important; letter-spacing: 0.10em !important; }
+
+.error-badge {
+  background: var(--lc-danger) !important;
+  color: #000 !important;
+  font-size: 9px !important;
+  font-weight: 800 !important;
+  padding: 1px 6px !important;
+  border-radius: 8px !important;
+  min-width: 16px !important;
+}
+
+/* Node body — tighter spacing, mono numbers */
+.node-body {
+  padding: 10px 12px !important;
+  background: linear-gradient(180deg,
+    rgba(255,255,255,0.012) 0%,
+    transparent 100%) !important;
+}
+.node-field {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  padding: 3px 0 !important;
+  border-bottom: 1px dashed rgba(255,255,255,0.04);
+}
+.node-field:last-child { border-bottom: none !important; }
+.field-label {
+  color: rgba(255,255,255,0.40) !important;
+  font-size: 10px !important;
+  font-weight: 500 !important;
+  text-transform: lowercase !important;
+  letter-spacing: 0.04em !important;
+}
+.field-value {
+  color: rgba(255,255,255,0.92) !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+/* Handles — square metallic */
+.handle-in, .handle-out {
+  width: 9px !important;
+  height: 9px !important;
+  border: 1.5px solid rgba(91, 212, 255, 0.55) !important;
+  background: #0E1216 !important;
+  border-radius: 2px !important;
+  transition: all 140ms ease !important;
+}
+.handle-in:hover, .handle-out:hover {
+  border-color: var(--lc-accent) !important;
+  background: var(--lc-accent) !important;
+  transform: scale(1.3) !important;
+  box-shadow: 0 0 10px rgba(0,255,157,0.55) !important;
+}
+
+/* Edges — gradient + glow */
+.react-flow__edge-path {
+  stroke: rgba(91,212,255,0.42) !important;
+  stroke-width: 1.6 !important;
+}
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke: var(--lc-accent) !important;
+  stroke-width: 2.2 !important;
+  filter: drop-shadow(0 0 6px rgba(0,255,157,0.5)) !important;
+}
+.react-flow__edge:hover .react-flow__edge-path {
+  stroke: rgba(255,255,255,0.55) !important;
+}
