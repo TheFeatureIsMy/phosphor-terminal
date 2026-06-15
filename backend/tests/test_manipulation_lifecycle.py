@@ -110,3 +110,13 @@ class TestLifecycleEngine:
         matches = clf.classify(features)
         types = [m.manipulation_type for m in matches]
         assert "M7" in types
+
+    def test_onchain_features(self):
+        from app.services.manipulation.onchain_features import compute_onchain_features
+        from app.services.manipulation.onchain_adapter import MockOnchainAdapter
+        adapter = MockOnchainAdapter()
+        snapshots = adapter.get_history("PEPE/USDT", limit=30)
+        features = compute_onchain_features([s.to_dict() for s in snapshots])
+        assert "holder_concentration_score" in features
+        assert "exchange_inflow_zscore" in features
+        assert all(0 <= v <= 100 for v in features.values())

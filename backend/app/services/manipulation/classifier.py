@@ -137,8 +137,22 @@ class ManipulationPatternClassifier:
                 evidence={"volume_price_divergence": vpd, "volume_zscore": vol_zscore},
             ))
 
-        # M3, M4 require Layer C/D data (not yet available from OHLCV)
-        # They return empty for now — will be added when those data layers are implemented
+        # M3: KOL Social Pump (Layer D)
+        kol_pump = features.get("kol_pump_score", 0)
+        fomo = features.get("retail_fomo_score", 0)
+        mention_vel = features.get("social_mention_velocity", 0)
+        if kol_pump > 50 or (mention_vel > 60 and fomo > 40):
+            conf = min(max(kol_pump, mention_vel) / 100, 1.0)
+            matches.append(PatternMatch(
+                manipulation_type="M3",
+                type_label=MANIPULATION_TYPES["M3"],
+                confidence=conf,
+                evidence={"kol_pump_score": kol_pump, "retail_fomo_score": fomo,
+                          "social_mention_velocity": mention_vel},
+            ))
+
+        # M4 requires Layer C data (not yet available)
+        # Will be added when on-chain data layer is implemented
 
         # Sort by confidence descending
         matches.sort(key=lambda m: m.confidence, reverse=True)
