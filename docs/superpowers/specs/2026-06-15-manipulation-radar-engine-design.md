@@ -561,3 +561,527 @@ class ManipulationAlert(Base):
 - **Signal Center** — 操纵雷达的 TradingSignal 可作为信号源之一，供策略订阅
 - **Dashboard** — 活跃操纵案例数 + 高危品种数可作为 Dashboard 的告警项
 - **Strategy DSL** — ManipulationFilterRule 已集成，需增强为生命周期感知
+
+## 11. 历史操纵自动回溯系统
+
+### 11.1 核心能力
+
+输入一个代币名称/合约地址/股票代码，系统自动完成：
+
+```
+输入: "SOL/USDT" 或 "0x7a250d..." 或 "601398"
+         ↓
+[1] 拉取该品种全部可用历史数据（越长越好）
+         ↓
+[2] 用异常检测器扫描全时间线，标记所有异常时段
+         ↓
+[3] 对每个异常时段进行操纵类型分类 (M1-M8)
+         ↓
+[4] 对每个疑似操纵事件进行生命周期阶段标注
+         ↓
+[5] 用已知结局（价格最终走势）验证标注是否正确
+         ↓
+[6] 将确认的案例连同全维度数据快照存入案例库
+         ↓
+[7] 自动加入训练集，更新识别模型
+```
+
+### 11.2 历史扫描器 — HistoricalManipulationScanner
+
+```python
+class HistoricalManipulationScanner:
+    """
+    对单个品种的全部历史数据进行操纵行为扫描。
+    不依赖实时数据 —— 纯粹基于历史回溯。
+    """
+
+    async def scan(self, symbol: str, market: str,
+                   start_date: datetime | None = None,
+                   end_date: datetime | None = None) -> ScanResult:
+        """
+        完整扫描流程:
+        1. 获取历史数据（所有可用 Layer）
+        2. 滑动窗口异常检测
+        3. 聚类异常时段为"事件"
+        4. 每个事件进行分类和生命周期标注
+        5. 用事件结局验证标注
+        """
+
+        # ---- Step 1: 全维度历史数据获取 ----
+        historical_data = await self._fetch_all_available_history(
+            symbol, market, start_date, end_date
+        )
+        # 返回: {
+        #   "ohlcv":     DataFrame (1m/5m/1h/4h/1d 多时间框架),
+        #   "volume":    DataFrame (逐笔成交或分钟级),
+        #   "funding":   DataFrame (资金费率历史, 加密货币),
+        #   "oi":        DataFrame (持仓量历史, 加密货币),
+        #   "onchain":   DataFrame (链上大额转账历史, 如可用),
+        #   "social":    DataFrame (社交提及历史, 如可用),
+        #   "orderbook": None (历史盘口一般不可用, 标记缺失),
+        # }
+
+        # ---- Step 2: 滑动窗口异常检测 ----
+        # 对每个时间窗口计算全部可用特征
+        anomaly_timeline = []
+        for window in self._sliding_windows(historical_data, window_size="4h", step="1h"):
+            features = self.feature_engine.compute_all_layers(window)
+            anomaly_score = self._aggregate_anomaly_score(features)
+            if anomaly_score > ANOMALY_THRESHOLD:
+                anomaly_timeline.append(AnomalyPoint(
+                    timestamp=window.end_time,
+                    score=anomaly_score,
+                    features=features,  # 保存完整特征快照
+                    raw_data=window.raw_data_snapshot()  # 保存原始数据
+                ))
+
+        # ---- Step 3: 聚类异常时段为事件 ----
+        # 时间上接近的异常点聚合为一个事件
+        events = self._cluster_anomalies_to_events(
+            anomaly_timeline,
+            max_gap="12h",        # 12小时内的异常视为同一事件
+            min_duration="2h",    # 至少持续2小时
+            min_anomaly_points=3  # 至少3个异常点
+        )
+
+        # ---- Step 4: 分类 + 生命周期标注 ----
+        cases = []
+        for event in events:
+            # 用分类器判断操纵类型
+            pattern = self.classifier.classify(event.feature_sequence)
+
+            # 用生命周期追踪器回溯标注各阶段
+            stages = self.lifecycle_tracker.retrospective_label(
+                event.price_series,
+                event.feature_sequence,
+                pattern.type
+            )
+
+            # ---- Step 5: 用结局验证 ----
+            outcome = self._measure_outcome(
+                symbol, event.end_time, lookforward="30d"
+            )
+            # outcome: {
+            #   peak_price_change: +280%,
+            #   collapse_depth: -75%,
+            #   duration_to_peak: 8 days,
+            #   duration_to_collapse: 3 days,
+            #   was_manipulation: True/False (基于结局判定)
+            # }
+
+            if outcome.was_manipulation:
+                case = ManipulationCase(
+                    symbol=symbol,
+                    market=market,
+                    manipulation_type=pattern.type,
+                    confidence=pattern.confidence,
+                    lifecycle_stages=stages,
+                    evidence=event.full_evidence_snapshot(),
+                    outcome=outcome,
+                    auto_discovered=True,
+                    source="historical_scan",
+                )
+                cases.append(case)
+
+        # ---- Step 6 & 7: 入库 + 训练 ----
+        for case in cases:
+            await self.case_repository.save(case)
+            await self.training_pipeline.add_to_training_set(case)
+
+        return ScanResult(
+            symbol=symbol,
+            scanned_period=f"{start_date} → {end_date}",
+            total_anomaly_points=len(anomaly_timeline),
+            events_detected=len(events),
+            confirmed_cases=len(cases),
+            cases=cases,
+        )
+```
+
+### 11.3 回溯式生命周期标注
+
+对历史事件，因为我们已经知道"结局"，所以可以做更精确的阶段标注：
+
+```python
+class RetrospectiveLifecycleLabeler:
+    """
+    已知完整价格走势后，反向标注每个阶段的时间范围。
+    比实时追踪更准确 —— 因为有"上帝视角"。
+    """
+
+    def label(self, price_series: pd.Series,
+              features_series: pd.DataFrame,
+              manipulation_type: str) -> list[StageLabel]:
+
+        # 找到价格峰值和谷值
+        peak_idx = price_series.idxmax()
+        collapse_low = price_series[peak_idx:].idxmin()
+        start_idx = price_series.index[0]
+
+        # ---- 建仓期: 起始 → 开始加速上涨之前 ----
+        # 特征: 成交量低于均值, 价格波动收窄, 筹码集中度上升
+        accu_end = self._find_acceleration_start(price_series[:peak_idx])
+
+        # ---- 拉升期: 加速上涨 → 价格峰值 ----
+        markup_start = accu_end
+        markup_end = peak_idx
+
+        # ---- 派发期: 峰值附近高位震荡 ----
+        # 特征: 量价背离, 多次试图创新高但失败
+        dist_start = self._find_distribution_start(price_series, peak_idx)
+        dist_end = self._find_distribution_end(price_series, peak_idx, collapse_low)
+
+        # ---- 崩盘期: 开始暴跌 → 低点 ----
+        collapse_start = dist_end
+        collapse_end = collapse_low
+
+        stages = [
+            StageLabel("accumulate", start_idx, accu_end,
+                       features=features_series[start_idx:accu_end],
+                       raw_snapshot=self._capture_all_data(start_idx, accu_end)),
+            StageLabel("markup", markup_start, markup_end,
+                       features=features_series[markup_start:markup_end],
+                       raw_snapshot=self._capture_all_data(markup_start, markup_end)),
+            StageLabel("distribute", dist_start, dist_end,
+                       features=features_series[dist_start:dist_end],
+                       raw_snapshot=self._capture_all_data(dist_start, dist_end)),
+            StageLabel("collapse", collapse_start, collapse_end,
+                       features=features_series[collapse_start:collapse_end],
+                       raw_snapshot=self._capture_all_data(collapse_start, collapse_end)),
+        ]
+
+        return stages
+```
+
+### 11.4 批量历史扫描
+
+支持批量扫描整个市场/板块：
+
+```
+# 扫描 Binance 永续合约 Top 100 的全部历史
+POST /api/v2/manipulation/historical-scan
+{
+    "scope": "binance_perpetual_top100",
+    "start_date": "2024-01-01",
+    "end_date": "2026-06-15",
+    "min_confidence": 0.6
+}
+
+# 扫描特定代币（含链上地址关联）
+POST /api/v2/manipulation/historical-scan
+{
+    "symbol": "PEPE/USDT",
+    "contract_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+    "start_date": "2023-04-01",
+    "include_onchain": true
+}
+
+# 扫描 A 股某票
+POST /api/v2/manipulation/historical-scan
+{
+    "symbol": "601398",
+    "market": "a_share",
+    "start_date": "2023-01-01"
+}
+```
+
+扫描结果自动填充案例库，后台异步运行，进度通过 WebSocket 推送。
+
+## 12. 全维度数据采集框架
+
+### 12.1 设计原则
+
+**在识别到操纵行为时，采集一切能采集到的信息。** 即使当前算法不用某个字段，也要存下来 —— 未来的模型可能需要。
+
+### 12.2 EvidenceSnapshot — 全维度证据快照
+
+每个操纵案例在每次状态评估时，都保存一份完整的证据快照：
+
+```python
+class EvidenceSnapshot:
+    """
+    某一时刻的全维度市场快照。
+    设计原则: 宁可多采集，不可遗漏。
+    每个字段都有 data_quality (0-1) 标注数据可靠程度。
+    """
+    timestamp: datetime
+    symbol: str
+
+    # ========== Layer A: 价格 + 成交量 ==========
+    price: dict = {
+        "ohlcv_1m": [...],           # 最近 60 根 1 分钟 K 线
+        "ohlcv_5m": [...],           # 最近 60 根 5 分钟 K 线
+        "ohlcv_1h": [...],           # 最近 48 根 1 小时 K 线
+        "ohlcv_4h": [...],           # 最近 30 根 4 小时 K 线
+        "ohlcv_1d": [...],           # 最近 90 根日 K 线
+        "tick_trades": [...],        # 最近 1000 笔逐笔成交（如可用）
+        "vwap": float,              # 当前 VWAP
+        "data_quality": 0.95,
+    }
+
+    # ========== Layer B: 盘口 ==========
+    orderbook: dict = {
+        "snapshot_l2": {             # L2 盘口快照
+            "bids": [[price, qty], ...],  # 前 50 档
+            "asks": [[price, qty], ...],
+        },
+        "bid_ask_spread": float,
+        "depth_at_1pct": float,      # ±1% 深度
+        "depth_at_5pct": float,      # ±5% 深度
+        "large_orders": [...],       # 当前大单列表 (>均值 5x)
+        "recent_cancels": int,       # 最近 5 分钟撤单数
+        "cancel_rate": float,        # 撤单率
+        "data_quality": 0.80,        # 盘口数据不一定总可用
+    }
+
+    # ========== Layer C: 链上（加密货币） ==========
+    onchain: dict = {
+        "top_holders": [             # Top-20 持仓地址
+            {"address": "0x...", "balance": 1e9, "pct": 0.15,
+             "last_activity": "2h ago", "label": "whale_1"},
+        ],
+        "holder_concentration": {
+            "top_10_pct": 0.62,      # Top-10 持仓占比
+            "top_50_pct": 0.84,
+            "gini_coefficient": 0.91,
+        },
+        "recent_transfers": [        # 最近 24h 大额转账
+            {"from": "0x...", "to": "0x...", "amount": 5e6,
+             "type": "exchange_deposit", "exchange": "binance"},
+        ],
+        "exchange_inflow_24h": float,    # 24h 交易所净流入
+        "exchange_outflow_24h": float,
+        "dex_volume_24h": float,         # DEX 交易量
+        "contract_interactions": int,     # 智能合约交互次数
+        "new_holders_24h": int,          # 24h 新增持有地址数
+        "data_quality": 0.60,            # 链上数据延迟且可能不完整
+    }
+
+    # ========== Layer D: 社交 + 新闻 ==========
+    social: dict = {
+        "twitter_mentions_1h": int,
+        "twitter_mentions_24h": int,
+        "twitter_mention_velocity": float,   # 提及增速 (vs 7d avg)
+        "kol_mentions": [                    # KOL 提及详情
+            {"handle": "@xxx", "followers": 500000,
+             "sentiment": "bullish", "has_disclaimer": False},
+        ],
+        "telegram_activity": float,          # TG 群消息量变化
+        "reddit_posts_24h": int,
+        "fear_greed_index": int,             # 恐贪指数
+        "google_trend_zscore": float,        # 搜索趋势 Z-score
+        "news_articles_24h": [               # 新闻
+            {"title": "...", "source": "...", "sentiment": float},
+        ],
+        "data_quality": 0.40,               # 社交数据噪声大
+    }
+
+    # ========== Layer E: 跨市场 ==========
+    cross_market: dict = {
+        "spot_price": float,
+        "perpetual_price": float,
+        "spot_perp_basis": float,            # 现货-永续基差
+        "spot_perp_basis_zscore": float,     # 基差 Z-score (vs 30d)
+        "funding_rate": float,               # 当前资金费率
+        "funding_rate_zscore": float,
+        "predicted_funding_rate": float,     # 预测下期费率
+        "open_interest": float,              # 未平仓合约量
+        "oi_change_24h_pct": float,
+        "long_short_ratio": float,           # 多空比
+        "top_trader_long_short": float,      # 大户多空比
+        "liquidation_24h_long": float,       # 24h 多头爆仓
+        "liquidation_24h_short": float,      # 24h 空头爆仓
+        "max_leverage_available": float,     # 最大可用杠杆
+        "insurance_fund_change": float,      # 保险基金变化
+        "data_quality": 0.85,
+    }
+
+    # ========== Layer F: 市场微观结构 ==========
+    microstructure: dict = {
+        "trade_size_distribution": [...],    # 成交笔数分布
+        "buy_sell_ratio": float,             # 主买/主卖比
+        "large_trade_pct": float,            # 大单占总成交比例
+        "trade_frequency_per_min": float,    # 每分钟成交笔数
+        "avg_trade_size": float,
+        "median_trade_size": float,
+        "trade_size_gini": float,            # 成交规模集中度
+        "data_quality": 0.75,
+    }
+
+    # ========== 计算特征（由 FeatureEngine 填充） ==========
+    computed_features: dict = {
+        # Layer A 特征
+        "wick_ratio_up": float,
+        "wick_ratio_down": float,
+        "volume_zscore": float,
+        "pump_then_dump": float,
+        "consolidation_score": float,
+        "breakout_velocity": float,
+        "distribution_signature": float,
+        # Layer B 特征
+        "bid_ask_imbalance": float,
+        "spoof_score": float,
+        "liquidity_void_score": float,
+        # Layer C 特征
+        "holder_concentration_delta": float,
+        "exchange_inflow_zscore": float,
+        # Layer D 特征
+        "social_mention_velocity": float,
+        "kol_pump_score": float,
+        # Layer E 特征
+        "cross_market_squeeze_score": float,
+        "funding_rate_extreme": float,
+        # 综合
+        "overall_anomaly_score": float,
+        "manipulation_type_probs": {"M1": 0.1, "M2": 0.0, ...},
+    }
+```
+
+### 12.3 数据采集策略
+
+| 场景 | 采集频率 | 采集范围 |
+|------|---------|---------|
+| **常规监控** | 每 5 分钟 | Layer A + Layer E（轻量） |
+| **异常触发** | 每 1 分钟 | 全部 Layer A-F（完整快照） |
+| **案例追踪中** | 每 1 分钟 | 全部 Layer A-F + 原始数据保存 |
+| **历史回溯** | 一次性 | 所有可获取的历史数据 |
+
+**存储策略**：
+- 常规监控数据保留 7 天后压缩
+- 异常快照数据保留 90 天
+- 案例关联数据**永久保留**（训练集）
+- 原始 tick 数据保留 30 天后只保留聚合特征
+
+### 12.4 缺失数据处理
+
+```python
+class DataQualityPolicy:
+    """
+    不是所有 Layer 的数据都能拿到。
+    原则: 有什么用什么，但必须诚实标注缺失。
+    """
+
+    def assess(self, snapshot: EvidenceSnapshot) -> DataQualityReport:
+        layers = {
+            "A_price":       snapshot.price["data_quality"],
+            "B_orderbook":   snapshot.orderbook["data_quality"],
+            "C_onchain":     snapshot.onchain["data_quality"],
+            "D_social":      snapshot.social["data_quality"],
+            "E_cross_market": snapshot.cross_market["data_quality"],
+            "F_microstructure": snapshot.microstructure["data_quality"],
+        }
+
+        available = {k: v for k, v in layers.items() if v > 0.3}
+        missing = {k: v for k, v in layers.items() if v <= 0.3}
+
+        # 信息完整度直接影响识别置信度的上限
+        completeness = len(available) / len(layers)
+        max_confidence = min(completeness * 1.2, 1.0)  # 数据越完整，允许的置信度越高
+
+        return DataQualityReport(
+            layers=layers,
+            available_layers=list(available.keys()),
+            missing_layers=list(missing.keys()),
+            completeness=completeness,
+            max_allowed_confidence=max_confidence,
+            warnings=[
+                f"Layer {k} unavailable (quality={v:.2f})"
+                for k, v in missing.items()
+            ]
+        )
+```
+
+## 13. 训练管线
+
+### 13.1 从案例到模型
+
+```
+┌──────────────┐     ┌──────────────┐     ┌──────────────┐
+│  案例库       │     │  特征提取     │     │  模型训练     │
+│  confirmed    │ →   │  每个阶段的   │ →   │  输入: 特征序列│
+│  cases with   │     │  EvidenceSnap │     │  输出: 操纵类型│
+│  full data    │     │  → 特征向量   │     │  + 阶段概率    │
+└──────────────┘     └──────────────┘     └──────────────┘
+                                                  ↓
+                                          ┌──────────────┐
+                                          │  模型评估     │
+                                          │  - 识别准确率  │
+                                          │  - 误报率     │
+                                          │  - 阶段判定准确│
+                                          │  - 信号胜率    │
+                                          └──────────────┘
+```
+
+### 13.2 训练数据结构
+
+每个训练样本:
+
+```python
+TrainingSample {
+    # 输入
+    feature_sequence: list[FeatureVector]  # 时间序列特征（多个时间步）
+    available_layers: list[str]            # 哪些数据层可用
+    symbol_metadata: {                     # 品种元数据
+        market: "crypto",
+        market_cap_rank: 15,
+        avg_daily_volume: 5e8,
+    }
+
+    # 标签
+    manipulation_type: "M5"                # 操纵类型
+    lifecycle_stage: "markup"              # 当前阶段
+    next_stage: "distribute"              # 下一个阶段（监督信号）
+    time_to_next_stage: "3d 4h"           # 距下一阶段的时间
+    final_outcome: {                      # 最终结局
+        was_manipulation: True,
+        peak_change: +280%,
+        collapse_depth: -75%,
+    }
+}
+```
+
+### 13.3 模型迭代
+
+- **v1 规则引擎**: 手写阈值规则，基于已知案例的特征分布
+- **v2 XGBoost**: 可解释的梯度提升树，输出 feature importance
+- **v3 Temporal CNN / Transformer**: 序列模式识别，自动学习时间依赖
+- 每个版本的模型都保留，用户可选择信任哪个版本的判断
+
+### 13.4 持续学习
+
+```python
+class ContinuousLearning:
+    """
+    案例库增长 → 模型自动重训 → AB 测试 → 上线
+    """
+
+    async def on_case_completed(self, case: ManipulationCase):
+        """当一个案例完成完整生命周期后触发"""
+
+        # 1. 加入训练集
+        samples = self.extract_training_samples(case)
+        await self.training_set.add(samples)
+
+        # 2. 检查是否需要重训
+        new_count = await self.training_set.count_since_last_training()
+        if new_count >= RETRAIN_THRESHOLD:  # 每累积 50 个新案例重训一次
+            await self.trigger_retrain()
+
+    async def trigger_retrain(self):
+        # 用全部训练集重训模型
+        new_model = await self.trainer.train(
+            self.training_set,
+            eval_split=0.2,
+        )
+
+        # 与当前模型对比
+        comparison = await self.evaluator.compare(
+            current_model=self.active_model,
+            new_model=new_model,
+            test_set=self.eval_set,
+        )
+
+        if comparison.new_is_better:
+            self.active_model = new_model
+            log(f"Model updated: accuracy {comparison.old_acc:.2%} → {comparison.new_acc:.2%}")
+```
