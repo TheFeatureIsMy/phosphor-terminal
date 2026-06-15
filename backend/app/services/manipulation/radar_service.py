@@ -10,6 +10,8 @@ from app.domain.manipulation import ManipulationScore
 from app.services.manipulation.data_adapter import MarketDataAdapter, MockMarketDataAdapter
 from app.services.manipulation.features import compute_all_features
 from app.services.manipulation.scoring import ManipulationResult, compute_manipulation_scores
+from app.services.manipulation.cross_market_adapter import MockCrossMarketAdapter
+from app.services.manipulation.cross_market_features import compute_cross_market_features
 
 
 class ManipulationRadarService:
@@ -19,8 +21,21 @@ class ManipulationRadarService:
 
     def scan_symbol(self, symbol: str, timeframe: str = "1h") -> ManipulationResult:
         candles = self._adapter.get_ohlcv(symbol, timeframe, limit=100)
-        features = compute_all_features(candles)
-        result = compute_manipulation_scores(features, symbol=symbol, timeframe=timeframe)
+        ohlcv_features = compute_all_features(candles)
+
+        # Fetch cross-market data (Layer E)
+        cm_adapter = MockCrossMarketAdapter()
+        cm_snapshots = cm_adapter.get_history(symbol, limit=50)
+        cm_features = compute_cross_market_features([s.to_dict() for s in cm_snapshots])
+
+        # Merge all features
+        features = {**ohlcv_features, **cm_features}
+
+        # Pass cross-market features to scoring
+        result = compute_manipulation_scores(
+            features, symbol=symbol, timeframe=timeframe,
+            cross_market_features=cm_features,
+        )
 
         record = ManipulationScore(
             symbol=symbol,

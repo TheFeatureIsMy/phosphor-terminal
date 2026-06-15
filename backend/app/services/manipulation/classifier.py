@@ -40,20 +40,32 @@ class ManipulationPatternClassifier:
     def classify(self, features: dict[str, float]) -> list[PatternMatch]:
         matches = []
 
-        # M5: Cross-Market Manipulation
-        # DEX pump spot → squeeze perp → funding rate harvest → crash
-        # Detectable via: extreme volume + pump-dump pattern + high price range
+        # M5: Cross-Market Manipulation (enhanced with Layer E)
+        # DEX pump spot -> squeeze perp -> funding rate harvest -> crash
         pump_dump = features.get("pump_then_dump", 0)
         vol_zscore = features.get("volume_zscore", 0)
         price_spike = features.get("price_range_spike", 0)
-        if pump_dump > 50 and vol_zscore > 40 and price_spike > 40:
-            conf = min((pump_dump + vol_zscore + price_spike) / 300, 1.0)
+        squeeze = features.get("cross_market_squeeze_score", 0)
+        funding_z = features.get("funding_rate_zscore", 0)
+        if squeeze > 50 or (pump_dump > 50 and vol_zscore > 40 and price_spike > 40):
+            # If cross-market data available, use it for higher confidence
+            if squeeze > 50:
+                conf = min(squeeze / 100, 1.0)
+                evidence = {
+                    "cross_market_squeeze_score": squeeze,
+                    "funding_rate_zscore": funding_z,
+                    "basis_zscore": features.get("basis_zscore", 0),
+                    "oi_surge_score": features.get("oi_surge_score", 0),
+                }
+            else:
+                conf = min((pump_dump + vol_zscore + price_spike) / 300, 1.0)
+                evidence = {"pump_dump": pump_dump, "volume_zscore": vol_zscore,
+                            "price_range_spike": price_spike}
             matches.append(PatternMatch(
                 manipulation_type="M5",
                 type_label=MANIPULATION_TYPES["M5"],
                 confidence=conf,
-                evidence={"pump_dump": pump_dump, "volume_zscore": vol_zscore,
-                          "price_range_spike": price_spike},
+                evidence=evidence,
             ))
 
         # M8: Liquidity Hunt (Stop Hunt)

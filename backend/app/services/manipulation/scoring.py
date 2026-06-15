@@ -52,6 +52,7 @@ def compute_manipulation_scores(
     features: dict[str, float],
     symbol: str = "",
     timeframe: str = "1h",
+    cross_market_features: dict[str, float] | None = None,
 ) -> ManipulationResult:
     stop_hunt = _weighted_avg([
         (features.get("wick_ratio_up", 0), 0.3),
@@ -72,11 +73,24 @@ def compute_manipulation_scores(
         (features.get("dump_then_recover", 0), 0.3),
     ])
 
-    overall = _weighted_avg([
-        (stop_hunt, 0.35),
-        (pump_dump, 0.35),
-        (liquidity_trap, 0.30),
-    ])
+    # Cross-market scores (Layer E)
+    cm = cross_market_features or {}
+    funding_squeeze = cm.get("cross_market_squeeze_score", 0)
+
+    # Update overall score to include cross-market when available
+    if cm:
+        overall = _weighted_avg([
+            (stop_hunt, 0.25),
+            (pump_dump, 0.25),
+            (liquidity_trap, 0.20),
+            (funding_squeeze, 0.30),  # Cross-market gets highest weight when available
+        ])
+    else:
+        overall = _weighted_avg([
+            (stop_hunt, 0.35),
+            (pump_dump, 0.35),
+            (liquidity_trap, 0.30),
+        ])
 
     risk = _risk_level(overall)
 
@@ -87,6 +101,8 @@ def compute_manipulation_scores(
         reasons.append(f"pump_dump pattern detected ({pump_dump:.0f})")
     if liquidity_trap > 60:
         reasons.append(f"liquidity trap signals ({liquidity_trap:.0f})")
+    if funding_squeeze > 50:
+        reasons.append(f"cross-market squeeze detected ({funding_squeeze:.0f})")
     if not reasons:
         reasons.append("no significant manipulation signals")
 
@@ -98,9 +114,9 @@ def compute_manipulation_scores(
         pump_dump_score=round(pump_dump, 1),
         liquidity_trap_score=round(liquidity_trap, 1),
         holder_concentration_score=0.0,
-        funding_squeeze_score=0.0,
+        funding_squeeze_score=round(funding_squeeze, 1),
         risk_level=risk,
         features=features,
         reasoning="; ".join(reasons),
-        data_quality={"layer_a": True, "layer_b": False, "layer_c": False},
+        data_quality={"layer_a": True, "layer_b": False, "layer_c": False, "layer_e": bool(cm)},
     )

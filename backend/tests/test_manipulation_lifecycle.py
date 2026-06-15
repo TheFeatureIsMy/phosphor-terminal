@@ -75,3 +75,20 @@ class TestLifecycleEngine:
         assert sig.action == "AMBUSH"
         sig = tracker.generate_signal("accumulate", "conservative")
         assert sig.action == "WATCH"
+
+    def test_cross_market_features(self):
+        from app.services.manipulation.cross_market_features import compute_cross_market_features
+        from app.services.manipulation.cross_market_adapter import MockCrossMarketAdapter
+        adapter = MockCrossMarketAdapter()
+        snapshots = adapter.get_history("BTC/USDT", limit=50)
+        features = compute_cross_market_features([s.to_dict() for s in snapshots])
+        assert "funding_rate_zscore" in features
+        assert "cross_market_squeeze_score" in features
+        assert all(0 <= v <= 100 for v in features.values())
+
+    def test_scoring_with_cross_market(self):
+        from app.services.manipulation.scoring import compute_manipulation_scores
+        features = {"wick_ratio_up": 30, "volume_zscore": 50, "pump_then_dump": 60}
+        cm = {"cross_market_squeeze_score": 70, "funding_rate_zscore": 65}
+        result = compute_manipulation_scores(features, "TEST", "1h", cross_market_features=cm)
+        assert result.funding_squeeze_score > 0

@@ -57,7 +57,7 @@ def _mock_case_detail():
     return {
         "id": "mock-1", "symbol": "SOL/USDT", "market": "crypto",
         "manipulation_type": "M5", "lifecycle_stage": "markup",
-        "confidence": 0.78, "evidence": {"pump_dump": 65, "volume_zscore": 55, "price_range_spike": 48},
+        "confidence": 0.78, "evidence": {"pump_dump": 65, "volume_zscore": 55, "price_range_spike": 48, "cross_market_squeeze_score": 72},
         "timeline": [
             {"stage": "suspected", "entered_at": "2026-06-14T08:00:00Z", "confidence": 0.45},
             {"stage": "accumulate", "entered_at": "2026-06-14T16:00:00Z", "confidence": 0.62},
