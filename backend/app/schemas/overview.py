@@ -1,6 +1,5 @@
 """Overview BFF schemas — Dashboard + Live Readiness + Global Status"""
 from __future__ import annotations
-from datetime import datetime
 from pydantic import BaseModel, Field
 from app.schemas.common import AvailableAction
 
@@ -11,6 +10,7 @@ class AccountOverview(BaseModel):
     today_pnl_pct: float = 0
     week_pnl_pct: float = 0
     max_drawdown_pct: float = 0
+    sharpe_ratio: float = 0
 
 
 class RuntimeOverview(BaseModel):
@@ -37,7 +37,7 @@ class SystemOverview(BaseModel):
 
 
 class RecentDecision(BaseModel):
-    time: datetime | None = None
+    time: str = ""
     symbol: str = ""
     decision: str = ""
     reason_codes: list[str] = Field(default_factory=list)
@@ -47,7 +47,7 @@ class Alert(BaseModel):
     level: str = "info"
     title: str = ""
     symbol: str = ""
-    time: datetime | None = None
+    time: str = ""
 
 
 class DashboardResponse(BaseModel):

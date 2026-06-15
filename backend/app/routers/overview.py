@@ -17,19 +17,54 @@ logger = logging.getLogger(__name__)
 def _mock_dashboard() -> dict:
     return DashboardResponse(
         state="healthy",
-        reason_codes=[],
+        reason_codes=["all_services_healthy", "low_latency"],
         available_actions=[
-            AvailableAction(type="emergency_stop", enabled=True, label="紧急停止", confirm_required=True),
+            AvailableAction(type="deploy_strategy", enabled=True, label="Deploy 'ETH Breakout v2' to Paper", confirm_required=False),
+            AvailableAction(type="review_signals", enabled=True, label="Review 3 pending signals", confirm_required=False),
+            AvailableAction(type="tighten_stop", enabled=True, label="Tighten SOL/USDT stop-loss", confirm_required=True),
         ],
-        account=AccountOverview(equity=10248.32, currency="USDT", today_pnl_pct=0.012, week_pnl_pct=0.038, max_drawdown_pct=0.041),
-        runtime=RuntimeOverview(running_strategies=2, open_positions=3, pending_orders=1, reconciling_count=0),
-        risk=RiskOverview(global_state="normal", daily_loss_remaining_pct=0.024, weekly_loss_remaining_pct=0.065, emergency_locked=False),
-        system=SystemOverview(live_readiness_state="LIVE_SMALL_READY", fast_track_latency_ms=45, redis_rtt_ms=3, freqtrade_state="healthy", exchange_state="ok"),
+        account=AccountOverview(
+            equity=124850.32,
+            currency="USDT",
+            today_pnl_pct=1.97,
+            week_pnl_pct=4.32,
+            max_drawdown_pct=-6.8,
+            sharpe_ratio=1.82,
+        ),
+        runtime=RuntimeOverview(
+            running_strategies=5,
+            open_positions=4,
+            pending_orders=2,
+            reconciling_count=0,
+        ),
+        risk=RiskOverview(
+            global_state="normal",
+            daily_loss_remaining_pct=72.0,
+            weekly_loss_remaining_pct=85.0,
+            emergency_locked=False,
+            reason_codes=["within_budget", "no_breakers_triggered"],
+        ),
+        system=SystemOverview(
+            live_readiness_state="live_ready",
+            fast_track_latency_ms=12,
+            redis_rtt_ms=3,
+            freqtrade_state="connected",
+            exchange_state="binance_connected",
+        ),
         recent_decisions=[
-            RecentDecision(symbol="BTC/USDT", decision="reduce_size", reason_codes=["ai_cache_soft_expired", "shadow_warning"]),
+            RecentDecision(time="14:32", symbol="BTC/USDT", decision="execute_long", reason_codes=["htf_bullish", "signal_strong", "risk_budget_ok"]),
+            RecentDecision(time="14:15", symbol="SOL/USDT", decision="reduce_size", reason_codes=["daily_loss_warning", "reduce_size"]),
+            RecentDecision(time="13:48", symbol="ETH/USDT", decision="hold", reason_codes=["near_resistance", "trend_intact"]),
+            RecentDecision(time="13:20", symbol="AVAX/USDT", decision="execute_long", reason_codes=["breakout_confirmed", "momentum_strong"]),
+            RecentDecision(time="12:45", symbol="BNB/USDT", decision="reject", reason_codes=["risk_gate_blocked", "correlation_high"]),
         ],
         alerts=[
-            Alert(level="warning", title="1h Shadow OB temporary violation", symbol="BTC/USDT"),
+            Alert(level="warning", title="Daily loss budget at 28% \u2014 approaching caution zone", symbol="PORTFOLIO", time="14:18"),
+            Alert(level="info", title="ETH/USDT approaching resistance at $3,860", symbol="ETH/USDT", time="13:55"),
+            Alert(level="warning", title="SOL/USDT volatility expanding \u2014 consider tightening stops", symbol="SOL/USDT", time="13:40"),
+            Alert(level="info", title="Strategy 'BTC Momentum v3' entered new position", symbol="BTC/USDT", time="13:32"),
+            Alert(level="error", title="Binance API latency spike \u2014 450ms (threshold: 200ms)", symbol="SYSTEM", time="12:15"),
+            Alert(level="info", title="Reconciliation completed \u2014 0 discrepancies", symbol="SYSTEM", time="12:00"),
         ],
     ).model_dump()
 
