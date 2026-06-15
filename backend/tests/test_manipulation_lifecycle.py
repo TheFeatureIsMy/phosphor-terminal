@@ -92,3 +92,21 @@ class TestLifecycleEngine:
         cm = {"cross_market_squeeze_score": 70, "funding_rate_zscore": 65}
         result = compute_manipulation_scores(features, "TEST", "1h", cross_market_features=cm)
         assert result.funding_squeeze_score > 0
+
+    def test_orderbook_features(self):
+        from app.services.manipulation.orderbook_features import compute_orderbook_features
+        from app.services.manipulation.orderbook_adapter import MockOrderbookAdapter
+        adapter = MockOrderbookAdapter()
+        snapshots = adapter.get_history("BTC/USDT", limit=60)
+        features = compute_orderbook_features([s.to_dict() for s in snapshots])
+        assert "spoof_score" in features
+        assert "liquidity_void_score" in features
+        assert all(0 <= v <= 100 for v in features.values())
+
+    def test_classifier_detects_spoofing(self):
+        from app.services.manipulation.classifier import ManipulationPatternClassifier
+        clf = ManipulationPatternClassifier()
+        features = {"spoof_score": 70, "depth_imbalance_score": 45, "spread_volatility": 55}
+        matches = clf.classify(features)
+        types = [m.manipulation_type for m in matches]
+        assert "M7" in types

@@ -12,6 +12,8 @@ from app.services.manipulation.features import compute_all_features
 from app.services.manipulation.scoring import ManipulationResult, compute_manipulation_scores
 from app.services.manipulation.cross_market_adapter import MockCrossMarketAdapter
 from app.services.manipulation.cross_market_features import compute_cross_market_features
+from app.services.manipulation.orderbook_adapter import MockOrderbookAdapter
+from app.services.manipulation.orderbook_features import compute_orderbook_features
 
 
 class ManipulationRadarService:
@@ -28,8 +30,13 @@ class ManipulationRadarService:
         cm_snapshots = cm_adapter.get_history(symbol, limit=50)
         cm_features = compute_cross_market_features([s.to_dict() for s in cm_snapshots])
 
+        # Fetch orderbook data (Layer B)
+        ob_adapter = MockOrderbookAdapter()
+        ob_snapshots = ob_adapter.get_history(symbol, limit=60)
+        ob_features = compute_orderbook_features([s.to_dict() for s in ob_snapshots])
+
         # Merge all features
-        features = {**ohlcv_features, **cm_features}
+        features = {**ohlcv_features, **cm_features, **ob_features}
 
         # Pass cross-market features to scoring
         result = compute_manipulation_scores(

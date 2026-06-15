@@ -68,20 +68,36 @@ class ManipulationPatternClassifier:
                 evidence=evidence,
             ))
 
-        # M8: Liquidity Hunt (Stop Hunt)
+        # M7: Spoofing (Layer B required)
+        spoof = features.get("spoof_score", 0)
+        depth_imb = features.get("depth_imbalance_score", 0)
+        if spoof > 50:
+            conf = min(spoof / 100, 1.0)
+            matches.append(PatternMatch(
+                manipulation_type="M7",
+                type_label=MANIPULATION_TYPES["M7"],
+                confidence=conf,
+                evidence={"spoof_score": spoof, "depth_imbalance": depth_imb,
+                          "spread_volatility": features.get("spread_volatility", 0)},
+            ))
+
+        # M8: Liquidity Hunt (enhanced with Layer B)
         # Precise wick through key levels then reversal
         wick_up = features.get("wick_ratio_up", 0)
         wick_down = features.get("wick_ratio_down", 0)
         pinbar = features.get("pinbar_score", 0)
         max_wick = max(wick_up, wick_down)
+        liq_void = features.get("liquidity_void_score", 0)
         if max_wick > 50 and pinbar > 30:
             conf = min((max_wick + pinbar) / 200, 1.0)
+            if liq_void > 40:
+                conf = min(conf + 0.15, 1.0)  # boost from orderbook evidence
             matches.append(PatternMatch(
                 manipulation_type="M8",
                 type_label=MANIPULATION_TYPES["M8"],
                 confidence=conf,
                 evidence={"wick_ratio": max_wick, "pinbar_score": pinbar,
-                          "volume_zscore": vol_zscore},
+                          "liquidity_void_score": liq_void, "volume_zscore": vol_zscore},
             ))
 
         # M2: Market Maker Irregular Control
@@ -121,7 +137,7 @@ class ManipulationPatternClassifier:
                 evidence={"volume_price_divergence": vpd, "volume_zscore": vol_zscore},
             ))
 
-        # M3, M4, M7 require Layer C/D/B data (not yet available from OHLCV)
+        # M3, M4 require Layer C/D data (not yet available from OHLCV)
         # They return empty for now — will be added when those data layers are implemented
 
         # Sort by confidence descending
