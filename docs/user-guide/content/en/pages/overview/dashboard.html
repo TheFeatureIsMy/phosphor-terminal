@@ -1,127 +1,38 @@
-<h1>AI Control Tower</h1>
-<p class="chapter-meta">Page · Overview · 5 min</p>
+<h1>Dashboard</h1>
 
-<blockquote class="lede">The first page you see every day — AI market judgment, current positions, risk status, and pending confirmations, all in one view.</blockquote>
+<p class="lead">The Dashboard is AlphaLoop's trading operation control tower — a single screen showing your account, strategies, positions, risk, decisions, and alerts.</p>
 
-<h2>TL;DR</h2>
-<p>The AI Control Tower is the PulseDesk home page. It is organized in three priority tiers: P0 (core focus) includes AI market judgment, positions and risk, and pending confirmations; P1 (analysis) includes agent signal distribution, strategy status, and equity curve; P2 (risk stats) shows risk interception data. At the top, the Trading Workflow Rail shows the real-time status of each step in the Daily Trading Loop — click any step to jump directly to that page.</p>
+<h2>Layout</h2>
+<p>The Dashboard uses a Bento grid layout, from top to bottom:</p>
 
-<h2>Who uses it & when</h2>
-<p>Every trader's first stop each morning. Before the market opens, check the AI's directional view, see if current positions are safe, and handle any items that need manual confirmation. Throughout the day, glance back periodically to confirm everything is running smoothly.</p>
+<h3>Global Status Bar</h3>
+<p>A pinned infrastructure status bar showing system state, Freqtrade latency, Redis latency, exchange connection, and system-level reason codes.</p>
 
-<h2>Page Anatomy</h2>
+<h3>Account Overview (Hero Card)</h3>
+<p>Left side displays total equity (animated counter) and 24h change. Right side shows four metrics: Today P&L, Week P&L, Max Drawdown, and Sharpe Ratio.</p>
 
-<svg class="diagram" viewBox="0 0 600 380" xmlns="http://www.w3.org/2000/svg">
-  <rect x="0" y="0" width="600" height="380" fill="rgba(255,255,255,0.02)" rx="8"/>
+<h3>Suggested Actions</h3>
+<p>Context-aware quick action buttons the system recommends based on current state — deploy a strategy, review signals, tighten stops. Up to 3 shown.</p>
 
-  <!-- Top workflow rail -->
-  <rect x="16" y="12" width="568" height="72" fill="rgba(80,180,255,0.08)" rx="6" stroke="rgba(80,180,255,0.25)" stroke-width="1"/>
-  <text x="24" y="32" fill="#50b4ff" font-family="monospace" font-size="9">Trading Workflow</text>
-  <rect x="24" y="42" width="36" height="34" fill="rgba(80,180,255,0.15)" rx="4"/>
-  <rect x="68" y="42" width="36" height="34" fill="rgba(255,155,61,0.15)" rx="4"/>
-  <rect x="112" y="42" width="36" height="34" fill="rgba(165,115,255,0.15)" rx="4"/>
-  <rect x="156" y="42" width="36" height="34" fill="rgba(80,130,255,0.15)" rx="4"/>
-  <rect x="200" y="42" width="36" height="34" fill="rgba(0,218,140,0.15)" rx="4"/>
-  <rect x="244" y="42" width="36" height="34" fill="rgba(255,84,112,0.15)" rx="4"/>
-  <rect x="288" y="42" width="36" height="34" fill="rgba(0,230,204,0.15)" rx="4"/>
-  <rect x="332" y="42" width="36" height="34" fill="rgba(255,140,51,0.15)" rx="4"/>
-  <rect x="376" y="42" width="36" height="34" fill="rgba(102,242,102,0.15)" rx="4"/>
-  <text x="200" y="68" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">① 9-step Workflow Rail</text>
-
-  <!-- Status bar -->
-  <rect x="16" y="96" width="568" height="38" fill="rgba(255,255,255,0.04)" rx="6" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
-  <text x="30" y="112" fill="#00ff9d" font-family="monospace" font-size="8">AI PROVIDER NORMAL</text>
-  <text x="170" y="112" fill="#9ca0a8" font-family="monospace" font-size="8">LOCAL GPU IDLE</text>
-  <text x="310" y="112" fill="#e8eaee" font-family="monospace" font-size="8">AI COST TODAY $1.24</text>
-  <text x="440" y="112" fill="#00ff9d" font-family="monospace" font-size="8">PENDING JOBS 0</text>
-
-  <!-- AI Market Judgment card (left) -->
-  <rect x="16" y="146" width="280" height="100" fill="rgba(0,255,157,0.06)" rx="6" stroke="rgba(0,255,157,0.2)" stroke-width="1"/>
-  <text x="24" y="164" fill="#00ff9d" font-family="monospace" font-size="9">AI Market Judgment</text>
-  <text x="40" y="190" fill="#e8eaee" font-family="monospace" font-size="22" font-weight="bold">Bullish</text>
-  <text x="130" y="188" fill="#9ca0a8" font-family="monospace" font-size="8">Confidence</text>
-  <rect x="130" y="196" width="140" height="6" fill="rgba(255,255,255,0.06)" rx="3"/>
-  <rect x="130" y="196" width="120" height="6" fill="#00ff9d" rx="3"/>
-  <text x="270" y="196" fill="#00ff9d" font-family="monospace" font-size="8">82%</text>
-  <text x="130" y="218" fill="#9ca0a8" font-family="monospace" font-size="8">Agent: trend_follower · Risk: Low</text>
-  <text x="24" y="238" fill="#9ca0a8" font-family="monospace" font-size="7">BTC 4H bullish structure intact...</text>
-
-  <!-- Positions + Risk card (right) -->
-  <rect x="308" y="146" width="276" height="100" fill="rgba(255,255,255,0.03)" rx="6" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
-  <text x="316" y="164" fill="#e8eaee" font-family="monospace" font-size="9">Positions + Risk</text>
-  <text x="316" y="182" fill="#9ca0a8" font-family="monospace" font-size="7">Symbol  Dir    PnL      Rec   Risk</text>
-  <rect x="316" y="192" width="260" height="22" fill="rgba(0,255,157,0.08)" rx="3"/>
-  <text x="320" y="208" fill="#e8eaee" font-family="monospace" font-size="8">BTC/USDT  Long +324.50  Hold  Low</text>
-  <rect x="316" y="216" width="260" height="22" fill="rgba(255,84,112,0.08)" rx="3"/>
-  <text x="320" y="232" fill="#e8eaee" font-family="monospace" font-size="8">ETH/USDT  Short -82.10  Reduce Med</text>
-
-  <!-- Pending Confirmations -->
-  <rect x="16" y="258" width="568" height="48" fill="rgba(245,197,66,0.06)" rx="6" stroke="rgba(245,197,66,0.2)" stroke-width="1"/>
-  <text x="24" y="276" fill="#f5c542" font-family="monospace" font-size="9">Pending Confirmations</text>
-  <text x="30" y="296" fill="#9ca0a8" font-family="monospace" font-size="8">Strategy "MomentumScalper" ready to deploy → Awaiting confirmation</text>
-
-  <!-- Expandable analysis section -->
-  <rect x="16" y="318" width="568" height="22" fill="rgba(255,255,255,0.03)" rx="4" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
-  <text x="30" y="333" fill="#9ca0a8" font-family="monospace" font-size="8">▸ More Analysis (Signal Distribution / Strategy Status / Equity Curve / Risk Interception)</text>
-
-  <!-- Callout numbers -->
-  <circle cx="24" cy="120" r="9" fill="none" stroke="#00ff9d" stroke-width="1.5"/>
-  <text x="24" y="124" fill="#00ff9d" font-family="monospace" font-size="10" text-anchor="middle">①</text>
-  <circle cx="308" cy="130" r="9" fill="none" stroke="#f5c542" stroke-width="1.5"/>
-  <text x="308" y="134" fill="#f5c542" font-family="monospace" font-size="10" text-anchor="middle">②</text>
-  <circle cx="24" cy="240" r="9" fill="none" stroke="#50b4ff" stroke-width="1.5"/>
-  <text x="24" y="244" fill="#50b4ff" font-family="monospace" font-size="10" text-anchor="middle">③</text>
-  <circle cx="308" cy="240" r="9" fill="none" stroke="#ff9b3d" stroke-width="1.5"/>
-  <text x="308" y="244" fill="#ff9b3d" font-family="monospace" font-size="10" text-anchor="middle">④</text>
-  <circle cx="24" y="314" r="9" fill="none" stroke="#ff5470" stroke-width="1.5"/>
-  <text x="24" y="318" fill="#ff5470" font-family="monospace" font-size="10" text-anchor="middle">⑤</text>
-</svg>
-
-<ol>
-  <li><strong>① Trading Workflow Rail</strong> — A horizontally scrolling pipeline of the 9-step Daily Trading Loop. Each step is a color-coded neon card; click one to jump directly to that page (Signal Center, Strategy Workspace, Execution Center, etc.). A flowing light animation traces progress, and the status badge (Ready/Attention/Blocked) in the top-right corner gives a quick health check.</li>
-  <li><strong>② AI Status Bar</strong> — Four real-time indicators: AI provider status (Normal/Degraded/Unavailable), local GPU state (Running/Idle/Unavailable), today's AI cost, and pending job count. Auto-refreshes every 30 seconds.</li>
-  <li><strong>③ AI Market Judgment</strong> — The AI's directional call (Bullish/Bearish/Sideways) based on recent signals, shown with a confidence bar, risk level, source agent name, and reasoning. Higher confidence and lower risk make the signal more actionable.</li>
-  <li><strong>④ Positions + Risk</strong> — All open positions in a compact table. Each row shows the symbol, direction, PnL (amount and percentage), AI recommendation (Hold/Reduce/Take Profit/Close), and risk level (Low/Medium/High). Green for profit, red for loss.</li>
-  <li><strong>⑤ Pending Confirmations</strong> — Items requiring manual intervention: pending signals, strategies ready for deployment, risk lock releases. Each shows a type icon, title, and description, with Reject and Approve buttons on the right.</li>
-</ol>
-
-<p>The P1/P2 analysis section is collapsed by default. Click "More Analysis" to reveal Agent Signal Distribution, Strategy Status Overview, Equity Curve, and Risk Interception Stats.</p>
-
-<h2>Reading the Key Metrics</h2>
+<h3>Three-Column Metrics</h3>
 <ul>
-  <li><strong>AI Market Direction</strong> — Shows "Bullish", "Bearish", or "Sideways". Derived from a vote among the 10 most recent signals: if long signals outnumber shorts 2:1 it is Bullish, the inverse for Bearish, otherwise Sideways. The large display text and directional icon make it readable at a glance.</li>
-  <li><strong>Confidence</strong> — 0% to 100%, shown as a progress bar beneath the direction. Above 75% means the AI is confident in its call. Below 50% automatically flags the risk level as "High" — proceed with caution.</li>
-  <li><strong>Position PnL</strong> — Each position shows the absolute PnL in USDT and the percentage change. The AI recommendation (Hold/Reduce/Take Profit/Close) is auto-generated: profit above 5% triggers "Take Profit", loss beyond 3% triggers "Reduce".</li>
-  <li><strong>Risk Level per Position</strong> — Individual risk tags per position. PnL swings over 5% are "High" risk, over 2% are "Medium". Cross-reference with the AI recommendation.</li>
-  <li><strong>Pending Count Badge</strong> — The orange badge number next to "Pending Confirmations". Zero means no backlog; higher numbers mean more items need your attention.</li>
-  <li><strong>Agent Signal Distribution</strong> — Visible after expanding the analysis section. Shows each AI agent's total signal count and the bullish/bearish ratio. Longer bars with more green indicate a stronger bullish bias from that agent.</li>
-  <li><strong>Risk Interception Stats</strong> — Risk events categorized by outcome: Rejected, Reduced, Paper Only, Allowed. The stacked bar below the counts gives a visual sense of the risk system's interception rate.</li>
+    <li><strong>Strategy Runtime</strong> — Running strategies, positions, pending orders, reconciling count</li>
+    <li><strong>Live Readiness</strong> — Current readiness lamp (Live Ready / Paper Only / Risk Locked) with gate pass status</li>
+    <li><strong>Global Risk</strong> — Risk state, daily/weekly loss remaining gauges</li>
 </ul>
 
-<h2>Common Actions, Step by Step</h2>
+<h3>Position Risk Table</h3>
+<p>Full-width table of open positions: symbol, direction (green/red stripe), size, entry, P&L, risk level, and reason codes.</p>
 
-<p><strong>Handle a pending confirmation</strong></p>
-<ol>
-  <li>Find the item in the "Pending Confirmations" card. Read its title and description to understand what is being requested.</li>
-  <li>Click the green "Approve" button to confirm the action (e.g., approve a strategy to advance to the next stage), or click "Reject" to cancel it.</li>
-  <li>The item disappears from the list immediately. Note: approve/reject actions are local only and do not affect backend state.</li>
-</ol>
-
-<p><strong>Navigate using the Workflow Rail</strong></p>
-<ol>
-  <li>Scroll horizontally across the "Trading Workflow" rail at the top of the page to find the step you want.</li>
-  <li>Read the status text below each card (Passed/Running/Attention/Blocked) to check that step's current state.</li>
-  <li>Click any step card to jump directly to that feature page without navigating the sidebar.</li>
-</ol>
-
-<h2>Behind the Scenes</h2>
-<p>The Dashboard is the most data-intensive page in PulseDesk. On load, the ViewModel fires 7 parallel API calls (equity curve, signals, positions, strategies, risk events, system status, inference jobs) using <code>async let</code> — the slowest endpoint determines total load time. Once loaded, it polls every 30 seconds to refresh signals, positions, and job queue data. Polling stops automatically when you navigate away. When the backend is unreachable, every endpoint degrades gracefully to mock data so the UI always has content to display.</p>
-
-<h2>See Also</h2>
+<h3>Decision Feed + Alert Timeline</h3>
+<p>Side-by-side columns:</p>
 <ul>
-  <li><a href="#/pages/overview/live-readiness">Page · Live Readiness Check</a> — Verify system health before going live</li>
-  <li><a href="#/walkthroughs/daily-trading-loop">Walkthrough · Daily Trading Loop</a> — Understand the full workflow rail</li>
-  <li><a href="#/pages/strategy/strategy-workspace">Page · Strategy Workspace</a> — Create and edit trading strategies</li>
-  <li><a href="#/pages/execution/execution-center">Page · Execution Center</a> — View and manage all orders</li>
-  <li><a href="#/pages/risk/risk-center">Page · Risk Center</a> — Risk interception details and rule configuration</li>
+    <li><strong>Recent Decisions</strong> — Latest trading decisions with time, symbol, action (execute/hold/reduce/reject), and reason codes</li>
+    <li><strong>Alert Timeline</strong> — Chronological system and trading alerts at three severity levels (info/warning/error)</li>
 </ul>
+
+<h3>Emergency Action Bar</h3>
+<p>A fixed bottom bar with "Halt All Trading" button. Requires confirmation before stopping all strategies and canceling pending orders.</p>
+
+<h2>Data Refresh</h2>
+<p>The Dashboard auto-refreshes every 30 seconds via a single aggregated BFF endpoint for data consistency.</p>

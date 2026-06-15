@@ -1,128 +1,38 @@
-<h1>AI 总控台</h1>
-<p class="chapter-meta">页面 · 总览 · 5 分钟</p>
+<h1>总览仪表盘</h1>
 
-<blockquote class="lede">每天打开 AlphaLoop 第一个看到的页面——AI 对市场的判断、当前持仓风险、需要你确认的事项，全部集中在一屏之内。</blockquote>
+<p class="lead">仪表盘是 AlphaLoop 的交易运营总控台，一屏展示账户、策略、持仓、风控、决策和告警全貌。</p>
 
-<h2>TL;DR</h2>
-<p>AI 总控台是 PulseDesk 的首页。它按优先级分为三层：P0（核心关注）包括 AI 市场判断、持仓与风险状态、待确认事项；P1（分析）包括 Agent 信号分布、策略状态、权益曲线；P2（风控统计）显示风险拦截数据。顶部的工作流导轨展示 Daily Trading Loop 各环节的实时状态，点击即可跳转到对应页面。</p>
+<h2>布局结构</h2>
+<p>仪表盘采用 Bento 网格布局，从上到下依次为：</p>
 
-<h2>谁用 · 何时用</h2>
-<p>每一位交易者每天早上打开应用后的第一站。在开盘前查看 AI 对市场的判断方向、当前持仓是否安全、有没有需要手动确认的事项。日常操作中，每隔一段时间切回来看一眼，确认一切正常。</p>
+<h3>全局状态栏</h3>
+<p>顶部固定的基础设施状态栏，展示系统状态、Freqtrade 延迟、Redis 延迟、交易所连接状态，以及系统级原因码标签。</p>
 
-<h2>页面解剖</h2>
+<h3>账户总览（Hero 卡片）</h3>
+<p>左侧显示总权益（大字带动画）和24小时涨跌幅，右侧四列指标：今日盈亏、本周盈亏、最大回撤、夏普比率。</p>
 
-<svg class="diagram" viewBox="0 0 600 380" xmlns="http://www.w3.org/2000/svg">
-  <rect x="0" y="0" width="600" height="380" fill="rgba(255,255,255,0.02)" rx="8"/>
+<h3>建议操作</h3>
+<p>系统根据当前状态推荐的快捷操作按钮，如部署策略、审核信号、收紧止损等。最多显示3个。</p>
 
-  <!-- Top workflow rail -->
-  <rect x="16" y="12" width="568" height="72" fill="rgba(80,180,255,0.08)" rx="6" stroke="rgba(80,180,255,0.25)" stroke-width="1"/>
-  <text x="24" y="32" fill="#50b4ff" font-family="monospace" font-size="9">交易工作流</text>
-  <!-- Mini step cards -->
-  <rect x="24" y="42" width="36" height="34" fill="rgba(80,180,255,0.15)" rx="4"/>
-  <rect x="68" y="42" width="36" height="34" fill="rgba(255,155,61,0.15)" rx="4"/>
-  <rect x="112" y="42" width="36" height="34" fill="rgba(165,115,255,0.15)" rx="4"/>
-  <rect x="156" y="42" width="36" height="34" fill="rgba(80,130,255,0.15)" rx="4"/>
-  <rect x="200" y="42" width="36" height="34" fill="rgba(0,218,140,0.15)" rx="4"/>
-  <rect x="244" y="42" width="36" height="34" fill="rgba(255,84,112,0.15)" rx="4"/>
-  <rect x="288" y="42" width="36" height="34" fill="rgba(0,230,204,0.15)" rx="4"/>
-  <rect x="332" y="42" width="36" height="34" fill="rgba(255,140,51,0.15)" rx="4"/>
-  <rect x="376" y="42" width="36" height="34" fill="rgba(102,242,102,0.15)" rx="4"/>
-  <text x="200" y="68" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">① 9 步工作流导轨</text>
-
-  <!-- Status bar -->
-  <rect x="16" y="96" width="568" height="38" fill="rgba(255,255,255,0.04)" rx="6" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
-  <text x="30" y="112" fill="#00ff9d" font-family="monospace" font-size="8">AI PROVIDER NORMAL</text>
-  <text x="170" y="112" fill="#9ca0a8" font-family="monospace" font-size="8">LOCAL GPU IDLE</text>
-  <text x="310" y="112" fill="#e8eaee" font-family="monospace" font-size="8">AI COST TODAY $1.24</text>
-  <text x="440" y="112" fill="#00ff9d" font-family="monospace" font-size="8">PENDING JOBS 0</text>
-
-  <!-- AI Market Judgment card (left) -->
-  <rect x="16" y="146" width="280" height="100" fill="rgba(0,255,157,0.06)" rx="6" stroke="rgba(0,255,157,0.2)" stroke-width="1"/>
-  <text x="24" y="164" fill="#00ff9d" font-family="monospace" font-size="9">AI 市场判断</text>
-  <text x="40" y="190" fill="#e8eaee" font-family="monospace" font-size="22" font-weight="bold">看多</text>
-  <text x="110" y="188" fill="#9ca0a8" font-family="monospace" font-size="8">置信度</text>
-  <rect x="110" y="196" width="160" height="6" fill="rgba(255,255,255,0.06)" rx="3"/>
-  <rect x="110" y="196" width="120" height="6" fill="#00ff9d" rx="3"/>
-  <text x="250" y="196" fill="#00ff9d" font-family="monospace" font-size="8">82%</text>
-  <text x="110" y="218" fill="#9ca0a8" font-family="monospace" font-size="8">Agent: trend_follower · 风险: 低</text>
-  <text x="24" y="238" fill="#9ca0a8" font-family="monospace" font-size="7">BTC 4H 多头结构完整...</text>
-
-  <!-- Positions + Risk card (right) -->
-  <rect x="308" y="146" width="276" height="100" fill="rgba(255,255,255,0.03)" rx="6" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
-  <text x="316" y="164" fill="#e8eaee" font-family="monospace" font-size="9">持仓 + 风险</text>
-  <text x="316" y="182" fill="#9ca0a8" font-family="monospace" font-size="7">标的    方向    PnL     建议   风险</text>
-  <rect x="316" y="192" width="260" height="22" fill="rgba(0,255,157,0.08)" rx="3"/>
-  <text x="320" y="208" fill="#e8eaee" font-family="monospace" font-size="8">BTC/USDT  多  +324.50  持有  低</text>
-  <rect x="316" y="216" width="260" height="22" fill="rgba(255,84,112,0.08)" rx="3"/>
-  <text x="320" y="232" fill="#e8eaee" font-family="monospace" font-size="8">ETH/USDT  空  -82.10   减仓  中</text>
-
-  <!-- Pending Confirmations -->
-  <rect x="16" y="258" width="568" height="48" fill="rgba(245,197,66,0.06)" rx="6" stroke="rgba(245,197,66,0.2)" stroke-width="1"/>
-  <text x="24" y="276" fill="#f5c542" font-family="monospace" font-size="9">待确认事项</text>
-  <text x="30" y="296" fill="#9ca0a8" font-family="monospace" font-size="8">策略「MomentumScalper」待部署 → 等待确认</text>
-
-  <!-- Expandable analysis section -->
-  <rect x="16" y="318" width="568" height="22" fill="rgba(255,255,255,0.03)" rx="4" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
-  <text x="30" y="333" fill="#9ca0a8" font-family="monospace" font-size="8">▸ 展开更多分析 (Agent 信号 / 策略状态 / 权益曲线 / 风险拦截)</text>
-
-  <!-- Callout numbers -->
-  <circle cx="24" cy="120" r="9" fill="none" stroke="#00ff9d" stroke-width="1.5"/>
-  <text x="24" y="124" fill="#00ff9d" font-family="monospace" font-size="10" text-anchor="middle">①</text>
-  <circle cx="308" cy="130" r="9" fill="none" stroke="#f5c542" stroke-width="1.5"/>
-  <text x="308" y="134" fill="#f5c542" font-family="monospace" font-size="10" text-anchor="middle">②</text>
-  <circle cx="24" cy="240" r="9" fill="none" stroke="#50b4ff" stroke-width="1.5"/>
-  <text x="24" y="244" fill="#50b4ff" font-family="monospace" font-size="10" text-anchor="middle">③</circle>
-  <circle cx="308" cy="240" r="9" fill="none" stroke="#ff9b3d" stroke-width="1.5"/>
-  <text x="308" y="244" fill="#ff9b3d" font-family="monospace" font-size="10" text-anchor="middle">④</text>
-  <circle cx="24" cy="314" r="9" fill="none" stroke="#ff5470" stroke-width="1.5"/>
-  <text x="24" y="318" fill="#ff5470" font-family="monospace" font-size="10" text-anchor="middle">⑤</text>
-</svg>
-
-<ol>
-  <li><strong>① 交易工作流导轨</strong> — 横向滚动的 Daily Trading Loop 九步流程。每个步骤用不同颜色的霓虹卡片表示，点击即可跳转到对应页面（如信号中心、策略工作区、执行中心）。导轨上方的流动光效显示当前进度，右上角的状态徽章（就绪/需关注/阻塞）一目了然。</li>
-  <li><strong>② AI 状态栏</strong> — 四个实时状态指标：AI 服务商（正常/降级/不可用）、本地 GPU（运行中/空闲/不可用）、今日 AI 费用、排队任务数。每 30 秒自动刷新。</li>
-  <li><strong>③ AI 市场判断</strong> — AI 综合近期信号后给出的方向判断（看多/看空/震荡），附带置信度进度条、风险等级、来源 Agent 名称以及判断理由。置信度越高、风险越低，信号越可靠。</li>
-  <li><strong>④ 持仓 + 风险</strong> — 当前所有开仓头寸，每行显示标的、方向、盈亏（含百分比）、AI 建议（持有/减仓/止盈/平仓）和风险等级（低/中/高）。绿色盈利、红色亏损，一目了然。</li>
-  <li><strong>⑤ 待确认事项</strong> — 需要人工干预的项目：待处理的信号、待部署的策略、待释放的风险锁定。每条显示类型图标、标题和描述，右侧有"拒绝"和"批准"按钮。</li>
-</ol>
-
-<p>P1/P2 分析区域默认折叠，点击"展开更多分析"可查看 Agent 信号分布、策略状态总览、权益曲线图和风险拦截统计。</p>
-
-<h2>关键指标怎么读</h2>
+<h3>三列指标卡</h3>
 <ul>
-  <li><strong>AI 市场判断方向</strong> — 显示"看多"、"看空"或"震荡"。方向来自最近 10 个信号的投票——如果多头信号数量超过空头两倍则为看多，反之看空，否则震荡。大数字 + 方向图标让你一眼掌握 AI 态度。</li>
-  <li><strong>置信度</strong> — 0%~100%，显示在方向下方的进度条里。置信度越高（≥75%），AI 的判断越坚定。低于 50% 时风险等级自动标记为"高"，需要你额外留意。</li>
-  <li><strong>持仓盈亏 (PnL)</strong> — 每个持仓显示绝对盈亏金额和百分比。AI 建议（持有/减仓/止盈/平仓）根据盈亏幅度自动生成：盈利 >5% 建议止盈，亏损 >3% 建议减仓。</li>
-  <li><strong>风险等级</strong> — 每笔持仓的独立风险标记。盈亏波动 >5% 为高风险，>2% 为中风险。结合 AI 建议一起参考。</li>
-  <li><strong>待确认数量</strong> — 状态栏右侧的橙色徽章数字。数量为 0 说明没有积压事项；数字越大，需要你花时间处理的事项越多。</li>
-  <li><strong>Agent 信号分布</strong> — 展开后可见。每个 AI Agent 发出的信号总数以及看多/看空的比例。条形越长、绿色占比越高，说明该 Agent 越偏向多头。</li>
-  <li><strong>风险拦截统计</strong> — 按"已拒绝"、"已减仓"、"仅模拟"、"已放行"四种结果分类的风险事件计数。下方的堆叠条直观显示风控系统的拦截率。</li>
+    <li><strong>策略运行</strong> — 运行中策略数、持仓数、挂单数、对账数</li>
+    <li><strong>实盘准入</strong> — 当前准入状态灯（实盘就绪/仅模拟/风控锁定）及检查通过情况</li>
+    <li><strong>全局风控</strong> — 风控状态、日损余额%、周损余额%进度条</li>
 </ul>
 
-<h2>常见操作 · 一步步</h2>
+<h3>持仓风险表</h3>
+<p>全宽表格展示当前持仓：品种、方向（左侧绿/红色条）、数量、开仓价、盈亏、风险等级和原因码。</p>
 
-<p><strong>处理待确认事项</strong></p>
-<ol>
-  <li>在"待确认事项"卡片中找到需要处理的项目，阅读标题和描述了解具体内容。</li>
-  <li>点击右侧绿色的"批准"按钮确认操作（例如批准策略部署到下一阶段），或点击"拒绝"取消。</li>
-  <li>被处理的项目会立即从列表中消失。注意：批准/拒绝操作目前仅在本地生效，不会影响后端状态。</li>
-</ol>
-
-<p><strong>通过工作流导轨导航</strong></p>
-<ol>
-  <li>在页面顶部的"交易工作流"导轨上横向滚动，找到目标步骤卡片。</li>
-  <li>查看卡片下方的状态文字（已通过/运行中/需关注/已阻塞），了解该环节当前状况。</li>
-  <li>点击任意步骤卡片，自动跳转到对应的功能页面，无需手动从侧边栏寻找。</li>
-</ol>
-
-<h2>幕后</h2>
-<p>Dashboard 是数据加载最密集的页面之一。进入页面时，ViewModel 会并行发起 7 个 API 调用（权益曲线、信号列表、持仓、策略列表、风险事件、系统状态、推理任务队列）。所有请求使用 <code>async let</code> 并发执行，最慢的接口决定总加载时间。进入页面后每 30 秒自动轮询刷新信号、持仓和任务队列数据，离开页面时自动停止轮询。后端不可用时自动降级到模拟数据（Mock），确保 UI 始终有内容可展示。</p>
-
-<h2>相关</h2>
+<h3>决策流 + 告警时间线</h3>
+<p>左右双栏：</p>
 <ul>
-  <li><a href="#/pages/overview/live-readiness">页面 · 实盘准入检查</a> — 上线前检查系统健康度</li>
-  <li><a href="#/walkthroughs/daily-trading-loop">情景 · 日常交易循环</a> — 了解工作流导轨的完整流程</li>
-  <li><a href="#/pages/strategy/strategy-workspace">页面 · 策略工作区</a> — 创建和编辑交易策略</li>
-  <li><a href="#/pages/execution/execution-center">页面 · 执行中心</a> — 查看和管理所有订单</li>
-  <li><a href="#/pages/risk/risk-center">页面 · 风控中心</a> — 风险拦截详情和规则配置</li>
+    <li><strong>近期决策</strong> — 最近的交易决策，显示时间、品种、操作（执行/持有/减仓/拒绝）及原因码</li>
+    <li><strong>告警时间线</strong> — 按时间排列的系统和交易告警（信息/警告/错误三级）</li>
 </ul>
+
+<h3>紧急停止栏</h3>
+<p>底部固定的紧急控制栏，包含"停止全部交易"按钮。点击后需确认，确认后将停止所有策略并取消挂单。</p>
+
+<h2>数据刷新</h2>
+<p>仪表盘每30秒自动轮询刷新数据。所有数据来自单一 BFF 聚合接口，确保一致性。</p>

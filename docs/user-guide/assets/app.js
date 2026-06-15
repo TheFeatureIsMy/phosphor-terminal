@@ -15,7 +15,7 @@ const NAV = [
     { path: "/concepts/10-ai-roles",        zh: "AlphaLoop 中的 AI 角色", en: "AI Roles in AlphaLoop" },
   ]},
   { group: { zh: "概览", en: "Overview" }, items: [
-    { path: "/pages/overview/dashboard",      zh: "Dashboard",        en: "Dashboard" },
+    { path: "/pages/overview/dashboard",      zh: "总览仪表盘",        en: "Dashboard" },
     { path: "/pages/overview/live-readiness", zh: "实盘就绪",          en: "Live Readiness" },
   ]},
   { group: { zh: "策略", en: "Strategy" }, items: [
