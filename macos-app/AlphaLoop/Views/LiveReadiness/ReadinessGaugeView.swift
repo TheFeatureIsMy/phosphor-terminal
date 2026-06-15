@@ -1,4 +1,4 @@
-// ReadinessGaugeView.swift — Orbital readiness score
+// ReadinessGaugeView.swift — Countdown-ring readiness score (editorial style)
 
 import SwiftUI
 
@@ -6,12 +6,11 @@ struct ReadinessGaugeView: View {
     @Environment(PulseColors.self) private var colors
     let score: Int
 
-    @State private var animatedFraction: Double = 0
-    @State private var orbitRotation: Double = 0
+    @State private var animatedProgress: Double = 0
     @State private var glowPulse = false
 
-    private let diameter: CGFloat = 220
-    private let sweep: Double = 270
+    private let ringSize: CGFloat = 180
+    private let strokeWidth: CGFloat = 6
     private var fraction: Double { min(max(Double(score), 0), 100) / 100.0 }
 
     private var scoreColor: Color {
@@ -22,125 +21,39 @@ struct ReadinessGaugeView: View {
 
     var body: some View {
         ZStack {
-            ambientGlow
-            referenceRing
-            trackArc
-            fillArc
-            tickMarks
-            orbitingParticle
-            scoreLabel
+            // Background ring
+            Circle()
+                .stroke(colors.border.opacity(0.3), style: StrokeStyle(lineWidth: strokeWidth, lineCap: .round))
+                .frame(width: ringSize, height: ringSize)
+
+            // Score arc
+            Circle()
+                .trim(from: 0, to: animatedProgress)
+                .stroke(scoreColor.opacity(0.9), style: StrokeStyle(lineWidth: strokeWidth, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+                .frame(width: ringSize, height: ringSize)
+                .shadow(color: scoreColor.opacity(glowPulse ? 0.3 : 0.15), radius: 8)
+
+            // Center content
+            VStack(spacing: 4) {
+                Text("\(score)")
+                    .font(.system(size: 36, weight: .semibold, design: .monospaced))
+                    .monospacedDigit()
+                    .foregroundStyle(scoreColor)
+                    .contentTransition(.numericText())
+
+                Text(L10n.LiveReadiness.readinessScore)
+                    .font(PulseFonts.caption)
+                    .foregroundStyle(colors.textMuted)
+            }
         }
-        .frame(width: diameter * 1.4, height: diameter * 1.15)
+        .frame(width: ringSize + 24, height: ringSize + 24)
         .onAppear {
-            withAnimation(.easeOut(duration: 1.5)) { animatedFraction = fraction }
-            withAnimation(.linear(duration: 12).repeatForever(autoreverses: false)) {
-                orbitRotation = 360
-            }
-            withAnimation(.easeInOut(duration: 3).repeatForever(autoreverses: true)) {
-                glowPulse = true
-            }
+            withAnimation(.easeOut(duration: 1.2)) { animatedProgress = fraction }
+            withAnimation(.easeInOut(duration: 2.5).repeatForever(autoreverses: true)) { glowPulse = true }
         }
         .onChange(of: score) {
-            withAnimation(.easeOut(duration: 0.8)) { animatedFraction = fraction }
+            withAnimation(.easeOut(duration: 0.8)) { animatedProgress = fraction }
         }
-    }
-
-    // MARK: - Layers
-
-    private var ambientGlow: some View {
-        Circle()
-            .fill(
-                RadialGradient(
-                    colors: [scoreColor.opacity(0.07), scoreColor.opacity(0.02), .clear],
-                    center: .center,
-                    startRadius: 0,
-                    endRadius: diameter * 0.7
-                )
-            )
-            .frame(width: diameter * 1.4, height: diameter * 1.4)
-            .scaleEffect(glowPulse ? 1.06 : 1.0)
-    }
-
-    private var referenceRing: some View {
-        Circle()
-            .stroke(colors.border.opacity(0.1), lineWidth: 0.5)
-            .frame(width: diameter + 30, height: diameter + 30)
-    }
-
-    private var trackArc: some View {
-        SweepArc(start: -135, end: 135)
-            .stroke(colors.border.opacity(0.15), style: StrokeStyle(lineWidth: 5, lineCap: .round))
-            .frame(width: diameter, height: diameter)
-    }
-
-    private var fillArc: some View {
-        SweepArc(start: -135, end: -135 + animatedFraction * sweep)
-            .stroke(
-                AngularGradient(
-                    colors: [scoreColor.opacity(0.15), scoreColor.opacity(0.6), scoreColor],
-                    center: .center
-                ),
-                style: StrokeStyle(lineWidth: 7, lineCap: .round)
-            )
-            .frame(width: diameter, height: diameter)
-            .shadow(color: scoreColor.opacity(0.3), radius: 8)
-    }
-
-    private var tickMarks: some View {
-        ForEach(0..<11, id: \.self) { i in
-            let angle = -135.0 + Double(i) * (sweep / 10.0)
-            let isLit = Double(i) / 10.0 <= fraction
-            let isMajor = i % 5 == 0
-
-            Rectangle()
-                .fill(isLit ? scoreColor.opacity(0.5) : colors.border.opacity(0.12))
-                .frame(width: isMajor ? 1.5 : 0.5, height: isMajor ? 12 : 7)
-                .offset(y: -(diameter / 2 + 16))
-                .rotationEffect(.degrees(angle))
-        }
-    }
-
-    private var orbitingParticle: some View {
-        Circle()
-            .fill(scoreColor)
-            .frame(width: 3, height: 3)
-            .shadow(color: scoreColor.opacity(0.8), radius: 4)
-            .offset(y: -(diameter / 2 + 22))
-            .rotationEffect(.degrees(orbitRotation))
-            .opacity(0.6)
-    }
-
-    private var scoreLabel: some View {
-        VStack(spacing: 2) {
-            Text("\(score)")
-                .font(.system(size: 54, weight: .ultraLight, design: .monospaced))
-                .foregroundStyle(scoreColor)
-                .contentTransition(.numericText())
-
-            Text(L10n.LiveReadiness.readinessScore)
-                .font(.system(size: 9, weight: .medium, design: .monospaced))
-                .foregroundStyle(colors.textMuted)
-                .textCase(.uppercase)
-                .tracking(3)
-        }
-    }
-}
-
-// MARK: - Arc Shape
-
-private struct SweepArc: Shape {
-    let start: Double
-    let end: Double
-
-    func path(in rect: CGRect) -> Path {
-        var p = Path()
-        p.addArc(
-            center: CGPoint(x: rect.midX, y: rect.midY),
-            radius: min(rect.width, rect.height) / 2,
-            startAngle: .degrees(start - 90),
-            endAngle: .degrees(end - 90),
-            clockwise: false
-        )
-        return p
     }
 }

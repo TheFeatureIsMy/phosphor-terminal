@@ -1,4 +1,4 @@
-// LaunchConsoleView.swift — Launch authorization command bar
+// LaunchConsoleView.swift — Launch authorization (editorial verdict style)
 
 import SwiftUI
 
@@ -11,162 +11,127 @@ struct LaunchConsoleView: View {
     let onPaperTrade: () -> Void
     let onGoLive: () -> Void
 
-    @State private var goLiveHover = false
-
     var body: some View {
-        VStack(spacing: 0) {
-            // Header
-            HStack(spacing: 6) {
-                Text("▸")
-                    .font(.system(size: 10, weight: .bold, design: .monospaced))
-                    .foregroundStyle(PulseColors.accent)
-                TerminalLabel(text: L10n.LiveReadiness.launchSequence)
-                Spacer()
-            }
-            .padding(.horizontal, PulseSpacing.md)
-            .padding(.vertical, PulseSpacing.sm)
-
-            Divider().background(colors.border.opacity(0.2))
-
-            // Body: blockers + actions
-            HStack(alignment: .center, spacing: 0) {
-                // Left: Blockers
-                blockerSection
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                // Separator
-                Rectangle()
-                    .fill(colors.border.opacity(0.2))
-                    .frame(width: 0.5)
-                    .padding(.vertical, PulseSpacing.xs)
-
-                // Right: Actions
-                actionButtons
-                    .frame(maxWidth: .infinity)
-            }
-            .padding(.vertical, PulseSpacing.sm)
-        }
-        .background(
-            RoundedRectangle(cornerRadius: PulseRadii.sm)
-                .fill(colors.surface.opacity(0.3))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: PulseRadii.sm)
-                .stroke(
-                    canStartLiveSmall
-                        ? PulseColors.accent.opacity(0.12)
-                        : colors.border.opacity(0.2),
-                    lineWidth: 0.5
-                )
-        )
-        .clipShape(RoundedRectangle(cornerRadius: PulseRadii.sm))
-    }
-
-    // MARK: - Blockers
-
-    private var blockerSection: some View {
-        VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
+        VStack(alignment: .leading, spacing: PulseSpacing.md) {
+            // Blockers
             if blockingReasons.isEmpty {
                 HStack(spacing: PulseSpacing.xs) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 10))
-                        .foregroundStyle(PulseColors.accent)
+                    Circle()
+                        .fill(PulseColors.accent)
+                        .frame(width: 6, height: 6)
+                        .shadow(color: PulseColors.accent.opacity(0.5), radius: 3)
                     Text(L10n.LiveReadiness.allClear)
-                        .font(PulseFonts.monoLabel)
+                        .font(.system(size: 13, weight: .medium, design: .monospaced))
                         .foregroundStyle(PulseColors.accent)
                 }
             } else {
-                ForEach(Array(blockingReasons.enumerated()), id: \.offset) { _, reason in
-                    HStack(alignment: .firstTextBaseline, spacing: PulseSpacing.xs) {
-                        Text("✗")
-                            .font(.system(size: 10, weight: .bold, design: .monospaced))
-                            .foregroundStyle(PulseColors.danger)
+                VStack(alignment: .leading, spacing: PulseSpacing.xs) {
+                    ForEach(Array(blockingReasons.enumerated()), id: \.offset) { i, reason in
+                        HStack(alignment: .firstTextBaseline, spacing: PulseSpacing.xs) {
+                            Text("\(toRoman(i + 1)).")
+                                .font(.system(size: 13, weight: .semibold, design: .serif))
+                                .foregroundStyle(PulseColors.danger.opacity(0.7))
+                                .frame(width: 24, alignment: .leading)
 
-                        Text(reason["code"] ?? "")
-                            .font(PulseFonts.monoLabel)
-                            .foregroundStyle(PulseColors.danger)
+                            Text(reason["code"] ?? "")
+                                .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                                .foregroundStyle(PulseColors.danger)
 
-                        Text("— \(reason["message"] ?? "")")
-                            .font(PulseFonts.micro)
-                            .foregroundStyle(colors.textMuted)
-                            .lineLimit(1)
+                            if let msg = reason["message"], !msg.isEmpty {
+                                Text("\u{2014} \u{201C}\(msg)\u{201D}")
+                                    .font(.system(size: 12.5, weight: .regular, design: .serif))
+                                    .italic()
+                                    .foregroundStyle(colors.textSecondary)
+                                    .lineLimit(1)
+                            }
+                        }
                     }
                 }
             }
-        }
-        .padding(.horizontal, PulseSpacing.md)
-    }
 
-    // MARK: - Action Buttons
+            // Divider
+            Rectangle()
+                .fill(colors.border)
+                .frame(height: 1)
 
-    private var actionButtons: some View {
-        HStack(spacing: PulseSpacing.sm) {
-            Spacer()
+            // Action buttons
+            HStack(spacing: PulseSpacing.md) {
+                Spacer()
 
-            // Paper Trade
-            Button(action: onPaperTrade) {
-                Text(L10n.LiveReadiness.paperTrade)
+                // Paper Trade (ghost)
+                Button(action: onPaperTrade) {
+                    Text(L10n.LiveReadiness.paperTrade)
+                        .font(.system(size: 11, weight: .medium, design: .monospaced))
+                        .textCase(.uppercase)
+                        .tracking(0.5)
+                        .padding(.horizontal, PulseSpacing.md)
+                        .padding(.vertical, PulseSpacing.xs)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(canStartPaper ? colors.textSecondary : colors.textMuted)
+                .overlay(
+                    RoundedRectangle(cornerRadius: PulseRadii.sm)
+                        .stroke(colors.border.opacity(canStartPaper ? 0.5 : 0.2), lineWidth: 1)
+                )
+                .disabled(!canStartPaper)
+                .opacity(canStartPaper ? 1 : 0.4)
+
+                // Go Live (primary CTA, verdict-style)
+                Button(action: onGoLive) {
+                    HStack(spacing: 4) {
+                        Text(L10n.LiveReadiness.goLive)
+                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                            .textCase(.uppercase)
+                            .tracking(0.5)
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 8, weight: .bold))
+                    }
+                    .padding(.horizontal, PulseSpacing.lg)
+                    .padding(.vertical, PulseSpacing.xs)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(canStartLiveSmall ? PulseColors.accent : colors.textMuted)
+                .background(
+                    RoundedRectangle(cornerRadius: PulseRadii.sm)
+                        .fill(canStartLiveSmall ? PulseColors.accent.opacity(0.18) : Color.clear)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: PulseRadii.sm)
+                        .stroke(
+                            canStartLiveSmall ? PulseColors.accent.opacity(0.45) : colors.border.opacity(0.2),
+                            lineWidth: 1
+                        )
+                )
+                .disabled(!canStartLiveSmall)
+                .opacity(canStartLiveSmall ? 1 : 0.4)
+
+                // Full Live (locked)
+                Text(L10n.LiveReadiness.fullLive)
                     .font(.system(size: 11, weight: .medium, design: .monospaced))
                     .textCase(.uppercase)
                     .tracking(0.5)
+                    .foregroundStyle(colors.textMuted)
                     .padding(.horizontal, PulseSpacing.md)
                     .padding(.vertical, PulseSpacing.xs)
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(canStartPaper ? colors.textSecondary : colors.textMuted)
-            .overlay(
-                RoundedRectangle(cornerRadius: PulseRadii.xs)
-                    .stroke(colors.border.opacity(canStartPaper ? 0.4 : 0.15), lineWidth: 1)
-            )
-            .disabled(!canStartPaper)
-            .opacity(canStartPaper ? 1 : 0.4)
-
-            // Go Live — primary action
-            Button(action: onGoLive) {
-                HStack(spacing: 4) {
-                    Text(L10n.LiveReadiness.goLive)
-                        .font(.system(size: 11, weight: .bold, design: .monospaced))
-                        .textCase(.uppercase)
-                        .tracking(0.5)
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 8, weight: .bold))
-                }
-                .padding(.horizontal, PulseSpacing.lg)
-                .padding(.vertical, PulseSpacing.xs)
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(canStartLiveSmall ? PulseColors.accent : colors.textMuted)
-            .background(
-                RoundedRectangle(cornerRadius: PulseRadii.xs)
-                    .fill(canStartLiveSmall ? PulseColors.accent.opacity(0.1) : Color.clear)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: PulseRadii.xs)
-                    .stroke(
-                        canStartLiveSmall ? PulseColors.accent.opacity(0.35) : colors.border.opacity(0.15),
-                        lineWidth: 1.5
+                    .overlay(
+                        RoundedRectangle(cornerRadius: PulseRadii.sm)
+                            .stroke(colors.border.opacity(0.15), lineWidth: 1)
                     )
-            )
-            .shadow(color: canStartLiveSmall ? PulseColors.accent.opacity(0.15) : .clear, radius: 8)
-            .disabled(!canStartLiveSmall)
-            .opacity(canStartLiveSmall ? 1 : 0.4)
+                    .opacity(canStartFullLive ? 0.8 : 0.25)
 
-            // Full Live (locked)
-            Text(L10n.LiveReadiness.fullLive)
-                .font(.system(size: 11, weight: .medium, design: .monospaced))
-                .textCase(.uppercase)
-                .tracking(0.5)
-                .foregroundStyle(colors.textMuted)
-                .padding(.horizontal, PulseSpacing.md)
-                .padding(.vertical, PulseSpacing.xs)
-                .overlay(
-                    RoundedRectangle(cornerRadius: PulseRadii.xs)
-                        .stroke(colors.border.opacity(0.1), lineWidth: 1)
-                )
-                .opacity(canStartFullLive ? 0.8 : 0.25)
-
-            Spacer()
+                Spacer()
+            }
         }
-        .padding(.horizontal, PulseSpacing.sm)
+    }
+
+    private func toRoman(_ n: Int) -> String {
+        switch n {
+        case 1: "i"
+        case 2: "ii"
+        case 3: "iii"
+        case 4: "iv"
+        case 5: "v"
+        default: "\(n)"
+        }
     }
 }
