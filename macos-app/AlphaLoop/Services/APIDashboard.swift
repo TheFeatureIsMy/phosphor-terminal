@@ -14,4 +14,13 @@ struct APIDashboard {
     func getEquityCurve() async throws -> [EquityPoint] {
         try await client.get("/api/dashboard/equity-curve", mock: MockData.mockEquityCurve)
     }
+
+    // Used by RiskView / StrategyRiskTab (not part of Dashboard BFF)
+    func getRiskEvents() async throws -> [RiskEvent] {
+        try await client.get("/api/risk/events", mock: MockData.mockRiskEvents)
+    }
+
+    func getCorrelation() async throws -> [CorrelationSnapshot] {
+        try await client.get("/api/portfolio/correlation", mock: MockData.mockCorrelation)
+    }
 }
