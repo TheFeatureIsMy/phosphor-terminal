@@ -208,3 +208,15 @@ async def get_signals(user_profile: str = "conservative"):
     except Exception as exc:
         logger.warning("Get signals failed: %s", exc)
         return []
+
+
+@router.get("/training/stats")
+async def get_training_stats():
+    try:
+        from app.services.manipulation.training_pipeline import ManipulationTrainingPipeline
+        pipeline = ManipulationTrainingPipeline()
+        return pipeline.get_stats()
+    except Exception as exc:
+        logger.warning("Training stats failed: %s", exc)
+        return {"total_samples": 0, "version": 0, "by_type": {}, "by_stage": {},
+                "cases_since_last_train": 0, "retrain_threshold": 50}

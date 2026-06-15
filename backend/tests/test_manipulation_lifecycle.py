@@ -130,3 +130,34 @@ class TestLifecycleEngine:
         assert "kol_pump_score" in features
         assert "retail_fomo_score" in features
         assert all(0 <= v <= 100 for v in features.values())
+
+    def test_training_pipeline_extracts_samples(self):
+        from app.services.manipulation.training_pipeline import ManipulationTrainingPipeline
+        pipeline = ManipulationTrainingPipeline()
+        case = {
+            "id": "test-1", "symbol": "SOL/USDT", "market": "crypto",
+            "manipulation_type": "M5", "lifecycle_stage": "completed",
+            "timeline": [
+                {"stage": "suspected", "features": {"volume_zscore": 45}},
+                {"stage": "accumulate", "features": {"consolidation_score": 65}},
+                {"stage": "markup", "features": {"breakout_velocity": 70, "funding_rate_zscore": 80}},
+                {"stage": "distribute", "features": {"distribution_signature": 60}},
+            ],
+            "outcome": {"was_manipulation": True, "peak_price_change_pct": 180},
+        }
+        samples = pipeline.extract_samples_from_case(case)
+        assert len(samples) == 4
+        assert samples[0].lifecycle_stage == "suspected"
+        assert samples[0].next_stage == "accumulate"
+        assert samples[-1].next_stage == "completed"
+        assert "A" in samples[2].available_layers
+        assert "E" in samples[2].available_layers  # funding_rate_zscore → Layer E
+
+    def test_rules_model_interface(self):
+        from app.services.manipulation.model_interface import RulesBasedModel
+        model = RulesBasedModel()
+        assert model.model_version == "rules-v1"
+        pred = model.predict({"pump_then_dump": 70, "volume_zscore": 60, "price_range_spike": 50})
+        assert pred.manipulation_type != "none"
+        assert pred.confidence > 0
+        assert len(pred.type_probabilities) > 0
