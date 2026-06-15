@@ -120,3 +120,13 @@ class TestLifecycleEngine:
         assert "holder_concentration_score" in features
         assert "exchange_inflow_zscore" in features
         assert all(0 <= v <= 100 for v in features.values())
+
+    def test_social_features(self):
+        from app.services.manipulation.social_features import compute_social_features
+        from app.services.manipulation.social_adapter import MockSocialAdapter
+        adapter = MockSocialAdapter()
+        snapshots = adapter.get_history("DOGE/USDT", limit=48)
+        features = compute_social_features([s.to_dict() for s in snapshots])
+        assert "kol_pump_score" in features
+        assert "retail_fomo_score" in features
+        assert all(0 <= v <= 100 for v in features.values())
