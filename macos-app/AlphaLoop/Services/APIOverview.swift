@@ -22,12 +22,14 @@ struct AccountOverviewResponse: Codable {
     var todayPnlPct: Double = 0
     var weekPnlPct: Double = 0
     var maxDrawdownPct: Double = 0
+    var sharpeRatio: Double?
 
     enum CodingKeys: String, CodingKey {
         case equity, currency
         case todayPnlPct = "today_pnl_pct"
         case weekPnlPct = "week_pnl_pct"
         case maxDrawdownPct = "max_drawdown_pct"
+        case sharpeRatio = "sharpe_ratio"
     }
 }
 
@@ -93,6 +95,7 @@ struct AlertResponse: Codable {
     var level: String = "info"
     var title: String = ""
     var symbol: String = ""
+    var time: String?
 }
 
 struct DashboardBFFResponse: Codable {
