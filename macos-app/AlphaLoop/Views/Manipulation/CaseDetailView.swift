@@ -199,12 +199,15 @@ struct CaseDetailView: View {
 
     // MARK: - Evidence Card
 
+    private var sortedEvidence: [(key: String, value: Double)] {
+        caseDetail.evidence.sorted { $0.value > $1.value }
+    }
+
     private var evidenceCard: some View {
         VStack(alignment: .leading, spacing: PulseSpacing.sm) {
             TerminalLabel(text: L10n.Manipulation.evidence)
 
             KryptonCard(emphasis: .subtle) {
-                let sortedEvidence = caseDetail.evidence.sorted { $0.value > $1.value }
                 LazyVGrid(
                     columns: [
                         GridItem(.flexible(), spacing: PulseSpacing.md),

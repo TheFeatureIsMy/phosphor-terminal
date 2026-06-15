@@ -81,6 +81,7 @@ SwiftUI app organized by feature domain:
 - **`Views/BacktestAndDryrun/BacktestLabView`** — Replaced old `BacktestDryrunView`. 3-column layout (Run Rail | Comparison | Inspector) driven by `BacktestLabViewModel`. Dry-run monitoring stays in `DryrunMonitorView`.
 - **`Views/LiveReadiness/LiveReadinessView`** — Live-trading readiness gate, driven by `LiveReadinessViewModel`.
 - **`Views/Dashboard/DashboardView`** — Bento Command Grid: `DashboardStatusBar` (infrastructure) → `AccountHeroCard` (equity + PnL + sparkline) → `AvailableActionsRow` → 3-column metrics (Runtime + Readiness + Risk) → `PositionRiskTable` → 2-column feeds (Decisions + Alerts) → `EmergencyActionBar` (sticky bottom). Driven by `DashboardViewModel` consuming single `GET /api/overview/dashboard` BFF endpoint.
+- **`Views/Manipulation/ManipulationRadarView`** — Market manipulation lifecycle radar: `CaseCardView` (case grid with `LifecycleIndicator`) + `CaseDetailView` (timeline + evidence + trading signal) + `ManipulationAlertFeed`. Driven by `ManipulationViewModel` consuming `/api/v2/manipulation/radar` + `/cases` + `/alerts` + `/signals`. Backend engine: `ManipulationPatternClassifier` (M1-M8 rules), `ManipulationLifecycleTracker` (state machine: suspected→accumulate→markup→distribute→collapse), `ManipulationCaseRepository` (case library), `HistoricalManipulationScanner` (historical case discovery).
 - **`DesignSystem/`** — Design tokens (`DesignTokens.swift`), view modifiers, animated effects. See Design System section below.
 - **`Localization/`** — See L10n below.
 

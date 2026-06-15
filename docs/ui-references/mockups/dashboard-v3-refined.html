@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlphaLoop Dashboard v3 — Refined Bento</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;0,700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+  *{margin:0;padding:0;box-sizing:border-box;}
+
+  :root{
+    --bg:#07090C;--surface:#0E1216;--surface-el:#131922;
+    --border:#1F2731;--border-hot:rgba(0,255,157,0.35);
+    --accent:#00FF9D;--accent-dim:rgba(0,255,157,0.08);
+    --cyan:#5BD4FF;--cyan-dim:rgba(91,212,255,0.08);
+    --amber:#FFB547;--amber-dim:rgba(255,181,71,0.08);
+    --danger:#FF5A6E;--danger-dim:rgba(255,90,110,0.08);
+    --purple:#A877FF;--purple-dim:rgba(168,119,255,0.08);
+    --profit:#00FF9D;--loss:#FF5A6E;
+    --text-1:rgba(255,255,255,0.92);--text-2:rgba(255,255,255,0.55);--text-3:rgba(255,255,255,0.30);
+    --card-bg:rgba(14,18,22,0.85);--card-border:rgba(31,39,49,0.7);--card-r:14px;
+  }
+
+  body{
+    background:var(--bg);color:var(--text-1);
+    font-family:'Space Grotesk',-apple-system,sans-serif;
+    min-height:100vh;overflow-x:hidden;
+  }
+  body::before{
+    content:'';position:fixed;inset:0;
+    background:
+      radial-gradient(ellipse 600px 400px at 12% 18%,rgba(0,255,157,0.035) 0%,transparent 70%),
+      radial-gradient(ellipse 500px 350px at 88% 55%,rgba(91,212,255,0.025) 0%,transparent 70%),
+      radial-gradient(ellipse 400px 300px at 50% 92%,rgba(255,90,110,0.02) 0%,transparent 70%);
+    pointer-events:none;z-index:0;
+  }
+  body::after{
+    content:'';position:fixed;inset:0;
+    background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(255,255,255,0.006) 2px,rgba(255,255,255,0.006) 4px);
+    pointer-events:none;z-index:0;
+  }
+
+  .dashboard{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:16px 20px 88px;display:flex;flex-direction:column;gap:10px;}
+
+  /* ===== CARD BASE ===== */
+  .card{
+    background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--card-r);
+    padding:16px 20px;position:relative;overflow:hidden;
+    backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+    transition:border-color 0.25s,box-shadow 0.25s,transform 0.15s;
+  }
+  .card:hover{border-color:rgba(255,255,255,0.08);box-shadow:0 4px 24px rgba(0,0,0,0.3);}
+  .card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,0.02),transparent 60%);pointer-events:none;}
+
+  .card-label{
+    font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;
+    letter-spacing:0.08em;text-transform:uppercase;color:var(--text-3);margin-bottom:10px;
+  }
+
+  .row{display:flex;gap:10px;}
+  .row>*{flex:1;min-width:0;}
+
+  /* ===== STATUS BAR (infrastructure only, no duplicate metrics) ===== */
+  .status-bar{
+    background:rgba(0,255,157,0.025);border:1px solid rgba(0,255,157,0.08);border-radius:10px;
+    padding:8px 20px;display:flex;align-items:center;gap:0;
+    font-family:'IBM Plex Mono',monospace;font-size:11px;
+    position:sticky;top:0;z-index:10;backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);
+  }
+  .sb-item{display:flex;align-items:center;gap:6px;padding:0 16px;border-right:1px solid rgba(255,255,255,0.05);white-space:nowrap;}
+  .sb-item:last-child{border-right:none;}.sb-item:first-child{padding-left:0;}
+  .sb-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+  .sb-dot.green{background:var(--accent);box-shadow:0 0 6px var(--accent);}
+  .sb-dot.amber{background:var(--amber);box-shadow:0 0 6px var(--amber);}
+  .sb-dot.red{background:var(--danger);box-shadow:0 0 6px var(--danger);}
+  .sb-label{color:var(--text-3);font-weight:400;}
+  .sb-value{color:var(--text-1);font-weight:500;}
+  .sb-value.green{color:var(--accent);}
+  .sb-value.amber{color:var(--amber);}
+  .sb-reason{
+    margin-left:auto;display:flex;gap:4px;align-items:center;padding-left:16px;
+  }
+
+  /* ===== HERO ACCOUNT CARD (Equity + PnL merged) ===== */
+  .hero-card{
+    min-height:140px;display:flex;gap:0;padding:0;overflow:hidden;
+    border-image:linear-gradient(135deg,rgba(0,255,157,0.15),rgba(91,212,255,0.08),rgba(31,39,49,0.7)) 1;
+    border:none;outline:1px solid rgba(0,255,157,0.12);outline-offset:-1px;border-radius:var(--card-r);
+  }
+  .hero-left{
+    flex:0 0 420px;padding:20px 28px;display:flex;flex-direction:column;justify-content:center;
+    position:relative;
+  }
+  .hero-left::after{
+    content:'';position:absolute;right:0;top:16px;bottom:16px;width:1px;
+    background:linear-gradient(180deg,transparent,rgba(255,255,255,0.06),transparent);
+  }
+  .hero-equity{
+    font-family:'IBM Plex Mono',monospace;font-size:40px;font-weight:700;
+    color:var(--text-1);letter-spacing:-1px;line-height:1;
+  }
+  .hero-currency{font-size:14px;color:var(--text-3);font-weight:400;margin-left:6px;}
+  .hero-change{
+    font-family:'IBM Plex Mono',monospace;font-size:13px;margin-top:10px;
+    display:flex;align-items:center;gap:8px;
+  }
+  .hero-change .positive{color:var(--profit);}
+  .hero-change .tag{
+    font-size:9px;padding:2px 6px;border-radius:4px;
+    background:rgba(0,255,157,0.1);color:var(--accent);border:1px solid rgba(0,255,157,0.2);
+  }
+
+  .hero-right{flex:1;display:flex;align-items:stretch;}
+  .hero-pnl-cell{
+    flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;
+    padding:16px 12px;position:relative;text-align:center;
+  }
+  .hero-pnl-cell+.hero-pnl-cell::before{
+    content:'';position:absolute;left:0;top:20px;bottom:20px;width:1px;
+    background:rgba(255,255,255,0.04);
+  }
+  .hero-pnl-label{
+    font-family:'IBM Plex Mono',monospace;font-size:9px;text-transform:uppercase;
+    letter-spacing:0.08em;color:var(--text-3);margin-bottom:8px;
+  }
+  .hero-pnl-value{
+    font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:600;line-height:1;
+  }
+  .hero-pnl-abs{
+    font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-3);margin-top:4px;
+  }
+
+  /* Sparkline SVG */
+  .hero-sparkline{
+    position:absolute;bottom:0;left:0;right:0;height:48px;opacity:0.12;pointer-events:none;
+  }
+
+  /* ===== QUICK ACTIONS ===== */
+  .actions-row{
+    display:flex;gap:8px;padding:4px 0;
+  }
+  .action-btn{
+    font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;
+    letter-spacing:0.04em;text-transform:uppercase;
+    padding:6px 14px;border-radius:6px;cursor:pointer;
+    display:flex;align-items:center;gap:6px;
+    border:1px solid;transition:all 0.15s;background:transparent;
+  }
+  .action-btn:hover{transform:translateY(-1px);}
+  .action-btn.primary{
+    color:var(--accent);border-color:rgba(0,255,157,0.25);
+    background:rgba(0,255,157,0.06);
+  }
+  .action-btn.primary:hover{background:rgba(0,255,157,0.12);border-color:rgba(0,255,157,0.4);}
+  .action-btn.secondary{
+    color:var(--cyan);border-color:rgba(91,212,255,0.2);
+    background:rgba(91,212,255,0.04);
+  }
+  .action-btn.secondary:hover{background:rgba(91,212,255,0.1);}
+  .action-btn.warn{
+    color:var(--amber);border-color:rgba(255,181,71,0.2);
+    background:rgba(255,181,71,0.04);
+  }
+  .action-btn.warn:hover{background:rgba(255,181,71,0.1);}
+  .action-label{
+    font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--text-3);
+    letter-spacing:0.04em;margin-right:8px;
+  }
+
+  /* ===== METRIC CARDS ===== */
+  .metric-card{min-height:110px;display:flex;flex-direction:column;justify-content:space-between;}
+  .metric-main{display:flex;align-items:baseline;gap:6px;margin-top:6px;}
+  .metric-number{font-family:'IBM Plex Mono',monospace;font-size:28px;font-weight:700;line-height:1;}
+  .metric-unit{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-3);}
+  .metric-details{display:flex;gap:12px;margin-top:10px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-2);}
+  .metric-detail-item{display:flex;align-items:center;gap:4px;}
+
+  /* Readiness */
+  .readiness-wrap{display:flex;align-items:center;gap:14px;margin-top:6px;}
+  .readiness-lamp{
+    width:36px;height:36px;border-radius:50%;position:relative;flex-shrink:0;
+  }
+  .readiness-lamp.live{
+    background:radial-gradient(circle,var(--accent) 25%,rgba(0,255,157,0.2) 70%,transparent 100%);
+    box-shadow:0 0 24px rgba(0,255,157,0.35),0 0 48px rgba(0,255,157,0.1);
+    animation:pulse 2.5s ease-in-out infinite;
+  }
+  @keyframes pulse{
+    0%,100%{box-shadow:0 0 24px rgba(0,255,157,0.35),0 0 48px rgba(0,255,157,0.1);}
+    50%{box-shadow:0 0 32px rgba(0,255,157,0.5),0 0 64px rgba(0,255,157,0.15);}
+  }
+  /* Readiness card ambient glow */
+  .readiness-card::after{
+    content:'';position:absolute;top:50%;left:30px;width:80px;height:80px;
+    background:radial-gradient(circle,rgba(0,255,157,0.06),transparent 70%);
+    transform:translate(-50%,-50%);pointer-events:none;border-radius:50%;
+  }
+  .readiness-text{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;letter-spacing:0.04em;}
+  .readiness-sub{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-3);margin-top:2px;}
+
+  /* Risk gauge */
+  .risk-gauge{display:flex;flex-direction:column;gap:8px;margin-top:10px;}
+  .gauge-row{display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:10px;}
+  .gauge-label{color:var(--text-3);min-width:52px;text-transform:uppercase;letter-spacing:0.04em;}
+  .gauge-bar{flex:1;height:5px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden;}
+  .gauge-fill{height:100%;border-radius:3px;transition:width 0.8s ease-out;}
+  .gauge-fill.safe{background:linear-gradient(90deg,var(--accent),rgba(0,255,157,0.5));}
+  .gauge-fill.caution{background:linear-gradient(90deg,var(--amber),rgba(255,181,71,0.5));}
+  .gauge-value{color:var(--text-2);min-width:32px;text-align:right;font-weight:500;}
+  .status-pill{
+    display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:6px;
+    font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;
+  }
+  .pill-green{background:rgba(0,255,157,0.1);color:var(--accent);border:1px solid rgba(0,255,157,0.2);}
+
+  /* Reason chips */
+  .reason-chips{display:flex;gap:4px;flex-wrap:wrap;}
+  .reason-chip{
+    font-family:'IBM Plex Mono',monospace;font-size:9px;padding:2px 7px;border-radius:4px;letter-spacing:0.03em;
+  }
+  .chip-info{background:rgba(91,212,255,0.08);color:var(--cyan);border:1px solid rgba(91,212,255,0.15);}
+  .chip-warn{background:rgba(255,181,71,0.08);color:var(--amber);border:1px solid rgba(255,181,71,0.15);}
+  .chip-block{background:rgba(255,90,110,0.08);color:var(--danger);border:1px solid rgba(255,90,110,0.15);}
+
+  /* ===== POSITION TABLE ===== */
+  .pos-table{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:12px;}
+  .pos-table th{
+    text-align:left;font-size:10px;font-weight:500;color:var(--text-3);text-transform:uppercase;
+    letter-spacing:0.06em;padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.06);
+  }
+  .pos-table td{padding:0;border-bottom:1px solid rgba(255,255,255,0.025);vertical-align:middle;}
+  .pos-table tr:hover td{background:rgba(255,255,255,0.015);}
+
+  .pos-row{display:flex;align-items:center;}
+  .pos-stripe{width:3px;align-self:stretch;border-radius:2px 0 0 2px;flex-shrink:0;}
+  .pos-stripe.long-stripe{background:var(--profit);}
+  .pos-stripe.short-stripe{background:var(--loss);}
+  .pos-cells{display:flex;align-items:center;flex:1;padding:10px 12px;gap:0;}
+  .pos-cell{flex:1;min-width:0;}
+  .pos-cell.symbol{font-weight:600;color:var(--text-1);flex:0 0 110px;}
+  .pos-cell.dir{flex:0 0 64px;}
+  .pos-cell.size{flex:0 0 70px;color:var(--text-2);}
+  .pos-cell.entry{flex:0 0 80px;color:var(--text-2);}
+  .pos-cell.pnl{flex:0 0 100px;font-weight:600;font-variant-numeric:tabular-nums;}
+  .pos-cell.pnlpct{flex:0 0 72px;font-weight:600;font-variant-numeric:tabular-nums;}
+  .pos-cell.risk{flex:0 0 70px;display:flex;align-items:center;gap:5px;}
+  .pos-cell.reason{flex:1;}
+
+  .dir-tag{font-size:10px;font-weight:600;text-transform:uppercase;}
+  .dir-tag.long{color:var(--profit);}
+  .dir-tag.short{color:var(--loss);}
+  .risk-dot{width:7px;height:7px;border-radius:50%;display:inline-block;}
+  .risk-label{font-size:10px;font-weight:500;}
+
+  /* ===== FEED / TIMELINE ===== */
+  .feed{display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto;}
+  .feed::-webkit-scrollbar{width:3px;}.feed::-webkit-scrollbar-track{background:transparent;}
+  .feed::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:2px;}
+
+  .feed-item{
+    display:flex;gap:12px;padding:10px 12px;border-radius:8px;
+    background:rgba(255,255,255,0.012);border:1px solid rgba(255,255,255,0.025);
+    transition:background 0.15s,border-color 0.15s;
+  }
+  .feed-item:hover{background:rgba(255,255,255,0.025);border-color:rgba(255,255,255,0.05);}
+  .feed-time{
+    font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-3);
+    white-space:nowrap;min-width:44px;padding-top:2px;
+  }
+  .feed-body{flex:1;}
+  .feed-symbol{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:var(--text-1);}
+  .feed-text{font-size:11px;color:var(--text-2);margin-top:2px;line-height:1.4;}
+
+  /* Alert timeline */
+  .alert-item{display:flex;align-items:flex-start;gap:12px;padding:10px 12px;position:relative;}
+  .alert-item::after{
+    content:'';position:absolute;left:17px;top:28px;bottom:-2px;width:1px;
+    background:rgba(255,255,255,0.04);
+  }
+  .alert-item:last-child::after{display:none;}
+  .alert-dot{
+    width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:3px;position:relative;z-index:1;
+  }
+  .alert-dot.warning{background:var(--amber);box-shadow:0 0 8px rgba(255,181,71,0.25);}
+  .alert-dot.error{background:var(--danger);box-shadow:0 0 8px rgba(255,90,110,0.25);}
+  .alert-dot.info{background:var(--cyan);box-shadow:0 0 8px rgba(91,212,255,0.25);}
+  .alert-body{flex:1;}
+  .alert-title{font-size:12px;font-weight:500;color:var(--text-1);line-height:1.4;}
+  .alert-meta{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-3);margin-top:3px;display:flex;gap:10px;}
+
+  /* ===== EMERGENCY BAR ===== */
+  .emergency-bar{
+    position:fixed;bottom:0;left:0;right:0;z-index:100;
+    background:rgba(7,9,12,0.94);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+    border-top:1px solid rgba(255,90,110,0.15);
+    padding:8px 20px;display:flex;align-items:center;justify-content:center;gap:16px;
+  }
+  .emergency-btn{
+    background:rgba(255,90,110,0.1);border:1px solid rgba(255,90,110,0.3);color:var(--danger);
+    font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:0.06em;
+    text-transform:uppercase;padding:7px 20px;border-radius:8px;cursor:pointer;
+    transition:all 0.15s;display:flex;align-items:center;gap:8px;
+  }
+  .emergency-btn:hover{
+    background:rgba(255,90,110,0.2);border-color:rgba(255,90,110,0.5);
+    box-shadow:0 0 20px rgba(255,90,110,0.12);
+  }
+  .emergency-note{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--text-3);letter-spacing:0.03em;}
+
+  /* Fade-in */
+  .fi{opacity:0;transform:translateY(10px);animation:fu 0.35s ease-out forwards;}
+  @keyframes fu{to{opacity:1;transform:translateY(0);}}
+</style>
+</head>
+<body>
+<div class="dashboard">
+
+  <!-- ===== GLOBAL STATUS BAR — infrastructure only ===== -->
+  <div class="status-bar fi" style="animation-delay:0ms">
+    <div class="sb-item">
+      <div class="sb-dot green"></div>
+      <span class="sb-label">SYS</span>
+      <span class="sb-value green">HEALTHY</span>
+    </div>
+    <div class="sb-item">
+      <div class="sb-dot green"></div>
+      <span class="sb-label">FREQTRADE</span>
+      <span class="sb-value">12ms</span>
+    </div>
+    <div class="sb-item">
+      <div class="sb-dot green"></div>
+      <span class="sb-label">REDIS</span>
+      <span class="sb-value">3ms</span>
+    </div>
+    <div class="sb-item">
+      <div class="sb-dot green"></div>
+      <span class="sb-label">EXCHANGE</span>
+      <span class="sb-value green">BINANCE</span>
+    </div>
+    <div class="sb-reason">
+      <span class="reason-chip chip-info">all_services_healthy</span>
+      <span class="reason-chip chip-info">low_latency</span>
+    </div>
+  </div>
+
+  <!-- ===== HERO: Account Overview (Equity + PnL merged) ===== -->
+  <div class="card hero-card fi" style="animation-delay:35ms">
+    <div class="hero-left">
+      <div class="card-label" style="padding:0;">// ACCOUNT OVERVIEW</div>
+      <div style="display:flex;align-items:baseline;">
+        <span class="hero-equity">124,850</span>
+        <span class="hero-currency">.32 USDT</span>
+      </div>
+      <div class="hero-change">
+        <span class="positive">▲ +2,415.80 (+1.97%)</span>
+        <span class="tag">24H</span>
+      </div>
+      <!-- Sparkline -->
+      <svg class="hero-sparkline" viewBox="0 0 420 48" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#00FF9D" stop-opacity="0.5"/>
+            <stop offset="100%" stop-color="#00FF9D" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <path d="M0,38 L30,36 L60,32 L90,34 L120,28 L150,24 L180,26 L210,20 L240,18 L270,22 L300,14 L330,16 L360,10 L390,8 L420,6 L420,48 L0,48 Z" fill="url(#sg)"/>
+        <path d="M0,38 L30,36 L60,32 L90,34 L120,28 L150,24 L180,26 L210,20 L240,18 L270,22 L300,14 L330,16 L360,10 L390,8 L420,6" fill="none" stroke="#00FF9D" stroke-width="1.5"/>
+      </svg>
+    </div>
+    <div class="hero-right">
+      <div class="hero-pnl-cell">
+        <div class="hero-pnl-label">Today P&L</div>
+        <div class="hero-pnl-value" style="color:var(--profit);">+1.97%</div>
+        <div class="hero-pnl-abs">+2,415.80</div>
+      </div>
+      <div class="hero-pnl-cell">
+        <div class="hero-pnl-label">Week P&L</div>
+        <div class="hero-pnl-value" style="color:var(--profit);">+4.32%</div>
+        <div class="hero-pnl-abs">+5,281.50</div>
+      </div>
+      <div class="hero-pnl-cell">
+        <div class="hero-pnl-label">Max Drawdown</div>
+        <div class="hero-pnl-value" style="color:var(--loss);">-6.8%</div>
+        <div class="hero-pnl-abs">-8,490.00</div>
+      </div>
+      <div class="hero-pnl-cell">
+        <div class="hero-pnl-label">Sharpe Ratio</div>
+        <div class="hero-pnl-value" style="color:var(--cyan);">1.82</div>
+        <div class="hero-pnl-abs">30d rolling</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== AVAILABLE ACTIONS (PRD: availableActions) ===== -->
+  <div class="actions-row fi" style="animation-delay:70ms">
+    <span class="action-label">SUGGESTED ACTIONS</span>
+    <button class="action-btn primary">▶ Deploy "ETH Breakout v2" to Paper</button>
+    <button class="action-btn secondary">◉ Review 3 pending signals</button>
+    <button class="action-btn warn">⚡ Tighten SOL/USDT stop-loss</button>
+  </div>
+
+  <!-- ===== ROW 2: Runtime + Readiness + Risk ===== -->
+  <div class="row">
+    <div class="card metric-card fi" style="animation-delay:105ms">
+      <div class="card-label">// STRATEGY RUNTIME</div>
+      <div class="metric-main">
+        <span class="metric-number" style="color:var(--purple);">5</span>
+        <span class="metric-unit">running</span>
+      </div>
+      <div class="metric-details">
+        <div class="metric-detail-item"><span style="color:var(--accent);">●</span> 4 positions</div>
+        <div class="metric-detail-item"><span style="color:var(--amber);">●</span> 2 pending</div>
+        <div class="metric-detail-item"><span style="color:var(--purple);">●</span> 0 reconciling</div>
+      </div>
+      <div class="reason-chips" style="margin-top:8px;">
+        <span class="reason-chip chip-info">all_strategies_healthy</span>
+      </div>
+    </div>
+
+    <div class="card metric-card readiness-card fi" style="animation-delay:140ms">
+      <div class="card-label">// LIVE READINESS</div>
+      <div class="readiness-wrap">
+        <div class="readiness-lamp live"></div>
+        <div>
+          <div class="readiness-text" style="color:var(--accent);">LIVE READY</div>
+          <div class="readiness-sub">All 7 gates passed</div>
+        </div>
+      </div>
+      <div class="reason-chips" style="margin-top:10px;">
+        <span class="reason-chip chip-info">risk_budget_ok</span>
+        <span class="reason-chip chip-info">exchange_ok</span>
+        <span class="reason-chip chip-info">balance_ok</span>
+      </div>
+    </div>
+
+    <div class="card metric-card fi" style="animation-delay:175ms">
+      <div class="card-label">// GLOBAL RISK STATE</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+        <span class="status-pill pill-green"><div class="sb-dot green" style="width:5px;height:5px;"></div> NORMAL</span>
+      </div>
+      <div class="risk-gauge">
+        <div class="gauge-row">
+          <span class="gauge-label">Daily</span>
+          <div class="gauge-bar"><div class="gauge-fill safe" style="width:72%;"></div></div>
+          <span class="gauge-value" style="color:var(--accent);">72%</span>
+        </div>
+        <div class="gauge-row">
+          <span class="gauge-label">Weekly</span>
+          <div class="gauge-bar"><div class="gauge-fill safe" style="width:85%;"></div></div>
+          <span class="gauge-value" style="color:var(--accent);">85%</span>
+        </div>
+      </div>
+      <div class="reason-chips" style="margin-top:6px;">
+        <span class="reason-chip chip-info">within_budget</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ROW 3: Position Risk Table ===== -->
+  <div class="card fi" style="animation-delay:210ms">
+    <div class="card-label">// POSITION RISK · 4 OPEN</div>
+    <table class="pos-table">
+      <thead>
+        <tr>
+          <th style="padding-left:16px;">Symbol</th>
+          <th>Direction</th>
+          <th>Size</th>
+          <th>Entry</th>
+          <th>P&L</th>
+          <th>P&L %</th>
+          <th>Risk</th>
+          <th>Reason</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="8" style="padding:0;">
+          <div class="pos-row">
+            <div class="pos-stripe long-stripe"></div>
+            <div class="pos-cells">
+              <div class="pos-cell symbol">BTC/USDT</div>
+              <div class="pos-cell dir"><span class="dir-tag long">LONG</span></div>
+              <div class="pos-cell size">0.15</div>
+              <div class="pos-cell entry">67,420</div>
+              <div class="pos-cell pnl" style="color:var(--profit);">+1,830.00</div>
+              <div class="pos-cell pnlpct" style="color:var(--profit);">+2.71%</div>
+              <div class="pos-cell risk"><div class="risk-dot" style="background:var(--accent);"></div><span class="risk-label" style="color:var(--accent);">LOW</span></div>
+              <div class="pos-cell reason"><span class="reason-chip chip-info">trend_aligned</span></div>
+            </div>
+          </div>
+        </td></tr>
+        <tr><td colspan="8" style="padding:0;">
+          <div class="pos-row">
+            <div class="pos-stripe long-stripe"></div>
+            <div class="pos-cells">
+              <div class="pos-cell symbol">ETH/USDT</div>
+              <div class="pos-cell dir"><span class="dir-tag long">LONG</span></div>
+              <div class="pos-cell size">2.5</div>
+              <div class="pos-cell entry">3,680</div>
+              <div class="pos-cell pnl" style="color:var(--profit);">+425.00</div>
+              <div class="pos-cell pnlpct" style="color:var(--profit);">+4.62%</div>
+              <div class="pos-cell risk"><div class="risk-dot" style="background:var(--amber);"></div><span class="risk-label" style="color:var(--amber);">MED</span></div>
+              <div class="pos-cell reason"><span class="reason-chip chip-warn">near_resistance</span></div>
+            </div>
+          </div>
+        </td></tr>
+        <tr><td colspan="8" style="padding:0;">
+          <div class="pos-row">
+            <div class="pos-stripe short-stripe"></div>
+            <div class="pos-cells">
+              <div class="pos-cell symbol">SOL/USDT</div>
+              <div class="pos-cell dir"><span class="dir-tag short">SHORT</span></div>
+              <div class="pos-cell size">20</div>
+              <div class="pos-cell entry">168.50</div>
+              <div class="pos-cell pnl" style="color:var(--loss);">-180.00</div>
+              <div class="pos-cell pnlpct" style="color:var(--loss);">-0.53%</div>
+              <div class="pos-cell risk"><div class="risk-dot" style="background:var(--amber);"></div><span class="risk-label" style="color:var(--amber);">MED</span></div>
+              <div class="pos-cell reason"><span class="reason-chip chip-warn">vol_expanding</span></div>
+            </div>
+          </div>
+        </td></tr>
+        <tr><td colspan="8" style="padding:0;">
+          <div class="pos-row">
+            <div class="pos-stripe long-stripe"></div>
+            <div class="pos-cells">
+              <div class="pos-cell symbol">AVAX/USDT</div>
+              <div class="pos-cell dir"><span class="dir-tag long">LONG</span></div>
+              <div class="pos-cell size">50</div>
+              <div class="pos-cell entry">38.20</div>
+              <div class="pos-cell pnl" style="color:var(--profit);">+340.80</div>
+              <div class="pos-cell pnlpct" style="color:var(--profit);">+1.78%</div>
+              <div class="pos-cell risk"><div class="risk-dot" style="background:var(--accent);"></div><span class="risk-label" style="color:var(--accent);">LOW</span></div>
+              <div class="pos-cell reason"><span class="reason-chip chip-info">momentum_ok</span></div>
+            </div>
+          </div>
+        </td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ===== ROW 4: Decisions + Alerts ===== -->
+  <div class="row">
+    <div class="card fi" style="animation-delay:245ms">
+      <div class="card-label">// RECENT DECISIONS</div>
+      <div class="feed">
+        <div class="feed-item">
+          <div class="feed-time">14:32</div>
+          <div class="feed-body">
+            <div class="feed-symbol">BTC/USDT · <span style="color:var(--accent);">EXECUTE LONG</span></div>
+            <div class="feed-text">MTF structure bullish, signal confidence 0.82</div>
+            <div class="reason-chips" style="margin-top:4px;">
+              <span class="reason-chip chip-info">htf_bullish</span>
+              <span class="reason-chip chip-info">signal_strong</span>
+              <span class="reason-chip chip-info">risk_budget_ok</span>
+            </div>
+          </div>
+        </div>
+        <div class="feed-item">
+          <div class="feed-time">14:15</div>
+          <div class="feed-body">
+            <div class="feed-symbol">SOL/USDT · <span style="color:var(--amber);">REDUCE SIZE</span></div>
+            <div class="feed-text">Approaching daily loss limit, reduce exposure</div>
+            <div class="reason-chips" style="margin-top:4px;">
+              <span class="reason-chip chip-warn">daily_loss_warning</span>
+              <span class="reason-chip chip-info">reduce_size</span>
+            </div>
+          </div>
+        </div>
+        <div class="feed-item">
+          <div class="feed-time">13:48</div>
+          <div class="feed-body">
+            <div class="feed-symbol">ETH/USDT · <span style="color:var(--cyan);">HOLD</span></div>
+            <div class="feed-text">Near resistance but trend intact, maintain position</div>
+            <div class="reason-chips" style="margin-top:4px;">
+              <span class="reason-chip chip-warn">near_resistance</span>
+              <span class="reason-chip chip-info">trend_intact</span>
+            </div>
+          </div>
+        </div>
+        <div class="feed-item">
+          <div class="feed-time">13:20</div>
+          <div class="feed-body">
+            <div class="feed-symbol">AVAX/USDT · <span style="color:var(--accent);">EXECUTE LONG</span></div>
+            <div class="feed-text">Breakout confirmed above $38, momentum aligned</div>
+            <div class="reason-chips" style="margin-top:4px;">
+              <span class="reason-chip chip-info">breakout_confirmed</span>
+            </div>
+          </div>
+        </div>
+        <div class="feed-item">
+          <div class="feed-time">12:45</div>
+          <div class="feed-body">
+            <div class="feed-symbol">BNB/USDT · <span style="color:var(--danger);">REJECT</span></div>
+            <div class="feed-text">Signal rejected by pre-deployment risk gate</div>
+            <div class="reason-chips" style="margin-top:4px;">
+              <span class="reason-chip chip-block">risk_gate_blocked</span>
+              <span class="reason-chip chip-warn">correlation_high</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card fi" style="animation-delay:280ms">
+      <div class="card-label">// ALERT TIMELINE</div>
+      <div class="feed" style="gap:0;">
+        <div class="alert-item">
+          <div class="alert-dot warning"></div>
+          <div class="alert-body">
+            <div class="alert-title">Daily loss budget at 28% — approaching caution zone</div>
+            <div class="alert-meta"><span>PORTFOLIO</span><span>14:18</span></div>
+          </div>
+        </div>
+        <div class="alert-item">
+          <div class="alert-dot info"></div>
+          <div class="alert-body">
+            <div class="alert-title">ETH/USDT approaching resistance at $3,860</div>
+            <div class="alert-meta"><span>ETH/USDT</span><span>13:55</span></div>
+          </div>
+        </div>
+        <div class="alert-item">
+          <div class="alert-dot warning"></div>
+          <div class="alert-body">
+            <div class="alert-title">SOL/USDT volatility expanding — consider tightening stops</div>
+            <div class="alert-meta"><span>SOL/USDT</span><span>13:40</span></div>
+          </div>
+        </div>
+        <div class="alert-item">
+          <div class="alert-dot info"></div>
+          <div class="alert-body">
+            <div class="alert-title">Strategy "BTC Momentum v3" entered new position</div>
+            <div class="alert-meta"><span>BTC/USDT</span><span>13:32</span></div>
+          </div>
+        </div>
+        <div class="alert-item">
+          <div class="alert-dot error"></div>
+          <div class="alert-body">
+            <div class="alert-title">Binance API latency spike — 450ms (threshold: 200ms)</div>
+            <div class="alert-meta"><span>SYSTEM</span><span>12:15</span></div>
+          </div>
+        </div>
+        <div class="alert-item">
+          <div class="alert-dot info"></div>
+          <div class="alert-body">
+            <div class="alert-title">Reconciliation completed — 0 discrepancies</div>
+            <div class="alert-meta"><span>SYSTEM</span><span>12:00</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== EMERGENCY BAR ===== -->
+<div class="emergency-bar fi" style="animation-delay:315ms">
+  <span class="emergency-note">EMERGENCY CONTROL</span>
+  <button class="emergency-btn"><span>⚠</span> HALT ALL TRADING</button>
+  <span class="emergency-note">Stops all strategies · Cancels pending orders · Preserves positions</span>
+</div>
+
+</body>
+</html>

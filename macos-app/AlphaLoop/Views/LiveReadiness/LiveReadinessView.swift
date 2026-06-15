@@ -1,5 +1,5 @@
-// LiveReadinessView.swift — 实盘准入「工业控制室」
-// Rewritten: 3-zone layout using ReadinessGaugeView, GatePipelineView, LaunchConsoleView
+// LiveReadinessView.swift — 实盘准入「地平线协议」
+// Centered hero → horizontal gate corridor → telemetry triptych → command bar
 
 import SwiftUI
 
@@ -10,23 +10,28 @@ struct LiveReadinessView: View {
     @Environment(ToastManager.self) private var toastManager
     @Bindable var viewModel: LiveReadinessViewModel
 
-    // MARK: - Body
-
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: PulseSpacing.lg) {
-                mastheadCard
+            VStack(spacing: PulseSpacing.xl) {
+                scoreHero
                     .staggeredAppearance(index: 0)
 
-                twoColumnBody
+                GatePipelineView(gates: viewModel.strategyGates)
                     .staggeredAppearance(index: 1)
 
-                launchConsole
+                warningsBanner
                     .staggeredAppearance(index: 2)
+
+                telemetryTriptych
+                    .staggeredAppearance(index: 3)
+
+                launchCommand
+                    .staggeredAppearance(index: 4)
             }
             .padding(PulseSpacing.lg)
         }
         .scrollEdgeEffectStyle(.soft, for: .vertical)
+        .background(ambientBackground)
         .task { await viewModel.loadData() }
         .id(settingsState.language)
         .sheet(isPresented: $viewModel.showLaunchConfirmation) {
@@ -34,311 +39,316 @@ struct LiveReadinessView: View {
         }
     }
 
-    // MARK: - 1. Masthead
+    // MARK: - Ambient Background
 
-    private var mastheadCard: some View {
-        KryptonCard(emphasis: .bold) {
-            HStack(spacing: PulseSpacing.lg) {
-                // Left: Gauge
-                ReadinessGaugeView(score: viewModel.data?.score ?? 0)
-                    .frame(width: 180)
-                    .padding(.vertical, PulseSpacing.sm)
-                    .background(
-                        RoundedRectangle(cornerRadius: PulseRadii.sm)
-                            .fill(colors.surfaceElevated)
-                    )
+    private var ambientBackground: some View {
+        VStack {
+            LinearGradient(
+                colors: [stateColor.opacity(0.03), .clear],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(height: 400)
+            Spacer()
+        }
+        .ignoresSafeArea()
+    }
 
-                // Center: State info
-                VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-                    // State lamp + label
-                    HStack(spacing: PulseSpacing.xs) {
-                        stateLamp
-                        Text(stateLabel)
-                            .font(PulseFonts.displaySubheading)
-                            .foregroundStyle(stateColor)
-                    }
+    // MARK: - 1. Score Hero
 
-                    // Description
-                    Text(L10n.LiveReadiness.stateDescription(viewModel.data?.state ?? ""))
-                        .font(PulseFonts.caption)
-                        .foregroundStyle(colors.textSecondary)
-                        .lineLimit(3)
+    private var scoreHero: some View {
+        VStack(spacing: PulseSpacing.md) {
+            // RE-CHECK button (top-right aligned)
+            HStack {
+                Spacer()
+                recheckButton
+            }
 
-                    // Permission toggles
-                    HStack(spacing: PulseSpacing.sm) {
-                        permissionIndicator(L10n.LiveReadiness.paper, enabled: viewModel.data?.canStartPaper ?? false)
-                        permissionIndicator(L10n.LiveReadiness.small, enabled: viewModel.data?.canStartLiveSmall ?? false)
-                        permissionIndicator(L10n.LiveReadiness.full, enabled: viewModel.data?.canStartFullLive ?? false)
-                    }
-                }
+            // Orbital gauge
+            ReadinessGaugeView(score: viewModel.data?.score ?? 0)
 
-                Spacer(minLength: PulseSpacing.md)
+            // State lamp + label
+            HStack(spacing: PulseSpacing.xs) {
+                stateLamp
+                Text(stateLabel)
+                    .font(.system(size: 20, weight: .semibold, design: .monospaced))
+                    .foregroundStyle(stateColor)
+                    .textCase(.uppercase)
+                    .tracking(2)
+            }
 
-                // Right: Re-check button
-                Button {
-                    Task { await viewModel.runCheck() }
-                } label: {
-                    HStack(spacing: PulseSpacing.xxs) {
-                        if viewModel.isChecking {
-                            ProgressView().controlSize(.mini)
-                        } else {
-                            Image(systemName: "arrow.clockwise")
-                                .font(.system(size: 11))
-                        }
-                        Text(L10n.LiveReadiness.recheck)
-                            .font(PulseFonts.monoLabel)
-                    }
-                    .foregroundStyle(PulseColors.accent)
-                    .padding(.horizontal, PulseSpacing.sm)
-                    .padding(.vertical, PulseSpacing.xs)
-                    .background(
-                        RoundedRectangle(cornerRadius: PulseRadii.sm)
-                            .fill(PulseColors.accent.opacity(0.06))
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: PulseRadii.sm)
-                            .stroke(PulseColors.accent.opacity(0.25), lineWidth: 1)
-                    )
-                }
-                .buttonStyle(.plain)
-                .disabled(viewModel.isChecking)
+            // State description
+            Text(L10n.LiveReadiness.stateDescription(viewModel.data?.state ?? ""))
+                .font(PulseFonts.caption)
+                .foregroundStyle(colors.textSecondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 480)
+
+            // Permission toggles
+            HStack(spacing: PulseSpacing.md) {
+                permissionBadge(L10n.LiveReadiness.paper, enabled: viewModel.data?.canStartPaper ?? false)
+                permissionBadge(L10n.LiveReadiness.small, enabled: viewModel.data?.canStartLiveSmall ?? false)
+                permissionBadge(L10n.LiveReadiness.full, enabled: viewModel.data?.canStartFullLive ?? false)
             }
         }
     }
-
-    // MARK: - Masthead Helpers
 
     @State private var lampPulse = false
 
     private var stateLamp: some View {
         Circle()
             .fill(stateColor)
-            .frame(width: 14, height: 14)
+            .frame(width: 10, height: 10)
             .shadow(color: stateColor.opacity(0.6), radius: lampPulse ? 8 : 3)
-            .scaleEffect(lampPulse ? 1.15 : 1.0)
-            .animation(
-                .easeInOut(duration: 1.2).repeatForever(autoreverses: true),
-                value: lampPulse
-            )
+            .scaleEffect(lampPulse ? 1.2 : 1.0)
+            .animation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true), value: lampPulse)
             .onAppear { lampPulse = true }
     }
 
-    private func permissionIndicator(_ label: String, enabled: Bool) -> some View {
+    private func permissionBadge(_ label: String, enabled: Bool) -> some View {
         HStack(spacing: 4) {
-            Image(systemName: enabled ? "circle.circle.fill" : "circle.circle")
-                .font(.system(size: 10))
+            Circle()
+                .fill(enabled ? PulseColors.accent : colors.textMuted.opacity(0.3))
+                .frame(width: 6, height: 6)
+                .shadow(color: enabled ? PulseColors.accent.opacity(0.4) : .clear, radius: 3)
             Text(label)
-                .font(PulseFonts.micro)
+                .font(.system(size: 10, weight: .medium, design: .monospaced))
+                .foregroundStyle(enabled ? PulseColors.accent : colors.textMuted)
+                .textCase(.uppercase)
+                .tracking(0.5)
         }
-        .foregroundStyle(enabled ? PulseColors.accent : PulseColors.danger)
     }
 
-    // MARK: - 2. Two-Column Body
-
-    private var twoColumnBody: some View {
-        HStack(alignment: .top, spacing: PulseSpacing.lg) {
-            // Left column: Gate pipeline (fixed 380px)
-            GatePipelineView(gates: viewModel.strategyGates)
-                .frame(width: 380)
-
-            // Right column: stacked panels
-            VStack(spacing: PulseSpacing.lg) {
-                systemHealthPanel
-                riskFirewallPanel
-                capitalReadoutPanel
+    private var recheckButton: some View {
+        Button {
+            Task { await viewModel.runCheck() }
+        } label: {
+            HStack(spacing: PulseSpacing.xxs) {
+                if viewModel.isChecking {
+                    ProgressView().controlSize(.mini)
+                } else {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 10))
+                }
+                Text(L10n.LiveReadiness.recheck)
+                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                    .textCase(.uppercase)
+                    .tracking(0.5)
             }
-            .frame(maxWidth: .infinity)
+            .foregroundStyle(colors.textSecondary)
+            .padding(.horizontal, PulseSpacing.sm)
+            .padding(.vertical, PulseSpacing.xs)
+            .background(
+                RoundedRectangle(cornerRadius: PulseRadii.xs)
+                    .fill(colors.surface.opacity(0.5))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: PulseRadii.xs)
+                    .stroke(colors.border.opacity(0.25), lineWidth: 0.5)
+            )
+        }
+        .buttonStyle(.plain)
+        .disabled(viewModel.isChecking)
+    }
+
+    // MARK: - 2. Warnings Banner
+
+    @ViewBuilder
+    private var warningsBanner: some View {
+        let warnings = viewModel.data?.warnings ?? []
+        if !warnings.isEmpty {
+            HStack(spacing: PulseSpacing.sm) {
+                Image(systemName: "exclamationmark.triangle")
+                    .font(.system(size: 10))
+                    .foregroundStyle(PulseColors.amber)
+
+                ForEach(Array(warnings.enumerated()), id: \.offset) { _, warning in
+                    Text(warning["message"] ?? warning["code"] ?? "")
+                        .font(PulseFonts.micro)
+                        .foregroundStyle(PulseColors.amber.opacity(0.8))
+                }
+
+                Spacer()
+            }
+            .padding(.horizontal, PulseSpacing.md)
+            .padding(.vertical, PulseSpacing.xs)
+            .background(
+                RoundedRectangle(cornerRadius: PulseRadii.xs)
+                    .fill(PulseColors.amber.opacity(0.04))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: PulseRadii.xs)
+                    .stroke(PulseColors.amber.opacity(0.1), lineWidth: 0.5)
+            )
         }
     }
 
-    // MARK: - System Health (3x2 grid)
+    // MARK: - 3. Telemetry Triptych
+
+    private var telemetryTriptych: some View {
+        HStack(alignment: .top, spacing: PulseSpacing.md) {
+            systemHealthPanel
+            riskFirewallPanel
+            capitalPoolPanel
+        }
+    }
+
+    // MARK: System Health
 
     private var systemHealthPanel: some View {
-        KryptonCard(emphasis: .subtle, cardPadding: 0) {
+        telemetryPanel(title: L10n.LiveReadiness.systemHealth) {
+            let checks = viewModel.data?.checks ?? []
             VStack(alignment: .leading, spacing: 0) {
-                // Header
-                HStack {
-                    TerminalLabel(text: L10n.LiveReadiness.systemHealth)
-                    Spacer()
-                }
-                .padding(.horizontal, PulseSpacing.md)
-                .padding(.vertical, PulseSpacing.sm)
-
-                Divider().background(colors.border)
-
-                let checks = viewModel.data?.checks ?? []
-                LazyVGrid(
-                    columns: Array(repeating: GridItem(.flexible(), spacing: 0), count: 3),
-                    spacing: 0
-                ) {
-                    ForEach(Array(checks.enumerated()), id: \.offset) { index, check in
-                        healthCell(check)
-                            .staggeredAppearance(index: index)
+                ForEach(Array(checks.enumerated()), id: \.offset) { index, check in
+                    healthRow(check)
+                    if index < checks.count - 1 {
+                        Divider().background(colors.border.opacity(0.15)).padding(.leading, 18)
                     }
                 }
             }
         }
     }
 
-    private func healthCell(_ check: ReadinessCheckResponse) -> some View {
-        VStack(spacing: PulseSpacing.xxs) {
-            HStack(spacing: 4) {
-                Circle()
-                    .fill(checkStatusColor(check.status))
-                    .frame(width: 6, height: 6)
-                    .shadow(color: checkStatusColor(check.status).opacity(0.5), radius: 3)
-                Text(check.label)
-                    .font(PulseFonts.micro)
-                    .foregroundStyle(colors.textSecondary)
-                    .lineLimit(1)
-            }
+    private func healthRow(_ check: ReadinessCheckResponse) -> some View {
+        let statusColor = checkStatusColor(check.status)
+        return HStack(spacing: PulseSpacing.xs) {
+            Circle()
+                .fill(statusColor)
+                .frame(width: 5, height: 5)
+                .shadow(color: statusColor.opacity(0.4), radius: 2)
+
+            Text(check.label)
+                .font(PulseFonts.micro)
+                .foregroundStyle(colors.textSecondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
             Text(check.value)
-                .font(PulseFonts.bodyMedium)
-                .foregroundStyle(checkStatusColor(check.status))
+                .font(PulseFonts.monoLabel)
+                .foregroundStyle(statusColor)
 
             if !check.threshold.isEmpty {
                 Text(check.threshold)
-                    .font(PulseFonts.micro)
+                    .font(.system(size: 8))
                     .foregroundStyle(colors.textMuted)
             }
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, PulseSpacing.sm)
-        .padding(.horizontal, PulseSpacing.xs)
-        .background(
-            checkStatusColor(check.status).opacity(0.03)
-        )
-        .overlay(
-            Rectangle()
-                .fill(colors.border.opacity(0.3))
-                .frame(height: 0.5),
-            alignment: .bottom
-        )
+        .padding(.horizontal, PulseSpacing.sm)
+        .padding(.vertical, PulseSpacing.xs)
     }
 
-    // MARK: - Risk Firewall
+    // MARK: Risk Firewall
 
     private var riskFirewallPanel: some View {
         Button {
             appState.selectedRoute = .riskCenter
         } label: {
-            KryptonCard(emphasis: .subtle) {
-                VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-                    // Header
-                    HStack {
-                        TerminalLabel(text: L10n.LiveReadiness.riskFirewall)
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 9))
-                            .foregroundStyle(colors.textMuted)
-                    }
-
-                    // Three gauge bars
-                    riskGaugeBar(
+            telemetryPanel(
+                title: L10n.LiveReadiness.riskFirewall,
+                trailing: AnyView(
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 8))
+                        .foregroundStyle(colors.textMuted)
+                )
+            ) {
+                VStack(spacing: PulseSpacing.sm) {
+                    riskBar(
                         label: L10n.LiveReadiness.daily,
                         used: viewModel.riskState.dailyLossUsed,
                         limit: viewModel.riskState.dailyLossLimit,
                         color: PulseColors.amber
                     )
-                    riskGaugeBar(
+                    riskBar(
                         label: L10n.LiveReadiness.weekly,
                         used: viewModel.riskState.weeklyLossUsed,
                         limit: viewModel.riskState.weeklyLossLimit,
                         color: PulseColors.cyan
                     )
-                    riskGaugeBar(
+                    riskBar(
                         label: L10n.LiveReadiness.consecutive,
                         used: viewModel.riskState.consecutiveLosses,
                         limit: viewModel.riskState.consecutiveLimit,
                         color: PulseColors.purple
                     )
 
-                    Divider().background(colors.border)
+                    Divider().background(colors.border.opacity(0.15))
 
-                    // Kill Switch + Breaker status chips
-                    HStack(spacing: PulseSpacing.sm) {
+                    // Status chips
+                    HStack(spacing: PulseSpacing.xs) {
                         statusChip(
-                            label: L10n.LiveReadiness.killSwitch,
+                            L10n.LiveReadiness.killSwitch,
                             value: viewModel.riskState.killSwitchActive
-                                ? L10n.zh("已激活", en: "ACTIVE")
-                                : L10n.LiveReadiness.off,
+                                ? L10n.zh("激活", en: "ON") : L10n.LiveReadiness.off,
                             color: viewModel.riskState.killSwitchActive
                                 ? PulseColors.danger : PulseColors.accent
                         )
                         statusChip(
-                            label: L10n.LiveReadiness.breaker,
+                            L10n.LiveReadiness.breaker,
                             value: breakerStatusLabel,
                             color: breakerStatusColor
                         )
                         Spacer()
                     }
                 }
+                .padding(.horizontal, PulseSpacing.sm)
+                .padding(.bottom, PulseSpacing.xs)
             }
         }
         .buttonStyle(.plain)
     }
 
-    private func riskGaugeBar(label: String, used: Double, limit: Double, color: Color) -> some View {
+    private func riskBar(label: String, used: Double, limit: Double, color: Color) -> some View {
         let ratio = limit > 0 ? min(used / limit, 1.0) : 0
         let isHot = ratio > 0.8
         let barColor = isHot ? PulseColors.danger : color
 
-        return HStack(spacing: PulseSpacing.xs) {
-            Text(label)
-                .font(PulseFonts.micro)
-                .foregroundStyle(colors.textSecondary)
-                .frame(width: 50, alignment: .leading)
+        return VStack(alignment: .leading, spacing: 3) {
+            HStack {
+                Text(label)
+                    .font(.system(size: 9, weight: .medium, design: .monospaced))
+                    .foregroundStyle(colors.textSecondary)
+                    .textCase(.uppercase)
+                Spacer()
+                Text(String(format: "%.1f%%", ratio * 100))
+                    .font(.system(size: 9, weight: .medium, design: .monospaced))
+                    .foregroundStyle(barColor)
+            }
 
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 2)
-                        .fill(colors.border.opacity(0.3))
-                    RoundedRectangle(cornerRadius: 2)
+                    RoundedRectangle(cornerRadius: 1.5)
+                        .fill(colors.border.opacity(0.2))
+                    RoundedRectangle(cornerRadius: 1.5)
                         .fill(barColor)
                         .frame(width: max(2, geo.size.width * ratio))
-                        .shadow(color: barColor.opacity(0.4), radius: isHot ? 4 : 0)
+                        .shadow(color: barColor.opacity(isHot ? 0.4 : 0.15), radius: isHot ? 4 : 0)
                 }
             }
-            .frame(height: 6)
-
-            Text(String(format: "%.1f%%", ratio * 100))
-                .font(PulseFonts.micro)
-                .foregroundStyle(barColor)
-                .frame(width: 40, alignment: .trailing)
+            .frame(height: 4)
         }
-        .frame(height: 16)
     }
 
-    private func statusChip(label: String, value: String, color: Color) -> some View {
-        HStack(spacing: 4) {
+    private func statusChip(_ label: String, value: String, color: Color) -> some View {
+        HStack(spacing: 3) {
             Circle()
                 .fill(color)
-                .frame(width: 6, height: 6)
-                .shadow(color: color.opacity(0.5), radius: 3)
-            Text(label)
-                .font(PulseFonts.micro)
-                .foregroundStyle(colors.textSecondary)
-            Text(value)
-                .font(PulseFonts.micro)
-                .fontWeight(.semibold)
+                .frame(width: 4, height: 4)
+                .shadow(color: color.opacity(0.4), radius: 2)
+            Text("\(label): \(value)")
+                .font(.system(size: 8, weight: .medium, design: .monospaced))
                 .foregroundStyle(color)
+                .textCase(.uppercase)
         }
-        .padding(.horizontal, PulseSpacing.xs)
-        .padding(.vertical, PulseSpacing.xxs)
+        .padding(.horizontal, PulseSpacing.xxs)
+        .padding(.vertical, 2)
         .background(
-            RoundedRectangle(cornerRadius: PulseRadii.xs)
+            RoundedRectangle(cornerRadius: 2)
                 .fill(color.opacity(0.06))
-                .overlay(
-                    RoundedRectangle(cornerRadius: PulseRadii.xs)
-                        .stroke(color.opacity(0.15), lineWidth: 0.5)
-                )
         )
     }
 
     private var breakerStatusLabel: String {
-        if viewModel.breakerState.shouldStop { return L10n.zh("已触发", en: "TRIPPED") }
-        if viewModel.breakerState.shouldCooldown { return L10n.zh("冷却中", en: "COOLDOWN") }
+        if viewModel.breakerState.shouldStop { return L10n.zh("触发", en: "TRIP") }
+        if viewModel.breakerState.shouldCooldown { return L10n.zh("冷却", en: "COOL") }
         return L10n.LiveReadiness.normal
     }
 
@@ -348,109 +358,72 @@ struct LiveReadinessView: View {
         return PulseColors.accent
     }
 
-    // MARK: - Capital Readout
+    // MARK: Capital Pool
 
-    private var capitalReadoutPanel: some View {
-        KryptonCard(emphasis: .subtle) {
-            VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-                TerminalLabel(text: L10n.LiveReadiness.capitalPool)
+    private var capitalPoolPanel: some View {
+        telemetryPanel(title: L10n.LiveReadiness.capitalPool) {
+            VStack(alignment: .leading, spacing: PulseSpacing.xs) {
+                capitalRow(L10n.LiveReadiness.totalBudget, value: viewModel.capitalConfig.totalBudget, unit: "USDT")
+                capitalRow(L10n.LiveReadiness.stakePerTrade, value: viewModel.capitalConfig.stakeAmount, unit: "USDT")
+                capitalRow(L10n.LiveReadiness.maxOpenTrades, value: viewModel.capitalConfig.maxOpenTrades, unit: "")
+                capitalRow(L10n.LiveReadiness.maxDailyLoss, value: viewModel.capitalConfig.maxDailyLossPct, unit: "%")
 
-                // 2x2 readout grid
-                LazyVGrid(
-                    columns: [GridItem(.flexible()), GridItem(.flexible())],
-                    spacing: PulseSpacing.sm
-                ) {
-                    readoutCell(
-                        label: L10n.LiveReadiness.totalBudget,
-                        value: viewModel.capitalConfig.totalBudget,
-                        unit: "USDT",
-                        icon: "dollarsign.circle"
-                    )
-                    readoutCell(
-                        label: L10n.LiveReadiness.stakePerTrade,
-                        value: viewModel.capitalConfig.stakeAmount,
-                        unit: "USDT",
-                        icon: "chart.bar"
-                    )
-                    readoutCell(
-                        label: L10n.LiveReadiness.maxOpenTrades,
-                        value: viewModel.capitalConfig.maxOpenTrades,
-                        unit: "",
-                        icon: "square.stack.3d.up"
-                    )
-                    readoutCell(
-                        label: L10n.LiveReadiness.maxDailyLoss,
-                        value: viewModel.capitalConfig.maxDailyLossPct,
-                        unit: "%",
-                        icon: "arrow.down.circle"
-                    )
+                Divider().background(colors.border.opacity(0.15))
+
+                // Safety badges
+                HStack(spacing: PulseSpacing.xxs) {
+                    safetyTag(L10n.LiveReadiness.noLeverage)
+                    safetyTag(L10n.LiveReadiness.spotOnly)
+                }
+                HStack(spacing: PulseSpacing.xxs) {
+                    safetyTag(L10n.LiveReadiness.humanConfirmRequired)
+                    safetyTag(L10n.LiveReadiness.autoTradeOff)
                 }
 
-                Divider().background(colors.border)
-
-                // Safety badges row
-                HStack(spacing: PulseSpacing.xs) {
-                    safetyBadge(L10n.LiveReadiness.noLeverage, icon: "xmark.shield")
-                    safetyBadge(L10n.LiveReadiness.spotOnly, icon: "banknote")
-                    safetyBadge(L10n.LiveReadiness.humanConfirmRequired, icon: "person.badge.key")
-                    safetyBadge(L10n.LiveReadiness.autoTradeOff, icon: "hand.raised")
-                    Spacer()
-                }
+                Divider().background(colors.border.opacity(0.15))
 
                 // Exposure summary
                 exposureSummary
             }
+            .padding(.horizontal, PulseSpacing.sm)
+            .padding(.bottom, PulseSpacing.xs)
         }
     }
 
-    private func readoutCell(label: String, value: String, unit: String, icon: String) -> some View {
-        HStack(spacing: PulseSpacing.xs) {
-            Image(systemName: icon)
-                .font(.system(size: 12))
-                .foregroundStyle(PulseColors.cyan)
-                .frame(width: 20)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(label)
-                    .font(PulseFonts.micro)
-                    .foregroundStyle(colors.textMuted)
-
-                HStack(alignment: .firstTextBaseline, spacing: 2) {
-                    Text(value)
-                        .font(PulseFonts.tabular)
-                        .foregroundStyle(colors.textPrimary)
-                    if !unit.isEmpty {
-                        Text(unit)
-                            .font(PulseFonts.micro)
-                            .foregroundStyle(colors.textMuted)
-                    }
+    private func capitalRow(_ label: String, value: String, unit: String) -> some View {
+        HStack {
+            Text(label)
+                .font(PulseFonts.micro)
+                .foregroundStyle(colors.textMuted)
+            Spacer()
+            HStack(alignment: .firstTextBaseline, spacing: 2) {
+                Text(value)
+                    .font(PulseFonts.monoLabel)
+                    .foregroundStyle(colors.textPrimary)
+                if !unit.isEmpty {
+                    Text(unit)
+                        .font(.system(size: 8))
+                        .foregroundStyle(colors.textMuted)
                 }
             }
         }
-        .padding(PulseSpacing.xs)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: PulseRadii.sm)
-                .fill(colors.surface)
-        )
     }
 
-    private func safetyBadge(_ label: String, icon: String) -> some View {
-        HStack(spacing: 3) {
-            Image(systemName: icon).font(.system(size: 9))
-            Text(label).font(PulseFonts.micro)
-        }
-        .foregroundStyle(PulseColors.accent)
-        .padding(.horizontal, PulseSpacing.xs)
-        .padding(.vertical, PulseSpacing.xxs)
-        .background(
-            RoundedRectangle(cornerRadius: PulseRadii.xs)
-                .fill(PulseColors.accent.opacity(0.06))
-                .overlay(
-                    RoundedRectangle(cornerRadius: PulseRadii.xs)
-                        .stroke(PulseColors.accent.opacity(0.15), lineWidth: 0.5)
-                )
-        )
+    private func safetyTag(_ label: String) -> some View {
+        Text(label)
+            .font(.system(size: 8, weight: .medium))
+            .foregroundStyle(PulseColors.accent.opacity(0.7))
+            .textCase(.uppercase)
+            .padding(.horizontal, 5)
+            .padding(.vertical, 2)
+            .background(
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(PulseColors.accent.opacity(0.05))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 2)
+                    .stroke(PulseColors.accent.opacity(0.1), lineWidth: 0.5)
+            )
     }
 
     private var exposureSummary: some View {
@@ -459,36 +432,63 @@ struct LiveReadinessView: View {
         let pct = viewModel.capitalConfig.totalBudgetValue > 0
             ? (exposure / viewModel.capitalConfig.totalBudgetValue * 100) : 0
 
-        return HStack(spacing: PulseSpacing.xs) {
+        return HStack(spacing: PulseSpacing.xxs) {
             Image(systemName: overBudget ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
-                .font(.system(size: 10))
+                .font(.system(size: 8))
                 .foregroundStyle(overBudget ? PulseColors.danger : PulseColors.accent)
 
             Text(L10n.LiveReadiness.maxExposure)
-                .font(PulseFonts.micro)
-                .foregroundStyle(colors.textSecondary)
-
-            Text(String(format: "%.0f USDT", exposure))
-                .font(PulseFonts.monoLabel)
-                .fontWeight(.bold)
-                .foregroundStyle(overBudget ? PulseColors.danger : PulseColors.accent)
+                .font(.system(size: 8))
+                .foregroundStyle(colors.textMuted)
 
             Spacer()
 
-            Text(String(format: "%.1f%% %@", pct, L10n.LiveReadiness.ofBudget))
-                .font(PulseFonts.micro)
+            Text(String(format: "%.0f USDT", exposure))
+                .font(PulseFonts.monoLabel)
+                .foregroundStyle(overBudget ? PulseColors.danger : PulseColors.accent)
+
+            Text(String(format: "(%.0f%%)", pct))
+                .font(.system(size: 8))
                 .foregroundStyle(colors.textMuted)
         }
-        .padding(PulseSpacing.xs)
-        .background(
-            RoundedRectangle(cornerRadius: PulseRadii.sm)
-                .fill(overBudget ? PulseColors.danger.opacity(0.06) : PulseColors.accent.opacity(0.04))
-        )
     }
 
-    // MARK: - 3. Launch Console
+    // MARK: - Telemetry Panel Builder
 
-    private var launchConsole: some View {
+    private func telemetryPanel<Content: View>(
+        title: String,
+        trailing: AnyView? = nil,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Header
+            HStack {
+                TerminalLabel(text: title)
+                Spacer()
+                if let trailing { trailing }
+            }
+            .padding(.horizontal, PulseSpacing.sm)
+            .padding(.vertical, PulseSpacing.xs)
+
+            Divider().background(colors.border.opacity(0.15))
+
+            content()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: PulseRadii.sm)
+                .fill(colors.surface.opacity(0.3))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: PulseRadii.sm)
+                .stroke(colors.border.opacity(0.2), lineWidth: 0.5)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: PulseRadii.sm))
+    }
+
+    // MARK: - 4. Launch Command
+
+    private var launchCommand: some View {
         LaunchConsoleView(
             blockingReasons: viewModel.data?.blockingReasons ?? [],
             canStartPaper: viewModel.data?.canStartPaper ?? false,
@@ -551,15 +551,29 @@ private struct LaunchConfirmationSheet: View {
     var body: some View {
         VStack(spacing: PulseSpacing.lg) {
             // Warning icon
-            Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 36))
-                .foregroundStyle(PulseColors.amber)
-                .shadow(color: PulseColors.amber.opacity(0.4), radius: 8)
+            ZStack {
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [PulseColors.amber.opacity(0.1), .clear],
+                            center: .center,
+                            startRadius: 0,
+                            endRadius: 50
+                        )
+                    )
+                    .frame(width: 100, height: 100)
 
-            // Title
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: 36))
+                    .foregroundStyle(PulseColors.amber)
+                    .shadow(color: PulseColors.amber.opacity(0.3), radius: 8)
+            }
+
             Text(L10n.LiveReadiness.confirmTitle)
-                .font(PulseFonts.displayHeading)
+                .font(.system(size: 20, weight: .semibold, design: .monospaced))
                 .foregroundStyle(colors.textPrimary)
+                .textCase(.uppercase)
+                .tracking(1)
 
             // Capital summary
             VStack(alignment: .leading, spacing: PulseSpacing.xs) {
@@ -574,11 +588,11 @@ private struct LaunchConfirmationSheet: View {
             }
             .padding(PulseSpacing.sm)
             .background(
-                RoundedRectangle(cornerRadius: PulseRadii.sm)
-                    .fill(PulseColors.cyan.opacity(0.04))
+                RoundedRectangle(cornerRadius: PulseRadii.xs)
+                    .fill(colors.surface)
             )
 
-            // Warning message
+            // Warning
             Text(L10n.LiveReadiness.confirmMessage)
                 .font(PulseFonts.caption)
                 .foregroundStyle(PulseColors.amber)
@@ -586,14 +600,18 @@ private struct LaunchConfirmationSheet: View {
                 .padding(PulseSpacing.sm)
                 .frame(maxWidth: .infinity)
                 .background(
-                    RoundedRectangle(cornerRadius: PulseRadii.sm)
-                        .fill(PulseColors.amber.opacity(0.06))
+                    RoundedRectangle(cornerRadius: PulseRadii.xs)
+                        .fill(PulseColors.amber.opacity(0.05))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: PulseRadii.xs)
+                        .stroke(PulseColors.amber.opacity(0.1), lineWidth: 0.5)
                 )
 
-            // Confirmation phrase input
+            // Confirmation input
             VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
-                Text(L10n.zh("请输入确认短语：", en: "Type confirmation phrase:"))
-                    .font(PulseFonts.caption)
+                Text(L10n.zh("输入确认短语：", en: "Type confirmation phrase:"))
+                    .font(PulseFonts.micro)
                     .foregroundStyle(colors.textSecondary)
 
                 Text("\"\(requiredPhrase)\"")
@@ -602,18 +620,18 @@ private struct LaunchConfirmationSheet: View {
 
                 TextField("", text: $confirmText)
                     .textFieldStyle(.plain)
-                    .font(PulseFonts.body)
+                    .font(.system(size: 13, design: .monospaced))
                     .padding(PulseSpacing.xs)
                     .background(
-                        RoundedRectangle(cornerRadius: PulseRadii.sm)
+                        RoundedRectangle(cornerRadius: PulseRadii.xs)
                             .fill(colors.surface)
                     )
                     .overlay(
-                        RoundedRectangle(cornerRadius: PulseRadii.sm)
+                        RoundedRectangle(cornerRadius: PulseRadii.xs)
                             .stroke(
                                 confirmText == requiredPhrase
-                                    ? PulseColors.accent.opacity(0.5)
-                                    : colors.border,
+                                    ? PulseColors.accent.opacity(0.4)
+                                    : colors.border.opacity(0.3),
                                 lineWidth: 1
                             )
                     )
@@ -621,11 +639,9 @@ private struct LaunchConfirmationSheet: View {
 
             // Buttons
             HStack(spacing: PulseSpacing.md) {
-                Button(L10n.zh("取消", en: "Cancel")) {
-                    dismiss()
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.regular)
+                Button(L10n.zh("取消", en: "Cancel")) { dismiss() }
+                    .buttonStyle(.bordered)
+                    .controlSize(.regular)
 
                 Button {
                     isLaunching = true
@@ -642,8 +658,8 @@ private struct LaunchConfirmationSheet: View {
                             Image(systemName: "bolt.fill")
                         }
                         Text(L10n.LiveReadiness.goLive)
-                            .font(PulseFonts.monoLabel)
-                            .fontWeight(.bold)
+                            .font(.system(size: 12, weight: .bold, design: .monospaced))
+                            .textCase(.uppercase)
                     }
                 }
                 .buttonStyle(.borderedProminent)
@@ -664,7 +680,6 @@ private struct LaunchConfirmationSheet: View {
                 .frame(width: 100, alignment: .leading)
             Text(value)
                 .font(PulseFonts.monoLabel)
-                .fontWeight(.semibold)
                 .foregroundStyle(colors.textPrimary)
             Spacer()
         }

@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Redesign — Layout Comparison</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #07090C;
+    --surface: #0E1216;
+    --surface-elevated: #131922;
+    --border: #1F2731;
+    --accent: #00FF9D;
+    --cyan: #5BD4FF;
+    --amber: #FFB547;
+    --danger: #FF5A6E;
+    --purple: #A877FF;
+    --text-primary: rgba(255,255,255,0.92);
+    --text-secondary: rgba(255,255,255,0.55);
+    --text-muted: rgba(255,255,255,0.35);
+    --card-bg: rgba(14,18,22,0.85);
+    --card-border: rgba(31,39,49,0.6);
+    --glass: rgba(255,255,255,0.03);
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: 'Space Grotesk', sans-serif;
+    overflow-x: hidden;
+  }
+
+  .page-header {
+    padding: 40px 48px 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 40px;
+  }
+  .page-header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, var(--accent), var(--cyan));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .page-header p {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin-top: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .approach-section {
+    padding: 0 48px 60px;
+  }
+  .approach-header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 8px;
+  }
+  .approach-tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 4px;
+    background: rgba(0,255,157,0.1);
+    color: var(--accent);
+    border: 1px solid rgba(0,255,157,0.2);
+  }
+  .approach-tag.recommended {
+    background: rgba(0,255,157,0.15);
+    border-color: rgba(0,255,157,0.4);
+    box-shadow: 0 0 12px rgba(0,255,157,0.1);
+  }
+  .approach-title {
+    font-size: 22px;
+    font-weight: 600;
+  }
+  .approach-desc {
+    color: var(--text-secondary);
+    font-size: 13px;
+    margin-bottom: 24px;
+    max-width: 720px;
+    line-height: 1.6;
+  }
+  .approach-pros-cons {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 24px;
+    font-size: 12px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .pros, .cons {
+    padding: 12px 16px;
+    border-radius: 8px;
+    flex: 1;
+    max-width: 360px;
+  }
+  .pros {
+    background: rgba(0,255,157,0.05);
+    border: 1px solid rgba(0,255,157,0.15);
+  }
+  .cons {
+    background: rgba(255,90,110,0.05);
+    border: 1px solid rgba(255,90,110,0.15);
+  }
+  .pros strong { color: var(--accent); }
+  .cons strong { color: var(--danger); }
+  .pros li, .cons li {
+    color: var(--text-secondary);
+    margin: 4px 0;
+    list-style: none;
+    padding-left: 12px;
+    position: relative;
+  }
+  .pros li::before { content: '+'; position: absolute; left: 0; color: var(--accent); }
+  .cons li::before { content: '−'; position: absolute; left: 0; color: var(--danger); }
+
+  /* Wireframe grid mockups */
+  .wireframe {
+    background: var(--surface);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .wireframe::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 30% 20%, rgba(0,255,157,0.03) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .wf-card {
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 11px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    transition: all 0.2s;
+  }
+  .wf-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  }
+  .wf-card .label {
+    text-transform: uppercase;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    opacity: 0.6;
+  }
+  .wf-card .title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .wf-card .hint {
+    font-size: 9px;
+    color: var(--text-muted);
+  }
+
+  .wf-status-bar {
+    background: rgba(0,255,157,0.06);
+    border: 1px solid rgba(0,255,157,0.15);
+    color: var(--accent);
+  }
+  .wf-equity {
+    background: rgba(91,212,255,0.08);
+    border: 1px solid rgba(91,212,255,0.2);
+    color: var(--cyan);
+  }
+  .wf-pnl {
+    background: rgba(0,255,157,0.06);
+    border: 1px solid rgba(0,255,157,0.15);
+    color: var(--accent);
+  }
+  .wf-runtime {
+    background: rgba(168,119,255,0.08);
+    border: 1px solid rgba(168,119,255,0.2);
+    color: var(--purple);
+  }
+  .wf-positions {
+    background: rgba(255,181,71,0.08);
+    border: 1px solid rgba(255,181,71,0.2);
+    color: var(--amber);
+  }
+  .wf-readiness {
+    background: rgba(0,255,157,0.06);
+    border: 1px solid rgba(0,255,157,0.15);
+    color: var(--accent);
+  }
+  .wf-risk {
+    background: rgba(255,90,110,0.08);
+    border: 1px solid rgba(255,90,110,0.2);
+    color: var(--danger);
+  }
+  .wf-decisions {
+    background: rgba(91,212,255,0.06);
+    border: 1px solid rgba(91,212,255,0.15);
+    color: var(--cyan);
+  }
+  .wf-alerts {
+    background: rgba(255,181,71,0.06);
+    border: 1px solid rgba(255,181,71,0.15);
+    color: var(--amber);
+  }
+  .wf-emergency {
+    background: rgba(255,90,110,0.12);
+    border: 1px solid rgba(255,90,110,0.3);
+    color: var(--danger);
+  }
+
+  /* ========== APPROACH A: Bento Grid ========== */
+  .grid-a {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 960px;
+  }
+  .grid-a .row {
+    display: flex;
+    gap: 10px;
+  }
+  .grid-a .full { flex: 1; }
+  .grid-a .half { flex: 1; }
+  .grid-a .third { flex: 1; }
+  .grid-a .two-thirds { flex: 2; }
+
+  /* ========== APPROACH B: Command Split ========== */
+  .grid-b {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 960px;
+  }
+  .grid-b .split {
+    display: flex;
+    gap: 10px;
+  }
+  .grid-b .left-col {
+    flex: 0 0 340px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .grid-b .right-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  /* ========== APPROACH C: Vertical Stream ========== */
+  .grid-c {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 960px;
+  }
+  .grid-c .hero-row {
+    display: flex;
+    gap: 10px;
+  }
+  .grid-c .hero-equity { flex: 1; min-height: 100px; }
+  .grid-c .metrics-row {
+    display: flex;
+    gap: 10px;
+  }
+  .grid-c .metrics-row > * { flex: 1; }
+  .grid-c .feed-row {
+    display: flex;
+    gap: 10px;
+  }
+  .grid-c .feed-row > * { flex: 1; }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 20px 0 40px;
+  }
+
+  .sticky-label {
+    position: absolute;
+    right: 14px;
+    top: 10px;
+    font-size: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    background: rgba(0,0,0,0.4);
+    padding: 2px 6px;
+    border-radius: 3px;
+  }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>Dashboard Redesign — Layout Comparison</h1>
+  <p>// PRD-DRIVEN TRADING OPERATION CONTROL TOWER — 3 LAYOUT APPROACHES</p>
+</div>
+
+<!-- ==================== APPROACH A ==================== -->
+<div class="approach-section">
+  <div class="approach-header">
+    <span class="approach-tag recommended">RECOMMENDED</span>
+    <h2 class="approach-title">A. Bento Command Grid</h2>
+  </div>
+  <p class="approach-desc">
+    4列弹性 Bento Grid，信息密度最高。每个 PRD 组件映射到一个固定网格位置，一屏可见全部关键数据。StatusBar 和 EmergencyBar 分别钉顶/钉底。视觉节奏通过卡片大小差异（hero equity 2列 vs 小卡片 1列）创造层次。
+  </p>
+  <div class="approach-pros-cons">
+    <div class="pros">
+      <strong>优势</strong>
+      <ul>
+        <li>信息密度最高，一屏尽览</li>
+        <li>符合 PRD "总控台"定位</li>
+        <li>Bento 布局天然适配 KryptonCard</li>
+        <li>最像专业量化交易终端</li>
+      </ul>
+    </div>
+    <div class="cons">
+      <strong>劣势</strong>
+      <ul>
+        <li>窗口过窄时需要响应式降级</li>
+        <li>卡片内容过多时可能拥挤</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="wireframe">
+    <div class="grid-a">
+      <div class="row">
+        <div class="wf-card wf-status-bar full" style="min-height:44px; flex-direction:row; align-items:center; justify-content:space-between;">
+          <span class="title">GLOBAL STATUS BAR</span>
+          <span class="hint">SystemState · RiskState · Latency · Freqtrade · Redis · Exchange · Positions · EmergencyLock</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="wf-card wf-equity half" style="min-height:110px;">
+          <span class="label">P0 · HERO</span>
+          <span class="title">Equity Card</span>
+          <span class="hint">总权益 124,850 USDT · 货币切换 · CountUp 动画</span>
+        </div>
+        <div class="wf-card wf-pnl half" style="min-height:110px;">
+          <span class="label">P0</span>
+          <span class="title">PnL Card Group</span>
+          <span class="hint">今日 PnL% · 本周 PnL% · 最大回撤% · 三列指标</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="wf-card wf-runtime third" style="min-height:90px;">
+          <span class="label">P0</span>
+          <span class="title">Strategy Runtime</span>
+          <span class="hint">运行策略数 · 持仓数 · 挂单数 · 对账中</span>
+        </div>
+        <div class="wf-card wf-readiness third" style="min-height:90px;">
+          <span class="label">P0</span>
+          <span class="title">Live Readiness</span>
+          <span class="hint">LIVE_READY / PAPER_ONLY / RISK_LOCKED 状态灯</span>
+        </div>
+        <div class="wf-card wf-risk third" style="min-height:90px;">
+          <span class="label">P0</span>
+          <span class="title">Global Risk</span>
+          <span class="hint">风控状态 · 日损余额% · 周损余额% · 紧急锁</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="wf-card wf-positions full" style="min-height:120px;">
+          <span class="label">P0 · TABLE</span>
+          <span class="title">Position Risk Card</span>
+          <span class="hint">Symbol · Direction · Size · P&L · RiskState · ReasonCodes — 全宽表格</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="wf-card wf-decisions half" style="min-height:100px;">
+          <span class="label">P0 · FEED</span>
+          <span class="title">Recent Decisions</span>
+          <span class="hint">时间 · 品种 · 决策 · reason_codes 标签 · 最近 10 条</span>
+        </div>
+        <div class="wf-card wf-alerts half" style="min-height:100px;">
+          <span class="label">P0 · TIMELINE</span>
+          <span class="title">Alert Timeline</span>
+          <span class="hint">级别 · 标题 · 品种 · 时间轴 · warning/error/critical</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="wf-card wf-emergency full" style="min-height:48px; flex-direction:row; align-items:center; justify-content:space-between;">
+          <span class="title">⚠ EMERGENCY ACTION BAR</span>
+          <span class="hint" style="color:var(--danger);">HALT ALL TRADING · 确认对话框 · 全局紧急停止</span>
+          <span class="sticky-label">STICKY BOTTOM</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ==================== APPROACH B ==================== -->
+<div class="approach-section">
+  <div class="approach-header">
+    <span class="approach-tag">方案 B</span>
+    <h2 class="approach-title">B. 左右分栏指挥台</h2>
+  </div>
+  <p class="approach-desc">
+    左栏 (340px) 纵向堆叠所有状态/指标卡片，右栏展示持仓表格 + 决策流 + 告警时间线。类似 Bloomberg Terminal 的信息面板布局。适合需要长时间盯盘的场景 —— 左侧是"仪表盘"，右侧是"实时流"。
+  </p>
+  <div class="approach-pros-cons">
+    <div class="pros">
+      <strong>优势</strong>
+      <ul>
+        <li>左右分区清晰：指标 vs 事件流</li>
+        <li>右栏表格/Feed 有更多纵向空间</li>
+        <li>盯盘模式友好</li>
+      </ul>
+    </div>
+    <div class="cons">
+      <strong>劣势</strong>
+      <ul>
+        <li>左栏窄，EquityCard 展示空间受限</li>
+        <li>小卡片堆叠可能视觉单调</li>
+        <li>与 Sidebar 叠加后左侧过重</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="wireframe">
+    <div class="grid-b">
+      <div class="row" style="display:flex;gap:10px;">
+        <div class="wf-card wf-status-bar" style="flex:1;min-height:44px;flex-direction:row;align-items:center;justify-content:space-between;">
+          <span class="title">GLOBAL STATUS BAR</span>
+          <span class="hint">SystemState · RiskState · Latency · Freqtrade · Redis · Exchange · Positions</span>
+        </div>
+      </div>
+      <div class="split">
+        <div class="left-col">
+          <div class="wf-card wf-equity" style="min-height:90px;">
+            <span class="label">HERO</span>
+            <span class="title">Equity Card</span>
+            <span class="hint">124,850 USDT</span>
+          </div>
+          <div class="wf-card wf-pnl" style="min-height:70px;">
+            <span class="title">PnL Summary</span>
+            <span class="hint">today / week / drawdown</span>
+          </div>
+          <div class="wf-card wf-runtime" style="min-height:60px;">
+            <span class="title">Strategy Runtime</span>
+            <span class="hint">running · positions · orders</span>
+          </div>
+          <div class="wf-card wf-readiness" style="min-height:50px;">
+            <span class="title">Live Readiness</span>
+            <span class="hint">LIVE_READY 状态灯</span>
+          </div>
+          <div class="wf-card wf-risk" style="min-height:70px;">
+            <span class="title">Global Risk</span>
+            <span class="hint">state · daily loss · weekly loss</span>
+          </div>
+          <div class="wf-card wf-emergency" style="min-height:48px;">
+            <span class="title">⚠ Emergency Stop</span>
+          </div>
+        </div>
+        <div class="right-col">
+          <div class="wf-card wf-positions" style="min-height:160px;">
+            <span class="label">TABLE</span>
+            <span class="title">Position Risk Card</span>
+            <span class="hint">Symbol · Direction · Size · P&L · Risk · Reasons</span>
+          </div>
+          <div class="wf-card wf-decisions" style="min-height:130px;">
+            <span class="label">FEED</span>
+            <span class="title">Recent Decisions</span>
+            <span class="hint">decision + reason_codes 时间流</span>
+          </div>
+          <div class="wf-card wf-alerts" style="min-height:100px;">
+            <span class="label">TIMELINE</span>
+            <span class="title">Alert Timeline</span>
+            <span class="hint">告警时间线</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ==================== APPROACH C ==================== -->
+<div class="approach-section">
+  <div class="approach-header">
+    <span class="approach-tag">方案 C</span>
+    <h2 class="approach-title">C. 瀑布指令流</h2>
+  </div>
+  <p class="approach-desc">
+    单栏纵向瀑布流。顶部大 hero 区（权益 + PnL），中间一行横排 4 个指标卡（Runtime · Readiness · Risk · Emergency），下方全宽持仓表，底部双栏 Decisions + Alerts。最简洁的结构，适合快速扫一眼就走的场景。
+  </p>
+  <div class="approach-pros-cons">
+    <div class="pros">
+      <strong>优势</strong>
+      <ul>
+        <li>布局最简洁，代码量最小</li>
+        <li>Hero 区视觉冲击力强</li>
+        <li>阅读顺序清晰：从上到下</li>
+      </ul>
+    </div>
+    <div class="cons">
+      <strong>劣势</strong>
+      <ul>
+        <li>需要滚动才能看到底部 Feed</li>
+        <li>信息密度低于 Bento Grid</li>
+        <li>不够"专业终端"感</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="wireframe">
+    <div class="grid-c">
+      <div class="row" style="display:flex;gap:10px;">
+        <div class="wf-card wf-status-bar" style="flex:1;min-height:44px;flex-direction:row;align-items:center;">
+          <span class="title">GLOBAL STATUS BAR</span>
+          <span class="hint" style="margin-left:auto;">全部状态指标</span>
+        </div>
+      </div>
+      <div class="hero-row">
+        <div class="wf-card wf-equity hero-equity" style="min-height:120px;">
+          <span class="label">HERO · LARGE</span>
+          <span class="title" style="font-size:16px;">Equity + PnL Overview</span>
+          <span class="hint">权益大数字 · 今日/本周 PnL% · 回撤% · 迷你权益曲线</span>
+        </div>
+      </div>
+      <div class="metrics-row">
+        <div class="wf-card wf-runtime" style="min-height:70px;">
+          <span class="title">Strategy Runtime</span>
+          <span class="hint">策略 · 持仓 · 挂单</span>
+        </div>
+        <div class="wf-card wf-readiness" style="min-height:70px;">
+          <span class="title">Live Readiness</span>
+          <span class="hint">状态灯</span>
+        </div>
+        <div class="wf-card wf-risk" style="min-height:70px;">
+          <span class="title">Global Risk</span>
+          <span class="hint">日损 · 周损 · 锁定</span>
+        </div>
+        <div class="wf-card wf-emergency" style="min-height:70px;">
+          <span class="title">⚠ Emergency</span>
+          <span class="hint">紧急停止</span>
+        </div>
+      </div>
+      <div class="row" style="display:flex;gap:10px;">
+        <div class="wf-card wf-positions" style="flex:1;min-height:130px;">
+          <span class="label">TABLE · FULL WIDTH</span>
+          <span class="title">Position Risk Card</span>
+          <span class="hint">Symbol · Direction · Size · P&L · Risk · ReasonCodes</span>
+        </div>
+      </div>
+      <div class="feed-row">
+        <div class="wf-card wf-decisions" style="min-height:110px;">
+          <span class="label">FEED</span>
+          <span class="title">Recent Decisions</span>
+          <span class="hint">决策 + reason_codes</span>
+        </div>
+        <div class="wf-card wf-alerts" style="min-height:110px;">
+          <span class="label">TIMELINE</span>
+          <span class="title">Alert Timeline</span>
+          <span class="hint">告警时间线</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="height:80px;"></div>
+
+</body>
+</html>

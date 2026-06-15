@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlphaLoop Dashboard v3 — Bento Command Grid</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #07090C;
+    --surface: #0E1216;
+    --surface-elevated: #131922;
+    --border: #1F2731;
+    --border-hot: rgba(0,255,157,0.35);
+    --accent: #00FF9D;
+    --accent-dim: rgba(0,255,157,0.08);
+    --cyan: #5BD4FF;
+    --cyan-dim: rgba(91,212,255,0.08);
+    --amber: #FFB547;
+    --amber-dim: rgba(255,181,71,0.08);
+    --danger: #FF5A6E;
+    --danger-dim: rgba(255,90,110,0.08);
+    --purple: #A877FF;
+    --purple-dim: rgba(168,119,255,0.08);
+    --profit: #00FF9D;
+    --loss: #FF5A6E;
+    --text-primary: rgba(255,255,255,0.92);
+    --text-secondary: rgba(255,255,255,0.55);
+    --text-muted: rgba(255,255,255,0.30);
+    --card-bg: rgba(14,18,22,0.85);
+    --card-border: rgba(31,39,49,0.7);
+    --card-radius: 14px;
+    --glass: rgba(255,255,255,0.02);
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: 'Space Grotesk', -apple-system, sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background layers */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 600px 400px at 15% 20%, rgba(0,255,157,0.04) 0%, transparent 70%),
+      radial-gradient(ellipse 500px 350px at 85% 60%, rgba(91,212,255,0.03) 0%, transparent 70%),
+      radial-gradient(ellipse 400px 300px at 50% 90%, rgba(255,90,110,0.02) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Scanlines */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(255,255,255,0.008) 2px,
+      rgba(255,255,255,0.008) 4px
+    );
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .dashboard {
+    position: relative;
+    z-index: 1;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 16px 20px 80px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  /* ===== CARDS ===== */
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--card-radius);
+    padding: 16px 20px;
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+  }
+  .card:hover {
+    border-color: rgba(255,255,255,0.08);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, var(--glass), transparent 60%);
+    pointer-events: none;
+  }
+
+  .card-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+  .card-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+  }
+
+  .row { display: flex; gap: 10px; }
+  .row > * { flex: 1; min-width: 0; }
+
+  /* ===== GLOBAL STATUS BAR ===== */
+  .status-bar {
+    background: rgba(0,255,157,0.03);
+    border: 1px solid rgba(0,255,157,0.1);
+    border-radius: 10px;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    backdrop-filter: blur(30px);
+    -webkit-backdrop-filter: blur(30px);
+  }
+  .sb-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 16px;
+    border-right: 1px solid rgba(255,255,255,0.06);
+    white-space: nowrap;
+  }
+  .sb-item:last-child { border-right: none; }
+  .sb-item:first-child { padding-left: 0; }
+  .sb-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .sb-dot.green { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+  .sb-dot.amber { background: var(--amber); box-shadow: 0 0 6px var(--amber); }
+  .sb-dot.red { background: var(--danger); box-shadow: 0 0 6px var(--danger); }
+  .sb-label { color: var(--text-muted); font-weight: 400; }
+  .sb-value { color: var(--text-primary); font-weight: 500; }
+  .sb-value.green { color: var(--accent); }
+  .sb-value.amber { color: var(--amber); }
+
+  /* ===== EQUITY CARD ===== */
+  .equity-card {
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .equity-card .equity-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.5px;
+    line-height: 1;
+  }
+  .equity-card .equity-currency {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-left: 8px;
+    font-weight: 400;
+  }
+  .equity-card .equity-change {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--profit);
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .equity-card .equity-change .arrow { font-size: 10px; }
+
+  /* ===== PNL CARD GROUP ===== */
+  .pnl-group {
+    display: flex;
+    gap: 0;
+    min-height: 120px;
+    align-items: stretch;
+  }
+  .pnl-cell {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 20px;
+    border-right: 1px solid rgba(255,255,255,0.05);
+  }
+  .pnl-cell:last-child { border-right: none; }
+  .pnl-cell .pnl-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+  .pnl-cell .pnl-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 24px;
+    font-weight: 600;
+    line-height: 1;
+  }
+  .pnl-cell .pnl-sub {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+  .pnl-positive { color: var(--profit); }
+  .pnl-negative { color: var(--loss); }
+  .pnl-neutral { color: var(--text-secondary); }
+
+  /* ===== METRIC CARDS (Runtime, Readiness, Risk) ===== */
+  .metric-card {
+    min-height: 100px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .metric-main {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .metric-number {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .metric-unit {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  .metric-details {
+    display: flex;
+    gap: 12px;
+    margin-top: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--text-secondary);
+  }
+  .metric-detail-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  /* Status pill */
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .pill-green { background: rgba(0,255,157,0.12); color: var(--accent); border: 1px solid rgba(0,255,157,0.25); }
+  .pill-amber { background: rgba(255,181,71,0.12); color: var(--amber); border: 1px solid rgba(255,181,71,0.25); }
+  .pill-red { background: rgba(255,90,110,0.12); color: var(--danger); border: 1px solid rgba(255,90,110,0.25); }
+
+  /* Reason chip */
+  .reason-chips {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+  }
+  .reason-chip {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    letter-spacing: 0.04em;
+  }
+  .chip-info { background: rgba(91,212,255,0.1); color: var(--cyan); border: 1px solid rgba(91,212,255,0.2); }
+  .chip-warn { background: rgba(255,181,71,0.1); color: var(--amber); border: 1px solid rgba(255,181,71,0.2); }
+  .chip-block { background: rgba(255,90,110,0.1); color: var(--danger); border: 1px solid rgba(255,90,110,0.2); }
+
+  /* ===== POSITION TABLE ===== */
+  .position-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+  }
+  .position-table th {
+    text-align: left;
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .position-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    vertical-align: middle;
+  }
+  .position-table tr:hover td {
+    background: rgba(255,255,255,0.02);
+  }
+  .position-table .symbol {
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .position-table .direction {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+  .direction.long { color: var(--profit); }
+  .direction.short { color: var(--loss); }
+  .pnl-cell-table { font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  /* Risk dot */
+  .risk-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 6px;
+  }
+
+  /* ===== DECISION FEED ===== */
+  .decision-feed {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 260px;
+    overflow-y: auto;
+  }
+  .decision-feed::-webkit-scrollbar { width: 4px; }
+  .decision-feed::-webkit-scrollbar-track { background: transparent; }
+  .decision-feed::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+  .decision-item {
+    display: flex;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.015);
+    border: 1px solid rgba(255,255,255,0.03);
+    transition: background 0.15s;
+  }
+  .decision-item:hover {
+    background: rgba(255,255,255,0.03);
+  }
+  .decision-time {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    min-width: 48px;
+    padding-top: 2px;
+  }
+  .decision-content { flex: 1; }
+  .decision-symbol {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .decision-text {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+  }
+
+  /* ===== ALERT TIMELINE ===== */
+  .alert-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    max-height: 260px;
+    overflow-y: auto;
+  }
+  .alert-timeline::-webkit-scrollbar { width: 4px; }
+  .alert-timeline::-webkit-scrollbar-track { background: transparent; }
+  .alert-timeline::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+  .alert-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 12px;
+    position: relative;
+  }
+  .alert-item::after {
+    content: '';
+    position: absolute;
+    left: 17px;
+    top: 28px;
+    bottom: -2px;
+    width: 1px;
+    background: rgba(255,255,255,0.06);
+  }
+  .alert-item:last-child::after { display: none; }
+  .alert-icon {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 2px;
+    position: relative;
+    z-index: 1;
+  }
+  .alert-icon.warning { background: var(--amber); box-shadow: 0 0 8px rgba(255,181,71,0.3); }
+  .alert-icon.error { background: var(--danger); box-shadow: 0 0 8px rgba(255,90,110,0.3); }
+  .alert-icon.info { background: var(--cyan); box-shadow: 0 0 8px rgba(91,212,255,0.3); }
+  .alert-content { flex: 1; }
+  .alert-title {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+  .alert-meta {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 2px;
+    display: flex;
+    gap: 8px;
+  }
+
+  /* ===== EMERGENCY BAR ===== */
+  .emergency-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: rgba(7,9,12,0.92);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255,90,110,0.2);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+  }
+  .emergency-btn {
+    background: rgba(255,90,110,0.15);
+    border: 1px solid rgba(255,90,110,0.4);
+    color: var(--danger);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 8px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .emergency-btn:hover {
+    background: rgba(255,90,110,0.25);
+    border-color: rgba(255,90,110,0.6);
+    box-shadow: 0 0 20px rgba(255,90,110,0.15);
+  }
+  .emergency-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+  }
+
+  /* ===== READINESS STATES ===== */
+  .readiness-state {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+  }
+  .readiness-lamp {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    position: relative;
+  }
+  .readiness-lamp.live {
+    background: radial-gradient(circle, var(--accent) 30%, rgba(0,255,157,0.3) 70%);
+    box-shadow: 0 0 20px rgba(0,255,157,0.4), 0 0 40px rgba(0,255,157,0.1);
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 20px rgba(0,255,157,0.4), 0 0 40px rgba(0,255,157,0.1); }
+    50% { box-shadow: 0 0 28px rgba(0,255,157,0.6), 0 0 56px rgba(0,255,157,0.15); }
+  }
+  .readiness-text {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+
+  /* ===== RISK GAUGE ===== */
+  .risk-gauge {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .gauge-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+  }
+  .gauge-label {
+    color: var(--text-muted);
+    min-width: 56px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .gauge-bar {
+    flex: 1;
+    height: 6px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .gauge-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.6s ease-out;
+  }
+  .gauge-fill.safe { background: linear-gradient(90deg, var(--accent), rgba(0,255,157,0.6)); }
+  .gauge-fill.caution { background: linear-gradient(90deg, var(--amber), rgba(255,181,71,0.6)); }
+  .gauge-value {
+    color: var(--text-secondary);
+    min-width: 36px;
+    text-align: right;
+    font-weight: 500;
+  }
+
+  /* Fade-in animation */
+  .fade-in {
+    opacity: 0;
+    transform: translateY(12px);
+    animation: fadeUp 0.4s ease-out forwards;
+  }
+  @keyframes fadeUp {
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<div class="dashboard">
+
+  <!-- ===== GLOBAL STATUS BAR ===== -->
+  <div class="status-bar fade-in" style="animation-delay: 0ms;">
+    <div class="sb-item">
+      <div class="sb-dot green"></div>
+      <span class="sb-label">SYSTEM</span>
+      <span class="sb-value green">HEALTHY</span>
+    </div>
+    <div class="sb-item">
+      <div class="sb-dot green"></div>
+      <span class="sb-label">RISK</span>
+      <span class="sb-value green">NORMAL</span>
+    </div>
+    <div class="sb-item">
+      <span class="sb-label">LATENCY</span>
+      <span class="sb-value">12ms</span>
+    </div>
+    <div class="sb-item">
+      <div class="sb-dot green"></div>
+      <span class="sb-label">FREQTRADE</span>
+      <span class="sb-value green">CONNECTED</span>
+    </div>
+    <div class="sb-item">
+      <span class="sb-label">REDIS</span>
+      <span class="sb-value">3ms</span>
+    </div>
+    <div class="sb-item">
+      <div class="sb-dot green"></div>
+      <span class="sb-label">EXCHANGE</span>
+      <span class="sb-value green">BINANCE</span>
+    </div>
+    <div class="sb-item">
+      <span class="sb-label">POSITIONS</span>
+      <span class="sb-value">4</span>
+    </div>
+    <div class="sb-item">
+      <div class="sb-dot green"></div>
+      <span class="sb-label">EMERGENCY</span>
+      <span class="sb-value green">UNLOCKED</span>
+    </div>
+  </div>
+
+  <!-- ===== ROW 1: Equity + PnL ===== -->
+  <div class="row">
+    <div class="card equity-card fade-in" style="animation-delay: 40ms;">
+      <div class="card-label">// TOTAL EQUITY</div>
+      <div style="display:flex;align-items:baseline;">
+        <span class="equity-value">124,850</span>
+        <span class="equity-currency">.32 USDT</span>
+      </div>
+      <div class="equity-change">
+        <span class="arrow">▲</span>
+        <span>+2,415.80 (+1.97%)</span>
+        <span style="color:var(--text-muted); margin-left:8px;">24h</span>
+      </div>
+    </div>
+
+    <div class="card fade-in" style="animation-delay: 80ms; padding: 16px 0;">
+      <div class="card-label" style="padding: 0 20px;">// P&L SUMMARY</div>
+      <div class="pnl-group">
+        <div class="pnl-cell">
+          <div class="pnl-label">Today</div>
+          <div class="pnl-value pnl-positive">+1.97%</div>
+          <div class="pnl-sub">+2,415.80 USDT</div>
+        </div>
+        <div class="pnl-cell">
+          <div class="pnl-label">This Week</div>
+          <div class="pnl-value pnl-positive">+4.32%</div>
+          <div class="pnl-sub">+5,281.50 USDT</div>
+        </div>
+        <div class="pnl-cell">
+          <div class="pnl-label">Max Drawdown</div>
+          <div class="pnl-value pnl-negative">-6.8%</div>
+          <div class="pnl-sub">-8,490.00 USDT</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ROW 2: Runtime + Readiness + Risk ===== -->
+  <div class="row">
+    <div class="card metric-card fade-in" style="animation-delay: 120ms;">
+      <div class="card-label">// STRATEGY RUNTIME</div>
+      <div class="metric-main">
+        <span class="metric-number" style="color:var(--purple);">5</span>
+        <span class="metric-unit">strategies running</span>
+      </div>
+      <div class="metric-details">
+        <div class="metric-detail-item">
+          <span style="color:var(--accent);">●</span> 4 positions
+        </div>
+        <div class="metric-detail-item">
+          <span style="color:var(--amber);">●</span> 2 pending
+        </div>
+        <div class="metric-detail-item">
+          <span style="color:var(--purple);">●</span> 0 reconciling
+        </div>
+      </div>
+    </div>
+
+    <div class="card metric-card fade-in" style="animation-delay: 160ms;">
+      <div class="card-label">// LIVE READINESS</div>
+      <div class="readiness-state">
+        <div class="readiness-lamp live"></div>
+        <div>
+          <div class="readiness-text" style="color:var(--accent);">LIVE READY</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-muted);margin-top:2px;">All gates passed</div>
+        </div>
+      </div>
+      <div class="reason-chips">
+        <span class="reason-chip chip-info">risk_budget_ok</span>
+        <span class="reason-chip chip-info">exchange_connected</span>
+      </div>
+    </div>
+
+    <div class="card metric-card fade-in" style="animation-delay: 200ms;">
+      <div class="card-label">// GLOBAL RISK</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+        <span class="status-pill pill-green">
+          <span class="sb-dot green" style="width:5px;height:5px;"></span>
+          NORMAL
+        </span>
+      </div>
+      <div class="risk-gauge">
+        <div class="gauge-row">
+          <span class="gauge-label">Daily</span>
+          <div class="gauge-bar"><div class="gauge-fill safe" style="width:72%;"></div></div>
+          <span class="gauge-value" style="color:var(--accent);">72%</span>
+        </div>
+        <div class="gauge-row">
+          <span class="gauge-label">Weekly</span>
+          <div class="gauge-bar"><div class="gauge-fill safe" style="width:85%;"></div></div>
+          <span class="gauge-value" style="color:var(--accent);">85%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ROW 3: Position Risk Table ===== -->
+  <div class="card fade-in" style="animation-delay: 240ms;">
+    <div class="card-label">// POSITION RISK · 4 OPEN</div>
+    <table class="position-table">
+      <thead>
+        <tr>
+          <th>Symbol</th>
+          <th>Direction</th>
+          <th>Size</th>
+          <th>Entry</th>
+          <th>P&L</th>
+          <th>P&L %</th>
+          <th>Risk</th>
+          <th>Reason</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="symbol">BTC/USDT</td>
+          <td><span class="direction long">LONG</span></td>
+          <td style="color:var(--text-secondary);">0.15</td>
+          <td style="color:var(--text-secondary);">67,420</td>
+          <td class="pnl-cell-table" style="color:var(--profit);">+1,830.00</td>
+          <td class="pnl-cell-table" style="color:var(--profit);">+2.71%</td>
+          <td><span class="risk-dot" style="background:var(--accent);"></span><span style="color:var(--accent);font-size:10px;">LOW</span></td>
+          <td><span class="reason-chip chip-info" style="font-size:8px;">trend_aligned</span></td>
+        </tr>
+        <tr>
+          <td class="symbol">ETH/USDT</td>
+          <td><span class="direction long">LONG</span></td>
+          <td style="color:var(--text-secondary);">2.5</td>
+          <td style="color:var(--text-secondary);">3,680</td>
+          <td class="pnl-cell-table" style="color:var(--profit);">+425.00</td>
+          <td class="pnl-cell-table" style="color:var(--profit);">+4.62%</td>
+          <td><span class="risk-dot" style="background:var(--amber);"></span><span style="color:var(--amber);font-size:10px;">MED</span></td>
+          <td><span class="reason-chip chip-warn" style="font-size:8px;">near_resistance</span></td>
+        </tr>
+        <tr>
+          <td class="symbol">SOL/USDT</td>
+          <td><span class="direction short">SHORT</span></td>
+          <td style="color:var(--text-secondary);">20</td>
+          <td style="color:var(--text-secondary);">168.50</td>
+          <td class="pnl-cell-table" style="color:var(--loss);">-180.00</td>
+          <td class="pnl-cell-table" style="color:var(--loss);">-0.53%</td>
+          <td><span class="risk-dot" style="background:var(--amber);"></span><span style="color:var(--amber);font-size:10px;">MED</span></td>
+          <td><span class="reason-chip chip-warn" style="font-size:8px;">vol_expanding</span></td>
+        </tr>
+        <tr>
+          <td class="symbol">AVAX/USDT</td>
+          <td><span class="direction long">LONG</span></td>
+          <td style="color:var(--text-secondary);">50</td>
+          <td style="color:var(--text-secondary);">38.20</td>
+          <td class="pnl-cell-table" style="color:var(--profit);">+340.80</td>
+          <td class="pnl-cell-table" style="color:var(--profit);">+1.78%</td>
+          <td><span class="risk-dot" style="background:var(--accent);"></span><span style="color:var(--accent);font-size:10px;">LOW</span></td>
+          <td><span class="reason-chip chip-info" style="font-size:8px;">momentum_ok</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ===== ROW 4: Decisions + Alerts ===== -->
+  <div class="row">
+    <div class="card fade-in" style="animation-delay: 280ms;">
+      <div class="card-label">// RECENT DECISIONS</div>
+      <div class="decision-feed">
+        <div class="decision-item">
+          <div class="decision-time">14:32</div>
+          <div class="decision-content">
+            <div class="decision-symbol">BTC/USDT</div>
+            <div class="decision-text">Execute LONG — MTF structure bullish, signal confidence 0.82</div>
+            <div class="reason-chips" style="margin-top:4px;">
+              <span class="reason-chip chip-info">htf_bullish</span>
+              <span class="reason-chip chip-info">signal_strong</span>
+              <span class="reason-chip chip-info">risk_budget_ok</span>
+            </div>
+          </div>
+        </div>
+        <div class="decision-item">
+          <div class="decision-time">14:15</div>
+          <div class="decision-content">
+            <div class="decision-symbol">SOL/USDT</div>
+            <div class="decision-text">Reduce position size — approaching daily loss limit</div>
+            <div class="reason-chips" style="margin-top:4px;">
+              <span class="reason-chip chip-warn">daily_loss_warning</span>
+              <span class="reason-chip chip-info">reduce_size</span>
+            </div>
+          </div>
+        </div>
+        <div class="decision-item">
+          <div class="decision-time">13:48</div>
+          <div class="decision-content">
+            <div class="decision-symbol">ETH/USDT</div>
+            <div class="decision-text">Hold position — near resistance but trend intact</div>
+            <div class="reason-chips" style="margin-top:4px;">
+              <span class="reason-chip chip-warn">near_resistance</span>
+              <span class="reason-chip chip-info">trend_intact</span>
+            </div>
+          </div>
+        </div>
+        <div class="decision-item">
+          <div class="decision-time">13:20</div>
+          <div class="decision-content">
+            <div class="decision-symbol">AVAX/USDT</div>
+            <div class="decision-text">Execute LONG — breakout confirmed, momentum strong</div>
+            <div class="reason-chips" style="margin-top:4px;">
+              <span class="reason-chip chip-info">breakout_confirmed</span>
+              <span class="reason-chip chip-info">momentum_strong</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card fade-in" style="animation-delay: 320ms;">
+      <div class="card-label">// ALERT TIMELINE</div>
+      <div class="alert-timeline">
+        <div class="alert-item">
+          <div class="alert-icon warning"></div>
+          <div class="alert-content">
+            <div class="alert-title">Daily loss budget at 28% — approaching caution zone</div>
+            <div class="alert-meta">
+              <span>PORTFOLIO</span>
+              <span>14:18</span>
+            </div>
+          </div>
+        </div>
+        <div class="alert-item">
+          <div class="alert-icon info"></div>
+          <div class="alert-content">
+            <div class="alert-title">ETH/USDT approaching resistance at $3,860</div>
+            <div class="alert-meta">
+              <span>ETH/USDT</span>
+              <span>13:55</span>
+            </div>
+          </div>
+        </div>
+        <div class="alert-item">
+          <div class="alert-icon warning"></div>
+          <div class="alert-content">
+            <div class="alert-title">SOL/USDT volatility expanding — consider tightening stops</div>
+            <div class="alert-meta">
+              <span>SOL/USDT</span>
+              <span>13:40</span>
+            </div>
+          </div>
+        </div>
+        <div class="alert-item">
+          <div class="alert-icon info"></div>
+          <div class="alert-content">
+            <div class="alert-title">Strategy "BTC Momentum v3" entered new position</div>
+            <div class="alert-meta">
+              <span>BTC/USDT</span>
+              <span>13:32</span>
+            </div>
+          </div>
+        </div>
+        <div class="alert-item">
+          <div class="alert-icon error"></div>
+          <div class="alert-content">
+            <div class="alert-title">Binance API latency spike — 450ms (threshold: 200ms)</div>
+            <div class="alert-meta">
+              <span>SYSTEM</span>
+              <span>12:15</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== EMERGENCY BAR ===== -->
+<div class="emergency-bar fade-in" style="animation-delay: 360ms;">
+  <span class="emergency-label">EMERGENCY CONTROL</span>
+  <button class="emergency-btn">
+    <span>⚠</span>
+    HALT ALL TRADING
+  </button>
+  <span class="emergency-label">Stops all strategies, cancels pending orders, closes positions</span>
+</div>
+
+</body>
+</html>

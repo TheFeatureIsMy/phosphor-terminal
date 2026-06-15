@@ -10,6 +10,7 @@ final class ManipulationViewModel {
     var selectedCase: ManipulationCaseDetail?
     var alerts: [ManipulationAlertItem] = []
     var userProfile: String = "conservative" // "conservative" or "aggressive"
+    var scanSymbol: String = ""
 
     // Legacy: keep scores for transition
     var scores: [ManipulationScoreV2] = []
@@ -23,6 +24,22 @@ final class ManipulationViewModel {
 
     init(client: NetworkClientProtocol) {
         self.api = APIManipulation(client: client)
+    }
+
+    /// Alias used by ManipulationRadarView
+    func load() async { await loadRadar() }
+
+    /// Scan a specific symbol
+    func scan() async {
+        guard !scanSymbol.isEmpty else { return }
+        isLoading = true
+        defer { isLoading = false }
+        do {
+            scores = try await api.listScores(limit: 20)
+        } catch {
+            errorHandler?.handle(error, context: "扫描 \(scanSymbol)")
+            self.error = error.localizedDescription
+        }
     }
 
     /// 加载雷达概览 + 告警 + 传统评分

@@ -222,7 +222,7 @@ struct ManipulationRadarView: View {
                         spacing: PulseSpacing.sm
                     ) {
                         ForEach(Array(overview.activeCases.enumerated()), id: \.element.id) { index, caseSummary in
-                            CaseCardView(case: caseSummary)
+                            CaseCardView(caseSummary: caseSummary)
                                 .staggeredAppearance(index: index)
                                 .onTapGesture {
                                     Task { await vm.loadCaseDetail(caseSummary.id) }

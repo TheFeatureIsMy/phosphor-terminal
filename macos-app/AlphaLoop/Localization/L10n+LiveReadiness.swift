@@ -8,6 +8,7 @@ extension L10n {
         static var paper: String { zh("模拟", en: "PAPER") }
         static var small: String { zh("小仓", en: "SMALL") }
         static var full: String { zh("全仓", en: "FULL") }
+        static var allClear: String { zh("全部通过", en: "ALL CLEAR") }
 
         // MARK: - States
         static var liveReady: String { zh("实盘就绪", en: "LIVE READY") }
