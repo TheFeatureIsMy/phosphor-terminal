@@ -1,5 +1,5 @@
-// ManipulationRadarView.swift — 操纵雷达主视图
-// 扫描输入 + 统计卡片 + 评分列表
+// ManipulationRadarView.swift — 操纵雷达主视图（重构版）
+// 概览仪表盘：头部 + 统计行 + 双栏（案例网格 + 告警流）
 
 import SwiftUI
 
@@ -10,139 +10,238 @@ struct ManipulationRadarView: View {
     @State private var viewModel: ManipulationViewModel?
 
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
+        Group {
             if let vm = viewModel {
-                if vm.isLoading {
-                    LoadingView(type: .detail).padding(PulseSpacing.lg)
+                if vm.isLoading && vm.radarOverview == nil {
+                    LoadingView(type: .dashboard)
+                        .padding(PulseSpacing.lg)
+                } else if let overview = vm.radarOverview {
+                    radarContent(vm: vm, overview: overview)
+                } else if let error = vm.error {
+                    EmptyStateView(
+                        icon: "exclamationmark.triangle",
+                        title: L10n.zh("加载失败", en: "Load Failed"),
+                        description: error,
+                        primaryAction: (title: L10n.zh("重试", en: "Retry"), action: {
+                            Task { await vm.loadRadar() }
+                        })
+                    )
+                    .padding(PulseSpacing.lg)
                 } else {
-                    VStack(spacing: PulseSpacing.md) {
-                        pageHeader(vm: vm)
-                        scanBar(vm: vm)
-                        summaryCards(vm: vm)
-                        scoresSection(vm: vm)
-                    }
+                    EmptyStateView(
+                        icon: "shield.checkered",
+                        title: L10n.Manipulation.noCases,
+                        description: L10n.Manipulation.radarSubtitle
+                    )
                     .padding(PulseSpacing.lg)
                 }
             } else {
-                LoadingView(type: .detail).padding(PulseSpacing.lg)
+                LoadingView(type: .dashboard)
+                    .padding(PulseSpacing.lg)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .id(settingsState.language)
-        .scrollEdgeEffectStyle(.soft, for: .vertical)
         .task {
             if viewModel == nil {
                 let vm = ManipulationViewModel(client: networkClient)
                 viewModel = vm
-                await vm.load()
+                await vm.loadRadar()
+                vm.startPolling()
             }
+        }
+        .onDisappear {
+            viewModel?.stopPolling()
+        }
+        .sheet(item: caseDetailBinding) { detail in
+            CaseDetailView(
+                caseDetail: detail,
+                userProfile: viewModel?.userProfile ?? "conservative"
+            )
+            .frame(minWidth: 520, minHeight: 600)
         }
     }
 
-    // MARK: - Header
+    // Binding for sheet(item:) — ManipulationCaseDetail needs Identifiable (already conforms)
+    private var caseDetailBinding: Binding<ManipulationCaseDetail?> {
+        Binding(
+            get: { viewModel?.selectedCase },
+            set: { viewModel?.selectedCase = $0 }
+        )
+    }
 
-    private func pageHeader(vm: ManipulationViewModel) -> some View {
-        HStack {
+    // MARK: - Main Content
+
+    private func radarContent(vm: ManipulationViewModel, overview: ManipulationRadarOverview) -> some View {
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(alignment: .leading, spacing: PulseSpacing.md) {
+                headerRow(vm: vm)
+                statsRow(overview: overview)
+                twoColumnBody(vm: vm, overview: overview)
+            }
+            .padding(PulseSpacing.lg)
+        }
+        .scrollEdgeEffectStyle(.soft, for: .vertical)
+    }
+
+    // MARK: - 1. Header Row
+
+    private func headerRow(vm: ManipulationViewModel) -> some View {
+        HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
-                Text(L10n.zh("操纵雷达", en: "Manipulation Radar"))
-                    .font(PulseFonts.displayHeading)
+                Text(L10n.Manipulation.radarTitle)
+                    .font(PulseFonts.displaySubheading)
                     .foregroundStyle(colors.textPrimary)
-                HStack(spacing: PulseSpacing.xxs) {
-                    StatusDot(status: highRiskCount(vm: vm) > 0 ? .loading : .online)
-                    Text(highRiskCount(vm: vm) > 0 ? L10n.zh("检测到异常信号", en: "Anomalous signals detected") : L10n.zh("市场状态正常", en: "Market conditions normal"))
-                        .font(PulseFonts.caption)
-                        .foregroundStyle(colors.textMuted)
-                }
-            }
-            Spacer()
-        }
-    }
-
-    // MARK: - Scan Bar
-
-    private func scanBar(vm: ManipulationViewModel) -> some View {
-        KryptonCard(emphasis: .subtle) {
-            HStack(spacing: PulseSpacing.sm) {
-                Image(systemName: "magnifyingglass")
-                    .font(PulseFonts.body)
+                Text(L10n.Manipulation.radarSubtitle)
+                    .font(PulseFonts.caption)
                     .foregroundStyle(colors.textMuted)
+            }
 
-                TextField(L10n.zh("输入交易对（如 BTC/USDT）", en: "Enter trading pair (e.g. BTC/USDT)"), text: Binding(
-                    get: { vm.scanSymbol },
-                    set: { vm.scanSymbol = $0 }
-                ))
-                .font(PulseFonts.body)
-                .foregroundStyle(colors.textPrimary)
-                .textFieldStyle(.plain)
-                .onSubmit {
-                    Task { await vm.scan() }
+            Spacer()
+
+            HStack(spacing: PulseSpacing.xs) {
+                // User profile toggle
+                Button {
+                    vm.toggleUserProfile()
+                } label: {
+                    HStack(spacing: PulseSpacing.xxs) {
+                        Image(systemName: vm.userProfile == "conservative" ? "shield.fill" : "bolt.fill")
+                            .font(PulseFonts.label)
+                        Text(vm.userProfile == "conservative" ? L10n.Manipulation.conservative : L10n.Manipulation.aggressive)
+                            .font(PulseFonts.captionMedium)
+                    }
+                    .foregroundStyle(vm.userProfile == "conservative" ? PulseColors.info : PulseColors.amber)
+                    .padding(.horizontal, PulseSpacing.xs)
+                    .padding(.vertical, PulseSpacing.xxs)
+                    .background(
+                        RoundedRectangle(cornerRadius: PulseRadii.button)
+                            .fill((vm.userProfile == "conservative" ? PulseColors.info : PulseColors.amber).opacity(0.08))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: PulseRadii.button)
+                            .stroke((vm.userProfile == "conservative" ? PulseColors.info : PulseColors.amber).opacity(0.15), lineWidth: 1)
+                    )
                 }
+                .buttonStyle(.plain)
 
-                KryptonButton(title: L10n.zh("扫描", en: "Scan"), action: {
-                    Task { await vm.scan() }
+                // Scan / refresh button
+                KryptonButton(title: L10n.Manipulation.startScan, action: {
+                    Task { await vm.loadRadar() }
                 })
             }
         }
     }
 
-    // MARK: - Summary Stat Cards
+    // MARK: - 2. Stats Row
 
-    private func summaryCards(vm: ManipulationViewModel) -> some View {
+    private func statsRow(overview: ManipulationRadarOverview) -> some View {
         HStack(spacing: PulseSpacing.md) {
+            // Total Active Cases
             StatCard(
-                icon: "chart.bar.doc.horizontal",
-                label: L10n.zh("已扫描", en: "Scanned"),
-                value: "\(vm.scores.count)",
+                icon: "shield.lefthalf.filled.badge.checkmark",
+                label: L10n.Manipulation.activeCases,
+                value: "\(overview.totalActive)",
                 color: PulseColors.info
             )
-            StatCard(
-                icon: "exclamationmark.shield.fill",
-                label: L10n.zh("高风险", en: "High Risk"),
-                value: "\(highRiskCount(vm: vm))",
-                color: PulseColors.danger
-            )
-            StatCard(
-                icon: "xmark.shield.fill",
-                label: L10n.zh("已拦截", en: "Blocked"),
-                value: "\(blockedCount(vm: vm))",
-                color: PulseColors.amber
-            )
-        }
-    }
 
-    // MARK: - Scores Section
-
-    private func scoresSection(vm: ManipulationViewModel) -> some View {
-        VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-            TerminalLabel(text: L10n.zh("操纵评分", en: "Manipulation Scores"))
-
-            if vm.scores.isEmpty {
-                EmptyStateView(
-                    icon: "shield.checkered",
-                    title: L10n.zh("暂无评分数据", en: "No Score Data"),
-                    description: L10n.zh("输入交易对并点击「扫描」开始操纵风险检测", en: "Enter a trading pair and click Scan to start manipulation risk detection"),
-                    primaryAction: (title: L10n.zh("扫描 BTC/USDT", en: "Scan BTC/USDT"), action: {
-                        vm.scanSymbol = "BTC/USDT"
-                        Task { await vm.scan() }
-                    })
-                )
-            } else {
-                LazyVStack(spacing: PulseSpacing.sm) {
-                    ForEach(Array(vm.sortedScores.enumerated()), id: \.element.id) { index, item in
-                        ManipulationScoreRow(score: item)
-                            .staggeredAppearance(index: index)
+            // High Risk Symbols
+            KryptonCard(emphasis: .subtle) {
+                VStack(spacing: PulseSpacing.xs) {
+                    Image(systemName: "exclamationmark.shield.fill")
+                        .font(.system(size: 18))
+                        .foregroundStyle(PulseColors.danger)
+                    if overview.highRiskSymbols.isEmpty {
+                        Text("—")
+                            .font(PulseFonts.displayHeading)
+                            .foregroundStyle(colors.textPrimary)
+                    } else {
+                        VStack(spacing: 1) {
+                            ForEach(overview.highRiskSymbols, id: \.self) { sym in
+                                Text(sym)
+                                    .font(PulseFonts.captionMedium)
+                                    .foregroundStyle(PulseColors.danger)
+                                    .lineLimit(1)
+                            }
+                        }
                     }
+                    Text(L10n.Manipulation.highRisk)
+                        .font(PulseFonts.caption)
+                        .foregroundStyle(colors.textMuted)
                 }
+                .frame(maxWidth: .infinity)
+            }
+
+            // By Stage breakdown
+            KryptonCard(emphasis: .subtle) {
+                VStack(spacing: PulseSpacing.xs) {
+                    Image(systemName: "chart.bar.doc.horizontal")
+                        .font(.system(size: 18))
+                        .foregroundStyle(PulseColors.accent)
+                    VStack(spacing: 1) {
+                        ForEach(overview.byStage.sorted(by: { $0.key < $1.key }), id: \.key) { stage, count in
+                            HStack(spacing: PulseSpacing.xxs) {
+                                Text("\(count)")
+                                    .font(PulseFonts.tabular)
+                                    .foregroundStyle(colors.textPrimary)
+                                Text(stage)
+                                    .font(PulseFonts.micro)
+                                    .foregroundStyle(colors.textMuted)
+                                    .lineLimit(1)
+                            }
+                        }
+                    }
+                    Text(L10n.Manipulation.byStage)
+                        .font(PulseFonts.caption)
+                        .foregroundStyle(colors.textMuted)
+                }
+                .frame(maxWidth: .infinity)
             }
         }
     }
 
-    // MARK: - Helpers
+    // MARK: - 3. Two-Column Body
 
-    private func highRiskCount(vm: ManipulationViewModel) -> Int {
-        vm.scores.filter { $0.riskLevel == "high" || $0.riskLevel == "critical" }.count
-    }
+    private func twoColumnBody(vm: ManipulationViewModel, overview: ManipulationRadarOverview) -> some View {
+        HStack(alignment: .top, spacing: PulseSpacing.md) {
+            // Left column (60%): Active Cases Grid
+            VStack(alignment: .leading, spacing: PulseSpacing.sm) {
+                TerminalLabel(text: L10n.Manipulation.activeCases)
 
-    private func blockedCount(vm: ManipulationViewModel) -> Int {
-        vm.scores.filter { $0.riskLevel == "critical" }.count
+                if overview.activeCases.isEmpty {
+                    EmptyStateView(
+                        icon: "shield.checkered",
+                        title: L10n.Manipulation.noCases,
+                        description: L10n.Manipulation.radarSubtitle
+                    )
+                } else {
+                    LazyVGrid(
+                        columns: [
+                            GridItem(.flexible(), spacing: PulseSpacing.sm),
+                            GridItem(.flexible(), spacing: PulseSpacing.sm)
+                        ],
+                        spacing: PulseSpacing.sm
+                    ) {
+                        ForEach(Array(overview.activeCases.enumerated()), id: \.element.id) { index, caseSummary in
+                            CaseCardView(case: caseSummary)
+                                .staggeredAppearance(index: index)
+                                .onTapGesture {
+                                    Task { await vm.loadCaseDetail(caseSummary.id) }
+                                }
+                        }
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .layoutPriority(1.5) // ~60%
+
+            // Right column (40%): Alert Feed
+            VStack(alignment: .leading, spacing: PulseSpacing.sm) {
+                TerminalLabel(text: L10n.Manipulation.alertFeed)
+
+                ManipulationAlertFeed(alerts: vm.alerts)
+            }
+            .frame(maxWidth: .infinity)
+            .layoutPriority(1.0) // ~40%
+        }
     }
 }
