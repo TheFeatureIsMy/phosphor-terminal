@@ -25,15 +25,15 @@ struct LiveReadinessCard: View {
                                     colors: [lampColor.opacity(0.06), .clear],
                                     center: .center,
                                     startRadius: 0,
-                                    endRadius: 60
+                                    endRadius: 40
                                 )
                             )
-                            .frame(width: 120, height: 120)
+                            .frame(width: 80, height: 80)
 
                         // Outer pulse ring
                         Circle()
                             .fill(lampColor.opacity(0.15))
-                            .frame(width: 36, height: 36)
+                            .frame(width: 28, height: 28)
                             .scaleEffect(isPulsing ? 1.6 : 1.0)
                             .opacity(isPulsing ? 0 : 0.6)
 
@@ -49,14 +49,14 @@ struct LiveReadinessCard: View {
                                     ],
                                     center: .center,
                                     startRadius: 0,
-                                    endRadius: 18
+                                    endRadius: 14
                                 )
                             )
-                            .frame(width: 36, height: 36)
+                            .frame(width: 28, height: 28)
                             .shadow(color: lampColor.opacity(0.35), radius: 12)
                             .shadow(color: lampColor.opacity(0.1), radius: 24)
                     }
-                    .frame(width: 60, height: 60)
+                    .frame(width: 44, height: 44)
                     .onAppear {
                         withAnimation(
                             .easeInOut(duration: 2.5)
@@ -86,6 +86,7 @@ struct LiveReadinessCard: View {
                     }
                 }
             }
+            .frame(minHeight: 140)
         }
     }
 

@@ -59,7 +59,10 @@ struct DashboardStatusBar: View {
         }
         .padding(.horizontal, PulseSpacing.lg)
         .padding(.vertical, PulseSpacing.xs)
-        .glassStyle()
+        .background(
+            RoundedRectangle(cornerRadius: PulseRadii.md)
+                .fill(colors.cardBackground)
+        )
     }
 
     // MARK: - Status Cell

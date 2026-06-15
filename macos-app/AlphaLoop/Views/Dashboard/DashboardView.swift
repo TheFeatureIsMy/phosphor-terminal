@@ -9,18 +9,15 @@ struct DashboardView: View {
     var viewModel: DashboardViewModel
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            content
-            EmergencyActionBar(viewModel: viewModel)
-        }
-        .id(settingsState.language)
-        .task {
-            await viewModel.load()
-            viewModel.startPolling()
-        }
-        .onDisappear {
-            viewModel.stopPolling()
-        }
+        content
+            .id(settingsState.language)
+            .task {
+                await viewModel.load()
+                viewModel.startPolling()
+            }
+            .onDisappear {
+                viewModel.stopPolling()
+            }
     }
 
     @ViewBuilder
@@ -82,12 +79,17 @@ struct DashboardView: View {
                             .staggeredAppearance(index: 6)
                     }
 
-                    // Bottom padding for emergency bar
-                    Spacer().frame(height: 60)
+                    // Row 5: Emergency bar (in flow, not fixed)
+                    EmergencyActionBar(viewModel: viewModel)
+                        .staggeredAppearance(index: 7)
+
+                    // Bottom padding
+                    Spacer().frame(height: PulseSpacing.lg)
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 16)
             }
+            .safeAreaPadding(.top, PulseSpacing.xxs)
         }
     }
 }

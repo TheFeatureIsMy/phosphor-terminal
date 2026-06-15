@@ -63,6 +63,7 @@ struct GlobalRiskCard: View {
                     )
                 }
             }
+            .frame(minHeight: 140)
         }
     }
 

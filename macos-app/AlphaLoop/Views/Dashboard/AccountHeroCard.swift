@@ -24,7 +24,6 @@ struct AccountHeroCard: View {
                 rightPanel
             }
         }
-        .overlay(gradientOutline)
     }
 
     // MARK: - Left Panel
@@ -175,22 +174,6 @@ struct AccountHeroCard: View {
         .padding(.vertical, PulseSpacing.lg)
     }
 
-    // MARK: - Gradient Outline
-
-    private var gradientOutline: some View {
-        RoundedRectangle(cornerRadius: PulseRadii.card)
-            .stroke(
-                LinearGradient(
-                    colors: [
-                        Color(red: 0, green: 1, blue: 0.62).opacity(0.15),
-                        Color(red: 0.36, green: 0.83, blue: 1).opacity(0.08)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                ),
-                lineWidth: 1
-            )
-    }
 
     // MARK: - Sharpe Color
 
