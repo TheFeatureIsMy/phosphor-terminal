@@ -113,11 +113,12 @@ def _mock_global_status() -> dict:
 @router.get("/dashboard", response_model=DashboardResponse)
 async def get_dashboard():
     try:
-        from app.services.bff.overview_aggregator import OverviewAggregator
-        agg = OverviewAggregator()
-        return await agg.dashboard()
-    except Exception as e:
-        logger.warning(f"[dashboard] OverviewAggregator unavailable, mock fallback: {e}")
+        from app.services.overview_aggregator import OverviewAggregatorService
+        svc = OverviewAggregatorService()
+        data = await svc.aggregate()
+        return data
+    except Exception as exc:
+        logger.warning("Aggregator failed, using mock: %s", exc)
         data = _mock_dashboard()
         data["_mock"] = True
         return data
