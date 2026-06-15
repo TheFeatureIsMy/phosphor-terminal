@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlphaLoop — Pre-Flight Control Room</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Share+Tech+Mono&family=Darker+Grotesque:wght@400;500;600;700;800;900&display=swap');
+
+*{margin:0;padding:0;box-sizing:border-box;}
+
+:root{
+  --void:#08090b;
+  --panel:#0f1114;
+  --panel-raised:#151820;
+  --panel-inset:#0a0b0e;
+  --bezel:#1a1d24;
+  --bezel-light:#252830;
+  --gold:#d4a843;
+  --gold-dim:rgba(212,168,67,0.08);
+  --gold-hot:rgba(212,168,67,0.6);
+  --signal-green:#2ecc71;
+  --signal-green-dim:rgba(46,204,113,0.1);
+  --signal-red:#e74c3c;
+  --signal-red-dim:rgba(231,76,60,0.08);
+  --signal-amber:#f39c12;
+  --ink:#c8c4b8;
+  --ink-2:rgba(200,196,184,0.5);
+  --ink-3:rgba(200,196,184,0.25);
+  --rivet:#2a2d35;
+}
+
+body{
+  background:var(--void);color:var(--ink);
+  font-family:'Darker Grotesque','Chakra Petch',sans-serif;
+  min-height:100vh;overflow-x:hidden;
+}
+
+/* Noise texture overlay */
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+  background-repeat:repeat;
+}
+
+/* Subtle warm radial */
+body::after{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(ellipse 800px 500px at 50% 30%,rgba(212,168,67,0.02),transparent 70%);
+}
+
+.page{position:relative;z-index:1;max-width:1160px;margin:0 auto;padding:20px 24px 80px;}
+
+/* ===== PANEL SYSTEM ===== */
+.panel{
+  background:var(--panel);
+  border:1px solid var(--bezel);
+  border-radius:3px;
+  position:relative;
+}
+.panel::after{
+  content:'';position:absolute;inset:0;border-radius:3px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.03),inset 0 -1px 0 rgba(0,0,0,0.3);
+  pointer-events:none;
+}
+
+/* Panel screws */
+.panel-screwed{padding:20px 24px;}
+.panel-screwed::before{
+  content:'';position:absolute;top:8px;left:8px;right:8px;bottom:8px;
+  border:1px solid rgba(255,255,255,0.02);border-radius:2px;pointer-events:none;
+}
+
+.panel-label{
+  font-family:'Share Tech Mono',monospace;font-size:10px;
+  letter-spacing:0.15em;text-transform:uppercase;color:var(--gold);
+  margin-bottom:14px;display:flex;align-items:center;gap:8px;
+}
+.panel-label::before{content:'';width:12px;height:2px;background:var(--gold);border-radius:1px;}
+
+/* ===== MASTHEAD ===== */
+.masthead{
+  display:flex;align-items:stretch;gap:0;
+  border:1px solid var(--bezel);border-radius:3px;overflow:hidden;
+  background:var(--panel);margin-bottom:16px;
+}
+
+/* Analog gauge */
+.gauge-housing{
+  width:180px;padding:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:var(--panel-inset);border-right:1px solid var(--bezel);
+  position:relative;
+}
+.gauge-housing::before{
+  content:'';position:absolute;inset:8px;border:1px solid rgba(255,255,255,0.015);border-radius:2px;
+}
+.gauge-dial{
+  width:120px;height:70px;position:relative;overflow:hidden;margin-bottom:8px;
+}
+.gauge-arc{
+  width:120px;height:120px;border-radius:50%;
+  border:4px solid var(--bezel-light);
+  border-top-color:transparent;border-right-color:transparent;
+  transform:rotate(225deg);position:absolute;top:0;
+}
+.gauge-fill-arc{
+  width:120px;height:120px;border-radius:50%;
+  border:4px solid transparent;
+  border-bottom-color:var(--signal-green);border-left-color:var(--signal-green);
+  transform:rotate(225deg);position:absolute;top:0;
+  clip-path:polygon(0 0, 100% 0, 100% 100%, 0 100%);
+}
+.gauge-needle{
+  position:absolute;bottom:0;left:50%;width:2px;height:56px;
+  background:linear-gradient(to top,var(--gold),var(--gold) 80%,transparent);
+  transform-origin:bottom center;transform:rotate(54deg);
+  border-radius:1px;
+  transition:transform 1.5s cubic-bezier(0.34,1.56,0.64,1);
+}
+.gauge-needle::after{
+  content:'';position:absolute;bottom:-3px;left:-3px;width:8px;height:8px;
+  background:var(--gold);border-radius:50%;
+  box-shadow:0 0 8px rgba(212,168,67,0.4);
+}
+.gauge-number{
+  font-family:'Share Tech Mono',monospace;font-size:32px;font-weight:400;
+  color:var(--gold);letter-spacing:2px;
+  text-shadow:0 0 20px rgba(212,168,67,0.3);
+}
+.gauge-unit{
+  font-family:'Share Tech Mono',monospace;font-size:9px;
+  color:var(--ink-3);letter-spacing:0.2em;text-transform:uppercase;
+}
+
+/* State block */
+.state-block{flex:1;padding:20px 28px;display:flex;flex-direction:column;justify-content:center;}
+.state-indicator{display:flex;align-items:center;gap:12px;margin-bottom:6px;}
+.state-lamp{
+  width:14px;height:14px;border-radius:50%;
+  background:var(--signal-green);
+  box-shadow:0 0 12px rgba(46,204,113,0.5),0 0 30px rgba(46,204,113,0.15);
+  animation:lamp-pulse 3s ease-in-out infinite;
+}
+@keyframes lamp-pulse{
+  0%,100%{box-shadow:0 0 12px rgba(46,204,113,0.5),0 0 30px rgba(46,204,113,0.15);}
+  50%{box-shadow:0 0 18px rgba(46,204,113,0.7),0 0 40px rgba(46,204,113,0.2);}
+}
+.state-text{
+  font-family:'Chakra Petch',sans-serif;font-size:22px;font-weight:700;
+  color:var(--signal-green);letter-spacing:0.06em;text-transform:uppercase;
+}
+.state-desc{font-size:14px;color:var(--ink-2);line-height:1.6;max-width:500px;}
+
+/* Permission toggles */
+.perm-row{display:flex;gap:16px;margin-top:14px;}
+.perm-toggle{display:flex;align-items:center;gap:8px;}
+.toggle-track{
+  width:32px;height:16px;border-radius:2px;position:relative;
+  background:var(--panel-inset);border:1px solid var(--bezel-light);
+  transition:background 0.3s;
+}
+.toggle-track.on{background:var(--signal-green-dim);border-color:rgba(46,204,113,0.3);}
+.toggle-track.off{background:var(--signal-red-dim);border-color:rgba(231,76,60,0.15);}
+.toggle-knob{
+  position:absolute;top:1px;width:12px;height:12px;border-radius:2px;
+  background:var(--bezel-light);transition:left 0.3s,background 0.3s;
+  box-shadow:0 1px 3px rgba(0,0,0,0.4);
+}
+.toggle-track.on .toggle-knob{left:17px;background:var(--signal-green);}
+.toggle-track.off .toggle-knob{left:1px;background:var(--signal-red);}
+.toggle-label{
+  font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:0.04em;
+}
+.toggle-label.on{color:var(--signal-green);}
+.toggle-label.off{color:var(--signal-red);}
+
+/* Recheck button */
+.recheck-zone{
+  width:140px;display:flex;align-items:center;justify-content:center;
+  background:var(--panel-inset);border-left:1px solid var(--bezel);
+}
+.recheck-btn{
+  font-family:'Chakra Petch',sans-serif;font-size:11px;font-weight:600;
+  letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);
+  background:transparent;border:2px solid var(--gold);border-radius:3px;
+  padding:10px 20px;cursor:pointer;transition:all 0.2s;
+  position:relative;overflow:hidden;
+}
+.recheck-btn:hover{
+  background:var(--gold-dim);box-shadow:0 0 20px rgba(212,168,67,0.15);
+}
+.recheck-btn::after{
+  content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(212,168,67,0.1),transparent);
+  transition:left 0.5s;
+}
+.recheck-btn:hover::after{left:100%;}
+
+/* ===== BODY GRID ===== */
+.body-grid{display:grid;grid-template-columns:380px 1fr;gap:16px;}
+
+/* ===== GATE PIPELINE ===== */
+.pipeline{padding:0;}
+.gate{
+  display:flex;align-items:stretch;position:relative;
+  border-bottom:1px solid var(--bezel);
+}
+.gate:last-child{border-bottom:none;}
+.gate-status-strip{
+  width:4px;flex-shrink:0;
+}
+.gate-status-strip.pass{background:var(--signal-green);}
+.gate-status-strip.fail{
+  background:repeating-linear-gradient(
+    -45deg,var(--signal-red),var(--signal-red) 3px,
+    transparent 3px,transparent 6px
+  );
+}
+.gate-content{flex:1;padding:14px 18px;display:flex;align-items:center;gap:14px;}
+.gate-seq{
+  font-family:'Share Tech Mono',monospace;font-size:20px;font-weight:400;
+  color:var(--ink-3);width:28px;text-align:center;flex-shrink:0;
+}
+.gate-seq.pass{color:var(--signal-green);}
+.gate-seq.fail{color:var(--signal-red);}
+.gate-info{flex:1;}
+.gate-name{
+  font-family:'Chakra Petch',sans-serif;font-size:13px;font-weight:600;
+  color:var(--ink);letter-spacing:0.02em;
+}
+.gate-sub{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--ink-3);margin-top:2px;}
+.gate-remedy-text{font-size:10px;color:var(--signal-red);margin-top:3px;opacity:0.8;}
+.gate-verdict{
+  font-family:'Share Tech Mono',monospace;font-size:10px;font-weight:400;
+  letter-spacing:0.12em;text-transform:uppercase;flex-shrink:0;
+  padding:4px 10px;border-radius:2px;
+}
+.gate-verdict.pass{color:var(--signal-green);background:var(--signal-green-dim);border:1px solid rgba(46,204,113,0.15);}
+.gate-verdict.fail{color:var(--signal-red);background:var(--signal-red-dim);border:1px solid rgba(231,76,60,0.15);}
+
+/* ===== RIGHT STACK ===== */
+.right-stack{display:flex;flex-direction:column;gap:16px;}
+
+/* Health cells */
+.health-strip{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:0;
+  overflow:hidden;border-radius:3px;
+  border:1px solid var(--bezel);background:var(--panel);
+}
+.health-cell{
+  padding:14px 16px;border-right:1px solid var(--bezel);
+  display:flex;align-items:center;gap:10px;
+  transition:background 0.2s;
+}
+.health-cell:last-child{border-right:none;}
+.health-cell:hover{background:rgba(255,255,255,0.015);}
+.health-led{
+  width:8px;height:8px;border-radius:50%;flex-shrink:0;
+}
+.health-led.green{background:var(--signal-green);box-shadow:0 0 6px rgba(46,204,113,0.5);}
+.health-led.amber{background:var(--signal-amber);box-shadow:0 0 6px rgba(243,156,18,0.5);}
+.health-led.red{background:var(--signal-red);box-shadow:0 0 6px rgba(231,76,60,0.5);}
+.health-data{flex:1;}
+.health-name{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--ink-2);text-transform:uppercase;letter-spacing:0.06em;}
+.health-val{font-family:'Share Tech Mono',monospace;font-size:14px;color:var(--ink);margin-top:2px;}
+.health-thresh{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--ink-3);}
+
+/* Risk gauges */
+.risk-row{display:flex;align-items:center;gap:10px;padding:6px 0;}
+.risk-label{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--ink-3);width:52px;text-transform:uppercase;letter-spacing:0.04em;}
+.risk-bar{flex:1;height:6px;background:var(--panel-inset);border-radius:1px;overflow:hidden;border:1px solid var(--bezel);}
+.risk-fill{height:100%;transition:width 1s ease-out;}
+.risk-fill.low{background:var(--signal-green);}
+.risk-fill.mid{background:var(--signal-amber);}
+.risk-val{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--ink);width:60px;text-align:right;}
+
+/* Capital readout */
+.readout-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;}
+.readout-cell{
+  padding:14px 18px;border-bottom:1px solid var(--bezel);border-right:1px solid var(--bezel);
+}
+.readout-cell:nth-child(2n){border-right:none;}
+.readout-cell:nth-last-child(-n+2){border-bottom:none;}
+.readout-val{
+  font-family:'Share Tech Mono',monospace;font-size:22px;color:var(--ink);
+  letter-spacing:1px;
+}
+.readout-unit{font-size:12px;color:var(--ink-3);margin-left:4px;}
+.readout-label{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--ink-3);text-transform:uppercase;letter-spacing:0.08em;margin-top:4px;}
+
+.safety-row{
+  display:flex;gap:8px;padding:12px 18px;border-top:1px solid var(--bezel);flex-wrap:wrap;
+}
+.safety-tag{
+  font-family:'Share Tech Mono',monospace;font-size:9px;
+  color:var(--gold);background:var(--gold-dim);
+  border:1px solid rgba(212,168,67,0.12);
+  padding:3px 8px;border-radius:2px;letter-spacing:0.04em;
+}
+
+/* ===== LAUNCH CONSOLE ===== */
+.launch-console{
+  margin-top:16px;border:1px solid var(--bezel);border-radius:3px;
+  overflow:hidden;background:var(--panel);
+}
+.launch-header{
+  padding:12px 24px;background:var(--panel-inset);
+  border-bottom:1px solid var(--bezel);
+  display:flex;align-items:center;gap:8px;
+}
+.launch-header-text{
+  font-family:'Share Tech Mono',monospace;font-size:10px;
+  letter-spacing:0.15em;text-transform:uppercase;color:var(--gold);
+}
+.launch-body{display:flex;align-items:stretch;}
+.launch-blockers{
+  flex:0 0 380px;padding:16px 24px;border-right:1px solid var(--bezel);
+  background:var(--panel-inset);
+}
+.blocker{display:flex;align-items:baseline;gap:8px;padding:5px 0;font-size:12px;}
+.blocker-x{font-family:'Share Tech Mono',monospace;color:var(--signal-red);font-size:14px;font-weight:700;}
+.blocker-code{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--signal-red);}
+.blocker-msg{color:var(--ink-3);font-size:11px;}
+
+.launch-actions{flex:1;display:flex;align-items:center;justify-content:center;gap:16px;padding:20px 24px;}
+.launch-btn{
+  font-family:'Chakra Petch',sans-serif;font-size:13px;font-weight:700;
+  letter-spacing:0.08em;text-transform:uppercase;
+  padding:14px 28px;border-radius:3px;cursor:pointer;
+  transition:all 0.25s;position:relative;overflow:hidden;
+  min-width:160px;text-align:center;
+}
+.launch-btn::before{
+  content:'';position:absolute;inset:0;opacity:0;transition:opacity 0.3s;
+}
+.launch-btn:hover::before{opacity:1;}
+.launch-btn.paper{
+  background:transparent;color:var(--ink);
+  border:2px solid var(--bezel-light);
+}
+.launch-btn.paper:hover{
+  border-color:var(--ink-2);
+  box-shadow:0 0 20px rgba(200,196,184,0.05);
+}
+.launch-btn.paper::before{background:rgba(200,196,184,0.03);}
+
+.launch-btn.go{
+  background:var(--signal-green-dim);color:var(--signal-green);
+  border:2px solid rgba(46,204,113,0.3);
+}
+.launch-btn.go:hover{
+  background:rgba(46,204,113,0.15);
+  border-color:rgba(46,204,113,0.5);
+  box-shadow:0 0 30px rgba(46,204,113,0.12),0 2px 8px rgba(46,204,113,0.1);
+}
+.launch-btn.go::before{background:rgba(46,204,113,0.05);}
+
+.launch-btn.locked{
+  background:transparent;color:var(--ink-3);
+  border:2px solid var(--bezel);opacity:0.4;pointer-events:none;
+}
+
+/* ===== ANIMATIONS ===== */
+.fi{opacity:0;transform:translateY(8px);animation:rise 0.4s ease-out forwards;}
+@keyframes rise{to{opacity:1;transform:translateY(0);}}
+.gate{opacity:0;animation:gate-in 0.3s ease-out forwards;}
+@keyframes gate-in{to{opacity:1;}}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ===== MASTHEAD ===== -->
+  <div class="masthead fi" style="animation-delay:0ms">
+    <!-- Analog Gauge -->
+    <div class="gauge-housing">
+      <div class="gauge-dial">
+        <div class="gauge-arc"></div>
+        <div class="gauge-fill-arc"></div>
+        <div class="gauge-needle"></div>
+      </div>
+      <div class="gauge-number">86</div>
+      <div class="gauge-unit">readiness</div>
+    </div>
+
+    <!-- State Info -->
+    <div class="state-block">
+      <div class="state-indicator">
+        <div class="state-lamp"></div>
+        <span class="state-text">Live Small Ready</span>
+      </div>
+      <div class="state-desc">系统健康，策略通过 5/7 门检查。可启动小仓实盘，需完成风控绑定和人工确认后解锁全仓。</div>
+      <div class="perm-row">
+        <div class="perm-toggle">
+          <div class="toggle-track on"><div class="toggle-knob"></div></div>
+          <span class="toggle-label on">PAPER</span>
+        </div>
+        <div class="perm-toggle">
+          <div class="toggle-track on"><div class="toggle-knob"></div></div>
+          <span class="toggle-label on">SMALL</span>
+        </div>
+        <div class="perm-toggle">
+          <div class="toggle-track off"><div class="toggle-knob"></div></div>
+          <span class="toggle-label off">FULL</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recheck -->
+    <div class="recheck-zone">
+      <button class="recheck-btn">⟳ RE-CHECK</button>
+    </div>
+  </div>
+
+  <!-- ===== BODY: GATES + RIGHT STACK ===== -->
+  <div class="body-grid">
+
+    <!-- LEFT: 7-Gate Pipeline -->
+    <div class="panel pipeline fi" style="animation-delay:50ms">
+      <div style="padding:14px 18px 8px;border-bottom:1px solid var(--bezel);">
+        <div class="panel-label">Strategy Gates · 5 / 7</div>
+      </div>
+
+      <div class="gate" style="animation-delay:80ms">
+        <div class="gate-status-strip pass"></div>
+        <div class="gate-content">
+          <div class="gate-seq pass">01</div>
+          <div class="gate-info">
+            <div class="gate-name">版本状态 Version Status</div>
+            <div class="gate-sub">Strategy reached paper_passed</div>
+          </div>
+          <div class="gate-verdict pass">GO</div>
+        </div>
+      </div>
+
+      <div class="gate" style="animation-delay:120ms">
+        <div class="gate-status-strip pass"></div>
+        <div class="gate-content">
+          <div class="gate-seq pass">02</div>
+          <div class="gate-info">
+            <div class="gate-name">回测记录 Backtest Record</div>
+            <div class="gate-sub">3 completed · best Sharpe 1.82</div>
+          </div>
+          <div class="gate-verdict pass">GO</div>
+        </div>
+      </div>
+
+      <div class="gate" style="animation-delay:160ms">
+        <div class="gate-status-strip pass"></div>
+        <div class="gate-content">
+          <div class="gate-seq pass">03</div>
+          <div class="gate-info">
+            <div class="gate-name">模拟时长 Dry-Run Duration</div>
+            <div class="gate-sub">168h completed (min: 72h)</div>
+          </div>
+          <div class="gate-verdict pass">GO</div>
+        </div>
+      </div>
+
+      <div class="gate" style="animation-delay:200ms">
+        <div class="gate-status-strip pass"></div>
+        <div class="gate-content">
+          <div class="gate-seq pass">04</div>
+          <div class="gate-info">
+            <div class="gate-name">模拟健康 Dry-Run Health</div>
+            <div class="gate-sub">No failures in last 7 days</div>
+          </div>
+          <div class="gate-verdict pass">GO</div>
+        </div>
+      </div>
+
+      <div class="gate" style="animation-delay:240ms">
+        <div class="gate-status-strip pass"></div>
+        <div class="gate-content">
+          <div class="gate-seq pass">05</div>
+          <div class="gate-info">
+            <div class="gate-name">无重复 No Duplicate</div>
+            <div class="gate-sub">No duplicate live_small runs</div>
+          </div>
+          <div class="gate-verdict pass">GO</div>
+        </div>
+      </div>
+
+      <div class="gate" style="animation-delay:280ms">
+        <div class="gate-status-strip fail"></div>
+        <div class="gate-content">
+          <div class="gate-seq fail">06</div>
+          <div class="gate-info">
+            <div class="gate-name">风控绑定 Risk Binding</div>
+            <div class="gate-sub">RiskPolicy + CapitalPool not bound</div>
+            <div class="gate-remedy-text">→ 绑定 live_small 级别的 RiskPolicy 和 CapitalPool</div>
+          </div>
+          <div class="gate-verdict fail">NO-GO</div>
+        </div>
+      </div>
+
+      <div class="gate" style="animation-delay:320ms">
+        <div class="gate-status-strip fail"></div>
+        <div class="gate-content">
+          <div class="gate-seq fail">07</div>
+          <div class="gate-info">
+            <div class="gate-name">人工确认 Human Confirm</div>
+            <div class="gate-sub">CapitalPool requires_human_confirm</div>
+            <div class="gate-remedy-text">→ 开启人工确认后方可进入全仓</div>
+          </div>
+          <div class="gate-verdict fail">NO-GO</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT STACK -->
+    <div class="right-stack">
+
+      <!-- System Health -->
+      <div class="fi" style="animation-delay:60ms">
+        <div class="health-strip">
+          <div class="health-cell">
+            <div class="health-led green"></div>
+            <div class="health-data">
+              <div class="health-name">Fast Track</div>
+              <div class="health-val">45ms</div>
+              <div class="health-thresh">&lt; 200ms</div>
+            </div>
+          </div>
+          <div class="health-cell">
+            <div class="health-led green"></div>
+            <div class="health-data">
+              <div class="health-name">Redis RTT</div>
+              <div class="health-val">3ms</div>
+              <div class="health-thresh">&lt; 50ms</div>
+            </div>
+          </div>
+          <div class="health-cell">
+            <div class="health-led green"></div>
+            <div class="health-data">
+              <div class="health-name">Freqtrade</div>
+              <div class="health-val">running</div>
+              <div class="health-thresh">running</div>
+            </div>
+          </div>
+          <div class="health-cell">
+            <div class="health-led amber"></div>
+            <div class="health-data">
+              <div class="health-name">Exchange API</div>
+              <div class="health-val">wt 80%</div>
+              <div class="health-thresh">&lt; 90%</div>
+            </div>
+          </div>
+          <div class="health-cell">
+            <div class="health-led green"></div>
+            <div class="health-data">
+              <div class="health-name">PostgreSQL</div>
+              <div class="health-val">connected</div>
+              <div class="health-thresh">connected</div>
+            </div>
+          </div>
+          <div class="health-cell">
+            <div class="health-led green"></div>
+            <div class="health-data">
+              <div class="health-name">AI Cache</div>
+              <div class="health-val">fresh</div>
+              <div class="health-thresh">&lt; 5min</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Risk Firewall -->
+      <div class="panel panel-screwed fi" style="animation-delay:100ms">
+        <div class="panel-label">Risk Firewall</div>
+        <div class="risk-row">
+          <span class="risk-label">Daily</span>
+          <div class="risk-bar"><div class="risk-fill low" style="width:27%;"></div></div>
+          <span class="risk-val">0.8% / 3%</span>
+        </div>
+        <div class="risk-row">
+          <span class="risk-label">Weekly</span>
+          <div class="risk-bar"><div class="risk-fill low" style="width:19%;"></div></div>
+          <span class="risk-val">1.5% / 8%</span>
+        </div>
+        <div class="risk-row">
+          <span class="risk-label">Consec</span>
+          <div class="risk-bar"><div class="risk-fill low" style="width:20%;"></div></div>
+          <span class="risk-val">1 / 5</span>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:10px;">
+          <span class="safety-tag">● KILL SWITCH: OFF</span>
+          <span class="safety-tag">● BREAKER: NORMAL</span>
+        </div>
+      </div>
+
+      <!-- Capital Readout -->
+      <div class="panel fi" style="animation-delay:140ms">
+        <div style="padding:14px 18px 0;">
+          <div class="panel-label">Capital Pool</div>
+        </div>
+        <div class="readout-grid">
+          <div class="readout-cell">
+            <div class="readout-val">500<span class="readout-unit">USDT</span></div>
+            <div class="readout-label">Total Budget</div>
+          </div>
+          <div class="readout-cell">
+            <div class="readout-val">50<span class="readout-unit">USDT</span></div>
+            <div class="readout-label">Stake / Trade</div>
+          </div>
+          <div class="readout-cell">
+            <div class="readout-val">3</div>
+            <div class="readout-label">Max Open Trades</div>
+          </div>
+          <div class="readout-cell">
+            <div class="readout-val">3.0<span class="readout-unit">%</span></div>
+            <div class="readout-label">Max Daily Loss</div>
+          </div>
+        </div>
+        <div class="safety-row">
+          <span class="safety-tag">🔒 NO LEVERAGE</span>
+          <span class="safety-tag">🛡 SPOT ONLY</span>
+          <span class="safety-tag">👤 HUMAN CONFIRM</span>
+          <span class="safety-tag">⚡ AUTO OFF</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== LAUNCH CONSOLE ===== -->
+  <div class="launch-console fi" style="animation-delay:180ms">
+    <div class="launch-header">
+      <div class="launch-header-text">▸ Launch Sequence</div>
+    </div>
+    <div class="launch-body">
+      <div class="launch-blockers">
+        <div class="blocker">
+          <span class="blocker-x">✗</span>
+          <span class="blocker-code">risk_binding</span>
+          <span class="blocker-msg">— 需绑定 RiskPolicy</span>
+        </div>
+        <div class="blocker">
+          <span class="blocker-x">✗</span>
+          <span class="blocker-code">human_confirm</span>
+          <span class="blocker-msg">— 需开启人工确认</span>
+        </div>
+      </div>
+      <div class="launch-actions">
+        <button class="launch-btn paper">PAPER TRADE</button>
+        <button class="launch-btn go">GO LIVE ▸</button>
+        <button class="launch-btn locked">FULL LIVE</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

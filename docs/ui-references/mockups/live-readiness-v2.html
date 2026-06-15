@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlphaLoop — Live Readiness v2 (Pre-Flight Control)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box;}
+  :root{
+    --bg:#07090C;--surface:#0E1216;--surface-el:#131922;
+    --border:#1F2731;--accent:#00FF9D;--cyan:#5BD4FF;
+    --amber:#FFB547;--danger:#FF5A6E;--purple:#A877FF;
+    --profit:#00FF9D;--loss:#FF5A6E;
+    --text-1:rgba(255,255,255,0.92);--text-2:rgba(255,255,255,0.55);--text-3:rgba(255,255,255,0.30);
+    --card-bg:rgba(14,18,22,0.85);--card-border:rgba(31,39,49,0.7);--card-r:14px;
+  }
+  body{background:var(--bg);color:var(--text-1);font-family:'Space Grotesk',sans-serif;min-height:100vh;}
+  body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 500px 400px at 50% 10%,rgba(0,255,157,0.03),transparent 70%),radial-gradient(ellipse 400px 300px at 80% 80%,rgba(91,212,255,0.02),transparent 70%);pointer-events:none;}
+  body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(255,255,255,0.005) 2px,rgba(255,255,255,0.005) 4px);pointer-events:none;}
+  .page{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:24px 28px 60px;}
+  .card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--card-r);padding:20px 24px;position:relative;overflow:hidden;backdrop-filter:blur(20px);}
+  .card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,0.015),transparent 50%);pointer-events:none;}
+  .label{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-3);margin-bottom:12px;}
+  .row{display:flex;gap:12px;}
+  .row>*{flex:1;min-width:0;}
+  .chip{font-family:'IBM Plex Mono',monospace;font-size:9px;padding:2px 8px;border-radius:4px;letter-spacing:0.03em;display:inline-flex;align-items:center;gap:4px;}
+  .chip-ok{background:rgba(0,255,157,0.08);color:var(--accent);border:1px solid rgba(0,255,157,0.15);}
+  .chip-warn{background:rgba(255,181,71,0.08);color:var(--amber);border:1px solid rgba(255,181,71,0.15);}
+  .chip-fail{background:rgba(255,90,110,0.08);color:var(--danger);border:1px solid rgba(255,90,110,0.15);}
+  .fi{opacity:0;transform:translateY(10px);animation:fu 0.35s ease-out forwards;}
+  @keyframes fu{to{opacity:1;transform:translateY(0);}}
+
+  /* ===== COMMAND HEADER ===== */
+  .cmd-header{display:flex;align-items:center;gap:28px;padding:24px 28px;}
+  .score-ring{position:relative;width:88px;height:88px;flex-shrink:0;}
+  .score-ring svg{width:88px;height:88px;transform:rotate(-90deg);}
+  .score-ring .track{fill:none;stroke:rgba(255,255,255,0.06);stroke-width:6;}
+  .score-ring .fill{fill:none;stroke:var(--accent);stroke-width:6;stroke-linecap:round;
+    stroke-dasharray:251;stroke-dashoffset:35;transition:stroke-dashoffset 1s ease-out;}
+  .score-value{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .score-num{font-family:'IBM Plex Mono',monospace;font-size:28px;font-weight:700;color:var(--accent);}
+  .score-label{font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--text-3);text-transform:uppercase;letter-spacing:0.1em;}
+  .cmd-info{flex:1;}
+  .cmd-state{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+  .state-dot{width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px rgba(0,255,157,0.4);animation:pulse 2s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{box-shadow:0 0 12px rgba(0,255,157,0.4);}50%{box-shadow:0 0 20px rgba(0,255,157,0.6);}}
+  .state-label{font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:600;color:var(--accent);letter-spacing:0.04em;}
+  .state-desc{font-size:13px;color:var(--text-2);line-height:1.5;}
+  .perm-badges{display:flex;gap:8px;margin-top:10px;}
+  .perm{font-family:'IBM Plex Mono',monospace;font-size:10px;padding:4px 12px;border-radius:6px;display:flex;align-items:center;gap:5px;font-weight:500;}
+  .perm-ok{background:rgba(0,255,157,0.08);color:var(--accent);border:1px solid rgba(0,255,157,0.15);}
+  .perm-no{background:rgba(255,255,255,0.03);color:var(--text-3);border:1px solid rgba(255,255,255,0.06);}
+  .cmd-actions{display:flex;flex-direction:column;gap:8px;flex-shrink:0;}
+  .btn{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;padding:8px 20px;border-radius:8px;border:1px solid;cursor:pointer;transition:all 0.15s;}
+  .btn:hover{transform:translateY(-1px);}
+  .btn-accent{color:var(--accent);border-color:rgba(0,255,157,0.3);background:rgba(0,255,157,0.08);}
+  .btn-accent:hover{background:rgba(0,255,157,0.15);box-shadow:0 0 16px rgba(0,255,157,0.1);}
+  .btn-cyan{color:var(--cyan);border-color:rgba(91,212,255,0.25);background:rgba(91,212,255,0.06);}
+
+  /* ===== TWO-COLUMN LAYOUT ===== */
+  .two-col{display:flex;gap:12px;align-items:flex-start;}
+  .col-left{flex:0 0 340px;display:flex;flex-direction:column;gap:12px;}
+  .col-right{flex:1;display:flex;flex-direction:column;gap:12px;}
+
+  /* ===== GATE PIPELINE (vertical) ===== */
+  .gate-list{display:flex;flex-direction:column;gap:0;}
+  .gate-item{display:flex;align-items:flex-start;gap:14px;padding:10px 0;position:relative;}
+  .gate-connector{position:absolute;left:15px;top:38px;bottom:-12px;width:2px;}
+  .gate-connector.pass{background:linear-gradient(180deg,var(--accent),var(--accent) 60%,rgba(0,255,157,0.2));}
+  .gate-connector.fail{background:linear-gradient(180deg,var(--text-3),rgba(255,255,255,0.06));}
+  .gate-item:last-child .gate-connector{display:none;}
+  .gate-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;position:relative;z-index:1;}
+  .gate-icon.pass{background:rgba(0,255,157,0.1);border:1px solid rgba(0,255,157,0.25);color:var(--accent);}
+  .gate-icon.fail{background:rgba(255,90,110,0.08);border:1px solid rgba(255,90,110,0.2);color:var(--danger);}
+  .gate-icon.pending{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);color:var(--text-3);}
+  .gate-body{flex:1;padding-top:2px;}
+  .gate-name{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:var(--text-1);}
+  .gate-detail{font-size:11px;color:var(--text-2);margin-top:2px;}
+  .gate-remedy{font-size:10px;color:var(--danger);margin-top:3px;font-style:italic;}
+
+  /* ===== SYSTEM CHECKS ===== */
+  .check-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .check-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;background:rgba(255,255,255,0.015);border:1px solid rgba(255,255,255,0.03);}
+  .check-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  .check-dot.ok{background:var(--accent);box-shadow:0 0 6px var(--accent);}
+  .check-dot.warn{background:var(--amber);box-shadow:0 0 6px var(--amber);}
+  .check-dot.fail{background:var(--danger);box-shadow:0 0 6px var(--danger);}
+  .check-info{flex:1;}
+  .check-label{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;color:var(--text-1);}
+  .check-value{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-2);margin-top:1px;}
+  .check-threshold{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--text-3);}
+
+  /* ===== RISK GAUGES ===== */
+  .gauge-row{display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:10px;margin-top:6px;}
+  .gauge-label{color:var(--text-3);min-width:48px;text-transform:uppercase;letter-spacing:0.04em;}
+  .gauge-bar{flex:1;height:5px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden;}
+  .gauge-fill{height:100%;border-radius:3px;}
+  .gauge-fill.safe{background:linear-gradient(90deg,var(--accent),rgba(0,255,157,0.5));}
+  .gauge-fill.warn{background:linear-gradient(90deg,var(--amber),rgba(255,181,71,0.5));}
+  .gauge-value{color:var(--text-2);min-width:28px;text-align:right;font-weight:500;}
+
+  /* ===== CAPITAL CONFIG ===== */
+  .config-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .config-item{padding:12px 16px;border-radius:10px;background:rgba(255,255,255,0.015);border:1px solid rgba(255,255,255,0.04);}
+  .config-label{font-family:'IBM Plex Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-3);margin-bottom:6px;}
+  .config-value{font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:600;color:var(--text-1);}
+  .config-unit{font-size:11px;color:var(--text-3);font-weight:400;margin-left:4px;}
+  .safety-badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+
+  /* ===== LAUNCH ZONE ===== */
+  .launch-zone{padding:20px 24px;border:1px solid rgba(0,255,157,0.1);border-radius:var(--card-r);background:rgba(0,255,157,0.02);position:relative;overflow:hidden;}
+  .launch-zone::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(0,255,157,0.04),transparent 60%);pointer-events:none;}
+  .launch-btns{display:flex;gap:12px;margin-top:16px;}
+  .launch-btn{flex:1;padding:12px;border-radius:10px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;cursor:pointer;transition:all 0.2s;border:none;}
+  .launch-btn.paper{background:rgba(91,212,255,0.1);color:var(--cyan);border:1px solid rgba(91,212,255,0.25);}
+  .launch-btn.paper:hover{background:rgba(91,212,255,0.18);box-shadow:0 0 20px rgba(91,212,255,0.1);}
+  .launch-btn.live{background:linear-gradient(135deg,rgba(0,255,157,0.15),rgba(0,255,157,0.08));color:var(--accent);border:1px solid rgba(0,255,157,0.3);}
+  .launch-btn.live:hover{background:linear-gradient(135deg,rgba(0,255,157,0.25),rgba(0,255,157,0.12));box-shadow:0 0 24px rgba(0,255,157,0.12);}
+  .launch-btn.disabled{opacity:0.35;pointer-events:none;}
+  .blocking-item{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:11px;}
+  .blocking-x{color:var(--danger);font-size:12px;font-weight:bold;}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ===== COMMAND HEADER ===== -->
+  <div class="card cmd-header fi" style="animation-delay:0ms">
+    <div class="score-ring">
+      <svg viewBox="0 0 88 88">
+        <circle class="track" cx="44" cy="44" r="40"/>
+        <circle class="fill" cx="44" cy="44" r="40"/>
+      </svg>
+      <div class="score-value">
+        <span class="score-num">86</span>
+        <span class="score-label">SCORE</span>
+      </div>
+    </div>
+    <div class="cmd-info">
+      <div class="cmd-state">
+        <div class="state-dot"></div>
+        <span class="state-label">LIVE SMALL READY</span>
+      </div>
+      <div class="state-desc">系统健康，策略通过 5/7 门检查。可启动小仓实盘交易，需完成风控绑定和人工确认后解锁全仓。</div>
+      <div class="perm-badges">
+        <span class="perm perm-ok">✓ 模拟 PAPER</span>
+        <span class="perm perm-ok">✓ 小仓 SMALL</span>
+        <span class="perm perm-no">✗ 全仓 FULL</span>
+      </div>
+    </div>
+    <div class="cmd-actions">
+      <button class="btn btn-accent">⟳ RE-CHECK</button>
+    </div>
+  </div>
+
+  <!-- ===== TWO-COLUMN BODY ===== -->
+  <div class="two-col" style="margin-top:12px;">
+
+    <!-- LEFT: Gate Pipeline + Risk -->
+    <div class="col-left">
+
+      <!-- 7-Gate Pipeline -->
+      <div class="card fi" style="animation-delay:40ms">
+        <div class="label">// STRATEGY GATES · 5/7 PASSED</div>
+        <div class="gate-list">
+          <div class="gate-item">
+            <div class="gate-connector pass"></div>
+            <div class="gate-icon pass">✓</div>
+            <div class="gate-body">
+              <div class="gate-name">版本状态 VERSION</div>
+              <div class="gate-detail">Strategy reached paper_passed</div>
+            </div>
+          </div>
+          <div class="gate-item">
+            <div class="gate-connector pass"></div>
+            <div class="gate-icon pass">✓</div>
+            <div class="gate-body">
+              <div class="gate-name">回测记录 BACKTEST</div>
+              <div class="gate-detail">3 backtests completed, best Sharpe 1.82</div>
+            </div>
+          </div>
+          <div class="gate-item">
+            <div class="gate-connector pass"></div>
+            <div class="gate-icon pass">✓</div>
+            <div class="gate-body">
+              <div class="gate-name">模拟时长 DRY-RUN</div>
+              <div class="gate-detail">168h completed (min: 72h)</div>
+            </div>
+          </div>
+          <div class="gate-item">
+            <div class="gate-connector pass"></div>
+            <div class="gate-icon pass">✓</div>
+            <div class="gate-body">
+              <div class="gate-name">模拟健康 HEALTH</div>
+              <div class="gate-detail">No failures in last 7 days</div>
+            </div>
+          </div>
+          <div class="gate-item">
+            <div class="gate-connector pass"></div>
+            <div class="gate-icon pass">✓</div>
+            <div class="gate-body">
+              <div class="gate-name">无重复 NO DUP</div>
+              <div class="gate-detail">No duplicate live_small runs</div>
+            </div>
+          </div>
+          <div class="gate-item">
+            <div class="gate-connector fail"></div>
+            <div class="gate-icon fail">✗</div>
+            <div class="gate-body">
+              <div class="gate-name">风控绑定 RISK BIND</div>
+              <div class="gate-detail">RiskPolicy + CapitalPool not bound</div>
+              <div class="gate-remedy">→ 需绑定 live_small 级别的 RiskPolicy 和 CapitalPool</div>
+            </div>
+          </div>
+          <div class="gate-item">
+            <div class="gate-icon fail">✗</div>
+            <div class="gate-body">
+              <div class="gate-name">人工确认 CONFIRM</div>
+              <div class="gate-detail">Human confirmation pending</div>
+              <div class="gate-remedy">→ CapitalPool 需设置 requires_human_confirm = true</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Risk Summary -->
+      <div class="card fi" style="animation-delay:80ms">
+        <div class="label">// RISK FIREWALL</div>
+        <div class="gauge-row">
+          <span class="gauge-label">Daily</span>
+          <div class="gauge-bar"><div class="gauge-fill safe" style="width:27%;"></div></div>
+          <span class="gauge-value" style="color:var(--accent);">0.8%</span>
+          <span style="color:var(--text-3);font-size:9px;">/ 3%</span>
+        </div>
+        <div class="gauge-row">
+          <span class="gauge-label">Weekly</span>
+          <div class="gauge-bar"><div class="gauge-fill safe" style="width:19%;"></div></div>
+          <span class="gauge-value" style="color:var(--accent);">1.5%</span>
+          <span style="color:var(--text-3);font-size:9px;">/ 8%</span>
+        </div>
+        <div class="gauge-row">
+          <span class="gauge-label">Consec</span>
+          <div class="gauge-bar"><div class="gauge-fill safe" style="width:20%;"></div></div>
+          <span class="gauge-value">1</span>
+          <span style="color:var(--text-3);font-size:9px;">/ 5</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:10px;">
+          <span class="chip chip-ok">● Kill Switch: OFF</span>
+          <span class="chip chip-ok">● Breaker: NORMAL</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: System Health + Capital + Launch -->
+    <div class="col-right">
+
+      <!-- System Health Grid -->
+      <div class="card fi" style="animation-delay:40ms">
+        <div class="label">// SYSTEM HEALTH · ALL OPERATIONAL</div>
+        <div class="check-grid">
+          <div class="check-item">
+            <div class="check-dot ok"></div>
+            <div class="check-info">
+              <div class="check-label">Fast Track</div>
+              <div class="check-value">45ms <span class="check-threshold">(< 200ms)</span></div>
+            </div>
+          </div>
+          <div class="check-item">
+            <div class="check-dot ok"></div>
+            <div class="check-info">
+              <div class="check-label">Redis RTT</div>
+              <div class="check-value">3ms <span class="check-threshold">(< 50ms)</span></div>
+            </div>
+          </div>
+          <div class="check-item">
+            <div class="check-dot ok"></div>
+            <div class="check-info">
+              <div class="check-label">Freqtrade</div>
+              <div class="check-value">running <span class="check-threshold">(running)</span></div>
+            </div>
+          </div>
+          <div class="check-item">
+            <div class="check-dot warn"></div>
+            <div class="check-info">
+              <div class="check-label">Exchange API</div>
+              <div class="check-value">weight 80% <span class="check-threshold">(< 90%)</span></div>
+            </div>
+          </div>
+          <div class="check-item">
+            <div class="check-dot ok"></div>
+            <div class="check-info">
+              <div class="check-label">PostgreSQL</div>
+              <div class="check-value">connected <span class="check-threshold">(connected)</span></div>
+            </div>
+          </div>
+          <div class="check-item">
+            <div class="check-dot ok"></div>
+            <div class="check-info">
+              <div class="check-label">AI Risk Cache</div>
+              <div class="check-value">fresh <span class="check-threshold">(< 5min)</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Capital Configuration -->
+      <div class="card fi" style="animation-delay:80ms">
+        <div class="label">// CAPITAL POOL · LIVE PARAMETERS</div>
+        <div class="config-grid">
+          <div class="config-item">
+            <div class="config-label">Total Budget</div>
+            <div class="config-value">500<span class="config-unit">USDT</span></div>
+          </div>
+          <div class="config-item">
+            <div class="config-label">Stake / Trade</div>
+            <div class="config-value">50<span class="config-unit">USDT</span></div>
+          </div>
+          <div class="config-item">
+            <div class="config-label">Max Open Trades</div>
+            <div class="config-value">3</div>
+          </div>
+          <div class="config-item">
+            <div class="config-label">Max Daily Loss</div>
+            <div class="config-value">3.0<span class="config-unit">%</span></div>
+          </div>
+        </div>
+        <div style="margin-top:10px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-2);">
+          Max Exposure: 150 USDT (30% of budget)
+        </div>
+        <div class="safety-badges">
+          <span class="chip chip-ok">🔒 No Leverage</span>
+          <span class="chip chip-ok">🛡 Spot Only</span>
+          <span class="chip chip-warn">👤 Human Confirm</span>
+          <span class="chip chip-ok">⚡ Auto-trade Off</span>
+        </div>
+      </div>
+
+      <!-- Launch Zone -->
+      <div class="launch-zone fi" style="animation-delay:120ms">
+        <div class="label">// LAUNCH SEQUENCE</div>
+
+        <div style="margin-bottom:12px;">
+          <div class="blocking-item">
+            <span class="blocking-x">✗</span>
+            <span style="color:var(--danger);">risk_binding_missing</span>
+            <span style="color:var(--text-3);margin-left:4px;">— 需绑定 RiskPolicy</span>
+          </div>
+          <div class="blocking-item">
+            <span class="blocking-x">✗</span>
+            <span style="color:var(--danger);">human_confirm_required</span>
+            <span style="color:var(--text-3);margin-left:4px;">— 需开启人工确认</span>
+          </div>
+        </div>
+
+        <div class="launch-btns">
+          <button class="launch-btn paper">◉ 模拟交易 PAPER TRADE</button>
+          <button class="launch-btn live">▶ 小仓实盘 LIVE SMALL</button>
+          <button class="launch-btn disabled" style="background:rgba(255,255,255,0.03);color:var(--text-3);border:1px solid rgba(255,255,255,0.06);">■ 全仓实盘 FULL LIVE</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</body>
+</html>
