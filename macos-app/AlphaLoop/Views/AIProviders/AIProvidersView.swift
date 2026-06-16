@@ -131,9 +131,9 @@ struct AIProvidersView: View {
 
                 // 指标行
                 HStack(spacing: PulseSpacing.md) {
-                    metricItem(label: L10n.zh("延迟", en: "Latency"), value: provider.isAvailable ? "\(Int.random(in: 45...320))ms" : "—")
+                    metricItem(label: L10n.zh("延迟", en: "Latency"), value: "—")
                     metricItem(label: L10n.zh("模型数", en: "Models"), value: "\(provider.modelCount ?? 0)")
-                    metricItem(label: L10n.zh("失败率", en: "Fail Rate"), value: provider.isAvailable ? "\(String(format: "%.1f", Double.random(in: 0.1...2.5)))%" : "—")
+                    metricItem(label: L10n.zh("失败率", en: "Fail Rate"), value: "—")
                 }
 
                 // URL + 操作
@@ -518,7 +518,7 @@ struct AIProvidersView: View {
         isLoading = true
         defer { isLoading = false }
 
-        async let p = api?.listProviders()
+        async let configs = api?.listProviders()
         async let m = api?.getModelStatus()
         async let r = inferenceApi?.getRuntimeState()
         async let j = inferenceApi?.listJobs()
@@ -526,7 +526,21 @@ struct AIProvidersView: View {
         async let privacy = api?.getPrivacyRules()
         async let runtime = api?.getModelRuntime()
 
-        providers = (try? await p) ?? []
+        // Convert ProviderConfigView to AIProviderInfo for view compatibility
+        if let views = try? await configs {
+            providers = views.map { v in
+                let baseUrl: String? = (v.config["base_url"]?.value as? String)
+                return AIProviderInfo(
+                    name: v.providerName,
+                    type: v.category,
+                    baseUrl: baseUrl,
+                    isAvailable: v.isActive || v.status == "active",
+                    modelCount: nil
+                )
+            }
+        } else {
+            providers = []
+        }
         modelStatus = (try? await m) ?? [:]
         runtimeState = try? await r
         inferenceJobs = (try? await j) ?? []
@@ -538,10 +552,15 @@ struct AIProvidersView: View {
     private func testProvider(_ name: String) async {
         testResult = nil
         do {
-            let resp = try await api?.testProvider(name: name)
+            let resp = try await api?.testConnection(body: ProviderTestRequestBody(
+                category: "llm",
+                providerName: name,
+                credentials: [:],
+                config: [:]
+            ))
             testResult = resp?.success == true
                 ? "\(name): \(L10n.zh("连接成功", en: "Connected")) ✓"
-                : "\(name): \(resp?.message ?? L10n.zh("连接失败", en: "Connection Failed"))"
+                : "\(name): \(L10n.zh("连接失败", en: "Connection Failed"))"
         } catch {
             testResult = "\(name): \(L10n.zh("测试失败", en: "Test Failed"))"
         }

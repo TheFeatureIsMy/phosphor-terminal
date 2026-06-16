@@ -51,6 +51,20 @@ struct BackendNotification: Decodable {
     }
 }
 
+/// Telegram 测试结果
+struct HealthCheckResult: Decodable {
+    let success: Bool
+    let status: String
+    let latencyMs: Int?
+    let error: String?
+
+    enum CodingKeys: String, CodingKey {
+        case success, status
+        case latencyMs = "latency_ms"
+        case error
+    }
+}
+
 struct APINotifications {
     let client: NetworkClientProtocol
 
@@ -78,5 +92,28 @@ struct APINotifications {
             mock: { NotificationsResponse(notifications: [], unread: MockData.mockNotifications().filter { !$0.isRead }.count) }
         )
         return response.unread
+    }
+
+    /// POST /api/admin/providers/test — Telegram connection test
+    func telegramTest(botToken: String, chatId: String, dryRun: Bool) async throws -> HealthCheckResult {
+        struct TelegramTestBody: Encodable {
+            let category: String
+            let providerName: String
+            let credentials: [String: String]
+            let config: [String: Bool]
+
+            enum CodingKeys: String, CodingKey {
+                case category, credentials, config
+                case providerName = "provider_name"
+            }
+        }
+        return try await client.post("/api/admin/providers/test", body: TelegramTestBody(
+            category: "notification",
+            providerName: "telegram",
+            credentials: ["bot_token": botToken, "chat_id": chatId],
+            config: ["dry_run": dryRun]
+        ), mock: {
+            HealthCheckResult(success: true, status: "active", latencyMs: 120, error: nil)
+        })
     }
 }

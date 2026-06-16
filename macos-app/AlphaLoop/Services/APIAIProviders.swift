@@ -2,6 +2,93 @@
 
 import Foundation
 
+// MARK: - Provider Config View Model (backend /api/admin/providers response)
+
+struct ProviderConfigView: Codable, Identifiable {
+    let id: Int
+    let category: String
+    let providerName: String
+    let instanceName: String?
+    let enabled: Bool
+    let isActive: Bool
+    let priority: Int
+    let status: String
+    let credentialStatus: String
+    let credentialsFields: [String]
+    let lastSyncAt: Date?
+    let lastError: String?
+    let latencyMs: Int?
+    let rateLimitRemaining: Int?
+    let rateLimitResetAt: Date?
+    let config: [String: AnyCodable]
+    let updatedAt: Date
+
+    enum CodingKeys: String, CodingKey {
+        case id, category, config
+        case providerName = "provider_name"
+        case instanceName = "instance_name"
+        case enabled, priority, status
+        case isActive = "is_active"
+        case credentialStatus = "credential_status"
+        case credentialsFields = "credentials_fields"
+        case lastSyncAt = "last_sync_at"
+        case lastError = "last_error"
+        case latencyMs = "latency_ms"
+        case rateLimitRemaining = "rate_limit_remaining"
+        case rateLimitResetAt = "rate_limit_reset_at"
+        case updatedAt = "updated_at"
+    }
+}
+
+// MARK: - Request Bodies
+
+struct ProviderConfigPayload: Encodable {
+    let category: String
+    let providerName: String
+    let instanceName: String?
+    let enabled: Bool
+    let priority: Int
+    let config: [String: String]
+    let credentials: [String: String]?
+
+    enum CodingKeys: String, CodingKey {
+        case category, enabled, priority, config, credentials
+        case providerName = "provider_name"
+        case instanceName = "instance_name"
+    }
+}
+
+struct ProviderTestRequestBody: Encodable {
+    let category: String
+    let providerName: String
+    let credentials: [String: String]
+    let config: [String: String]
+
+    enum CodingKeys: String, CodingKey {
+        case category, credentials, config
+        case providerName = "provider_name"
+    }
+}
+
+// MARK: - Health Check Result
+
+struct HealthCheckResultResponse: Decodable {
+    let success: Bool
+    let status: String
+    let latencyMs: Int?
+    let error: String?
+    let checkedAt: String?
+
+    enum CodingKeys: String, CodingKey {
+        case success, status
+        case latencyMs = "latency_ms"
+        case error
+        case checkedAt = "checked_at"
+    }
+}
+
+// MARK: - Legacy Types (view compatibility)
+
 struct AIProviderInfo: Decodable, Identifiable {
     let id = UUID()
     let name: String
@@ -29,32 +116,45 @@ struct ModelStatusInfo: Decodable, Identifiable {
     }
 }
 
-struct AIProvidersListResponse: Decodable {
-    let providers: [AIProviderInfo]
-}
-
-struct ModelStatusResponse: Decodable {
-    let models: [String: ModelStatusInfo]
-}
-
 struct TestProviderResponse: Decodable {
     let success: Bool
     let message: String
     let models: [String]?
 }
 
+// MARK: - API Service
+
 struct APIAIProviders {
     let client: any NetworkClientProtocol
 
-    func listProviders() async throws -> [AIProviderInfo] {
-        try await client.get("/api/ai/providers", mock: {
+    // MARK: New admin providers API
+
+    /// GET /api/admin/providers?category=llm → [ProviderConfigView]
+    func listProviders() async throws -> [ProviderConfigView] {
+        try await client.get("/api/admin/providers?category=llm", mock: {
             [
-                AIProviderInfo(name: "Ollama", type: "ollama", baseUrl: "http://localhost:11434", isAvailable: true, modelCount: 3),
-                AIProviderInfo(name: "OpenAI", type: "openai", baseUrl: "https://api.openai.com/v1", isAvailable: false, modelCount: nil),
-                AIProviderInfo(name: "DeepSeek", type: "openai_compatible", baseUrl: "https://api.deepseek.com/v1", isAvailable: false, modelCount: nil),
+                ProviderConfigView(id: 1, category: "llm", providerName: "Ollama", instanceName: "default", enabled: true, isActive: true, priority: 0, status: "active", credentialStatus: "configured", credentialsFields: [], lastSyncAt: Date(), lastError: nil, latencyMs: 12, rateLimitRemaining: nil, rateLimitResetAt: nil, config: ["base_url": AnyCodable("http://localhost:11434")], updatedAt: Date()),
+                ProviderConfigView(id: 2, category: "llm", providerName: "OpenAI", instanceName: "default", enabled: true, isActive: false, priority: 1, status: "error", credentialStatus: "missing", credentialsFields: ["api_key"], lastSyncAt: nil, lastError: "API key not configured", latencyMs: nil, rateLimitRemaining: nil, rateLimitResetAt: nil, config: [:], updatedAt: Date()),
+                ProviderConfigView(id: 3, category: "llm", providerName: "DeepSeek", instanceName: "default", enabled: true, isActive: false, priority: 2, status: "unknown", credentialStatus: "missing", credentialsFields: ["api_key"], lastSyncAt: nil, lastError: nil, latencyMs: nil, rateLimitRemaining: nil, rateLimitResetAt: nil, config: [:], updatedAt: Date()),
             ]
         })
     }
+
+    /// POST /api/admin/providers → ProviderConfigView
+    func updateConfig(body: ProviderConfigPayload) async throws -> ProviderConfigView {
+        try await client.post("/api/admin/providers", body: body, mock: {
+            ProviderConfigView(id: 0, category: body.category, providerName: body.providerName, instanceName: body.instanceName, enabled: body.enabled, isActive: false, priority: body.priority, status: "unknown", credentialStatus: body.credentials != nil ? "configured" : "missing", credentialsFields: body.credentials?.map(\.key) ?? [], lastSyncAt: nil, lastError: nil, latencyMs: nil, rateLimitRemaining: nil, rateLimitResetAt: nil, config: [:], updatedAt: Date())
+        })
+    }
+
+    /// POST /api/admin/providers/test (ephemeral) → HealthCheckResultResponse
+    func testConnection(body: ProviderTestRequestBody) async throws -> HealthCheckResultResponse {
+        try await client.post("/api/admin/providers/test", body: body, mock: {
+            HealthCheckResultResponse(success: true, status: "active", latencyMs: 42, error: nil, checkedAt: ISO8601DateFormatter().string(from: Date()))
+        })
+    }
+
+    // MARK: Legacy API (unchanged)
 
     func getModelStatus() async throws -> [String: ModelStatusInfo] {
         struct Response: Decodable { let finbert: ModelStatusInfo?; let chronos: ModelStatusInfo?; let timesfm: ModelStatusInfo?; let shap: ModelStatusInfo? }
