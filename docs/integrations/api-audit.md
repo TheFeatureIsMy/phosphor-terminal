@@ -166,8 +166,53 @@ Real on-chain integration deferred to a later sub-project.
 ### Discord / Email / Webhook (stubs)
 Deferred to sub-project 6.
 
-## Market Data, On-Chain, Social, News (all stubs)
-- CoinGlass: https://coinglass.github.io/API-Reference/
+## Market Data (real, CCXT Binance)
+
+All 4 market_data providers share CCXT Binance as the underlying source. Health check uses the public `/api/v3/ping` endpoint. Future sub-projects add data-fetching methods (`fetch_klines`, `fetch_orderbook`, `fetch_funding_rate`, `fetch_open_interest`).
+
+### Kline (real)
+- **Provider class:** `app.services.providers.categories.market_data.kline.KlineProvider`
+- **Underlying source:** CCXT Binance public API
+- **Official docs:** https://docs.ccxt.com/#/exchanges/binance
+- **Auth (health check):** None — uses public `/api/v3/ping`
+- **Used endpoint:** `GET /api/v3/ping` (no token cost, no rate limit)
+- **Future method:** `fetch_klines(symbol, timeframe, limit)` — deferred
+- **Rate-limit headers:** Not used (public ping)
+- **Error codes:** 200 → ACTIVE; 5xx → ERROR
+- **Config schema:** `KlineConfig { base_url, timeout_s }`
+- **Credentials dict shape (for future private calls):** `{"api_key", "secret"}`
+
+### Orderbook (real)
+- **Provider class:** `app.services.providers.categories.market_data.orderbook.OrderbookProvider`
+- **Auth (health check):** None
+- **Used endpoint:** `GET /api/v3/ping`
+- **Future method:** `fetch_orderbook(symbol, limit=20)` — deferred
+- **Rate-limit headers:** Not used
+- **Error codes:** 200 → ACTIVE; 5xx → ERROR
+- **Config schema:** `OrderbookConfig { base_url, timeout_s }`
+- **Credentials dict shape (for future private calls):** `{"api_key", "secret"}`
+
+### Funding (real)
+- **Provider class:** `app.services.providers.categories.market_data.funding.FundingProvider`
+- **Auth (health check):** None
+- **Used endpoint:** `GET /api/v3/ping`
+- **Future method:** `fetch_funding_rate(symbol)` — deferred
+- **Rate-limit headers:** Not used
+- **Error codes:** 200 → ACTIVE; 5xx → ERROR
+- **Config schema:** `FundingConfig { base_url, timeout_s }`
+- **Credentials dict shape (for future private calls):** `{"api_key", "secret"}`
+
+### OI (real)
+- **Provider class:** `app.services.providers.categories.market_data.oi.OIProvider`
+- **Auth (health check):** None
+- **Used endpoint:** `GET /api/v3/ping`
+- **Future method:** `fetch_open_interest(symbol)` — deferred
+- **Rate-limit headers:** Not used
+- **Error codes:** 200 → ACTIVE; 5xx → ERROR
+- **Config schema:** `OIConfig { base_url, timeout_s }`
+- **Credentials dict shape (for future private calls):** `{"api_key", "secret"}`
+
+## On-Chain, Social, News (all stubs)
 - Glassnode: https://docs.glassnode.com/
 - CryptoQuant: https://cryptoquant.github.io/public-api-docs/
 - Whale Alert: https://docs.whale-alert.io/
