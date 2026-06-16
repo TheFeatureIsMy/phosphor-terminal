@@ -36,11 +36,25 @@ class RateLimitParser:
         source: str = ""
 
         # Standard X-RateLimit-* family
+        # Exact match (e.g. X-RateLimit-Remaining)
         if "x-ratelimit-remaining" in lower:
             remaining = int(lower["x-ratelimit-remaining"])
             source = "header:x-ratelimit-remaining"
+        # Suffixed variants (e.g. Groq: X-RateLimit-Remaining-Requests)
+        if remaining is None:
+            for key in ("x-ratelimit-remaining-requests", "x-ratelimit-remaining-tokens"):
+                if key in lower:
+                    remaining = int(lower[key])
+                    source = f"header:{key}"
+                    break
+
         if "x-ratelimit-limit" in lower:
             limit = int(lower["x-ratelimit-limit"])
+        if limit is None:
+            for key in ("x-ratelimit-limit-requests", "x-ratelimit-limit-tokens"):
+                if key in lower:
+                    limit = int(lower[key])
+                    break
         if "x-ratelimit-reset" in lower:
             reset_at = cls._parse_reset(lower["x-ratelimit-reset"])
 
