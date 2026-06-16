@@ -172,16 +172,13 @@ class TestGenerateStrategyLLMIntegration:
 
     def _make_mock_llm(self, response_content: str | None = None, raise_error: bool = False):
         """Create a mock LLM service that optionally raises on chat()."""
-        from app.services.llm_service import LLMService, LLMResponse
+        from app.services.llm_service import LLMResponse
 
-        svc = LLMService()
-        provider = MagicMock()
-        provider.name = "ollama"
-        provider.model_id = "qwen2.5:7b"
-        provider.health_check = AsyncMock(return_value=True)
+        svc = MagicMock()
+        svc.providers = [MagicMock()]
 
         if raise_error:
-            provider.chat = AsyncMock(side_effect=RuntimeError("LLM unavailable"))
+            svc.chat = AsyncMock(side_effect=RuntimeError("LLM unavailable"))
         else:
             content = response_content or json.dumps({
                 "name": "LLM动量策略",
@@ -189,7 +186,7 @@ class TestGenerateStrategyLLMIntegration:
                 "parameters": {"fast_period": 12, "slow_period": 26},
                 "explanation": "LLM generated momentum strategy.",
             })
-            provider.chat = AsyncMock(return_value=LLMResponse(
+            svc.chat = AsyncMock(return_value=LLMResponse(
                 content=content,
                 model="qwen2.5:7b",
                 provider="ollama",
@@ -197,7 +194,6 @@ class TestGenerateStrategyLLMIntegration:
                 latency_ms=450.0,
             ))
 
-        svc.providers = [provider]
         return svc
 
     def test_llm_available_returns_llm_generated_source(self):

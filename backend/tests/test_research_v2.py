@@ -29,7 +29,7 @@ from app.schemas.research_v2 import (
 from app.services.research.report_builder import build_research_report, _parse_report_json
 from app.services.research.signal_extractor import extract_candidates
 from app.services.research.strategy_drafter import generate_strategy_draft, _contains_python
-from app.services.llm_service import LLMResponse, LLMService
+from app.services.llm_service import LLMResponse
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -245,13 +245,8 @@ class TestSchemaValidation:
 class TestReportBuilder:
     @pytest.mark.asyncio
     async def test_report_builder_with_mock_llm(self):
-        llm = LLMService()
-        mock_provider = AsyncMock()
-        mock_provider.health_check = AsyncMock(return_value=True)
-        mock_provider.chat = AsyncMock(return_value=_mock_llm_response(_mock_research_json()))
-        mock_provider.name = "mock"
-        mock_provider.model_id = "mock-model"
-        llm.providers = [mock_provider]
+        llm = AsyncMock()
+        llm.chat = AsyncMock(return_value=_mock_llm_response(_mock_research_json()))
 
         report, llm_resp, input_hash, output_hash = await build_research_report(
             llm, "BTC/USDT", "crypto", "1d", "2025-01-01", ["market", "social"],
@@ -266,7 +261,8 @@ class TestReportBuilder:
 
     @pytest.mark.asyncio
     async def test_report_builder_llm_failure_returns_degraded(self):
-        llm = LLMService()
+        llm = AsyncMock()
+        llm.chat = AsyncMock(side_effect=RuntimeError("No LLM provider available"))
 
         report, llm_resp, input_hash, output_hash = await build_research_report(
             llm, "BTC/USDT", "crypto", "1d", "2025-01-01", ["market"],
@@ -308,13 +304,8 @@ class TestSignalExtractor:
 class TestStrategyDrafter:
     @pytest.mark.asyncio
     async def test_strategy_drafter_generates_valid_dsl(self):
-        llm = LLMService()
-        mock_provider = AsyncMock()
-        mock_provider.health_check = AsyncMock(return_value=True)
-        mock_provider.chat = AsyncMock(return_value=_mock_llm_response(_mock_dsl_json()))
-        mock_provider.name = "mock"
-        mock_provider.model_id = "mock-model"
-        llm.providers = [mock_provider]
+        llm = AsyncMock()
+        llm.chat = AsyncMock(return_value=_mock_llm_response(_mock_dsl_json()))
 
         candidate = _make_candidate_data()
         draft, llm_resp, input_hash, output_hash = await generate_strategy_draft(
@@ -327,13 +318,8 @@ class TestStrategyDrafter:
     @pytest.mark.asyncio
     async def test_strategy_drafter_invalid_dsl_marked(self):
         bad_dsl = json.dumps({"schema_version": "999", "invalid": True})
-        llm = LLMService()
-        mock_provider = AsyncMock()
-        mock_provider.health_check = AsyncMock(return_value=True)
-        mock_provider.chat = AsyncMock(return_value=_mock_llm_response(bad_dsl))
-        mock_provider.name = "mock"
-        mock_provider.model_id = "mock-model"
-        llm.providers = [mock_provider]
+        llm = AsyncMock()
+        llm.chat = AsyncMock(return_value=_mock_llm_response(bad_dsl))
 
         candidate = _make_candidate_data()
         draft, _, _, _ = await generate_strategy_draft(llm, candidate, candidate.report_id)
@@ -366,13 +352,8 @@ class TestProviderTrace:
         session.add(run)
         session.commit()
 
-        llm = LLMService()
-        mock_provider = AsyncMock()
-        mock_provider.health_check = AsyncMock(return_value=True)
-        mock_provider.chat = AsyncMock(return_value=_mock_llm_response(_mock_research_json()))
-        mock_provider.name = "mock"
-        mock_provider.model_id = "mock-model"
-        llm.providers = [mock_provider]
+        llm = AsyncMock()
+        llm.chat = AsyncMock(return_value=_mock_llm_response(_mock_research_json()))
 
         svc = ResearchService(session, llm)
         import asyncio
@@ -401,13 +382,8 @@ class TestProviderTrace:
         session.add(run)
         session.commit()
 
-        llm = LLMService()
-        mock_provider = AsyncMock()
-        mock_provider.health_check = AsyncMock(return_value=True)
-        mock_provider.chat = AsyncMock(return_value=_mock_llm_response(_mock_research_json()))
-        mock_provider.name = "mock"
-        mock_provider.model_id = "mock-model"
-        llm.providers = [mock_provider]
+        llm = AsyncMock()
+        llm.chat = AsyncMock(return_value=_mock_llm_response(_mock_research_json()))
 
         svc = ResearchService(session, llm)
         import asyncio
@@ -420,7 +396,7 @@ class TestProviderTrace:
         ).all()
         assert len(candidates) > 0
 
-        mock_provider.chat = AsyncMock(return_value=_mock_llm_response(_mock_dsl_json()))
+        llm.chat = AsyncMock(return_value=_mock_llm_response(_mock_dsl_json()))
         draft = asyncio.run(
             svc.generate_draft(candidates[0], report)
         )
@@ -443,12 +419,13 @@ class TestResearchV2API:
         mock_provider.chat = AsyncMock(return_value=_mock_llm_response(content))
         mock_provider.name = "mock"
         mock_provider.model_id = "mock-model"
-        return mock_provider
+        llm = AsyncMock()
+        llm.chat = mock_provider.chat
+        return llm
 
     def test_create_and_execute_research_run(self, client):
         with patch("app.routers.ai_research._get_llm_service") as mock_get:
-            llm = LLMService()
-            llm.providers = [self._patch_llm(_mock_research_json())]
+            llm = self._patch_llm(_mock_research_json())
             mock_get.return_value = llm
 
             resp = client.post("/api/ai-research/v2/runs", json={
@@ -467,8 +444,7 @@ class TestResearchV2API:
 
     def test_get_report_after_execution(self, client):
         with patch("app.routers.ai_research._get_llm_service") as mock_get:
-            llm = LLMService()
-            llm.providers = [self._patch_llm(_mock_research_json())]
+            llm = self._patch_llm(_mock_research_json())
             mock_get.return_value = llm
 
             resp = client.post("/api/ai-research/v2/runs", json={
@@ -485,8 +461,7 @@ class TestResearchV2API:
 
     def test_get_candidates_after_execution(self, client):
         with patch("app.routers.ai_research._get_llm_service") as mock_get:
-            llm = LLMService()
-            llm.providers = [self._patch_llm(_mock_research_json())]
+            llm = self._patch_llm(_mock_research_json())
             mock_get.return_value = llm
 
             resp = client.post("/api/ai-research/v2/runs", json={
@@ -503,8 +478,7 @@ class TestResearchV2API:
 
     def test_generate_draft_from_candidate(self, client):
         with patch("app.routers.ai_research._get_llm_service") as mock_get:
-            llm = LLMService()
-            llm.providers = [self._patch_llm(_mock_research_json())]
+            llm = self._patch_llm(_mock_research_json())
             mock_get.return_value = llm
 
             resp = client.post("/api/ai-research/v2/runs", json={
@@ -516,7 +490,8 @@ class TestResearchV2API:
             resp = client.get(f"/api/ai-research/v2/runs/{run_id}/candidates")
             candidate_id = resp.json()[0]["id"]
 
-            llm.providers = [self._patch_llm(_mock_dsl_json())]
+            llm = self._patch_llm(_mock_dsl_json())
+            mock_get.return_value = llm
             resp = client.post(f"/api/ai-research/v2/candidates/{candidate_id}/generate-draft")
             assert resp.status_code == 201
             draft = resp.json()
@@ -525,8 +500,7 @@ class TestResearchV2API:
 
     def test_confirm_valid_draft_creates_version(self, client):
         with patch("app.routers.ai_research._get_llm_service") as mock_get:
-            llm = LLMService()
-            llm.providers = [self._patch_llm(_mock_research_json())]
+            llm = self._patch_llm(_mock_research_json())
             mock_get.return_value = llm
 
             resp = client.post("/api/ai-research/v2/runs", json={
@@ -538,7 +512,8 @@ class TestResearchV2API:
             resp = client.get(f"/api/ai-research/v2/runs/{run_id}/candidates")
             candidate_id = resp.json()[0]["id"]
 
-            llm.providers = [self._patch_llm(_mock_dsl_json())]
+            llm = self._patch_llm(_mock_dsl_json())
+            mock_get.return_value = llm
             resp = client.post(f"/api/ai-research/v2/candidates/{candidate_id}/generate-draft")
             draft_id = resp.json()["id"]
 
@@ -552,8 +527,7 @@ class TestResearchV2API:
     def test_confirm_invalid_draft_rejected(self, client):
         with patch("app.routers.ai_research._get_llm_service") as mock_get:
             bad_dsl = json.dumps({"schema_version": "999"})
-            llm = LLMService()
-            llm.providers = [self._patch_llm(_mock_research_json())]
+            llm = self._patch_llm(_mock_research_json())
             mock_get.return_value = llm
 
             resp = client.post("/api/ai-research/v2/runs", json={
@@ -565,7 +539,8 @@ class TestResearchV2API:
             resp = client.get(f"/api/ai-research/v2/runs/{run_id}/candidates")
             candidate_id = resp.json()[0]["id"]
 
-            llm.providers = [self._patch_llm(bad_dsl)]
+            llm = self._patch_llm(bad_dsl)
+            mock_get.return_value = llm
             resp = client.post(f"/api/ai-research/v2/candidates/{candidate_id}/generate-draft")
             draft_id = resp.json()["id"]
 
@@ -574,8 +549,7 @@ class TestResearchV2API:
 
     def test_confirm_does_not_trigger_execution(self, client):
         with patch("app.routers.ai_research._get_llm_service") as mock_get:
-            llm = LLMService()
-            llm.providers = [self._patch_llm(_mock_research_json())]
+            llm = self._patch_llm(_mock_research_json())
             mock_get.return_value = llm
 
             resp = client.post("/api/ai-research/v2/runs", json={
@@ -587,7 +561,8 @@ class TestResearchV2API:
             resp = client.get(f"/api/ai-research/v2/runs/{run_id}/candidates")
             candidate_id = resp.json()[0]["id"]
 
-            llm.providers = [self._patch_llm(_mock_dsl_json())]
+            llm = self._patch_llm(_mock_dsl_json())
+            mock_get.return_value = llm
             resp = client.post(f"/api/ai-research/v2/candidates/{candidate_id}/generate-draft")
             draft_id = resp.json()["id"]
 
@@ -602,7 +577,8 @@ class TestResearchV2API:
 
     def test_research_failure_returns_degraded(self, client):
         with patch("app.routers.ai_research._get_llm_service") as mock_get:
-            llm = LLMService()  # no providers → will fail
+            llm = AsyncMock()
+            llm.chat = AsyncMock(side_effect=RuntimeError("No LLM provider available"))
             mock_get.return_value = llm
 
             resp = client.post("/api/ai-research/v2/runs", json={
