@@ -6,7 +6,7 @@ expected. Real implementations (this round) are detailed in full; stub-only
 providers list their official documentation URL for future implementation
 (later sub-projects).
 
-Last updated: 2026-06-16.
+Last updated: 2026-06-17.
 
 ## LLM Providers
 
@@ -163,8 +163,35 @@ Real on-chain integration deferred to a later sub-project.
 - **Rate limit headers:** `Retry-After` on 429
 - **Config schema:** `TelegramConfig { dry_run, timeout_s }`
 
-### Discord / Email / Webhook (stubs)
-Deferred to sub-project 6.
+### Discord (real)
+- **Provider class:** `app.services.providers.categories.notification.discord.DiscordProvider`
+- **Official docs:** https://discord.com/developers/docs/resources/webhook
+- **Auth:** Webhook URL (embedded token)
+- **Used endpoint:** `HEAD {webhook_url}` (probes webhook validity)
+- **Rate limit headers:** `X-RateLimit-*` standard family; `Retry-After` on 429
+- **Error codes:** 204 → ACTIVE; 404 → INACTIVE (deleted webhook); 5xx → ERROR
+- **Config schema:** `DiscordConfig { timeout_s }`
+- **Credentials dict shape:** `{"webhook_url": "https://discord.com/api/webhooks/{id}/{token}"}`
+
+### Email (real, SMTP)
+- **Provider class:** `app.services.providers.categories.notification.email.EmailProvider`
+- **Official docs:** https://docs.python.org/3/library/smtplib.html
+- **Auth:** SMTP AUTH LOGIN (username + password)
+- **Used endpoint:** SMTP connection to `{host}:{port}` + optional STARTTLS + login (does not send an email)
+- **Rate limit headers:** N/A (protocol-level, not HTTP)
+- **Error codes:** Successful login → ACTIVE; SMTPAuthenticationError → INACTIVE; connection/timeout → ERROR
+- **Config schema:** `EmailConfig { host, port, use_tls, timeout_s }`
+- **Credentials dict shape:** `{"username": "...", "password": "..."}`
+
+### Webhook (real, generic HTTP POST)
+- **Provider class:** `app.services.providers.categories.notification.webhook.WebhookProvider`
+- **Official docs:** N/A — generic HTTP webhook contract
+- **Auth:** Optional `Authorization` header via `auth_header` credential
+- **Used endpoint:** `POST {url}` with `{"ping": true}` JSON body
+- **Rate limit headers:** Depends on target server; standard `Retry-After` on 429
+- **Error codes:** 2xx → ACTIVE; 5xx → ERROR
+- **Config schema:** `WebhookConfig { url, timeout_s }`
+- **Credentials dict shape:** `{"auth_header": "Bearer ..."}` (optional)
 
 ## Market Data (real, CCXT Binance)
 
