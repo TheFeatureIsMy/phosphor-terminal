@@ -300,3 +300,39 @@ Response (200):
 - Spec: `docs/superpowers/specs/2026-06-16-provider-adapter-foundation-design.md` §8
 - Configuration model: `docs/settings/configuration-model.md`
 - API audit (per-provider details): `docs/integrations/api-audit.md`
+
+## System Settings
+
+All paths under `/api/admin/system-settings/*`. The new `system_settings` table stores non-provider configuration (general/risk/privacy/retention).
+
+### `GET /api/admin/system-settings?category={category}`
+
+List all settings (or filtered by `general`/`risk`/`privacy`/`retention`).
+
+**Response (200):** list of `SystemSettingView`:
+```json
+[
+  {"id": 1, "key": "general.default_language", "value": {"value": "zh-CN"}, "category": "general", "updated_at": "2026-06-17T12:00:00Z", "updated_by": "system"},
+  ...
+]
+```
+
+### `GET /api/admin/system-settings/{key}`
+
+Get a single setting. `{key:path}` matches dotted keys like `risk.max_single_loss`.
+
+**Response (200):** `SystemSettingView`.
+**Errors:** 404 `not_found`.
+
+### `PUT /api/admin/system-settings/{key}`
+
+Create or update. Body: `{"value": {...}, "category": "...", "updated_by": "alice"}`.
+
+**Response (200):** updated `SystemSettingView`.
+
+### `DELETE /api/admin/system-settings/{key}`
+
+Hard delete.
+
+**Response:** 204 No Content.
+**Errors:** 404 `not_found`.

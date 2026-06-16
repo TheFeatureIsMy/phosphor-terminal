@@ -180,6 +180,26 @@ COMMITTED for this dev-phase product).
 A nullable `provider_config_id` FK is added. `ON DELETE SET NULL` so
 deleting a config preserves historical usage records.
 
+## `system_settings` (new)
+
+| Column | Type | Nullable | Default | Notes |
+|---|---|---|---|---|
+| `id` | Integer | no | autoincrement | PK |
+| `key` | String(128) | no | — | unique |
+| `value` | JSON | no | — | opaque JSON |
+| `category` | String(32) | no | — | `general`/`risk`/`privacy`/`retention` |
+| `updated_at` | DateTime | no | server now | on update |
+| `updated_by` | String(64) | yes | NULL | `api`/`cli`/user id |
+
+### Indices
+- `ix_system_settings_category` (`category`)
+
+### Seeded rows (4)
+- `general.default_language` = `{"value": "zh-CN"}`
+- `risk.max_single_loss` = `{"value": 5.0}`
+- `privacy.share_ai_prompts` = `{"value": false}`
+- `retention.logs_days` = `{"value": 30}`
+
 | Column | Type | Nullable | Notes |
 |---|---|---|---|
 | `provider_config_id` | Integer | yes | FK to `provider_configs.id` ON DELETE SET NULL |
