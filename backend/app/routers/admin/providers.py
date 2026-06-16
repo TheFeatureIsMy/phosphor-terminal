@@ -118,12 +118,10 @@ def update_provider(provider_id: int, payload: dict, request: Request, db: Sessi
         payload_with_id["instance_name"] = row.instance_name
     validated = Schema.model_validate(payload_with_id)
     before_hash = _hash_creds(row.credentials_ct)
-    try:
-        svc.upsert(db, validated.model_dump())
-        db.commit()
-    except DuplicateProviderError:
-        db.rollback()
-        raise HTTPException(status_code=409, detail={"code": "duplicate"})
+    updated = svc.update(db, provider_id, validated.model_dump())
+    if updated is None:
+        raise HTTPException(status_code=404, detail={"code": "not_found"})
+    db.commit()
     db.refresh(row)
     after_hash = _hash_creds(row.credentials_ct)
     _record_audit(db, row.id, "update", before_hash=before_hash, after_hash=after_hash, ip=_get_client_ip(request))
@@ -134,9 +132,12 @@ def update_provider(provider_id: int, payload: dict, request: Request, db: Sessi
 @router.delete("/{provider_id}", status_code=204)
 def delete_provider(provider_id: int, request: Request, db: Session = Depends(get_db)):
     svc = ProviderConfigService()
-    if not svc.delete(db, provider_id):
+    row = svc.get(db, provider_id)
+    if row is None:
         raise HTTPException(status_code=404, detail={"code": "not_found"})
+    # Insert audit log FIRST so the FK is satisfied when the row is deleted
     _record_audit(db, provider_id, "delete", ip=_get_client_ip(request))
+    svc.delete(db, provider_id)
     db.commit()
 
 

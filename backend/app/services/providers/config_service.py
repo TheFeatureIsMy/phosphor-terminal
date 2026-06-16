@@ -94,6 +94,31 @@ class ProviderConfigService:
         db.flush()
         return row
 
+    def update(self, db: Session, row_id: int, payload: dict) -> ProviderConfig | None:
+        """Update an existing config by id. Returns None if not found."""
+        row = self.get(db, row_id)
+        if row is None:
+            return None
+        validated = self._validate_payload({
+            **payload,
+            "category": row.category,
+            "provider_name": row.provider_name,
+            "instance_name": row.instance_name,
+        })
+        if "config" in payload and payload["config"] is not None:
+            row.config = validated.config
+        if "enabled" in payload:
+            row.enabled = validated.enabled
+        if "priority" in payload:
+            row.priority = validated.priority
+        creds = validated.credentials
+        if creds is not None:
+            row.credentials_ct = self._codec.encrypt_dict(creds)
+            row.credentials_fields = self._codec.field_names(creds)
+            row.credential_status = "configured"
+        db.flush()
+        return row
+
     def delete(self, db: Session, row_id: int) -> bool:
         row = self.get(db, row_id)
         if row is None:
