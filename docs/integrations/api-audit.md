@@ -33,15 +33,69 @@ Last updated: 2026-06-16.
 - **Used endpoint:** `GET /api/tags`
 - **Config schema:** `OllamaConfig { base_url, model, timeout_s }`
 
-### DeepSeek / Qwen / Zhipu / Moonshot / Gemini / Groq / Azure OpenAI (stubs)
-Return `not_implemented`. Real implementations deferred to sub-project 2.
-- DeepSeek: https://platform.deepseek.com/api-docs/
-- Qwen: https://help.aliyun.com/zh/model-studio/developer-reference/api-reference
-- Zhipu: https://open.bigmodel.cn/dev/api
-- Moonshot: https://platform.moonshot.cn/docs/api-reference
-- Gemini: https://ai.google.dev/gemini-api/docs
-- Groq: https://console.groq.com/docs/api-reference
-- Azure OpenAI: https://learn.microsoft.com/en-us/azure/ai-services/openai/reference
+### DeepSeek (real)
+- **Provider class:** `app.services.providers.categories.llm.deepseek.DeepSeekProvider`
+- **Official docs:** https://api-docs.deepseek.com
+- **Auth:** `Authorization: Bearer <api_key>` (OpenAI-compatible)
+- **Used endpoint:** `GET /v1/models` (no token cost)
+- **Rate-limit headers:** Not consistently documented; falls back to `Retry-After`
+- **Error codes:** 401 → INACTIVE; 429 → RATE_LIMITED; 5xx → ERROR
+- **Config schema:** `DeepSeekConfig { base_url, model, timeout_s }` (default model: `deepseek-chat`)
+
+### Qwen (real, Alibaba DashScope compatible-mode)
+- **Provider class:** `app.services.providers.categories.llm.qwen.QwenProvider`
+- **Official docs:** https://help.aliyun.com/zh/model-studio/developer-reference/api-reference
+- **Auth:** `Authorization: Bearer <api_key>` (compatible-mode)
+- **Used endpoint:** `GET /compatible-mode/v1/models` (no token cost)
+- **Rate-limit headers:** Not documented; falls back to `Retry-After`
+- **Error codes:** 401 → INACTIVE; 429 → RATE_LIMITED; 5xx → ERROR
+- **Config schema:** `QwenConfig { base_url, model, timeout_s }` (default model: `qwen-plus`)
+
+### Zhipu (real, 智谱 GLM)
+- **Provider class:** `app.services.providers.categories.llm.zhipu.ZhipuProvider`
+- **Official docs:** https://open.bigmodel.cn/dev/api
+- **Auth:** `Authorization: Bearer <api_key>` (OpenAI-compatible)
+- **Used endpoint:** `GET /api/paas/v4/models` (no token cost)
+- **Rate-limit headers:** Not documented; falls back to `Retry-After`
+- **Error codes:** 401 → INACTIVE; 429 → RATE_LIMITED; 5xx → ERROR
+- **Config schema:** `ZhipuConfig { base_url, model, timeout_s }` (default model: `glm-4`)
+
+### Moonshot (real, 月之暗面 Kimi)
+- **Provider class:** `app.services.providers.categories.llm.moonshot.MoonshotProvider`
+- **Official docs:** https://platform.moonshot.cn/docs/api-reference
+- **Auth:** `Authorization: Bearer <api_key>` (OpenAI-compatible)
+- **Used endpoint:** `GET /v1/models` (no token cost)
+- **Rate-limit headers:** Not documented; falls back to `Retry-After`
+- **Error codes:** 401 → INACTIVE; 429 → RATE_LIMITED; 5xx → ERROR
+- **Config schema:** `MoonshotConfig { base_url, model, timeout_s }` (default model: `moonshot-v1-8k`)
+
+### Gemini (real, Google AI Studio)
+- **Provider class:** `app.services.providers.categories.llm.gemini.GeminiProvider`
+- **Official docs:** https://ai.google.dev/gemini-api/docs
+- **Auth:** `?key=<api_key>` query param (NOT Bearer — Google standard)
+- **Used endpoint:** `GET /v1beta/models?key=<key>&pageSize=1` (no token cost)
+- **Rate-limit headers:** Not standardized; 429 on quota exceeded
+- **Error codes:** 401/403 → INACTIVE; 429 → RATE_LIMITED; 503/504 → ERROR
+- **Config schema:** `GeminiConfig { base_url, model, timeout_s }` (default model: `gemini-1.5-flash`)
+
+### Groq (real)
+- **Provider class:** `app.services.providers.categories.llm.groq.GroqProvider`
+- **Official docs:** https://console.groq.com/docs
+- **Auth:** `Authorization: Bearer <api_key>` (OpenAI-compatible)
+- **Used endpoint:** `GET /openai/v1/models` (no token cost)
+- **Rate-limit headers:** Full family — `x-ratelimit-limit-requests`, `x-ratelimit-remaining-requests`, `x-ratelimit-reset-requests`, `x-ratelimit-limit-tokens`, `x-ratelimit-remaining-tokens`, `x-ratelimit-reset-tokens`, `Retry-After`
+- **Error codes:** 400 → ERROR; 401 → INACTIVE; 429 → RATE_LIMITED; 5xx → ERROR
+- **Config schema:** `GroqConfig { base_url, model, timeout_s }` (default model: `llama-3.1-70b-versatile`)
+
+### Azure OpenAI (real)
+- **Provider class:** `app.services.providers.categories.llm.azure_openai.AzureOpenAIProvider`
+- **Official docs:** https://learn.microsoft.com/en-us/azure/ai-services/openai/reference
+- **Auth:** `api-key: <api_key>` header (NOT Bearer — Azure standard)
+- **Used endpoint:** `POST {endpoint}/chat/completions?api-version=...` with 1-token body (minimal cost)
+- **Rate-limit headers:** `Retry-After` on 429; others not standardized
+- **Error codes:** 401 → INACTIVE; 404 → ERROR (deployment not found); 429 → RATE_LIMITED; 5xx → ERROR
+- **Config schema:** `AzureOpenAIConfig { endpoint, deployment, api_version, model, timeout_s }`
+- **Note:** Per-deployment URL; `endpoint` must include `/openai/deployments/{deployment}` path
 
 ## CEX Providers
 
