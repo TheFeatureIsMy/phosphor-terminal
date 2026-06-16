@@ -27,7 +27,13 @@ from app.routers import workflow
 async def lifespan(app: FastAPI):
     setup_logging(level=settings.log_level, fmt=settings.log_format)
     init_db()
+    # Start provider health scheduler
+    from app.services.providers.scheduler import ProviderHealthScheduler
+
+    sched = ProviderHealthScheduler()
+    await sched.start()
     yield
+    await sched.stop()
 
 
 app = FastAPI(
