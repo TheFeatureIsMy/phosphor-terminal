@@ -19,19 +19,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # 1. Add nullable FK to AIUsageLog (batch mode for SQLite compatibility)
-    with op.batch_alter_table("ai_usage_logs") as batch_op:
-        batch_op.add_column(
-            sa.Column("provider_config_id", sa.Integer(), nullable=True),
-        )
-        batch_op.create_foreign_key(
-            "fk_ai_usage_logs_provider_config",
-            "provider_configs",
-            ["provider_config_id"], ["id"],
-            ondelete="SET NULL",
-        )
-
-    # 2. Create provider_configs
+    # 1. Create provider_configs first (so FKs can reference it)
     op.create_table(
         "provider_configs",
         sa.Column("id", sa.Integer(), primary_key=True, autoincrement=True),
@@ -64,7 +52,19 @@ def upgrade() -> None:
     op.create_index("ix_provider_config_cat_name", "provider_configs", ["category", "provider_name"])
     op.create_index("ix_provider_config_enabled", "provider_configs", ["enabled"])
 
-    # 3. Create provider_audit_logs
+    # 2. Add nullable FK to AIUsageLog (now provider_configs exists)
+    with op.batch_alter_table("ai_usage_logs") as batch_op:
+        batch_op.add_column(
+            sa.Column("provider_config_id", sa.Integer(), nullable=True),
+        )
+        batch_op.create_foreign_key(
+            "fk_ai_usage_logs_provider_config",
+            "provider_configs",
+            ["provider_config_id"], ["id"],
+            ondelete="SET NULL",
+        )
+
+    # 3. Create provider_audit_logs (FK to provider_configs is now valid)
     op.create_table(
         "provider_audit_logs",
         sa.Column("id", sa.Integer(), primary_key=True, autoincrement=True),
@@ -100,14 +100,20 @@ def downgrade() -> None:
         sa.Column("created_at", sa.DateTime()),
         sa.Column("updated_at", sa.DateTime()),
     )
+
+    # 1. Drop FK from ai_usage_logs first (before dropping referenced table)
+    with op.batch_alter_table("ai_usage_logs") as batch_op:
+        batch_op.drop_constraint("fk_ai_usage_logs_provider_config", type_="foreignkey")
+        batch_op.drop_column("provider_config_id")
+
+    # 2. Drop provider_audit_logs (FK to provider_configs)
     op.drop_index("ix_provider_audit_logs_created_at", table_name="provider_audit_logs")
     op.drop_index("ix_provider_audit_logs_provider_id", table_name="provider_audit_logs")
     op.drop_table("provider_audit_logs")
+
+    # 3. Drop provider_configs (no remaining FKs referencing it)
     op.drop_index("ix_provider_config_enabled", table_name="provider_configs")
     op.drop_index("ix_provider_config_cat_name", table_name="provider_configs")
     op.drop_index("ix_provider_config_provider_name", table_name="provider_configs")
     op.drop_index("ix_provider_config_category", table_name="provider_configs")
     op.drop_table("provider_configs")
-    with op.batch_alter_table("ai_usage_logs") as batch_op:
-        batch_op.drop_constraint("fk_ai_usage_logs_provider_config", type_="foreignkey")
-        batch_op.drop_column("provider_config_id")
