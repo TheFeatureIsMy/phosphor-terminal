@@ -57,6 +57,11 @@ and `provider_audit_logs` tables, plus the soft FK added to
                                         └──────────────────────────────┘
 ```
 
+> **Note (sub-project 8):** A new `system_settings` table (added 2026-06-17) is
+> separate from `provider_configs`. See the `system_settings (new)` section
+> below. Realtime modules (`health_broadcaster`, `ticker_cache`, CCXT ticker
+> stream) are in-memory only and not represented in the ER diagram.
+
 ## `provider_configs` (new)
 
 | Column | Type | Nullable | Default | Notes |

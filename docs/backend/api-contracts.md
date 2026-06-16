@@ -336,3 +336,48 @@ Hard delete.
 
 **Response:** 204 No Content.
 **Errors:** 404 `not_found`.
+
+## Real-time WebSocket (sub-project 7)
+
+All WebSocket connections are unauthenticated for now (admin auth deferred to sub-project 9+).
+
+### `WS /api/ws/provider-health`
+
+Real-time stream of provider health updates. Server pushes JSON frames.
+
+**Initial frame (sent on connect):**
+```json
+{
+  "type": "snapshot",
+  "ts": "2026-06-17T12:00:00Z",
+  "providers": [
+    {"id": 1, "key": "...", "value": {...}, "category": "...", ...}
+  ]
+}
+```
+
+**Update frames (when a provider's status changes):**
+```json
+{
+  "type": "update",
+  "ts": "2026-06-17T12:01:00Z",
+  "provider_id": 1,
+  "status": "active",
+  "latency_ms": 42,
+  "error": null
+}
+```
+
+**Heartbeat (every 30s to keep connection alive):**
+```json
+{"type": "heartbeat", "ts": "..."}
+```
+
+Backed by `app.services.providers.realtime.health_broadcaster` (in-memory pub/sub fed by `ProviderHealthService.test_from_row`).
+
+### `GET /api/providers/ticker/{symbol}` (planned, sub-project 7.5)
+
+Returns the latest cached ticker data from `app.services.providers.realtime.ticker_cache`. Read by `CCXT Binance watch_ticker` background task. Default symbols: `BTC/USDT`.
+
+**Response (200):** `{"last": 50000.0, "bid": ..., "ask": ..., "volume": ..., "ts": ...}`
+**Errors:** 404 `not_found` (no recent data; TTL 60s).

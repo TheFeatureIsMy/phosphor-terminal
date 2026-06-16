@@ -1,9 +1,11 @@
 # Configuration Model — Provider Adapter Foundation
 
 The provider configuration system uses a single `provider_configs` table
-backed by a Pydantic discriminated union. This document describes the
-schema, the validation flow, the encryption boundary, and the audit
-trail.
+backed by a Pydantic discriminated union. In addition, non-provider
+configuration (general / risk / privacy / retention) is stored in a
+separate `system_settings` table. This document describes the schema,
+the validation flow, the encryption boundary, and the audit trail for
+both systems.
 
 ## Tables
 
@@ -206,6 +208,23 @@ The Alembic migration `2026_06_16_xxxx_provider_foundation.py`:
 The migration is **not reversible in production** without restoring a
 backup of `ai_provider_configs`. In dev, `alembic downgrade -1` brings
 the schema back, but no rows.
+
+## System Settings (sub-project 8)
+
+A separate `system_settings` table stores non-provider configuration:
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | Integer PK | autoincrement |
+| `key` | String(128) | unique (e.g. `risk.max_single_loss`) |
+| `value` | JSON | opaque |
+| `category` | String(32) | `general` / `risk` / `privacy` / `retention` |
+| `updated_at` | DateTime | on update |
+| `updated_by` | String(64) | `api` / `cli` / user id |
+
+Admin API: `GET/PUT/DELETE /api/admin/system-settings/{key}` (see `docs/backend/api-contracts.md`).
+
+Seeded rows (4): `general.default_language=zh-CN`, `risk.max_single_loss=5.0`, `privacy.share_ai_prompts=false`, `retention.logs_days=30`.
 
 ## Cross-references
 
