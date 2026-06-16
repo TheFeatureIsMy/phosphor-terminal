@@ -24,6 +24,11 @@ class Settings(BaseSettings):
     rate_limit_per_minute: int = 60
     rate_limit_burst: int = 10
 
+    # Provider health scheduler (sub-project 1 of provider foundation)
+    provider_health_interval_s: int = 60
+    provider_health_batch_size: int = 10
+    provider_health_enabled: bool = True
+
     log_level: str = "INFO"
     log_format: str = "json"
 
