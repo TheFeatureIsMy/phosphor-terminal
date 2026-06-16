@@ -14,6 +14,13 @@ AI 驱动的加密货币量化交易工作台 — macOS 原生客户端 + Python
 
 三方之间不共享代码,只通过 HTTP API 通信。
 
+Provider integrations go through a unified Provider Adapter framework
+(`backend/app/services/providers/`). Configuration is stored in the
+`provider_configs` table; the admin API is at `/api/admin/providers/*`.
+See `docs/integrations/api-audit.md` for per-provider integration
+details and `docs/settings/configuration-model.md` for the configuration
+schema.
+
 ## 快速开始
 
 ### 后端
