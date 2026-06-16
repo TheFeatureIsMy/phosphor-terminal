@@ -23,6 +23,7 @@ from app.models.research_v2 import ResearchReport, SignalCandidate, StrategyDraf
 from app.models.agent_signal import AgentProfile, AgentSignal, AgentSignalScore
 from app.models.ai_provider import AIUsageLog
 from app.models.provider_config import ProviderAuditLog, ProviderConfig  # noqa: F401
+from app.models.system_settings import SystemSetting  # noqa: F401
 
 __all__ = [
     "Strategy",
@@ -53,4 +54,5 @@ __all__ = [
     "AIUsageLog",
     "ProviderConfig",
     "ProviderAuditLog",
+    "SystemSetting",
 ]
