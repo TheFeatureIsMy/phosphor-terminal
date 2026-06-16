@@ -23,6 +23,7 @@ from app.routers import overview, execution_bff, reconciliation_bff, risk_bff, s
 from app.routers import market_structure_bff, failure_clustering_bff
 from app.routers import workflow
 from app.routers.admin.providers import router as admin_providers_router
+from app.routers.admin.system_settings import router as admin_system_settings_router
 from app.routers.providers_ws import router as providers_ws_router
 from app.services.providers.realtime.ccxt_ticker_stream import run_binance_ticker_stream
 
@@ -102,6 +103,7 @@ app.include_router(strategy_runs.router)
 app.include_router(inference.router)
 app.include_router(mcp.router)
 app.include_router(admin_providers_router)
+app.include_router(admin_system_settings_router)
 app.include_router(providers_ws_router)
 app.include_router(decision.router)
 
