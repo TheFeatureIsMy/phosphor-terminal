@@ -212,13 +212,81 @@ All 4 market_data providers share CCXT Binance as the underlying source. Health 
 - **Config schema:** `OIConfig { base_url, timeout_s }`
 - **Credentials dict shape (for future private calls):** `{"api_key", "secret"}`
 
-## On-Chain, Social, News (all stubs)
-- Glassnode: https://docs.glassnode.com/
-- CryptoQuant: https://cryptoquant.github.io/public-api-docs/
-- Whale Alert: https://docs.whale-alert.io/
-- CryptoCompare: https://min-api.cryptocompare.com/documentation
-- LunarCrush: https://lunarcrush.com/developers
-- CryptoPanic: https://cryptopanic.com/api/v1/
+## On-Chain
+
+### Glassnode (real)
+- **Provider class:** `app.services.providers.categories.onchain.glassnode.GlassnodeProvider`
+- **Official docs:** https://docs.glassnode.com/
+- **Auth:** API key in query (`?api_key=<key>`) — required
+- **Used endpoint:** `GET /v2/metrics/indicators/sopr?a=BTC&since=1700000000&api_key=...`
+- **Rate-limit headers:** Not documented
+- **Error codes:** 401 → INACTIVE; 5xx → ERROR
+- **Config schema:** `GlassnodeConfig { base_url, timeout_s }`
+- **Credentials dict shape:** `{"api_key": "..."}`
+
+### CryptoQuant (real)
+- **Provider class:** `app.services.providers.categories.onchain.cryptoquant.CryptoQuantProvider`
+- **Official docs:** https://cryptoquant.github.io/public-api-docs/
+- **Auth:** API key in `X-API-Token` header — required
+- **Used endpoint:** `GET /v2/btc/metrics/indicators/sopr?window=1d`
+- **Rate-limit headers:** Not documented
+- **Error codes:** 401 → INACTIVE; 5xx → ERROR
+- **Config schema:** `CryptoQuantConfig { base_url, timeout_s }`
+- **Credentials dict shape:** `{"api_key": "..."}`
+
+### Whale Alert (real)
+- **Provider class:** `app.services.providers.categories.onchain.whale_alert.WhaleAlertProvider`
+- **Official docs:** https://docs.whale-alert.io/
+- **Auth:** None — public endpoint
+- **Used endpoint:** `GET /v1/status` (no token cost)
+- **Rate-limit headers:** Not documented
+- **Error codes:** 200 → ACTIVE; 5xx → ERROR
+- **Config schema:** `WhaleAlertConfig { base_url, timeout_s }`
+- **Credentials dict shape:** (empty)
+
+## Social
+
+### CryptoCompare Social (real)
+- **Provider class:** `app.services.providers.categories.social.cryptocompare_social.CryptoCompareSocialProvider`
+- **Official docs:** https://min-api.cryptocompare.com/documentation
+- **Auth:** None — public free tier
+- **Used endpoint:** `GET /data/v2/social/stats/latest?symbol=BTC&aggregate=1h&limit=1`
+- **Rate-limit headers:** Not documented
+- **Error codes:** 200 → ACTIVE; 5xx → ERROR
+- **Config schema:** `CryptoCompareSocialConfig { base_url, timeout_s }`
+- **Credentials dict shape:** (empty)
+
+### LunarCrush (real)
+- **Provider class:** `app.services.providers.categories.social.lunarcrush.LunarCrushProvider`
+- **Official docs:** https://lunarcrush.com/developers
+- **Auth:** None — public discovery
+- **Used endpoint:** `GET /4.0/coins/list`
+- **Rate-limit headers:** Not documented
+- **Error codes:** 200 → ACTIVE; 5xx → ERROR
+- **Config schema:** `LunarCrushConfig { base_url, timeout_s }`
+- **Credentials dict shape:** (empty)
+
+## News
+
+### CryptoCompare News (real)
+- **Provider class:** `app.services.providers.categories.news.cryptocompare_news.CryptoCompareNewsProvider`
+- **Official docs:** https://min-api.cryptocompare.com/documentation
+- **Auth:** None — public free tier
+- **Used endpoint:** `GET /data/v2/news/?lang=EN&limit=1`
+- **Rate-limit headers:** Not documented
+- **Error codes:** 200 → ACTIVE; 5xx → ERROR
+- **Config schema:** `CryptoCompareNewsConfig { base_url, timeout_s }`
+- **Credentials dict shape:** (empty)
+
+### CryptoPanic (real)
+- **Provider class:** `app.services.providers.categories.news.cryptopanic.CryptoPanicProvider`
+- **Official docs:** https://cryptopanic.com/api/v1
+- **Auth:** None — public free tier
+- **Used endpoint:** `GET /api/v1/posts/?filter=hot&page=1`
+- **Rate-limit headers:** Not documented
+- **Error codes:** 200 → ACTIVE; 5xx → ERROR
+- **Config schema:** `CryptoPanicConfig { base_url, timeout_s }`
+- **Credentials dict shape:** (empty)
 
 ## Rate-Limit Header Coverage
 
