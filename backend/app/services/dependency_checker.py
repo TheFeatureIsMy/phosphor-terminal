@@ -108,6 +108,27 @@ def _check_llm_provider(env_key: str, provider_name: str) -> dict:
     return {"status": "not_configured", "requires": env_key}
 
 
+def _llm_provider_db_status(provider_name: str, instance_name: str = "default") -> dict:
+    """Check LLM provider status via DB (provider_configs table)."""
+    try:
+        from app.services.providers.config_service import ProviderConfigService
+        from app.services.providers.base import ProviderCategory
+        from app.database import SessionLocal
+        svc = ProviderConfigService()
+        with SessionLocal() as db:
+            row = svc.get_by_identity(
+                db, category=ProviderCategory.LLM.value,
+                provider_name=provider_name, instance_name=instance_name,
+            )
+        if row and row.enabled and row.credential_status == "configured":
+            return {"status": "configured", "source": "db", "is_active": row.is_active}
+        if row:
+            return {"status": "configured", "source": "db", "missing_credentials": True}
+        return {"status": "not_configured", "source": "db"}
+    except Exception:
+        return {"status": "unknown", "source": "db", "detail": "db_unavailable"}
+
+
 def check_all_dependencies() -> dict:
     """Return full dependency status report."""
     required = {
@@ -136,16 +157,16 @@ def check_all_dependencies() -> dict:
             ) else "not_found",
         },
         "ollama": _check_ollama(),
-        "openai": _check_llm_provider("OPENAI_API_KEY", "openai"),
-        "anthropic": _check_llm_provider("ANTHROPIC_API_KEY", "anthropic"),
-        "deepseek": _check_llm_provider("DEEPSEEK_API_KEY", "deepseek"),
-        "qwen": _check_llm_provider("QWEN_API_KEY", "qwen"),
-        "zhipu": _check_llm_provider("ZHIPU_API_KEY", "zhipu"),
-        "moonshot": _check_llm_provider("MOONSHOT_API_KEY", "moonshot"),
-        "mimo": _check_llm_provider("MIMO_API_KEY", "mimo"),
-        "gemini": _check_llm_provider("GEMINI_API_KEY", "gemini"),
-        "groq": _check_llm_provider("GROQ_API_KEY", "groq"),
-        "azure_openai": _check_llm_provider("AZURE_OPENAI_API_KEY", "azure_openai"),
+        "openai": _llm_provider_db_status("openai"),
+        "anthropic": _llm_provider_db_status("anthropic"),
+        "deepseek": _llm_provider_db_status("deepseek"),
+        "qwen": _llm_provider_db_status("qwen"),
+        "zhipu": _llm_provider_db_status("zhipu"),
+        "moonshot": _llm_provider_db_status("moonshot"),
+        "mimo": _llm_provider_db_status("mimo"),
+        "gemini": _llm_provider_db_status("gemini"),
+        "groq": _llm_provider_db_status("groq"),
+        "azure_openai": _llm_provider_db_status("azure_openai"),
         "telegram": {
             "status": "dry_run",
             "detail": "Configure TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID to enable",

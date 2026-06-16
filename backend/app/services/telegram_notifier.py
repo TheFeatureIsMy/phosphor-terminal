@@ -1,8 +1,15 @@
+"""telegram_notifier — thin wrapper that pulls creds from provider_configs."""
 from __future__ import annotations
 
+import logging
 from typing import Any, Optional
 
 import aiohttp
+
+from app.services.providers.base import ProviderCategory
+from app.services.providers.config_service import ProviderConfigService
+
+logger = logging.getLogger(__name__)
 
 
 def build_risk_message(event: dict[str, Any]) -> str:
@@ -20,7 +27,28 @@ async def send_telegram_notification(
     bot_token: Optional[str] = None,
     chat_id: Optional[str] = None,
 ) -> dict[str, Any]:
+    from app.database import SessionLocal
+
     message = build_risk_message(event)
+
+    if not bot_token or not chat_id:
+        try:
+            svc = ProviderConfigService()
+            with SessionLocal() as db:
+                row = svc.get_by_identity(
+                    db, category=ProviderCategory.NOTIFICATION.value,
+                    provider_name="telegram",
+                )
+            if row and row.enabled and row.credentials_ct:
+                creds = svc.decrypt_credentials(row) or {}
+                bot_token = bot_token or creds.get("bot_token")
+                chat_id = chat_id or creds.get("chat_id")
+                cfg = row.config or {}
+                if cfg.get("dry_run"):
+                    dry_run = True
+        except Exception:
+            logger.warning("Failed to read telegram config from DB", exc_info=True)
+
     if dry_run or not bot_token or not chat_id:
         return {
             "status": "dry_run",
@@ -46,10 +74,11 @@ async def send_telegram_notification(
                     "destination": chat_id,
                     "detail": f"HTTP {resp.status}: {await resp.text()}",
                 }
-    except Exception as e:
+    except Exception as exc:
+        logger.exception("Telegram send failed")
         return {
             "status": "error",
             "message": message,
             "destination": chat_id,
-            "detail": str(e),
+            "detail": str(exc),
         }
