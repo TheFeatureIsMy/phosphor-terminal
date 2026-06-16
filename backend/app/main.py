@@ -14,13 +14,14 @@ from app.routers import (
     health, commands, ledger, strategies, strategies_v2, orders, dashboard, backtest, dryrun, risk, system, auth,
     search, notifications, attribution, sentiment, rag, markets,
     ai_research, agent_signals, ai_providers, factor_research, websocket,
-    signals_v2, strategy_runs, inference, mcp, admin,
+    signals_v2, strategy_runs, inference, mcp,
     decision,
 )
 from app.routers import shadow_strategy
 from app.routers import overview, execution_bff, reconciliation_bff, risk_bff, structure_bff
 from app.routers import market_structure_bff, failure_clustering_bff
 from app.routers import workflow
+from app.routers.admin.providers import router as admin_providers_router
 
 
 @asynccontextmanager
@@ -91,7 +92,7 @@ app.include_router(signals_v2.router)
 app.include_router(strategy_runs.router)
 app.include_router(inference.router)
 app.include_router(mcp.router)
-app.include_router(admin.router)
+app.include_router(admin_providers_router)
 app.include_router(decision.router)
 
 # BFF aggregation layer
