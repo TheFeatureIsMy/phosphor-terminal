@@ -1,11 +1,14 @@
 """Structure BFF — Matrix + Shadow Windows + MTF Guard"""
 import logging
-from datetime import datetime, timezone
 
-from fastapi import APIRouter, Query, Path
+from fastapi import APIRouter, Depends, Path, Query
+from sqlalchemy.orm import Session
+from sqlalchemy import select
+
+from app.database import get_db
 
 from app.schemas.structure_bff import (
-    StructureMatrixResponse, MatrixRow, MatrixCell,
+    StructureMatrixResponse,
     ShadowWindowsResponse, ShadowWindow,
 )
 from app.schemas.common import AvailableAction
@@ -42,38 +45,6 @@ def _get_redis_store():
     return RuntimeRedisStore(redis_url=settings.redis_url)
 
 
-# ── Mock helpers ──────────────────────────────────────────────────
-
-def _mock_matrix(symbol: str) -> dict:
-    return StructureMatrixResponse(
-        state="warning",
-        reason_codes=["shadow_ob_temporary_violation"],
-        available_actions=[
-            AvailableAction(type="refresh_structure", enabled=True, label="刷新结构数据"),
-        ],
-        symbol=symbol,
-        base_timeframe="5m",
-        rows=[
-            MatrixRow(timeframe="5m", cells={
-                "bullish_ob": MatrixCell(zone_type="order_block", status="active", current_strength=0.78, action="allow"),
-                "fvg": MatrixCell(zone_type="fvg", status="active", current_strength=0.65, filled_ratio=0.35, action="allow"),
-            }),
-            MatrixRow(timeframe="15m", cells={
-                "bullish_ob": MatrixCell(zone_type="order_block", status="active", current_strength=0.82, action="allow"),
-                "fvg": MatrixCell(zone_type="fvg", status="active", current_strength=0.71, filled_ratio=0.42, action="allow"),
-            }),
-            MatrixRow(timeframe="1h", cells={
-                "bullish_ob": MatrixCell(zone_type="order_block", status="warning", current_strength=0.41, temporary_violation=True, action="reduce_size", reason_codes=["shadow_low_violated_ob_bottom"]),
-                "fvg": MatrixCell(zone_type="fvg", status="active", current_strength=0.55, filled_ratio=0.85, action="reduce_size", reason_codes=["fvg_nearly_filled"]),
-            }),
-            MatrixRow(timeframe="4h", cells={
-                "bullish_ob": MatrixCell(zone_type="order_block", status="active", current_strength=0.88, action="allow"),
-                "fvg": MatrixCell(zone_type="fvg", status="active", current_strength=0.92, filled_ratio=0.12, action="allow"),
-            }),
-        ],
-    ).model_dump()
-
-
 # ── Endpoints ────────────────────────────────────────────────────
 
 @router.get("/matrix", response_model=StructureMatrixResponse)
@@ -102,10 +73,15 @@ async def get_structure_matrix(symbol: str = Query(default="BTC/USDT")):
             ],
         }
     except Exception as e:
-        logger.warning(f"[structure-matrix] StructureMatrixService unavailable, mock fallback: {e}")
-        data = _mock_matrix(symbol)
-        data["_mock"] = True
-        return data
+        logger.exception("[structure-matrix] StructureMatrixService unavailable: %s", e)
+        return StructureMatrixResponse(
+            state="data_source_unavailable",
+            reason_codes=["data_source_unavailable", type(e).__name__],
+            available_actions=[],
+            symbol=symbol,
+            base_timeframe=None,
+            rows=[],
+        ).model_dump()
 
 
 @router.get("/shadow-windows", response_model=ShadowWindowsResponse)
@@ -115,7 +91,7 @@ async def get_shadow_windows(symbol: str = Query(default="BTC/USDT")):
     windows = svc.get_all_windows(symbol=symbol)
 
     if not windows:
-        # No active windows — return mock data as fallback
+        # No active windows — return empty data
         return ShadowWindowsResponse(
             state="healthy",
             reason_codes=[],
@@ -190,42 +166,49 @@ async def get_mtf_guard_events(
     strategy_id: str = Path(..., description="Strategy ID"),
     symbol: str = Query(default=None, description="Filter by symbol"),
     limit: int = Query(default=50, ge=1, le=200),
+    db: Session = Depends(get_db),
 ):
-    """Get historical MTF Guard events (mock for now, DB integration pending)."""
-    # TODO: Replace with real DB query from mtf_guard_events table
-    now = datetime.now(timezone.utc)
-    mock_events = [
-        {
-            "id": "evt_001",
-            "strategy_id": strategy_id,
-            "symbol": symbol or "BTC/USDT",
-            "fast_timeframe": "5m",
-            "slow_timeframe": "1h",
-            "structure_type": "order_block",
-            "guard_state": "temporary_violation",
-            "action": "block_entry",
-            "htf_candle_closed": False,
-            "reason_codes": ["fast_tf_entered_htf_zone"],
-            "created_at": now.isoformat(),
-        },
-        {
-            "id": "evt_002",
-            "strategy_id": strategy_id,
-            "symbol": symbol or "BTC/USDT",
-            "fast_timeframe": "5m",
-            "slow_timeframe": "1h",
-            "structure_type": "order_block",
-            "guard_state": "confirmed",
-            "action": "allow",
-            "htf_candle_closed": True,
-            "reason_codes": ["htf_close_reclaimed"],
-            "created_at": now.isoformat(),
-        },
-    ]
+    """Get historical MTF Guard events from mtf_guard_events table."""
+    try:
+        from app.domain.mtf_guard import MTFGuardEvent
+        import uuid
 
-    return {
-        "strategy_id": strategy_id,
-        "events": mock_events[:limit],
-        "total": len(mock_events),
-        "_mock": True,
-    }
+        stmt = (
+            select(MTFGuardEvent)
+            .where(MTFGuardEvent.strategy_id == uuid.UUID(strategy_id))
+            .order_by(MTFGuardEvent.created_at.desc())
+            .limit(limit)
+        )
+        if symbol:
+            stmt = stmt.where(MTFGuardEvent.symbol == symbol)
+
+        events = list(db.scalars(stmt).all())
+
+        return {
+            "strategy_id": strategy_id,
+            "events": [
+                {
+                    "id": str(ev.id),
+                    "strategy_id": str(ev.strategy_id),
+                    "symbol": ev.symbol,
+                    "fast_timeframe": ev.fast_timeframe,
+                    "slow_timeframe": ev.slow_timeframe,
+                    "structure_type": ev.structure_type,
+                    "guard_state": ev.guard_state,
+                    "action": ev.action,
+                    "htf_candle_closed": ev.htf_candle_closed,
+                    "reason_codes": ev.reason_codes,
+                    "created_at": ev.created_at.isoformat() if ev.created_at else None,
+                }
+                for ev in events
+            ],
+            "total": len(events),
+        }
+    except Exception as e:
+        logger.exception("[mtf-guard-events] DB query failed: %s", e)
+        return {
+            "strategy_id": strategy_id,
+            "events": [],
+            "total": 0,
+            "reason_codes": ["data_source_unavailable", type(e).__name__],
+        }

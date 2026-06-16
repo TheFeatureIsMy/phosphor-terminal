@@ -19,48 +19,6 @@ logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
-# Mock fallbacks
-# ---------------------------------------------------------------------------
-
-def _mock_center() -> dict:
-    return ExecutionCenterResponse(
-        state="running",
-        reason_codes=[],
-        available_actions=[
-            AvailableAction(type="emergency_stop", enabled=True, label="紧急停止", confirm_required=True),
-        ],
-        sessions=[
-            ExecutionSession(run_id="run-001", strategy_name="BTC Structure Scalp", mode="live_small", status="running", symbol="BTC/USDT", open_positions=2, pending_orders=1),
-            ExecutionSession(run_id="run-002", strategy_name="ETH FVG Hunter", mode="dryrun", status="running", symbol="ETH/USDT", open_positions=1, pending_orders=0),
-        ],
-        total_running=2,
-        total_open_positions=3,
-        total_pending_orders=1,
-        freqtrade_heartbeat="healthy",
-        execution_latency_ms=45,
-    ).model_dump()
-
-
-def _mock_orders_positions() -> dict:
-    return OrdersPositionsResponse(
-        state="healthy",
-        reason_codes=[],
-        available_actions=[
-            AvailableAction(type="cancel_all_orders", enabled=True, label="取消所有挂单", confirm_required=True),
-            AvailableAction(type="force_close_all", enabled=True, label="强制平仓所有", confirm_required=True),
-        ],
-        orders=[
-            OrderResponse(id="ord-001", symbol="BTC/USDT", side="buy", type="limit", quantity=0.01, price=61500, status="pending", exchange_order_id="ex-12345"),
-        ],
-        positions=[
-            PositionResponse(id="pos-001", symbol="BTC/USDT", side="long", avg_entry_price=62100, current_price=62450, quantity=0.05, unrealized_pnl=17.5, unrealized_pnl_pct=0.56, stop_loss=61200),
-            PositionResponse(id="pos-002", symbol="ETH/USDT", side="long", avg_entry_price=3380, current_price=3410, quantity=1.0, unrealized_pnl=30, unrealized_pnl_pct=0.89, stop_loss=3320),
-            PositionResponse(id="pos-003", symbol="BTC/USDT", side="short", avg_entry_price=62800, current_price=62450, quantity=0.02, unrealized_pnl=7, unrealized_pnl_pct=0.56, stop_loss=63200),
-        ],
-    ).model_dump()
-
-
-# ---------------------------------------------------------------------------
 # Endpoints — Execution Center / Orders / Positions / Emergency
 # ---------------------------------------------------------------------------
 
@@ -141,10 +99,20 @@ async def get_execution_center():
             execution_latency_ms=latency_ms,
         ).model_dump()
     except Exception as e:
-        logger.warning(f"[execution-center] FreqtradeClient unavailable, mock fallback: {e}")
-        data = _mock_center()
-        data["_mock"] = True
-        return data
+        logger.exception("[execution-center] FreqtradeClient unavailable: %s", e)
+        return ExecutionCenterResponse(
+            state="data_source_unavailable",
+            reason_codes=["data_source_unavailable", type(e).__name__],
+            available_actions=[
+                AvailableAction(type="emergency_stop", enabled=True, label="紧急停止", confirm_required=True),
+            ],
+            sessions=[],
+            total_running=0,
+            total_open_positions=0,
+            total_pending_orders=0,
+            freqtrade_heartbeat="unknown",
+            execution_latency_ms=None,
+        ).model_dump()
 
 
 @router.get("/orders", response_model=OrdersPositionsResponse)
@@ -216,10 +184,17 @@ async def get_orders_positions():
             positions=positions,
         ).model_dump()
     except Exception as e:
-        logger.warning(f"[execution-orders] FreqtradeClient unavailable, mock fallback: {e}")
-        data = _mock_orders_positions()
-        data["_mock"] = True
-        return data
+        logger.exception("[execution-orders] FreqtradeClient unavailable: %s", e)
+        return OrdersPositionsResponse(
+            state="data_source_unavailable",
+            reason_codes=["data_source_unavailable", type(e).__name__],
+            available_actions=[
+                AvailableAction(type="cancel_all_orders", enabled=True, label="取消所有挂单", confirm_required=True),
+                AvailableAction(type="force_close_all", enabled=True, label="强制平仓所有", confirm_required=True),
+            ],
+            orders=[],
+            positions=[],
+        ).model_dump()
 
 
 @router.get("/positions", response_model=OrdersPositionsResponse)
@@ -275,10 +250,17 @@ async def get_positions():
             positions=positions,
         ).model_dump()
     except Exception as e:
-        logger.warning(f"[execution-positions] FreqtradeClient unavailable, mock fallback: {e}")
-        data = _mock_orders_positions()
-        data["_mock"] = True
-        return data
+        logger.exception("[execution-positions] FreqtradeClient unavailable: %s", e)
+        return OrdersPositionsResponse(
+            state="data_source_unavailable",
+            reason_codes=["data_source_unavailable", type(e).__name__],
+            available_actions=[
+                AvailableAction(type="cancel_all_orders", enabled=True, label="取消所有挂单", confirm_required=True),
+                AvailableAction(type="force_close_all", enabled=True, label="强制平仓所有", confirm_required=True),
+            ],
+            orders=[],
+            positions=[],
+        ).model_dump()
 
 
 @router.post("/emergency-stop")
@@ -302,8 +284,8 @@ async def emergency_stop():
                 "error": result.get("error", "unknown"),
             }
     except Exception as e:
-        logger.warning(f"[emergency-stop] FreqtradeClient unavailable, mock fallback: {e}")
-        return {"status": "emergency_stop_executed", "reason_codes": ["manual_trigger"], "_mock": True}
+        logger.exception("[emergency-stop] FreqtradeClient unavailable: %s", e)
+        return {"status": "emergency_stop_failed", "reason_codes": ["data_source_unavailable", type(e).__name__]}
 
 
 # ---------------------------------------------------------------------------
@@ -362,7 +344,7 @@ async def get_trade_source_trace(trade_id: str, db: Session = Depends(get_db)):
                 except Exception:
                     logger.debug("DecisionSnapshot lookup failed for %s", fs.runtime_snapshot_id)
     except Exception as e:
-        logger.warning("[trade-trace] DB lookup failed, returning empty trace: %s", e)
+        logger.exception("[trade-trace] DB lookup failed, returning empty trace: %s", e)
 
     # Build labels list
     labels_data = []
@@ -474,14 +456,14 @@ async def add_trade_review_label(trade_id: str, body: dict, db: Session = Depend
         }
     except Exception as e:
         db.rollback()
-        logger.warning("[add-label] DB write failed, returning stub: %s", e)
+        logger.exception("[add-label] DB write failed: %s", e)
         return {
             "trade_id": trade_id,
             "label": label,
             "label_source": label_source,
             "notes": notes,
-            "result": "label_added",
-            "_mock": True,
+            "result": "error",
+            "reason_codes": ["data_source_unavailable", type(e).__name__],
         }
 
 
@@ -507,8 +489,8 @@ async def get_trade_labels(trade_id: str, db: Session = Depends(get_db)):
             ],
         }
     except Exception as e:
-        logger.warning("[get-labels] DB read failed: %s", e)
-        return {"trade_id": trade_id, "labels": [], "_mock": True}
+        logger.exception("[get-labels] DB read failed: %s", e)
+        return {"trade_id": trade_id, "labels": [], "reason_codes": ["data_source_unavailable", type(e).__name__]}
 
 
 @router.get("/trades/{trade_id}/review")

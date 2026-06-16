@@ -19,7 +19,7 @@ from app.routers import (
 )
 from app.routers import shadow_strategy
 from app.routers import overview, execution_bff, reconciliation_bff, risk_bff, structure_bff
-from app.routers import market_structure_bff, failure_clustering_bff, data_source_bff
+from app.routers import market_structure_bff, failure_clustering_bff
 from app.routers import workflow
 
 
@@ -102,7 +102,6 @@ app.include_router(risk_bff.router)
 app.include_router(structure_bff.router)
 app.include_router(market_structure_bff.router)
 app.include_router(failure_clustering_bff.router)
-app.include_router(data_source_bff.router)
 
 # Shadow Strategy
 app.include_router(shadow_strategy.router)

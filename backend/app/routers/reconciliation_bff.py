@@ -1,4 +1,6 @@
 """Reconciliation BFF — Bus view + Runs"""
+import logging
+
 from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -10,34 +12,8 @@ from app.schemas.common import AvailableAction
 from app.database import get_db
 
 router = APIRouter(prefix="/api/reconciliation", tags=["reconciliation-bff"])
+logger = logging.getLogger(__name__)
 
-
-# ---------------------------------------------------------------------------
-# Mock fallbacks
-# ---------------------------------------------------------------------------
-
-def _mock_bus() -> dict:
-    return ReconciliationBusResponse(
-        state="healthy",
-        reason_codes=[],
-        available_actions=[
-            AvailableAction(type="refresh_exchange_state", enabled=True, label="刷新交易所状态"),
-            AvailableAction(type="retry_reconciliation", enabled=True, label="重新对账"),
-        ],
-        recent_commands=[
-            CommandBusEvent(id="cmd-001", command_type="start_dryrun", status="completed"),
-            CommandBusEvent(id="cmd-002", command_type="place_order", status="completed"),
-        ],
-        reconciliation_runs=[
-            ReconciliationRun(id="recon-001", status="completed", discrepancies=0),
-        ],
-        active_leases=[],
-    ).model_dump()
-
-
-# ---------------------------------------------------------------------------
-# Endpoints
-# ---------------------------------------------------------------------------
 
 @router.get("/bus", response_model=ReconciliationBusResponse)
 async def get_reconciliation_bus(db: Session = Depends(get_db)):
@@ -99,8 +75,16 @@ async def get_reconciliation_bus(db: Session = Depends(get_db)):
             reconciliation_runs=reconciliation_runs,
             active_leases=[],
         ).model_dump()
-    except Exception:
-        return _mock_bus()
+    except Exception as e:
+        logger.exception("[reconciliation-bus] DB query failed: %s", e)
+        return ReconciliationBusResponse(
+            state="data_source_unavailable",
+            reason_codes=["data_source_unavailable", type(e).__name__],
+            available_actions=[],
+            recent_commands=[],
+            reconciliation_runs=[],
+            active_leases=[],
+        ).model_dump()
 
 
 @router.get("/runs")
@@ -165,4 +149,5 @@ async def refresh_exchange_state():
                 "error": status_data.get("error", "unknown"),
             }
     except Exception:
-        return {"status": "refreshed", "reason_codes": []}
+        logger.exception("[refresh-exchange-state] FreqtradeClient unavailable")
+        return {"status": "refresh_failed", "reason_codes": ["data_source_unavailable"]}

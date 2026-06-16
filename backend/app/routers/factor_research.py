@@ -7,13 +7,12 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from app.services.factor_research import (
     FACTOR_REGISTRY,
     CryptoFactorBackend,
-    StubFactorBackend,
     combine_factors,
     fama_macbeth_regression,
     out_of_sample_test,
@@ -23,11 +22,8 @@ from app.services.market_data import market_data_service
 
 router = APIRouter(prefix="/api/factors", tags=["factor-research"])
 
-# Default backend: real market data; falls back to stub on import error
-try:
-    _backend: Any = CryptoFactorBackend(market_data_service)
-except Exception:
-    _backend = StubFactorBackend()
+# Default backend: real market data; raise 503 on init failure (no silent stub fallback)
+_backend: Any = CryptoFactorBackend(market_data_service)
 
 
 # ---------------------------------------------------------------------------

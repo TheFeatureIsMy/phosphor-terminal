@@ -22,8 +22,6 @@ class OverviewAggregatorService:
             self._fetch_runtime(),
             self._fetch_risk(),
             self._fetch_system(),
-            self._fetch_recent_decisions(),
-            self._fetch_alerts(),
             return_exceptions=True,
         )
 
@@ -31,8 +29,6 @@ class OverviewAggregatorService:
         runtime = self._safe_result(results[1], self._default_runtime())
         risk = self._safe_result(results[2], self._default_risk())
         system = self._safe_result(results[3], self._default_system())
-        recent_decisions = self._safe_result(results[4], [])
-        alerts = self._safe_result(results[5], [])
 
         state, reason_codes = self._derive_state(risk, system)
         available_actions = self._derive_actions(state)
@@ -45,8 +41,8 @@ class OverviewAggregatorService:
             "runtime": runtime,
             "risk": risk,
             "system": system,
-            "recent_decisions": recent_decisions,
-            "alerts": alerts,
+            "recent_decisions": [],
+            "alerts": [],
         }
 
     # ── Sub-fetchers ──────────────────────────────────────────────────
@@ -138,14 +134,6 @@ class OverviewAggregatorService:
             "freqtrade_state": ft_state,
             "exchange_state": "unknown",
         }
-
-    async def _fetch_recent_decisions(self) -> list:
-        # Placeholder — decision service not yet built
-        return []
-
-    async def _fetch_alerts(self) -> list:
-        # Placeholder — alerts service not yet built
-        return []
 
     # ── State derivation ──────────────────────────────────────────────
 

@@ -15,6 +15,7 @@ Academic thresholds (BARRA/MSCI, Grinold & Kahn):
 from __future__ import annotations
 
 import math
+import warnings
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
@@ -530,8 +531,26 @@ def _period_to_limit(period: str, timeframe: str = "1d") -> int:
 # ---------------------------------------------------------------------------
 
 
+def _emit_deprecation_warning():
+    """Emit a deprecation warning compatible with Python 3.9+.
+
+    `warnings.deprecated` decorator is Python 3.13+ only; we use a manual
+    class-level warning to stay compatible with the project's Python 3.11 target.
+    """
+    warnings.warn(
+        "StubFactorBackend is deprecated (v2.5 mock-removal). "
+        "Routers no longer use it; it remains only for legacy test fixtures.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
+
 class StubFactorBackend:
     """Deterministic fallback when market data is unavailable.
+
+    DEPRECATED (v2.5 mock-removal): No longer used by routers. Routers now
+    raise HTTPException 503 on CryptoFactorBackend init failure instead of
+    silently falling back to this stub. Kept for test compatibility.
 
     Produces plausible-looking but synthetic metrics so the UI can still render.
     """

@@ -20,15 +20,6 @@ from app.services.risk_rules import evaluate_risk_rules
 router = APIRouter(prefix="/api", tags=["risk"])
 
 
-def _mock_correlations() -> list[dict]:
-    return [
-        {"id": 1, "symbol_a": "BTC/USDT", "symbol_b": "ETH/USDT", "correlation": 0.92, "window_days": 30, "alert_level": "red", "created_at": datetime.now(timezone.utc).isoformat()},
-        {"id": 2, "symbol_a": "BTC/USDT", "symbol_b": "SOL/USDT", "correlation": 0.78, "window_days": 30, "alert_level": "normal", "created_at": datetime.now(timezone.utc).isoformat()},
-        {"id": 3, "symbol_a": "ETH/USDT", "symbol_b": "SOL/USDT", "correlation": 0.85, "window_days": 30, "alert_level": "yellow", "created_at": datetime.now(timezone.utc).isoformat()},
-        {"id": 4, "symbol_a": "BTC/USDT", "symbol_b": "BNB/USDT", "correlation": 0.71, "window_days": 30, "alert_level": "normal", "created_at": datetime.now(timezone.utc).isoformat()},
-    ]
-
-
 @router.get("/risk/events", response_model=list[RiskEventResponse])
 def list_risk_events(db: Session = Depends(get_db)):
     events = db.query(RiskEvent).order_by(RiskEvent.created_at.desc()).limit(50).all()
@@ -99,11 +90,8 @@ def list_correlations(db: Session = Depends(get_db)):
             )
             for r in saved
         ]
-    mock = _mock_correlations()
-    source = freqtrade_db.source_status(simulated=True)
-    for c in mock:
-        c["data_source"] = source
-    return [CorrelationResponse(**c) for c in mock]
+    # No data in DB or freqtrade_db — return empty list, not mock
+    return []
 
 
 @router.post("/portfolio/stress-tests", response_model=PortfolioStressTestResponse)

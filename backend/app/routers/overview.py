@@ -1,4 +1,10 @@
-"""Overview BFF — Dashboard + Live Readiness + Global Status"""
+"""Overview BFF — Dashboard + Live Readiness + Global Status
+
+Production policy (v2.5 mock-removal): when the underlying service is
+unavailable we return an explicit `data_source_unavailable` state with
+empty payload + reason_codes, NOT a hardcoded mock. Frontend must
+inspect `state` / `reason_codes` and render an empty/error state.
+"""
 import logging
 
 from fastapi import APIRouter
@@ -14,98 +20,66 @@ router = APIRouter(prefix="/api/overview", tags=["overview-bff"])
 logger = logging.getLogger(__name__)
 
 
-def _mock_dashboard() -> dict:
+_UNAVAILABLE_REASON = "data_source_unavailable"
+
+
+def _empty_dashboard(reason: str) -> dict:
     return DashboardResponse(
-        state="healthy",
-        reason_codes=["all_services_healthy", "low_latency"],
-        available_actions=[
-            AvailableAction(type="deploy_strategy", enabled=True, label="Deploy 'ETH Breakout v2' to Paper", confirm_required=False),
-            AvailableAction(type="review_signals", enabled=True, label="Review 3 pending signals", confirm_required=False),
-            AvailableAction(type="tighten_stop", enabled=True, label="Tighten SOL/USDT stop-loss", confirm_required=True),
-        ],
+        state="data_source_unavailable",
+        reason_codes=[reason, _UNAVAILABLE_REASON],
+        available_actions=[],
         account=AccountOverview(
-            equity=124850.32,
-            currency="USDT",
-            today_pnl_pct=1.97,
-            week_pnl_pct=4.32,
-            max_drawdown_pct=-6.8,
-            sharpe_ratio=1.82,
+            equity=0, currency="USDT",
+            today_pnl_pct=0, week_pnl_pct=0,
+            max_drawdown_pct=0, sharpe_ratio=0,
         ),
         runtime=RuntimeOverview(
-            running_strategies=5,
-            open_positions=4,
-            pending_orders=2,
-            reconciling_count=0,
+            running_strategies=0, open_positions=0,
+            pending_orders=0, reconciling_count=0,
         ),
         risk=RiskOverview(
-            global_state="normal",
-            daily_loss_remaining_pct=72.0,
-            weekly_loss_remaining_pct=85.0,
+            global_state="unknown",
+            daily_loss_remaining_pct=0,
+            weekly_loss_remaining_pct=0,
             emergency_locked=False,
-            reason_codes=["within_budget", "no_breakers_triggered"],
+            reason_codes=[_UNAVAILABLE_REASON],
         ),
         system=SystemOverview(
-            live_readiness_state="live_ready",
-            fast_track_latency_ms=12,
-            redis_rtt_ms=3,
-            freqtrade_state="connected",
-            exchange_state="binance_connected",
+            live_readiness_state="unknown",
+            fast_track_latency_ms=None,
+            redis_rtt_ms=None,
+            freqtrade_state="unknown",
+            exchange_state="unknown",
         ),
-        recent_decisions=[
-            RecentDecision(time="14:32", symbol="BTC/USDT", decision="execute_long", reason_codes=["htf_bullish", "signal_strong", "risk_budget_ok"]),
-            RecentDecision(time="14:15", symbol="SOL/USDT", decision="reduce_size", reason_codes=["daily_loss_warning", "reduce_size"]),
-            RecentDecision(time="13:48", symbol="ETH/USDT", decision="hold", reason_codes=["near_resistance", "trend_intact"]),
-            RecentDecision(time="13:20", symbol="AVAX/USDT", decision="execute_long", reason_codes=["breakout_confirmed", "momentum_strong"]),
-            RecentDecision(time="12:45", symbol="BNB/USDT", decision="reject", reason_codes=["risk_gate_blocked", "correlation_high"]),
-        ],
-        alerts=[
-            Alert(level="warning", title="Daily loss budget at 28% \u2014 approaching caution zone", symbol="PORTFOLIO", time="14:18"),
-            Alert(level="info", title="ETH/USDT approaching resistance at $3,860", symbol="ETH/USDT", time="13:55"),
-            Alert(level="warning", title="SOL/USDT volatility expanding \u2014 consider tightening stops", symbol="SOL/USDT", time="13:40"),
-            Alert(level="info", title="Strategy 'BTC Momentum v3' entered new position", symbol="BTC/USDT", time="13:32"),
-            Alert(level="error", title="Binance API latency spike \u2014 450ms (threshold: 200ms)", symbol="SYSTEM", time="12:15"),
-            Alert(level="info", title="Reconciliation completed \u2014 0 discrepancies", symbol="SYSTEM", time="12:00"),
-        ],
+        recent_decisions=[],
+        alerts=[],
     ).model_dump()
 
 
-def _mock_live_readiness() -> dict:
+def _empty_live_readiness(reason: str) -> dict:
     return LiveReadinessResponse(
-        state="LIVE_SMALL_READY",
-        score=86,
-        reason_codes=[],
-        available_actions=[
-            AvailableAction(type="start_paper", enabled=True, label="启动模拟"),
-            AvailableAction(type="start_live_small", enabled=True, label="启动小仓实盘", confirm_required=True),
-            AvailableAction(type="disable_auto", enabled=True, label="禁用自动交易", confirm_required=True),
-        ],
-        can_start_paper=True,
-        can_start_live_small=True,
+        state="data_source_unavailable",
+        score=0,
+        reason_codes=[reason, _UNAVAILABLE_REASON],
+        available_actions=[],
+        can_start_paper=False,
+        can_start_live_small=False,
         can_start_full_live=False,
-        blocking_reasons=[],
-        warnings=[{"code": "exchange_api_weight_warning", "message": "交易所 API 权重剩余偏低"}],
-        checks=[
-            ReadinessCheck(key="fast_track_latency", label="Fast Track 延迟", status="healthy", value="45ms", threshold="<200ms"),
-            ReadinessCheck(key="redis_rtt", label="Redis RTT", status="healthy", value="3ms", threshold="<50ms"),
-            ReadinessCheck(key="postgres", label="PostgreSQL", status="healthy", value="ok", threshold="connected"),
-            ReadinessCheck(key="freqtrade", label="Freqtrade", status="healthy", value="running", threshold="running"),
-            ReadinessCheck(key="exchange_api", label="交易所 API", status="warning", value="weight 80%", threshold="<90%"),
-            ReadinessCheck(key="orderbook", label="订单簿数据", status="healthy", value="fresh", threshold="<5s"),
-            ReadinessCheck(key="ai_cache", label="AI Risk Cache", status="healthy", value="fresh", threshold="not expired"),
-            ReadinessCheck(key="risk_state", label="风控状态", status="healthy", value="normal", threshold="not locked"),
-        ],
+        blocking_reasons=[_UNAVAILABLE_REASON],
+        warnings=[],
+        checks=[],
     ).model_dump()
 
 
-def _mock_global_status() -> dict:
+def _empty_global_status(reason: str) -> dict:
     return GlobalStatusResponse(
-        system_state="LIVE_SMALL_READY",
-        risk_state="normal",
-        fast_track_latency_ms=45,
-        freqtrade_state="healthy",
-        redis_rtt_ms=3,
-        exchange_state="ok",
-        open_positions=3,
+        system_state="data_source_unavailable",
+        risk_state="unknown",
+        fast_track_latency_ms=None,
+        freqtrade_state="unknown",
+        redis_rtt_ms=None,
+        exchange_state="unknown",
+        open_positions=0,
         emergency_locked=False,
     ).model_dump()
 
@@ -118,10 +92,8 @@ async def get_dashboard():
         data = await svc.aggregate()
         return data
     except Exception as exc:
-        logger.warning("Aggregator failed, using mock: %s", exc)
-        data = _mock_dashboard()
-        data["_mock"] = True
-        return data
+        logger.exception("Aggregator failed, returning data_source_unavailable: %s", exc)
+        return _empty_dashboard(reason=type(exc).__name__)
 
 
 @router.get("/live-readiness", response_model=LiveReadinessResponse)
@@ -150,10 +122,8 @@ async def get_live_readiness():
             "checks": [{"key": c.key, "label": c.label, "status": c.status, "value": c.value, "threshold": c.threshold} for c in result.checks],
         }
     except Exception as e:
-        logger.warning(f"[live-readiness] LiveReadinessService unavailable, mock fallback: {e}")
-        data = _mock_live_readiness()
-        data["_mock"] = True
-        return data
+        logger.exception(f"[live-readiness] LiveReadinessService unavailable: {e}")
+        return _empty_live_readiness(reason=type(e).__name__)
 
 
 @router.post("/live-readiness/check", response_model=LiveReadinessResponse)
@@ -182,10 +152,8 @@ async def run_readiness_check():
             "checks": [{"key": c.key, "label": c.label, "status": c.status, "value": c.value, "threshold": c.threshold} for c in result.checks],
         }
     except Exception as e:
-        logger.warning(f"[live-readiness-check] LiveReadinessService unavailable, mock fallback: {e}")
-        data = _mock_live_readiness()
-        data["_mock"] = True
-        return data
+        logger.exception(f"[live-readiness-check] LiveReadinessService unavailable: {e}")
+        return _empty_live_readiness(reason=type(e).__name__)
 
 
 @router.get("/global-status", response_model=GlobalStatusResponse)
@@ -195,7 +163,5 @@ async def get_global_status():
         agg = OverviewAggregator()
         return await agg.global_status()
     except Exception as e:
-        logger.warning(f"[global-status] OverviewAggregator unavailable, mock fallback: {e}")
-        data = _mock_global_status()
-        data["_mock"] = True
-        return data
+        logger.exception(f"[global-status] OverviewAggregator unavailable: {e}")
+        return _empty_global_status(reason=type(e).__name__)

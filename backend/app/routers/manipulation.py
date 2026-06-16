@@ -27,51 +27,6 @@ def _get_case_repo():
 
 
 # ---------------------------------------------------------------------------
-# Mock fallback helpers
-# ---------------------------------------------------------------------------
-
-def _mock_radar_overview():
-    return {
-        "active_cases": [
-            {"id": "mock-1", "symbol": "SOL/USDT", "manipulation_type": "M5",
-             "lifecycle_stage": "markup", "confidence": 0.78, "trading_signal_action": "RIDE", "created_at": "2026-06-15T10:00:00Z"},
-            {"id": "mock-2", "symbol": "PEPE/USDT", "manipulation_type": "M3",
-             "lifecycle_stage": "distribute", "confidence": 0.85, "trading_signal_action": "EXIT", "created_at": "2026-06-14T08:00:00Z"},
-            {"id": "mock-3", "symbol": "DOGE/USDT", "manipulation_type": "M8",
-             "lifecycle_stage": "suspected", "confidence": 0.45, "trading_signal_action": "WATCH", "created_at": "2026-06-15T14:00:00Z"},
-        ],
-        "total_active": 3,
-        "by_stage": {"suspected": 1, "markup": 1, "distribute": 1},
-        "high_risk_symbols": ["PEPE/USDT"],
-        "recent_alerts": [
-            {"id": "alert-1", "case_id": "mock-2", "alert_type": "stage_change", "severity": "critical",
-             "title": "PEPE/USDT: markup → distribute", "detail": {}, "trading_signal": None, "created_at": "2026-06-15T12:00:00Z"},
-            {"id": "alert-2", "case_id": "mock-1", "alert_type": "stage_change", "severity": "warning",
-             "title": "SOL/USDT: accumulate → markup", "detail": {}, "trading_signal": None, "created_at": "2026-06-15T10:30:00Z"},
-        ],
-        "_mock": True,
-    }
-
-
-def _mock_case_detail():
-    return {
-        "id": "mock-1", "symbol": "SOL/USDT", "market": "crypto",
-        "manipulation_type": "M5", "lifecycle_stage": "markup",
-        "confidence": 0.78, "evidence": {"pump_dump": 65, "volume_zscore": 55, "price_range_spike": 48, "cross_market_squeeze_score": 72},
-        "timeline": [
-            {"stage": "suspected", "entered_at": "2026-06-14T08:00:00Z", "confidence": 0.45},
-            {"stage": "accumulate", "entered_at": "2026-06-14T16:00:00Z", "confidence": 0.62},
-            {"stage": "markup", "entered_at": "2026-06-15T10:00:00Z", "confidence": 0.78},
-        ],
-        "outcome": {}, "similar_cases": [], "auto_discovered": True, "source": "rule_engine",
-        "trading_signal": {"action": "RIDE", "direction": "long", "sizing": "medium",
-                           "stop_loss": "trailing", "rationale": "Markup confirmed", "risk_level": "medium"},
-        "created_at": "2026-06-14T08:00:00Z", "updated_at": "2026-06-15T10:00:00Z",
-        "_mock": True,
-    }
-
-
-# ---------------------------------------------------------------------------
 # Existing endpoints — scan + scores
 # ---------------------------------------------------------------------------
 
@@ -117,8 +72,16 @@ async def get_radar_overview():
         repo = _get_case_repo()
         return repo.get_radar_overview()
     except Exception as exc:
-        logger.warning("Radar overview failed: %s", exc)
-        return _mock_radar_overview()
+        logger.exception("Radar overview failed: %s", exc)
+        return {
+            "active_cases": [],
+            "total_active": 0,
+            "by_stage": {},
+            "high_risk_symbols": [],
+            "recent_alerts": [],
+            "state": "data_source_unavailable",
+            "reason_codes": ["data_source_unavailable", type(exc).__name__],
+        }
 
 
 @router.get("/cases")
@@ -129,8 +92,13 @@ async def list_cases(stage: str | None = None, symbol: str | None = None,
         return repo.list_cases(stage=stage, symbol=symbol,
                                manipulation_type=manipulation_type, active_only=active_only)
     except Exception as exc:
-        logger.warning("List cases failed: %s", exc)
-        return []
+        logger.exception("List cases failed: %s", exc)
+        return {
+            "cases": [],
+            "total": 0,
+            "state": "data_source_unavailable",
+            "reason_codes": ["data_source_unavailable", type(exc).__name__],
+        }
 
 
 @router.get("/cases/{case_id}")
@@ -144,8 +112,11 @@ async def get_case(case_id: str):
     except HTTPException:
         raise
     except Exception as exc:
-        logger.warning("Get case failed: %s", exc)
-        return _mock_case_detail()
+        logger.exception("Get case failed: %s", exc)
+        raise HTTPException(status_code=503, detail={
+            "state": "data_source_unavailable",
+            "reason_codes": ["data_source_unavailable", type(exc).__name__],
+        })
 
 
 @router.get("/alerts")
@@ -154,8 +125,13 @@ async def get_alerts(limit: int = 20):
         repo = _get_case_repo()
         return repo.get_alerts(limit=limit)
     except Exception as exc:
-        logger.warning("Get alerts failed: %s", exc)
-        return []
+        logger.exception("Get alerts failed: %s", exc)
+        return {
+            "alerts": [],
+            "total": 0,
+            "state": "data_source_unavailable",
+            "reason_codes": ["data_source_unavailable", type(exc).__name__],
+        }
 
 
 @router.post("/historical-scan")
@@ -167,7 +143,6 @@ async def historical_scan(symbol: str = "BTC/USDT", market: str = "crypto", limi
         candles = adapter.get_ohlcv(symbol, "1h", limit)
         scanner = HistoricalManipulationScanner()
         result = scanner.scan(candles, symbol=symbol, market=market)
-        # Save confirmed cases to repo
         repo = _get_case_repo()
         for case_data in result.cases:
             repo.create_case(
@@ -183,8 +158,15 @@ async def historical_scan(symbol: str = "BTC/USDT", market: str = "crypto", limi
             "confirmed_cases": result.confirmed_cases,
         }
     except Exception as exc:
-        logger.warning("Historical scan failed: %s", exc)
-        return {"symbol": symbol, "scanned_candles": 0, "events_detected": 0, "confirmed_cases": 0}
+        logger.exception("Historical scan failed: %s", exc)
+        return {
+            "symbol": symbol,
+            "scanned_candles": 0,
+            "events_detected": 0,
+            "confirmed_cases": 0,
+            "state": "data_source_unavailable",
+            "reason_codes": ["data_source_unavailable", type(exc).__name__],
+        }
 
 
 @router.get("/signals")
@@ -204,10 +186,19 @@ async def get_signals(user_profile: str = "conservative"):
                 "lifecycle_stage": case["lifecycle_stage"],
                 "signal": signal.to_dict(),
             })
-        return signals
+        return {
+            "signals": signals,
+            "total": len(signals),
+            "state": "healthy",
+        }
     except Exception as exc:
-        logger.warning("Get signals failed: %s", exc)
-        return []
+        logger.exception("Get signals failed: %s", exc)
+        return {
+            "signals": [],
+            "total": 0,
+            "state": "data_source_unavailable",
+            "reason_codes": ["data_source_unavailable", type(exc).__name__],
+        }
 
 
 @router.get("/training/stats")
@@ -215,8 +206,18 @@ async def get_training_stats():
     try:
         from app.services.manipulation.training_pipeline import ManipulationTrainingPipeline
         pipeline = ManipulationTrainingPipeline()
-        return pipeline.get_stats()
+        stats = pipeline.get_stats()
+        stats["state"] = "healthy"
+        return stats
     except Exception as exc:
-        logger.warning("Training stats failed: %s", exc)
-        return {"total_samples": 0, "version": 0, "by_type": {}, "by_stage": {},
-                "cases_since_last_train": 0, "retrain_threshold": 50}
+        logger.exception("Training stats failed: %s", exc)
+        return {
+            "total_samples": 0,
+            "version": 0,
+            "by_type": {},
+            "by_stage": {},
+            "cases_since_last_train": 0,
+            "retrain_threshold": 50,
+            "state": "data_source_unavailable",
+            "reason_codes": ["data_source_unavailable", type(exc).__name__],
+        }

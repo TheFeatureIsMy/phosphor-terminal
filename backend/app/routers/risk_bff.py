@@ -17,64 +17,6 @@ router = APIRouter(prefix="/api/risk", tags=["risk-bff"])
 logger = logging.getLogger(__name__)
 
 
-def _mock_overview() -> dict:
-    return RiskOverviewResponse(
-        state="normal",
-        reason_codes=[],
-        available_actions=[
-            AvailableAction(type="emergency_stop", enabled=True, label="紧急停止", confirm_required=True),
-            AvailableAction(type="block_new_entries", enabled=True, label="禁止新开仓"),
-            AvailableAction(type="unblock", enabled=True, label="解除禁止"),
-        ],
-        account_state="normal",
-        emergency_locked=False,
-        guards=[
-            RiskGuard(key="daily_loss", label="日亏损限制", current_value=120, limit_value=500, remaining_pct=0.76, status="healthy"),
-            RiskGuard(key="weekly_loss", label="周亏损限制", current_value=280, limit_value=1500, remaining_pct=0.81, status="healthy"),
-            RiskGuard(key="exposure", label="总敞口", current_value=3200, limit_value=8000, remaining_pct=0.6, status="healthy"),
-            RiskGuard(key="consecutive_loss", label="连续亏损", current_value=1, limit_value=5, remaining_pct=0.8, status="healthy"),
-        ],
-        active_locks=[],
-    ).model_dump()
-
-
-def _mock_stop_protection() -> dict:
-    return StopProtectionResponse(
-        state="healthy",
-        reason_codes=[],
-        available_actions=[
-            AvailableAction(type="refresh_all", enabled=True, label="刷新全部止损"),
-        ],
-        positions=[
-            PositionStop(
-                position_id="pos-001", symbol="BTC/USDT", side="long",
-                entry_price=62100, current_price=62450,
-                stops=StopLevel(raw_structure_stop=61200, last_known_good_stop=61350, secure_runtime_stop=61350, exchange_protective_stop=61000),
-                stop_update_allowed=True, reason_codes=["structure_stop_valid"],
-            ),
-            PositionStop(
-                position_id="pos-002", symbol="ETH/USDT", side="long",
-                entry_price=3380, current_price=3410,
-                stops=StopLevel(raw_structure_stop=3300, last_known_good_stop=3320, secure_runtime_stop=3320, exchange_protective_stop=3280, volatility_locked=False),
-                stop_update_allowed=True, reason_codes=["structure_stop_valid"],
-            ),
-        ],
-        volatility_locks=[],
-    ).model_dump()
-
-
-def _mock_circuit_breakers() -> dict:
-    return CircuitBreakersResponse(
-        state="healthy",
-        reason_codes=[],
-        records=[
-            CircuitBreakerRecord(id="cb-001", type="daily_loss_lock", account_id="default", reason_codes=["daily_loss_limit_reached"]),
-            CircuitBreakerRecord(id="cb-002", type="emergency_stop", account_id="default", reason_codes=["manual_trigger"], related_command_id="cmd-099"),
-        ],
-        total_count=2,
-    ).model_dump()
-
-
 @router.get("/overview", response_model=RiskOverviewResponse)
 async def get_risk_overview():
     try:
@@ -82,10 +24,16 @@ async def get_risk_overview():
         agg = RiskAggregator()
         return await agg.overview()
     except Exception as e:
-        logger.warning(f"[risk-overview] RiskAggregator unavailable, mock fallback: {e}")
-        data = _mock_overview()
-        data["_mock"] = True
-        return data
+        logger.exception("[risk-overview] RiskAggregator unavailable: %s", e)
+        return RiskOverviewResponse(
+            state="data_source_unavailable",
+            reason_codes=["data_source_unavailable", type(e).__name__],
+            available_actions=[],
+            account_state="unknown",
+            emergency_locked=False,
+            guards=[],
+            active_locks=[],
+        ).model_dump()
 
 
 @router.get("/stop-protection", response_model=StopProtectionResponse)
@@ -159,10 +107,14 @@ async def get_stop_protection():
             "volatility_locks": result.volatility_locks,
         }
     except Exception as e:
-        logger.warning(f"[stop-protection] StopProtectionService unavailable, mock fallback: {e}")
-        data = _mock_stop_protection()
-        data["_mock"] = True
-        return data
+        logger.exception("[stop-protection] StopProtectionService unavailable: %s", e)
+        return StopProtectionResponse(
+            state="data_source_unavailable",
+            reason_codes=["data_source_unavailable", type(e).__name__],
+            available_actions=[],
+            positions=[],
+            volatility_locks=[],
+        ).model_dump()
 
 
 @router.get("/volatility-locks")
@@ -213,10 +165,13 @@ async def get_circuit_breakers(db: Session = Depends(get_db)):
             total_count=len(records),
         ).model_dump()
     except Exception as e:
-        logger.warning(f"[circuit-breakers] DB query failed, mock fallback: {e}")
-        data = _mock_circuit_breakers()
-        data["_mock"] = True
-        return data
+        logger.exception("[circuit-breakers] DB query failed: %s", e)
+        return CircuitBreakersResponse(
+            state="data_source_unavailable",
+            reason_codes=["data_source_unavailable", type(e).__name__],
+            records=[],
+            total_count=0,
+        ).model_dump()
 
 
 @router.post("/emergency-stop")

@@ -155,22 +155,13 @@ def get_signal_validity(db: Session = Depends(get_db)):
             })
 
         if not sources:
-            raise ValueError("no data")
+            return {"sources": [], "state": "healthy"}
 
         sources.sort(key=lambda x: x["accuracy"], reverse=True)
         return {"sources": sources, "state": "healthy"}
-    except Exception:
-        # Mock fallback
-        return {
-            "state": "healthy",
-            "sources": [
-                {"name": "AI Research", "accuracy": 0.72, "total": 45},
-                {"name": "TradingAgents", "accuracy": 0.68, "total": 38},
-                {"name": "Manual", "accuracy": 0.61, "total": 25},
-                {"name": "Sentiment", "accuracy": 0.55, "total": 28},
-                {"name": "KOL", "accuracy": 0.42, "total": 20},
-            ],
-        }
+    except Exception as e:
+        logger.exception("[signal-validity] DB query failed: %s", e)
+        return {"sources": [], "state": "data_source_unavailable", "reason_codes": ["data_source_unavailable", type(e).__name__]}
 
 
 @router.get("/shap-features")
@@ -181,21 +172,7 @@ def get_shap_features(db: Session = Depends(get_db)):
         if shap_service.available and shap_service._model is not None:
             importances = shap_service.get_global_importances()
             return {"state": "healthy", "features": importances}
-        raise ValueError("shap not ready")
-    except Exception:
-        # Mock fallback with realistic feature importances
-        return {
-            "state": "healthy",
-            "features": [
-                {"name": "RSI_14", "value": 0.312},
-                {"name": "MACD_hist", "value": 0.248},
-                {"name": "Vol_24h", "value": 0.201},
-                {"name": "BB_width", "value": 0.178},
-                {"name": "EMA_cross", "value": 0.156},
-                {"name": "ATR_14", "value": 0.123},
-                {"name": "OBV_slope", "value": 0.098},
-                {"name": "ADX_14", "value": 0.087},
-                {"name": "Funding_rate", "value": 0.065},
-                {"name": "Sentiment", "value": 0.042},
-            ],
-        }
+        return {"state": "healthy", "features": []}
+    except Exception as e:
+        logger.exception("[shap-features] SHAP service unavailable: %s", e)
+        return {"state": "data_source_unavailable", "features": [], "reason_codes": ["data_source_unavailable", type(e).__name__]}
