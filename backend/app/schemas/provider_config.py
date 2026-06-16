@@ -89,7 +89,7 @@ class ProviderConfigView(BaseModel):
     priority: int
     status: str
     credential_status: str
-    credential_fields: list[str]
+    credentials_fields: list[str] = Field(default_factory=list)
     last_sync_at: datetime | None
     last_error: str | None
     latency_ms: int | None
