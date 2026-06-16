@@ -46,7 +46,10 @@ class ProviderHealthScheduler:
     ) -> None:
         self.interval_s = interval_s if interval_s is not None else settings.provider_health_interval_s
         self.batch_size = batch_size if batch_size is not None else settings.provider_health_batch_size
-        self.enabled = self.interval_s > 0
+        self.enabled = (
+            self.interval_s > 0
+            and settings.provider_health_enabled
+        )
         self._session_factory = session_factory or SessionLocal
         self._health = health_service or ProviderHealthService(
             registry=self._build_registry()
