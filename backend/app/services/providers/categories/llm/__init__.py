@@ -5,6 +5,7 @@ from app.services.providers.registry import registry
 from app.services.providers.categories.llm.openai import OpenAIProvider
 from app.services.providers.categories.llm.anthropic import AnthropicProvider
 from app.services.providers.categories.llm.ollama import OllamaProvider
+from app.services.providers.categories.llm.azure_openai import AzureOpenAIProvider
 
 
 def _make_stub(provider_name: str):
@@ -20,8 +21,8 @@ def _make_stub(provider_name: str):
     return cls
 
 
-for _name in ("deepseek", "qwen", "zhipu", "moonshot", "gemini", "groq", "azure_openai"):
+for _name in ("deepseek", "qwen", "zhipu", "moonshot", "gemini", "groq"):
     registry.register(_make_stub(_name))
 
-for _cls in (OpenAIProvider, AnthropicProvider, OllamaProvider):
+for _cls in (OpenAIProvider, AnthropicProvider, OllamaProvider, AzureOpenAIProvider):
     registry.register(_cls)
