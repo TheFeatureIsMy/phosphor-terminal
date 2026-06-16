@@ -315,6 +315,22 @@ All 4 market_data providers share CCXT Binance as the underlying source. Health 
 - **Config schema:** `CryptoPanicConfig { base_url, timeout_s }`
 - **Credentials dict shape:** (empty)
 
+## Real-time WebSocket Streams
+
+### Provider Health Stream
+- **Endpoint:** `ws://<host>/api/ws/provider-health` (FastAPI WebSocket)
+- **Protocol:** JSON
+- **Initial frame:** `{"type": "snapshot", "ts": "...", "providers": [...]}`
+- **Update frames:** `{"type": "update", "ts": "...", "provider_id": ..., "status": ..., "latency_ms": ..., "error": ...}`
+- **Heartbeat:** `{"type": "heartbeat", "ts": "..."}` every 30s to keep connection alive
+- **Backed by:** `app.services.providers.realtime.health_broadcaster` (in-memory pub/sub fed by `ProviderHealthService`)
+
+### CCXT Binance Ticker Stream
+- **Underlying source:** CCXT Binance public WebSocket `watch_ticker`
+- **Symbols (default):** `BTC/USDT`
+- **Update destination:** `app.services.providers.realtime.ticker_cache.TickerCache` (in-memory, 60s TTL)
+- **Public access:** future sub-projects will expose `GET /api/providers/ticker/{symbol}` reading from the cache
+
 ## Rate-Limit Header Coverage
 
 `RateLimitParser` recognizes:
