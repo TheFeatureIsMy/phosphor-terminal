@@ -114,11 +114,38 @@ Last updated: 2026-06-16.
 - **Used endpoint:** `GET /api/v1/ping` via `FreqtradeClient.ping()`
 - **Config schema:** `FreqtradeConfig { url, username, password, timeout_s }`
 
-### OKX / Bybit / Bitget (stubs)
-Real implementations deferred to sub-project 3.
-- OKX: https://www.okx.com/docs-v5/en/
-- Bybit: https://bybit-exchange.github.io/docs/v5/intro
-- Bitget: https://www.bitget.com/api-doc/common/intro
+### OKX (real)
+- **Provider class:** `app.services.providers.categories.cex.okx.OKXProvider`
+- **Official docs:** https://www.okx.com/docs-v5/en/
+- **Auth (health check):** None — uses public endpoint
+- **Auth (private, future):** HMAC SHA256 — headers `OK-ACCESS-KEY`, `OK-ACCESS-SIGN`, `OK-ACCESS-TIMESTAMP`, `OK-ACCESS-PASSPHRASE`
+- **Used endpoint:** `GET /api/v5/public/time` (no token cost, no rate limit)
+- **Rate-limit headers:** Not documented for public endpoints
+- **Error codes:** 200 → ACTIVE; 401/403 → INACTIVE; 5xx → ERROR
+- **Config schema:** `OKXConfig { base_url, timeout_s }`
+- **Credentials dict shape (for future private calls):** `{"api_key", "secret", "passphrase"}`
+
+### Bybit (real)
+- **Provider class:** `app.services.providers.categories.cex.bybit.BybitProvider`
+- **Official docs:** https://bybit-exchange.github.io/docs/v5/intro
+- **Auth (health check):** None — uses public endpoint
+- **Auth (private, future):** HMAC SHA256 — headers `X-BAPI-API-KEY`, `X-BAPI-SIGN`, `X-BAPI-TIMESTAMP`, `X-BAPI-RECV-WINDOW`
+- **Used endpoint:** `GET /v5/market/time` (no token cost, no rate limit)
+- **Rate-limit headers:** Not documented for public endpoints
+- **Error codes:** 200 → ACTIVE; 401/403 → INACTIVE; 5xx → ERROR
+- **Config schema:** `BybitConfig { base_url, timeout_s }`
+- **Credentials dict shape (for future private calls):** `{"api_key", "secret"}`
+
+### Bitget (real)
+- **Provider class:** `app.services.providers.categories.cex.bitget.BitgetProvider`
+- **Official docs:** https://www.bitget.com/api-doc/common/intro
+- **Auth (health check):** None — uses public endpoint
+- **Auth (private, future):** HMAC SHA256 — headers `ACCESS-KEY`, `ACCESS-SIGN`, `ACCESS-TIMESTAMP`, `ACCESS-PASSPHRASE`
+- **Used endpoint:** `GET /api/v2/public/time` (no token cost, no rate limit)
+- **Rate-limit headers:** Not documented for public endpoints
+- **Error codes:** 200 → ACTIVE; 401/403 → INACTIVE; 5xx → ERROR
+- **Config schema:** `BitgetConfig { base_url, timeout_s }`
+- **Credentials dict shape (for future private calls):** `{"api_key", "secret", "passphrase"}`
 
 ## DeX Providers (all stubs)
 Real on-chain integration deferred to a later sub-project.
