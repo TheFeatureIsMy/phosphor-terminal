@@ -8,7 +8,7 @@ import SwiftUI
 
 // MARK: - Environment Key for NetworkClient
 private struct NetworkClientKey: EnvironmentKey {
-    static let defaultValue: any NetworkClientProtocol = MockNetworkClient()
+    static let defaultValue: any NetworkClientProtocol = LiveNetworkClient()
 }
 
 extension EnvironmentValues {
@@ -37,6 +37,7 @@ enum APIError: Error, LocalizedError {
 
 // MARK: - 网络客户端协议
 protocol NetworkClientProtocol: Sendable {
+    var baseURL: URL { get }
     func get<T: Decodable>(_ endpoint: String, mock: @escaping @Sendable () -> T) async throws -> T
     func post<T: Decodable>(_ endpoint: String, body: (any Encodable)?, mock: @escaping @Sendable () -> T) async throws -> T
     func postForm<T: Decodable>(_ endpoint: String, formFields: [String: String], mock: @escaping @Sendable () -> T) async throws -> T
@@ -47,6 +48,12 @@ protocol NetworkClientProtocol: Sendable {
 
 // MARK: - 模拟网络客户端
 final class MockNetworkClient: NetworkClientProtocol, @unchecked Sendable {
+    let baseURL: URL
+
+    init(baseURL: URL = URL(string: "http://localhost:8000")!) {
+        self.baseURL = baseURL
+    }
+
     func get<T: Decodable>(_ endpoint: String, mock: @escaping @Sendable () -> T) async throws -> T {
         try await Task.sleep(for: .milliseconds(Int.random(in: 200...500)))
         return mock()

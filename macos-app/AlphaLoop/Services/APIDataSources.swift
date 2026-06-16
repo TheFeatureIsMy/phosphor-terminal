@@ -166,3 +166,74 @@ enum MockDataSources {
         APIDataSources.convert(providers)
     }
 }
+
+// MARK: - Real-time WebSocket streams
+
+struct ProviderHealthMessage: Codable {
+    let type: String
+    let ts: Date
+    let providers: [ProviderConfigView]?
+    let providerId: Int?
+    let status: String?
+    let latencyMs: Int?
+    let error: String?
+
+    enum CodingKeys: String, CodingKey {
+        case type, ts, providers, status, error
+        case providerId = "provider_id"
+        case latencyMs = "latency_ms"
+    }
+}
+
+extension APIDataSources {
+    /// Connect to /api/ws/provider-health and return an AsyncStream of decoded messages.
+    public func connectProviderHealthStream() -> AsyncThrowingStream<ProviderHealthMessage, Error> {
+        let url = client.baseURL.appendingPathComponent("/api/ws/provider-health")
+        return AsyncThrowingStream { continuation in
+            let task = URLSession.shared.webSocketTask(with: url)
+            task.resume()
+            let decoder = JSONDecoder()
+            decoder.dateDecodingStrategy = .iso8601
+
+            final class Receiver: @unchecked Sendable {
+                let task: URLSessionWebSocketTask
+                let decoder: JSONDecoder
+                let continuation: AsyncThrowingStream<ProviderHealthMessage, Error>.Continuation
+
+                init(task: URLSessionWebSocketTask, decoder: JSONDecoder, continuation: AsyncThrowingStream<ProviderHealthMessage, Error>.Continuation) {
+                    self.task = task
+                    self.decoder = decoder
+                    self.continuation = continuation
+                }
+
+                func start() {
+                    receive()
+                }
+
+                func receive() {
+                    task.receive { [weak self] result in
+                        guard let self else { return }
+                        switch result {
+                        case .success(let message):
+                            if case .string(let text) = message, let data = text.data(using: .utf8) {
+                                do {
+                                    let msg = try self.decoder.decode(ProviderHealthMessage.self, from: data)
+                                    self.continuation.yield(msg)
+                                } catch {
+                                    // Skip malformed frame
+                                }
+                            }
+                            self.receive()
+                        case .failure(let error):
+                            self.continuation.finish(throwing: error)
+                        }
+                    }
+                }
+            }
+
+            let receiver = Receiver(task: task, decoder: decoder, continuation: continuation)
+            receiver.start()
+            continuation.onTermination = { _ in task.cancel(with: .goingAway, reason: nil) }
+        }
+    }
+}
