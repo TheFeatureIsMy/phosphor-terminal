@@ -13,7 +13,7 @@ python3 -m pytest tests/ -q --cov=app   # Tests with coverage (CI gate: ≥30%)
 python3 -m pytest tests/test_risk_rules.py -q          # Single file
 python3 -m pytest tests/ -q -k "structure"             # Filter by name
 ```
-First-time setup: `scripts/build-backend.sh` installs `backend/requirements.txt` via `pip3 install --user`.
+First-time setup: `scripts/build-backend.sh` installs `backend/requirements.txt` via `pip3 install --user`. Requires Python 3.12 (3.9 has syntax the existing models use).
 
 ### macOS App (macos-app/)
 ```bash
@@ -43,7 +43,7 @@ docker compose up    # postgres :5432, redis :6379, backend :8000, freqtrade :80
 ## Architecture
 
 AlphaLoop — AI-driven crypto quant trading dashboard. **Three independent codebases** that share no source code, only API contracts:
-- `backend/` — Python 3.11, FastAPI, SQLAlchemy, Pydantic v2
+- `backend/` — Python 3.12, FastAPI, SQLAlchemy, Pydantic v2
 - `macos-app/` — Swift 6.2, SwiftUI, no external deps
 - `canvas-web/` — React 19 + Vite, embeds `@xyflow/react` for the strategy DAG editor
 
@@ -65,6 +65,18 @@ FastAPI app with **~44 routers** and **~86 service modules**.
 Freqtrade integration is dual-channel: REST via `freqtrade_client.py` *and* direct SQLite reads via `freqtrade_db.py`. Trade history → SQLite; orders/control → REST. Don't conflate the two.
 
 Redis runtime store (`runtime_redis_store.py`) serves BFF endpoints for live state. When Redis is empty, routers fall back to a service computation, then to mock data — keep this three-tier pattern when adding new BFF endpoints.
+
+**Provider Adapter Foundation** (sub-project 1, 2026-06-16): New
+package `app/services/providers/` holds the `ProviderAdapter` Protocol,
+`ProviderRegistry`, `ProviderConfigService`, `ProviderHealthService`,
+and `ProviderHealthScheduler` (native asyncio). All 8 provider
+categories (`llm/cex/dex/notification/market_data/onchain/social/news`)
+register their adapters at import time. Admin API: `/api/admin/providers/*`.
+Configuration persists in the `provider_configs` table; credentials are
+Fernet-encrypted. See `docs/integrations/api-audit.md` for per-provider
+integration details and `docs/settings/configuration-model.md` for the
+configuration schema. Dropped files: `services/data_source_manager.py`,
+`routers/data_source_bff.py`, `ai_provider_configs` table.
 
 ### macOS App (`macos-app/AlphaLoop/`)
 
@@ -123,6 +135,7 @@ GitHub Actions (`.github/workflows/ci.yml`):
 ## Conventions
 
 - **Backend**: thin routers, logic in services. Tests mirror service/router names. New BFF endpoints follow the Redis → service → mock fallback pattern.
+- **ProviderAdapter**: New domain types under `app/services/providers/`. New API endpoint → register a `ProviderAdapter` subclass + add to the category's `__init__.py`. Health/test/scheduler handle the rest.
 - **macOS app**:
   - New domain types → `Models/Types.swift`. New enums → `Models/Enums.swift`.
   - New API endpoint → add Codable response + method + mock factory in `Services/API<Domain>.swift` (all three in one file).
