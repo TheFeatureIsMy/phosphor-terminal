@@ -3,10 +3,11 @@ from app.services.providers.base import ProviderCategory, ProviderStubBase
 from app.services.providers.registry import registry
 
 from app.services.providers.categories.cex.binance import BinanceProvider
+from app.services.providers.categories.cex.bybit import BybitProvider
 from app.services.providers.categories.cex.freqtrade import FreqtradeProvider
 
 
-for _name in ("okx", "bybit", "bitget"):
+for _name in ("okx", "bitget"):
     class _Stub(ProviderStubBase):
         category = ProviderCategory.CEX
         provider_name = _name
@@ -14,5 +15,5 @@ for _name in ("okx", "bybit", "bitget"):
     _Stub.__name__ = f"{_name.title()}Provider"
     registry.register(_Stub)
 
-for _cls in (BinanceProvider, FreqtradeProvider):
+for _cls in (BinanceProvider, BybitProvider, FreqtradeProvider):
     registry.register(_cls)
