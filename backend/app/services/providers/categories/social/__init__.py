@@ -1,11 +1,9 @@
-"""Social provider registrations. All stubs (sub-project 5)."""
-from app.services.providers.base import ProviderCategory, ProviderStubBase
+"""Social provider registrations."""
 from app.services.providers.registry import registry
 
-for _name in ("cryptocompare_social", "lunarcrush"):
-    class _Stub(ProviderStubBase):
-        category = ProviderCategory.SOCIAL
-        provider_name = _name
-        is_multi_instance = False
-    _Stub.__name__ = f"{_name.title().replace('_', '')}Provider"
-    registry.register(_Stub)
+from app.services.providers.categories.social.cryptocompare_social import CryptoCompareSocialProvider
+from app.services.providers.categories.social.lunarcrush import LunarCrushProvider
+
+
+for _cls in (CryptoCompareSocialProvider, LunarCrushProvider):
+    registry.register(_cls)
