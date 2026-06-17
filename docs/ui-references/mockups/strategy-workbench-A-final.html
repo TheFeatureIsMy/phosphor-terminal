@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=1440, initial-scale=1" />
+<title>策略工作台 · A · ProofAlpha aligned</title>
+<style>
+  /* ProofAlpha aligned · 极简终端风：保留品牌色（磷光绿 #00FF9D），
+     但去掉所有 AI 味装饰：无发光、无心跳光环、无全大写、无 tracking、
+     无 EDIT BAY/LAUNCH CONSOLE 词汇、无等大卡片。
+     标签 sentence case，正文 SF Pro 13px，数字/hash/DSL SF Mono。
+     状态用色点+文字。节点紧凑表格卡。面板表格化。 */
+  :root {
+    /* === ProofAlpha tokens (镜像 DesignTokens.swift) === */
+    --bg:           #0A0A0A;
+    --surface:      rgba(255,255,255,0.04);
+    --surface-2:    rgba(255,255,255,0.06);
+    --surface-3:    rgba(255,255,255,0.10);
+    --card:         #171B26;            /* StateColors.card */
+    --card-glass:   rgba(24,24,27,0.55); /* cardBackground (dark) */
+    --border:       rgba(255,255,255,0.08);
+    --border-2:     rgba(255,255,255,0.16);
+    --border-accent:rgba(0,255,157,0.25);
+
+    --text-1:       #E0E0E0;
+    --text-2:       #888888;
+    --text-3:       #555555;
+    --text-4:       #333333;
+
+    --accent:       #00FF9D;            /* 品牌磷光绿 */
+    --accent-soft:  rgba(0,255,157,0.10);
+    --accent-mid:   rgba(0,255,157,0.18);
+
+    --ok:           #00FF9D;
+    --warn:         #FFB800;
+    --err:          #FF3B3B;
+    --cyan:         #00C2FF;
+    --amber:        #FFB800;
+    --purple:       #A855F7;
+
+    --r-sm: 4px;
+    --r-md: 6px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, "SF Pro Text", "Helvetica Neue", system-ui, sans-serif;
+    font-size: 13px;
+    color: var(--text-1);
+    background: var(--bg);
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  .mono {
+    font-family: "SF Mono", "JetBrains Mono", ui-monospace, Menlo, monospace;
+  }
+
+  .app { display: flex; flex-direction: column; height: 100vh; }
+
+  /* ── 顶 HUD ── */
+  .hud {
+    height: 40px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 0 16px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .hud .identity { display: flex; align-items: baseline; gap: 8px; }
+  .hud .name { font-weight: 600; color: var(--text-1); }
+  .hud .ver { color: var(--text-2); }
+  .hud .hash { color: var(--text-3); }
+  .hud .age { color: var(--text-3); }
+  .hud .sep { color: var(--text-4); }
+  .hud .spacer { flex: 1; }
+  .hud .stage { display: flex; align-items: center; gap: 8px; color: var(--text-2); }
+  .hud .stage-bar { display: inline-flex; gap: 2px; }
+  .hud .stage-bar i {
+    display: block; width: 10px; height: 4px;
+    background: rgba(255,255,255,0.12); border-radius: 1px;
+  }
+  .hud .stage-bar i.on { background: var(--accent); }
+  .hud .readiness { color: var(--text-2); }
+  .hud .readiness .num { color: var(--text-1); }
+  .hud .next { display: flex; align-items: center; gap: 6px; color: var(--text-2); }
+  .hud .next .label { color: var(--text-3); }
+  .hud .next .action { color: var(--accent); cursor: pointer; }
+  .hud .actions { display: flex; gap: 6px; margin-left: 12px; }
+  .btn {
+    height: 26px; padding: 0 10px; border-radius: var(--r-sm);
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text-1); font-size: 12px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 5px;
+    font-family: inherit;
+    transition: border-color .15s, background .15s;
+  }
+  .btn:hover { border-color: var(--border-2); background: var(--surface-2); }
+  .btn.primary {
+    background: var(--accent); color: #0A0A0A; border-color: var(--accent);
+    font-weight: 600;
+  }
+  .btn.primary:hover { background: #2BFFAE; border-color: #2BFFAE; }
+  .btn.accent { color: var(--accent); border-color: var(--border-accent); }
+  .btn.ghost { background: transparent; }
+
+  /* ── 画布区 ── */
+  .canvas-wrap { flex: 1; position: relative; overflow: hidden; background: var(--bg); }
+  .canvas-wrap::before {
+    content: ''; position: absolute; inset: 0;
+    background-image: radial-gradient(circle, rgba(255,255,255,0.030) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+  .canvas-wrap::after {
+    /* 极淡 ProofAlpha 氛围光，不是发光，是环境光 */
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background:
+      radial-gradient(circle at 20% 0%, rgba(0,255,157,0.025), transparent 40%),
+      radial-gradient(circle at 80% 100%, rgba(0,194,255,0.020), transparent 50%);
+  }
+
+  /* 节点：紧凑表格卡，无发光，头部色点 */
+  .node {
+    position: absolute;
+    width: 188px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    font-size: 12px;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.4);
+  }
+  .node .head {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .node .head .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .node .head .type {
+    font-size: 10px; color: var(--text-3);
+    /* sentence case，无 letter-spacing */
+  }
+  .node .head .title { font-weight: 500; color: var(--text-1); flex: 1; }
+  .node .body { padding: 6px 10px; display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; }
+  .node .body .k { color: var(--text-3); font-size: 11px; }
+  .node .body .v { color: var(--text-1); font-size: 11px; text-align: right; }
+  .node.selected {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent);
+  }
+  .node.invalid { border-color: var(--err); position: relative; }
+  .node.invalid::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: var(--err);
+    border-radius: var(--r-md) 0 0 var(--r-md);
+  }
+
+  /* 端口 */
+  .port {
+    position: absolute; width: 8px; height: 8px; border-radius: 50%;
+    background: var(--card); border: 1px solid var(--border-2);
+  }
+  .port.in { left: -5px; top: 12px; }
+  .port.out { right: -5px; top: 12px; }
+
+  /* 连线（SVG） */
+  .edges { position: absolute; inset: 0; pointer-events: none; }
+  .edges path { fill: none; stroke: rgba(255,255,255,0.18); stroke-width: 1.5; }
+  .edges path.hot { stroke: var(--accent); }
+  .edges path.ctrl { stroke: var(--purple); stroke-dasharray: 4 3; }
+
+  /* 画布角标 */
+  .canvas-meta {
+    position: absolute; left: 16px; top: 16px;
+    font-size: 11px; color: var(--text-3);
+    display: flex; gap: 12px;
+  }
+  .canvas-meta .k { color: var(--text-4); }
+  .zoom-ctl {
+    position: absolute; right: 16px; top: 16px;
+    display: flex; gap: 4px;
+    background: var(--card-glass);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    padding: 2px;
+  }
+  .zoom-ctl button {
+    width: 24px; height: 22px; background: transparent; border: 0;
+    color: var(--text-2); cursor: pointer; font-family: inherit; font-size: 12px;
+    border-radius: 3px;
+  }
+  .zoom-ctl button:hover { background: var(--surface-2); color: var(--text-1); }
+  .minimap {
+    position: absolute; right: 16px; bottom: 48px;
+    width: 140px; height: 80px;
+    background: var(--card-glass);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+  }
+
+  /* ── 底状态栏 ── */
+  .statusbar {
+    height: 26px;
+    display: flex; align-items: center; gap: 14px;
+    padding: 0 16px;
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+    font-size: 11px; color: var(--text-3);
+  }
+  .statusbar .item { display: flex; align-items: center; gap: 5px; }
+  .statusbar .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .statusbar .dot.ok { background: var(--ok); }
+  .statusbar .dot.err { background: var(--err); }
+  .statusbar .dot.warn { background: var(--warn); }
+  .statusbar .sep { color: var(--text-4); }
+  .statusbar .hint { margin-left: auto; color: var(--text-4); }
+  .statusbar .hint kbd {
+    font-family: "SF Mono", "JetBrains Mono", monospace; font-size: 10px;
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 3px; padding: 0 4px; color: var(--text-2);
+    margin: 0 2px;
+  }
+
+  /* ── 唤出版本面板（玻璃态，与 app 一致）── */
+  .panel {
+    position: absolute; right: 16px; top: 56px;
+    width: 320px;
+    background: var(--card-glass);
+    backdrop-filter: blur(20px) saturate(140%);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    font-size: 12px;
+  }
+  .panel .phead {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px; border-bottom: 1px solid var(--border);
+  }
+  .panel .phead .ptitle { font-weight: 600; color: var(--text-1); flex: 1; }
+  .panel .phead .pclose { color: var(--text-3); cursor: pointer; font-size: 14px; }
+  .panel .section { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+  .panel .section:last-child { border-bottom: 0; }
+  .panel .slabel {
+    font-size: 10px; color: var(--text-3); margin-bottom: 6px;
+    /* sentence case，无 uppercase / 无 tracking */
+  }
+  .panel table { width: 100%; border-collapse: collapse; }
+  .panel th, .panel td {
+    text-align: left; padding: 4px 6px; font-size: 11px;
+    color: var(--text-2); border-bottom: 1px solid var(--border);
+  }
+  .panel th { color: var(--text-3); font-weight: 500; font-size: 10px; }
+  .panel td.mono { color: var(--text-1); }
+  .panel tr:last-child td { border-bottom: 0; }
+  .panel tr.current td { background: var(--accent-soft); }
+  .panel tr.current td:first-child { color: var(--accent); font-weight: 500; }
+  .panel .badge {
+    display: inline-block; padding: 1px 5px; border-radius: 3px; font-size: 10px;
+  }
+  .panel .badge.draft { background: rgba(136,136,136,0.16); color: var(--text-2); }
+  .panel .badge.backtested { background: rgba(0,255,157,0.16); color: var(--accent); }
+  .panel .badge.live { background: rgba(0,194,255,0.16); color: var(--cyan); }
+  .panel .change-row .delta { color: var(--accent); }
+
+  .legend {
+    position: absolute; left: 16px; bottom: 48px;
+    display: flex; gap: 14px; font-size: 10px; color: var(--text-3);
+    background: var(--card-glass);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm); padding: 4px 8px;
+  }
+  .legend .item { display: flex; align-items: center; gap: 4px; }
+  .legend .swatch { width: 8px; height: 8px; border-radius: 2px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- 顶 HUD -->
+  <div class="hud">
+    <div class="identity">
+      <span class="name">BTC RSI 均值回归</span>
+      <span class="sep">·</span>
+      <span class="ver mono">v3 draft</span>
+      <span class="sep">·</span>
+      <span class="hash mono">4f7a..b209</span>
+      <span class="sep">·</span>
+      <span class="age">2h ago</span>
+    </div>
+    <div class="spacer"></div>
+    <div class="stage">
+      <span>Backtested</span>
+      <span class="stage-bar"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span>
+      <span class="mono">5/7</span>
+    </div>
+    <span class="sep">·</span>
+    <div class="readiness">准入 <span class="num mono">8/11</span></div>
+    <span class="sep">·</span>
+    <div class="next"><span class="label">下一步</span><span class="action">运行模拟 →</span></div>
+    <div class="actions">
+      <button class="btn accent">验证</button>
+      <button class="btn">复制</button>
+      <button class="btn">归档</button>
+      <button class="btn">绑定实盘</button>
+      <button class="btn primary">运行模拟</button>
+      <button class="btn ghost">⋯</button>
+    </div>
+  </div>
+
+  <!-- 画布 -->
+  <div class="canvas-wrap">
+    <div class="canvas-meta">
+      <span><span class="k">画布</span> BTC/USDT 5m · Binance</span>
+      <span><span class="k">节点</span> 12 · 连线 11</span>
+    </div>
+    <div class="zoom-ctl">
+      <button>−</button><button>100%</button><button>+</button><button>⌂</button>
+    </div>
+
+    <svg class="edges" viewBox="0 0 1440 700" preserveAspectRatio="none">
+      <path class="hot" d="M 258 178 C 320 178, 320 178, 380 178" />
+      <path class="hot" d="M 568 178 C 630 178, 630 178, 690 178" />
+      <path class="hot" d="M 878 178 C 940 178, 940 178, 1000 178" />
+      <path class="ctrl" d="M 470 240 C 470 320, 470 320, 470 380" />
+    </svg>
+
+    <!-- Signal -->
+    <div class="node" style="left:70px; top:150px;">
+      <div class="head"><span class="dot" style="background:var(--cyan)"></span><span class="type">信号</span><span class="title">Signal Input</span></div>
+      <div class="body">
+        <span class="k">symbol</span><span class="v mono">BTC/USDT</span>
+        <span class="k">timeframe</span><span class="v mono">5m</span>
+        <span class="k">source</span><span class="v">signal_center</span>
+      </div>
+      <span class="port out"></span>
+    </div>
+
+    <!-- RSI（选中） -->
+    <div class="node selected" style="left:380px; top:150px;">
+      <div class="head"><span class="dot" style="background:var(--cyan)"></span><span class="type">条件</span><span class="title">RSI 阈值</span></div>
+      <div class="body">
+        <span class="k">indicator</span><span class="v mono">rsi</span>
+        <span class="k">period</span><span class="v mono">14</span>
+        <span class="k">operator</span><span class="v mono">&lt;</span>
+        <span class="k">value</span><span class="v mono">30</span>
+      </div>
+      <span class="port in"></span><span class="port out"></span>
+    </div>
+
+    <!-- Vol 过滤（失败） -->
+    <div class="node invalid" style="left:690px; top:150px;">
+      <div class="head"><span class="dot" style="background:var(--amber)"></span><span class="type">过滤</span><span class="title">成交量过滤</span></div>
+      <div class="body">
+        <span class="k">indicator</span><span class="v mono">volume</span>
+        <span class="k">operator</span><span class="v mono">&gt;</span>
+        <span class="k">value</span><span class="v mono">1.5×</span>
+      </div>
+      <span class="port in"></span><span class="port out"></span>
+    </div>
+
+    <!-- Exec -->
+    <div class="node" style="left:1000px; top:150px;">
+      <div class="head"><span class="dot" style="background:var(--accent)"></span><span class="type">执行</span><span class="title">Execution</span></div>
+      <div class="body">
+        <span class="k">entry logic</span><span class="v mono">AND</span>
+        <span class="k">exit logic</span><span class="v mono">OR</span>
+        <span class="k">schema</span><span class="v mono">2.5</span>
+      </div>
+      <span class="port in"></span>
+    </div>
+
+    <!-- MTF Guard -->
+    <div class="node" style="left:380px; top:380px;">
+      <div class="head"><span class="dot" style="background:var(--purple)"></span><span class="type">控制</span><span class="title">MTF Guard</span></div>
+      <div class="body">
+        <span class="k">fast / slow</span><span class="v mono">5m / 1h</span>
+        <span class="k">structure</span><span class="v">order_block</span>
+        <span class="k">shadow</span><span class="v">strict</span>
+      </div>
+      <span class="port in"></span>
+    </div>
+
+    <!-- 版本面板 -->
+    <div class="panel">
+      <div class="phead">
+        <span class="ptitle">版本与最近变更</span>
+        <span class="pclose">×</span>
+      </div>
+      <div class="section">
+        <div class="slabel">最近变更</div>
+        <table>
+          <tr class="change-row"><td class="mono" style="color:var(--text-2)">2h ago</td><td class="mono">v3</td><td>补 MTF Guard + Vol 过滤</td><td class="delta">+12 节点</td></tr>
+          <tr class="change-row"><td class="mono" style="color:var(--text-2)">1d ago</td><td class="mono">v2</td><td>RSI period 21→14</td><td class="delta">2 改</td></tr>
+          <tr class="change-row"><td class="mono" style="color:var(--text-2)">3d ago</td><td class="mono">v1</td><td>初始版本</td><td class="delta">+9 节点</td></tr>
+        </table>
+      </div>
+      <div class="section">
+        <div class="slabel">版本列表</div>
+        <table>
+          <thead><tr><th>版本</th><th>状态</th><th>hash</th><th>时间</th></tr></thead>
+          <tbody>
+            <tr class="current"><td class="mono">v3</td><td><span class="badge draft">draft</span></td><td class="mono">4f7a..b209</td><td>2h ago</td></tr>
+            <tr><td class="mono">v2</td><td><span class="badge backtested">backtested</span></td><td class="mono">3c1d..8af2</td><td>1d ago</td></tr>
+            <tr><td class="mono">v1</td><td><span class="badge draft">draft</span></td><td class="mono">1b9e..0c44</td><td>3d ago</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 图例 -->
+    <div class="legend">
+      <div class="item"><span class="swatch" style="background:var(--cyan)"></span>信号/条件</div>
+      <div class="item"><span class="swatch" style="background:var(--amber)"></span>过滤</div>
+      <div class="item"><span class="swatch" style="background:var(--accent)"></span>执行</div>
+      <div class="item"><span class="swatch" style="background:var(--purple)"></span>控制平面</div>
+      <div class="item"><span class="swatch" style="background:var(--err)"></span>校验失败</div>
+    </div>
+
+    <div class="minimap"></div>
+  </div>
+
+  <!-- 底状态栏 -->
+  <div class="statusbar">
+    <div class="item"><span class="dot ok"></span> 验证通过</div>
+    <span class="sep">·</span>
+    <div class="item mono">v3 4f7a..b209</div>
+    <span class="sep">·</span>
+    <div class="item">2h ago</div>
+    <span class="sep">·</span>
+    <div class="item">12 节点 · 11 连线</div>
+    <div class="hint">
+      <kbd>⌘1</kbd>策略列表 <kbd>⌘2</kbd>节点配置 <kbd>⌘3</kbd>版本 <kbd>⌘4</kbd>风控 <kbd>⌘5</kbd>回测/模拟 <kbd>⌘6</kbd>准入
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

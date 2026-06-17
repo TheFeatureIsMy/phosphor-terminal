@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=1440, initial-scale=1" />
+<title>策略工作台 · C 浅色专业后台</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  /* 浅色专业后台风：浅灰白底 + 黑字 + 单一强调色。
+     最接近商业量化后台。画布节点用白卡 + 细灰边。
+     HUD/面板表格化。与全局 ProofAlpha 暗色冲突（需为这两页单独设 token）。 */
+  :root {
+    --bg: #F7F8FA;
+    --surface: #FFFFFF;
+    --surface-2: #F0F2F5;
+    --surface-3: #E7EAF0;
+    --border: #E1E5EC;
+    --border-2: #D2D8E2;
+    --text-1: #1A2030;
+    --text-2: #5A6577;
+    --text-3: #8B95A6;
+    --text-4: #B5BCC8;
+    --accent: #2563EB;
+    --accent-soft: rgba(37,99,235,0.08);
+    --ok: #16A34A;
+    --warn: #D97706;
+    --err: #DC2626;
+    --cyan: #0891B2;
+    --amber: #D97706;
+    --purple: #7C3AED;
+    --r-sm: 4px;
+    --r-md: 6px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    font-size: 13px;
+    color: var(--text-1);
+    background: var(--bg);
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  .app { display: flex; flex-direction: column; height: 100vh; }
+
+  /* ── 顶 HUD ── */
+  .hud {
+    height: 52px;
+    display: flex; align-items: center; gap: 14px;
+    padding: 0 20px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  .breadcrumb { font-size: 12px; color: var(--text-3); }
+  .breadcrumb .cur { color: var(--text-1); font-weight: 500; }
+  .hud .name { font-size: 15px; font-weight: 600; }
+  .hud .type-tag {
+    font-size: 10px; color: var(--text-3); padding: 2px 6px;
+    border: 1px solid var(--border-2); border-radius: 3px; background: var(--surface-2);
+  }
+  .hud .ver { color: var(--accent); font-weight: 500; }
+  .hud .hash { color: var(--text-3); }
+  .hud .age { color: var(--text-3); }
+  .hud .sep { color: var(--text-4); }
+  .hud .spacer { flex: 1; }
+  .stage-pill {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 4px 10px; background: var(--surface-2); border: 1px solid var(--border-2);
+    border-radius: 4px; font-size: 12px;
+  }
+  .stage-pill .bar { display: inline-flex; gap: 3px; }
+  .stage-pill .bar i { display: block; width: 12px; height: 5px; background: var(--border-2); border-radius: 1px; }
+  .stage-pill .bar i.on { background: var(--accent); }
+  .stage-pill .label { color: var(--text-2); }
+  .stage-pill .num { color: var(--text-1); font-weight: 500; }
+  .readiness-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 4px; font-size: 12px;
+    background: rgba(217,119,6,0.08); border: 1px solid rgba(217,119,6,0.30);
+    color: var(--warn);
+  }
+
+  .btn {
+    height: 30px; padding: 0 14px; border-radius: var(--r-sm);
+    background: var(--surface); border: 1px solid var(--border-2);
+    color: var(--text-1); font-size: 12px; cursor: pointer; font-family: inherit;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn:hover { background: var(--surface-2); }
+  .btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .btn.outline-accent { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+
+  /* ── 画布 ── */
+  .canvas-wrap { flex: 1; position: relative; overflow: hidden; background: var(--bg); }
+  .canvas-wrap::before {
+    content: ''; position: absolute; inset: 0;
+    background-image: radial-gradient(circle, rgba(0,0,0,0.06) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  /* 节点：白卡 + 细灰边，左侧色条 */
+  .node {
+    position: absolute;
+    width: 190px;
+    background: var(--surface);
+    border: 1px solid var(--border-2);
+    border-radius: var(--r-md);
+    font-size: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    overflow: hidden;
+  }
+  .node .lstripe { position: absolute; left: 0; top: 0; bottom: 0; width: 3px; }
+  .node .head {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px 6px 14px;
+  }
+  .node .head .ico {
+    width: 22px; height: 22px; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; color: #fff; font-weight: 600;
+  }
+  .node .head .meta { display: flex; flex-direction: column; gap: 1px; flex: 1; }
+  .node .head .type { font-size: 9px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.5px; }
+  .node .head .title { font-weight: 600; color: var(--text-1); font-size: 12px; }
+  .node .body {
+    padding: 4px 12px 8px 14px;
+    display: grid; grid-template-columns: auto 1fr; gap: 3px 12px;
+  }
+  .node .body .k { color: var(--text-3); font-size: 11px; }
+  .node .body .v { color: var(--text-1); font-size: 11px; text-align: right; }
+  .node .ports { display: flex; justify-content: space-between; padding: 0 12px 8px 14px; }
+  .node .ports .p {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--surface); border: 2px solid var(--border-2);
+  }
+  .node.selected { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft), 0 1px 3px rgba(0,0,0,0.06); }
+  .node.invalid { border-color: var(--err); }
+  .node.invalid .lstripe { background: var(--err) !important; }
+  .node.invalid .err-tag {
+    margin: 0 12px 8px 14px; padding: 4px 8px;
+    background: rgba(220,38,38,0.08); border-radius: 3px;
+    color: var(--err); font-size: 10px;
+  }
+
+  .edges { position: absolute; inset: 0; pointer-events: none; }
+  .edges path { fill: none; stroke: var(--border-2); stroke-width: 1.5; }
+  .edges path.hot { stroke: var(--accent); }
+  .edges path.ctrl { stroke: var(--purple); stroke-dasharray: 4 3; }
+
+  .canvas-meta {
+    position: absolute; left: 20px; top: 14px;
+    font-size: 11px; color: var(--text-3);
+    display: flex; gap: 14px; z-index: 2;
+  }
+  .canvas-meta .k { color: var(--text-4); margin-right: 4px; }
+  .zoom-ctl {
+    position: absolute; right: 20px; top: 14px;
+    display: flex; gap: 2px; z-index: 2;
+    background: var(--surface); border: 1px solid var(--border-2); border-radius: var(--r-sm);
+    padding: 2px;
+  }
+  .zoom-ctl button {
+    width: 28px; height: 24px; background: transparent; border: 0;
+    color: var(--text-2); cursor: pointer; font-family: inherit; font-size: 12px;
+    border-radius: 3px;
+  }
+  .zoom-ctl button:hover { background: var(--surface-2); color: var(--text-1); }
+  .minimap {
+    position: absolute; right: 20px; bottom: 52px;
+    width: 160px; height: 90px;
+    background: var(--surface); border: 1px solid var(--border-2); border-radius: var(--r-sm);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06); z-index: 2;
+  }
+
+  /* ── 底状态栏 ── */
+  .statusbar {
+    height: 30px;
+    display: flex; align-items: center; gap: 14px;
+    padding: 0 20px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    font-size: 11px; color: var(--text-3);
+  }
+  .statusbar .item { display: flex; align-items: center; gap: 5px; }
+  .statusbar .dot { width: 7px; height: 7px; border-radius: 50%; }
+  .statusbar .dot.ok { background: var(--ok); }
+  .statusbar .dot.err { background: var(--err); }
+  .statusbar .dot.warn { background: var(--warn); }
+  .statusbar .sep { color: var(--text-4); }
+  .statusbar .hint { margin-left: auto; color: var(--text-4); }
+  .statusbar .hint kbd {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    background: var(--surface-2); border: 1px solid var(--border-2);
+    border-radius: 3px; padding: 1px 5px; color: var(--text-2);
+    margin: 0 2px;
+  }
+
+  /* ── 唤出版本面板 ── */
+  .panel {
+    position: absolute; right: 20px; top: 80px;
+    width: 340px;
+    background: var(--surface);
+    border: 1px solid var(--border-2);
+    border-radius: var(--r-md);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.10);
+    z-index: 5;
+    overflow: hidden;
+  }
+  .panel .phead {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 14px; border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+  .panel .phead .ico {
+    width: 22px; height: 22px; border-radius: 4px;
+    background: var(--accent-soft); color: var(--accent);
+    display: flex; align-items: center; justify-content: center; font-size: 12px;
+  }
+  .panel .phead .ptitle { font-weight: 600; color: var(--text-1); flex: 1; font-size: 13px; }
+  .panel .phead .pclose {
+    width: 22px; height: 22px; border-radius: 3px;
+    color: var(--text-3); cursor: pointer; font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .panel .phead .pclose:hover { background: var(--surface-3); color: var(--text-1); }
+  .panel .section { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+  .panel .section:last-child { border-bottom: 0; }
+  .panel .slabel {
+    font-size: 10px; color: var(--text-3); text-transform: uppercase;
+    letter-spacing: 0.5px; margin-bottom: 6px; font-weight: 600;
+  }
+  .panel table { width: 100%; border-collapse: collapse; }
+  .panel th, .panel td { text-align: left; padding: 5px 4px; font-size: 11px; color: var(--text-2); border-bottom: 1px solid var(--border); }
+  .panel th { color: var(--text-3); font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: 0.4px; }
+  .panel td.mono { font-family: 'JetBrains Mono', monospace; color: var(--text-1); }
+  .panel tr:last-child td { border-bottom: 0; }
+  .panel tr.current td { background: var(--accent-soft); }
+  .panel tr.current td:first-child { color: var(--accent); font-weight: 600; }
+  .panel .badge { display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500; }
+  .panel .badge.draft { background: var(--surface-3); color: var(--text-2); }
+  .panel .badge.backtested { background: rgba(22,163,74,0.12); color: var(--ok); }
+  .panel .badge.live { background: rgba(37,99,235,0.12); color: var(--accent); }
+  .panel .change-row .delta { color: var(--ok); }
+
+  .legend {
+    position: absolute; left: 20px; bottom: 52px;
+    display: flex; gap: 14px; font-size: 10px; color: var(--text-3);
+    background: var(--surface); border: 1px solid var(--border-2);
+    border-radius: var(--r-sm); padding: 5px 10px; z-index: 2;
+  }
+  .legend .item { display: flex; align-items: center; gap: 5px; }
+  .legend .swatch { width: 3px; height: 12px; border-radius: 1px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- 顶 HUD -->
+  <div class="hud">
+    <div class="breadcrumb">Strategies › <span class="cur">BTC RSI 均值回归</span></div>
+    <span class="type-tag">rule_dsl</span>
+    <span class="type-tag">manual</span>
+    <span class="sep">·</span>
+    <span class="ver mono">v3 draft</span>
+    <span class="hash mono">4f7a..b209</span>
+    <span class="age">2h ago</span>
+    <div class="spacer"></div>
+    <div class="stage-pill">
+      <span class="bar"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span>
+      <span class="label">Backtested</span>
+      <span class="num mono">5/7</span>
+    </div>
+    <div class="readiness-pill">准入 <span class="mono">8/11</span></div>
+    <button class="btn outline-accent">验证</button>
+    <button class="btn">复制</button>
+    <button class="btn">归档</button>
+    <button class="btn">绑定实盘</button>
+    <button class="btn primary">▶ 运行模拟</button>
+    <button class="btn">⋯</button>
+  </div>
+
+  <!-- 画布 -->
+  <div class="canvas-wrap">
+    <div class="canvas-meta">
+      <span><span class="k">画布</span>BTC/USDT 5m · Binance</span>
+      <span><span class="k">节点</span>12</span>
+      <span><span class="k">连线</span>11</span>
+    </div>
+    <div class="zoom-ctl">
+      <button>−</button><button>100%</button><button>+</button><button>⌂</button>
+    </div>
+
+    <svg class="edges" viewBox="0 0 1440 700" preserveAspectRatio="none">
+      <path class="hot" d="M 280 180 C 350 180, 350 180, 420 180" />
+      <path class="hot" d="M 610 180 C 680 180, 680 180, 750 180" />
+      <path class="hot" d="M 940 180 C 1010 180, 1010 180, 1080 180" />
+      <path class="ctrl" d="M 520 240 C 520 320, 520 320, 520 380" />
+    </svg>
+
+    <!-- Signal -->
+    <div class="node" style="left:80px; top:140px;">
+      <div class="lstripe" style="background:var(--cyan)"></div>
+      <div class="head">
+        <div class="ico" style="background:var(--cyan)">📡</div>
+        <div class="meta"><span class="type">信号输入</span><span class="title">Signal Input</span></div>
+      </div>
+      <div class="body">
+        <span class="k">symbol</span><span class="v mono">BTC/USDT</span>
+        <span class="k">timeframe</span><span class="v mono">5m</span>
+        <span class="k">source</span><span class="v">signal_center</span>
+      </div>
+      <div class="ports"><span></span><span class="p"></span></div>
+    </div>
+
+    <!-- RSI（选中） -->
+    <div class="node selected" style="left:420px; top:140px;">
+      <div class="lstripe" style="background:var(--cyan)"></div>
+      <div class="head">
+        <div class="ico" style="background:var(--cyan)">📊</div>
+        <div class="meta"><span class="type">指标条件</span><span class="title">RSI 阈值</span></div>
+      </div>
+      <div class="body">
+        <span class="k">indicator</span><span class="v mono">rsi</span>
+        <span class="k">period</span><span class="v mono">14</span>
+        <span class="k">operator</span><span class="v mono">&lt;</span>
+        <span class="k">value</span><span class="v mono">30</span>
+      </div>
+      <div class="ports"><span class="p"></span><span class="p"></span></div>
+    </div>
+
+    <!-- Vol 过滤（失败） -->
+    <div class="node invalid" style="left:750px; top:140px;">
+      <div class="lstripe" style="background:var(--amber)"></div>
+      <div class="head">
+        <div class="ico" style="background:var(--amber)">🔍</div>
+        <div class="meta"><span class="type">过滤器</span><span class="title">成交量过滤</span></div>
+      </div>
+      <div class="body">
+        <span class="k">indicator</span><span class="v mono">volume</span>
+        <span class="k">operator</span><span class="v mono">&gt;</span>
+        <span class="k">value</span><span class="v mono">1.5×</span>
+      </div>
+      <div class="err-tag">⚠ DSL_INVALID_VALUE · value 必须为数值</div>
+      <div class="ports"><span class="p"></span><span class="p"></span></div>
+    </div>
+
+    <!-- Exec -->
+    <div class="node" style="left:1080px; top:140px;">
+      <div class="lstripe" style="background:var(--accent)"></div>
+      <div class="head">
+        <div class="ico" style="background:var(--accent)">🚀</div>
+        <div class="meta"><span class="type">执行输出</span><span class="title">Execution</span></div>
+      </div>
+      <div class="body">
+        <span class="k">entry logic</span><span class="v mono">AND</span>
+        <span class="k">exit logic</span><span class="v mono">OR</span>
+        <span class="k">schema</span><span class="v mono">2.5</span>
+      </div>
+      <div class="ports"><span class="p"></span><span></span></div>
+    </div>
+
+    <!-- MTF Guard -->
+    <div class="node" style="left:420px; top:380px;">
+      <div class="lstripe" style="background:var(--purple)"></div>
+      <div class="head">
+        <div class="ico" style="background:var(--purple)">🔀</div>
+        <div class="meta"><span class="type">控制平面</span><span class="title">MTF Guard</span></div>
+      </div>
+      <div class="body">
+        <span class="k">fast / slow</span><span class="v mono">5m / 1h</span>
+        <span class="k">structure</span><span class="v">order_block</span>
+        <span class="k">shadow</span><span class="v">strict</span>
+      </div>
+      <div class="ports"><span class="p"></span><span></span></div>
+    </div>
+
+    <!-- 版本面板 -->
+    <div class="panel">
+      <div class="phead">
+        <div class="ico">⌚</div>
+        <span class="ptitle">版本与最近变更</span>
+        <span class="pclose">×</span>
+      </div>
+      <div class="section">
+        <div class="slabel">最近变更</div>
+        <table>
+          <tr class="change-row"><td class="mono" style="color:var(--text-2)">2h ago</td><td class="mono">v3</td><td>补 MTF Guard + Vol 过滤</td><td class="delta">+12 节点</td></tr>
+          <tr class="change-row"><td class="mono" style="color:var(--text-2)">1d ago</td><td class="mono">v2</td><td>RSI period 21→14</td><td class="delta">2 改</td></tr>
+          <tr class="change-row"><td class="mono" style="color:var(--text-2)">3d ago</td><td class="mono">v1</td><td>初始版本</td><td class="delta">+9 节点</td></tr>
+        </table>
+      </div>
+      <div class="section">
+        <div class="slabel">版本列表</div>
+        <table>
+          <thead><tr><th>版本</th><th>状态</th><th>hash</th><th>时间</th></tr></thead>
+          <tbody>
+            <tr class="current"><td class="mono">v3</td><td><span class="badge draft">draft</span></td><td class="mono">4f7a..b209</td><td>2h ago</td></tr>
+            <tr><td class="mono">v2</td><td><span class="badge backtested">backtested</span></td><td class="mono">3c1d..8af2</td><td>1d ago</td></tr>
+            <tr><td class="mono">v1</td><td><span class="badge draft">draft</span></td><td class="mono">1b9e..0c44</td><td>3d ago</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="legend">
+      <div class="item"><span class="swatch" style="background:var(--cyan)"></span>信号/条件</div>
+      <div class="item"><span class="swatch" style="background:var(--amber)"></span>过滤</div>
+      <div class="item"><span class="swatch" style="background:var(--accent)"></span>执行</div>
+      <div class="item"><span class="swatch" style="background:var(--purple)"></span>控制平面</div>
+      <div class="item"><span class="swatch" style="background:var(--err)"></span>校验失败</div>
+    </div>
+
+    <div class="minimap"></div>
+  </div>
+
+  <!-- 底状态栏 -->
+  <div class="statusbar">
+    <div class="item"><span class="dot ok"></span> 验证通过</div>
+    <span class="sep">·</span>
+    <div class="item mono">v3 4f7a..b209</div>
+    <span class="sep">·</span>
+    <div class="item">2h ago</div>
+    <span class="sep">·</span>
+    <div class="item">12 节点 · 11 连线</div>
+    <div class="hint">
+      <kbd>⌘1</kbd>策略列表 <kbd>⌘2</kbd>节点配置 <kbd>⌘3</kbd>版本 <kbd>⌘4</kbd>风控 <kbd>⌘5</kbd>回测/模拟 <kbd>⌘6</kbd>准入
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

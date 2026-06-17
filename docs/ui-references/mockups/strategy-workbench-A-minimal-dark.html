@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=1440, initial-scale=1" />
+<title>策略工作台 · A 暗色极简终端</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  /* 暗色极简终端风：去磷光、去全大写、去 tracking、去发光、去心跳。
+     标签 sentence case，正文 Inter 13px，数字/hash/DSL JetBrains Mono。
+     状态用色点+文字。节点紧凑表格卡。面板表格化。参考 Linear / Vercel dark。 */
+  :root {
+    --bg: #0B0E12;
+    --surface: #11151B;
+    --surface-2: #161B22;
+    --border: #232A33;
+    --border-2: #2E3742;
+    --text-1: #E6EBF1;
+    --text-2: #9BA6B2;
+    --text-3: #5E6873;
+    --text-4: #3A424C;
+    --accent: #3B82F6;   /* 蓝，不用磷光绿 */
+    --accent-soft: rgba(59,130,246,0.14);
+    --ok: #22C55E;
+    --warn: #EAB308;
+    --err: #EF4444;
+    --cyan: #06B6D4;
+    --amber: #F59E0B;
+    --purple: #8B5CF6;
+    --r-sm: 4px;
+    --r-md: 6px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    font-size: 13px;
+    color: var(--text-1);
+    background: var(--bg);
+    overflow: hidden;
+  }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  .app { display: flex; flex-direction: column; height: 100vh; }
+
+  /* ── 顶 HUD（40px，细，无发光）── */
+  .hud {
+    height: 40px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 0 16px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .hud .identity { display: flex; align-items: baseline; gap: 8px; }
+  .hud .name { font-weight: 600; color: var(--text-1); }
+  .hud .ver { color: var(--text-2); }
+  .hud .hash { color: var(--text-3); }
+  .hud .age { color: var(--text-3); }
+  .hud .sep { color: var(--text-4); }
+  .hud .spacer { flex: 1; }
+  .hud .stage { display: flex; align-items: center; gap: 8px; color: var(--text-2); }
+  .hud .stage-bar { display: inline-flex; gap: 2px; }
+  .hud .stage-bar i { display: block; width: 10px; height: 4px; background: var(--border-2); border-radius: 1px; }
+  .hud .stage-bar i.on { background: var(--accent); }
+  .hud .readiness { color: var(--text-2); }
+  .hud .readiness .num { color: var(--text-1); }
+  .hud .next { display: flex; align-items: center; gap: 6px; color: var(--text-2); }
+  .hud .next .label { color: var(--text-3); }
+  .hud .next .action { color: var(--accent); cursor: pointer; }
+  .hud .actions { display: flex; gap: 6px; margin-left: 12px; }
+  .btn {
+    height: 26px; padding: 0 10px; border-radius: var(--r-sm);
+    background: var(--surface); border: 1px solid var(--border-2);
+    color: var(--text-1); font-size: 12px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 5px;
+    font-family: inherit;
+  }
+  .btn:hover { border-color: var(--text-3); }
+  .btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .btn.ghost { background: transparent; }
+
+  /* ── 画布区 ── */
+  .canvas-wrap { flex: 1; position: relative; overflow: hidden; background: var(--bg); }
+  .canvas-wrap::before {
+    /* 点阵背景，极淡 */
+    content: ''; position: absolute; inset: 0;
+    background-image: radial-gradient(circle, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  /* 节点：紧凑表格卡，无发光，头部细色条 */
+  .node {
+    position: absolute;
+    width: 180px;
+    background: var(--surface);
+    border: 1px solid var(--border-2);
+    border-radius: var(--r-md);
+    font-size: 12px;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.4);
+  }
+  .node .head {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .node .head .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .node .head .type { font-size: 10px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.4px; }
+  .node .head .title { font-weight: 500; color: var(--text-1); flex: 1; }
+  .node .body { padding: 6px 10px; display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; }
+  .node .body .k { color: var(--text-3); font-size: 11px; }
+  .node .body .v { color: var(--text-1); font-size: 11px; text-align: right; }
+  .node.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .node.invalid { border-color: var(--err); }
+  .node.invalid::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: var(--err);
+    border-radius: var(--r-md) 0 0 var(--r-md);
+  }
+
+  /* 端口 */
+  .port {
+    position: absolute; width: 8px; height: 8px; border-radius: 50%;
+    background: var(--surface-2); border: 1px solid var(--border-2);
+  }
+  .port.in { left: -5px; top: 12px; }
+  .port.out { right: -5px; top: 12px; }
+
+  /* 连线（SVG 叠在画布上） */
+  .edges { position: absolute; inset: 0; pointer-events: none; }
+  .edges path { fill: none; stroke: var(--border-2); stroke-width: 1.5; }
+  .edges path.hot { stroke: var(--accent); }
+  .edges path.ctrl { stroke: var(--purple); stroke-dasharray: 4 3; }
+
+  /* 画布角标 */
+  .canvas-meta {
+    position: absolute; left: 16px; top: 16px;
+    font-size: 11px; color: var(--text-3);
+    display: flex; gap: 12px;
+  }
+  .canvas-meta .k { color: var(--text-4); }
+  .zoom-ctl {
+    position: absolute; right: 16px; top: 16px;
+    display: flex; gap: 4px;
+    background: var(--surface); border: 1px solid var(--border-2); border-radius: var(--r-sm);
+    padding: 2px;
+  }
+  .zoom-ctl button {
+    width: 24px; height: 22px; background: transparent; border: 0;
+    color: var(--text-2); cursor: pointer; font-family: inherit; font-size: 12px;
+    border-radius: 3px;
+  }
+  .zoom-ctl button:hover { background: var(--surface-2); color: var(--text-1); }
+  .minimap {
+    position: absolute; right: 16px; bottom: 48px;
+    width: 140px; height: 80px;
+    background: var(--surface); border: 1px solid var(--border-2); border-radius: var(--r-sm);
+    opacity: 0.7;
+  }
+
+  /* ── 底状态栏 ── */
+  .statusbar {
+    height: 26px;
+    display: flex; align-items: center; gap: 14px;
+    padding: 0 16px;
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+    font-size: 11px; color: var(--text-3);
+  }
+  .statusbar .item { display: flex; align-items: center; gap: 5px; }
+  .statusbar .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .statusbar .dot.ok { background: var(--ok); }
+  .statusbar .dot.err { background: var(--err); }
+  .statusbar .dot.warn { background: var(--warn); }
+  .statusbar .sep { color: var(--text-4); }
+  .statusbar .hint { margin-left: auto; color: var(--text-4); }
+  .statusbar .hint kbd {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    background: var(--surface-2); border: 1px solid var(--border-2);
+    border-radius: 3px; padding: 0 4px; color: var(--text-2);
+    margin: 0 2px;
+  }
+
+  /* ── 唤出的版本面板（右上浮层示例）── */
+  .panel {
+    position: absolute; right: 16px; top: 56px;
+    width: 320px;
+    background: var(--surface);
+    border: 1px solid var(--border-2);
+    border-radius: var(--r-md);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    font-size: 12px;
+  }
+  .panel .phead {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px; border-bottom: 1px solid var(--border);
+  }
+  .panel .phead .ptitle { font-weight: 600; color: var(--text-1); flex: 1; }
+  .panel .phead .pclose { color: var(--text-3); cursor: pointer; font-size: 14px; }
+  .panel .section { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+  .panel .section:last-child { border-bottom: 0; }
+  .panel .slabel { font-size: 10px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 6px; }
+  .panel table { width: 100%; border-collapse: collapse; }
+  .panel th, .panel td { text-align: left; padding: 4px 6px; font-size: 11px; color: var(--text-2); border-bottom: 1px solid var(--border); }
+  .panel th { color: var(--text-3); font-weight: 500; font-size: 10px; text-transform: uppercase; letter-spacing: 0.3px; }
+  .panel td.mono { font-family: 'JetBrains Mono', monospace; color: var(--text-1); }
+  .panel tr.current td { background: var(--accent-soft); }
+  .panel tr.current td:first-child { color: var(--accent); font-weight: 500; }
+  .panel .badge { display: inline-block; padding: 1px 5px; border-radius: 3px; font-size: 10px; }
+  .panel .badge.draft { background: rgba(155,166,178,0.16); color: var(--text-2); }
+  .panel .badge.backtested { background: rgba(34,197,94,0.16); color: var(--ok); }
+  .panel .badge.live { background: rgba(59,130,246,0.16); color: var(--accent); }
+
+  .legend {
+    position: absolute; left: 16px; bottom: 48px;
+    display: flex; gap: 14px; font-size: 10px; color: var(--text-3);
+    background: var(--surface); border: 1px solid var(--border-2);
+    border-radius: var(--r-sm); padding: 4px 8px;
+  }
+  .legend .item { display: flex; align-items: center; gap: 4px; }
+  .legend .swatch { width: 8px; height: 8px; border-radius: 2px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- 顶 HUD -->
+  <div class="hud">
+    <div class="identity">
+      <span class="name">BTC RSI 均值回归</span>
+      <span class="sep">·</span>
+      <span class="ver mono">v3 draft</span>
+      <span class="sep">·</span>
+      <span class="hash mono">4f7a..b209</span>
+      <span class="sep">·</span>
+      <span class="age">2h ago</span>
+    </div>
+    <div class="spacer"></div>
+    <div class="stage">
+      <span>Backtested</span>
+      <span class="stage-bar"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span>
+      <span class="mono">5/7</span>
+    </div>
+    <span class="sep">·</span>
+    <div class="readiness">准入 <span class="num mono">8/11</span></div>
+    <span class="sep">·</span>
+    <div class="next"><span class="label">下一步</span><span class="action">运行模拟 →</span></div>
+    <div class="actions">
+      <button class="btn">验证</button>
+      <button class="btn primary">运行模拟</button>
+      <button class="btn ghost">⋯</button>
+    </div>
+  </div>
+
+  <!-- 画布 -->
+  <div class="canvas-wrap">
+    <div class="canvas-meta">
+      <span><span class="k">画布</span> BTC/USDT 5m · Binance</span>
+      <span><span class="k">节点</span> 12 · 连线 11</span>
+    </div>
+    <div class="zoom-ctl">
+      <button>−</button><button>100%</button><button>+</button><button>⌂</button>
+    </div>
+
+    <!-- 连线 -->
+    <svg class="edges" viewBox="0 0 1440 700" preserveAspectRatio="none">
+      <path class="hot" d="M 250 180 C 320 180, 320 180, 380 180" />
+      <path class="hot" d="M 560 180 C 630 180, 630 180, 690 180" />
+      <path class="hot" d="M 870 180 C 940 180, 940 180, 1000 180" />
+      <path class="ctrl" d="M 470 240 C 470 320, 470 320, 470 380" />
+    </svg>
+
+    <!-- Signal 节点 -->
+    <div class="node" style="left:70px; top:150px;">
+      <div class="head"><span class="dot" style="background:var(--cyan)"></span><span class="type">信号</span><span class="title">Signal Input</span></div>
+      <div class="body">
+        <span class="k">symbol</span><span class="v mono">BTC/USDT</span>
+        <span class="k">timeframe</span><span class="v mono">5m</span>
+        <span class="k">source</span><span class="v">signal_center</span>
+      </div>
+      <span class="port out"></span>
+    </div>
+
+    <!-- RSI 条件节点（选中） -->
+    <div class="node selected" style="left:380px; top:150px;">
+      <div class="head"><span class="dot" style="background:var(--cyan)"></span><span class="type">条件</span><span class="title">RSI 阈值</span></div>
+      <div class="body">
+        <span class="k">indicator</span><span class="v mono">rsi</span>
+        <span class="k">period</span><span class="v mono">14</span>
+        <span class="k">operator</span><span class="v mono">&lt;</span>
+        <span class="k">value</span><span class="v mono">30</span>
+      </div>
+      <span class="port in"></span><span class="port out"></span>
+    </div>
+
+    <!-- Vol 过滤节点（校验失败） -->
+    <div class="node invalid" style="left:690px; top:150px;">
+      <div class="head"><span class="dot" style="background:var(--amber)"></span><span class="type">过滤</span><span class="title">成交量过滤</span></div>
+      <div class="body">
+        <span class="k">indicator</span><span class="v mono">volume</span>
+        <span class="k">operator</span><span class="v mono">&gt;</span>
+        <span class="k">value</span><span class="v mono">1.5×</span>
+      </div>
+      <span class="port in"></span><span class="port out"></span>
+    </div>
+
+    <!-- Exec 节点 -->
+    <div class="node" style="left:1000px; top:150px;">
+      <div class="head"><span class="dot" style="background:var(--accent)"></span><span class="type">执行</span><span class="title">Execution</span></div>
+      <div class="body">
+        <span class="k">entry logic</span><span class="v mono">AND</span>
+        <span class="k">exit logic</span><span class="v mono">OR</span>
+        <span class="k">schema</span><span class="v mono">2.5</span>
+      </div>
+      <span class="port in"></span>
+    </div>
+
+    <!-- MTF Guard（控制平面） -->
+    <div class="node" style="left:380px; top:380px;">
+      <div class="head"><span class="dot" style="background:var(--purple)"></span><span class="type">控制</span><span class="title">MTF Guard</span></div>
+      <div class="body">
+        <span class="k">fast / slow</span><span class="v mono">5m / 1h</span>
+        <span class="k">structure</span><span class="v">order_block</span>
+        <span class="k">shadow</span><span class="v">strict</span>
+      </div>
+      <span class="port in"></span>
+    </div>
+
+    <!-- 唤出的版本面板示例 -->
+    <div class="panel">
+      <div class="phead">
+        <span class="ptitle">版本与最近变更</span>
+        <span class="pclose">×</span>
+      </div>
+      <div class="section">
+        <div class="slabel">最近变更</div>
+        <table>
+          <tr><td class="mono" style="color:var(--text-2)">2h ago</td><td class="mono">v3</td><td>draft</td><td class="mono">4f7a..b209</td><td>+12 节点</td></tr>
+          <tr><td class="mono" style="color:var(--text-2)">1d ago</td><td class="mono">v2</td><td>backtested</td><td class="mono">3c1d..8af2</td><td>补 MTF Guard</td></tr>
+          <tr><td class="mono" style="color:var(--text-2)">3d ago</td><td class="mono">v1</td><td>draft</td><td class="mono">1b9e..0c44</td><td>初始版本</td></tr>
+        </table>
+      </div>
+      <div class="section">
+        <div class="slabel">版本列表</div>
+        <table>
+          <thead><tr><th>版本</th><th>状态</th><th>hash</th><th>时间</th></tr></thead>
+          <tbody>
+            <tr class="current"><td class="mono">v3</td><td><span class="badge draft">draft</span></td><td class="mono">4f7a..b209</td><td>2h ago</td></tr>
+            <tr><td class="mono">v2</td><td><span class="badge backtested">backtested</span></td><td class="mono">3c1d..8af2</td><td>1d ago</td></tr>
+            <tr><td class="mono">v1</td><td><span class="badge draft">draft</span></td><td class="mono">1b9e..0c44</td><td>3d ago</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 图例 -->
+    <div class="legend">
+      <div class="item"><span class="swatch" style="background:var(--cyan)"></span>信号/条件</div>
+      <div class="item"><span class="swatch" style="background:var(--amber)"></span>过滤</div>
+      <div class="item"><span class="swatch" style="background:var(--accent)"></span>执行</div>
+      <div class="item"><span class="swatch" style="background:var(--purple)"></span>控制平面</div>
+      <div class="item"><span class="swatch" style="background:var(--err)"></span>校验失败</div>
+    </div>
+
+    <div class="minimap"></div>
+  </div>
+
+  <!-- 底状态栏 -->
+  <div class="statusbar">
+    <div class="item"><span class="dot ok"></span> 验证通过</div>
+    <span class="sep">·</span>
+    <div class="item mono">v3 4f7a..b209</div>
+    <span class="sep">·</span>
+    <div class="item">2h ago</div>
+    <span class="sep">·</span>
+    <div class="item">12 节点 · 11 连线</div>
+    <div class="hint">
+      <kbd>⌘1</kbd>策略列表 <kbd>⌘2</kbd>节点配置 <kbd>⌘3</kbd>版本 <kbd>⌘4</kbd>风控 <kbd>⌘5</kbd>回测/模拟 <kbd>⌘6</kbd>准入
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=1440, initial-scale=1" />
+<title>策略工作台 · D 纯黑 IDE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  /* 纯黑 IDE 风：极深黑底 + 高对比白字 + 唯一强调色（青）。
+     零装饰、零圆角、零渐变。节点是直角边框块。HUD/面板是纯文本行+分隔线。
+     最冷峻最反装饰。参考裸终端 / IDE / tldraw。 */
+  :root {
+    --bg: #050505;
+    --surface: #0A0A0A;
+    --surface-2: #111111;
+    --border: #1F1F1F;
+    --border-2: #2A2A2A;
+    --text-1: #E8E8E8;
+    --text-2: #888888;
+    --text-3: #555555;
+    --text-4: #333333;
+    --accent: #00E5CC;   /* 单一青 */
+    --accent-soft: rgba(0,229,204,0.10);
+    --ok: #00E5CC;
+    --warn: #FFB020;
+    --err: #FF4444;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; border-radius: 0 !important; }
+  html, body { height: 100%; }
+  body {
+    font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--text-1);
+    background: var(--bg);
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  .sans { font-family: 'Inter', sans-serif; }
+
+  .app { display: flex; flex-direction: column; height: 100vh; }
+
+  /* ── 顶 HUD：纯文本行 + 横线分隔，无背景区分 ── */
+  .hud {
+    border-bottom: 1px solid var(--border);
+    padding: 6px 16px;
+    font-size: 11px;
+    line-height: 1.6;
+  }
+  .hud-row { display: flex; align-items: center; gap: 10px; }
+  .hud .name { color: var(--text-1); font-weight: 600; }
+  .hud .ver { color: var(--accent); }
+  .hud .hash { color: var(--text-2); }
+  .hud .age { color: var(--text-3); }
+  .hud .sep { color: var(--text-4); }
+  .hud .spacer { flex: 1; }
+  .hud .stage { color: var(--text-2); }
+  .hud .stage .bar { display: inline-flex; gap: 2px; margin: 0 4px; vertical-align: middle; }
+  .hud .stage .bar i { display: block; width: 10px; height: 6px; background: var(--border-2); }
+  .hud .stage .bar i.on { background: var(--accent); }
+  .hud .readiness { color: var(--warn); }
+  .hud .next { color: var(--text-3); }
+  .hud .next .arrow { color: var(--accent); cursor: pointer; }
+
+  .btn {
+    height: 22px; padding: 0 10px;
+    background: transparent; border: 1px solid var(--border-2);
+    color: var(--text-1); font-size: 11px; cursor: pointer;
+    font-family: inherit;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .btn:hover { border-color: var(--text-2); }
+  .btn.primary { background: var(--accent); color: #000; border-color: var(--accent); }
+  .btn.accent { border-color: var(--accent); color: var(--accent); }
+
+  /* ── 画布 ── */
+  .canvas-wrap { flex: 1; position: relative; overflow: hidden; background: var(--bg); }
+  .canvas-wrap::before {
+    content: ''; position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+
+  /* 节点：直角边框块，无圆角无填充色，仅边框 + 内文字 */
+  .node {
+    position: absolute;
+    width: 190px;
+    background: var(--surface);
+    border: 1px solid var(--border-2);
+    font-size: 11px;
+    line-height: 1.5;
+  }
+  .node .head {
+    display: flex; align-items: center; gap: 6px;
+    padding: 4px 8px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+  .node .head .tag {
+    font-size: 9px; color: var(--text-3); text-transform: uppercase;
+    letter-spacing: 0.5px; padding: 1px 4px; border: 1px solid var(--border-2);
+  }
+  .node .head .title { color: var(--text-1); flex: 1; font-weight: 500; }
+  .node .body { padding: 4px 8px; }
+  .node .body .row { display: flex; justify-content: space-between; gap: 8px; }
+  .node .body .k { color: var(--text-3); }
+  .node .body .v { color: var(--text-1); }
+  .node.selected { border-color: var(--accent); }
+  .node.selected .head { background: var(--accent-soft); }
+  .node.invalid { border-color: var(--err); }
+  .node.invalid .err {
+    padding: 3px 8px; border-top: 1px solid var(--border);
+    color: var(--err); font-size: 10px; background: rgba(255,68,68,0.06);
+  }
+
+  .edges { position: absolute; inset: 0; pointer-events: none; }
+  .edges path { fill: none; stroke: var(--text-3); stroke-width: 1; }
+  .edges path.hot { stroke: var(--accent); }
+  .edges path.ctrl { stroke: var(--text-2); stroke-dasharray: 3 3; }
+
+  .canvas-meta {
+    position: absolute; left: 16px; top: 12px;
+    font-size: 10px; color: var(--text-3);
+    display: flex; gap: 14px; z-index: 2;
+  }
+  .canvas-meta .k { color: var(--text-4); margin-right: 3px; }
+  .zoom-ctl {
+    position: absolute; right: 16px; top: 12px;
+    display: flex; z-index: 2;
+    border: 1px solid var(--border-2);
+  }
+  .zoom-ctl button {
+    width: 28px; height: 22px; background: var(--surface); border: 0;
+    border-right: 1px solid var(--border-2);
+    color: var(--text-2); cursor: pointer; font-family: inherit; font-size: 11px;
+  }
+  .zoom-ctl button:last-child { border-right: 0; }
+  .zoom-ctl button:hover { background: var(--surface-2); color: var(--text-1); }
+
+  /* ── 底状态栏：纯文本行 + 顶部分隔线 ── */
+  .statusbar {
+    border-top: 1px solid var(--border);
+    padding: 4px 16px;
+    font-size: 10px; color: var(--text-3);
+    display: flex; gap: 12px; align-items: center;
+  }
+  .statusbar .item { display: flex; align-items: center; gap: 4px; }
+  .statusbar .dot { width: 6px; height: 6px; }
+  .statusbar .dot.ok { background: var(--ok); }
+  .statusbar .dot.err { background: var(--err); }
+  .statusbar .dot.warn { background: var(--warn); }
+  .statusbar .sep { color: var(--text-4); }
+  .statusbar .hint { margin-left: auto; color: var(--text-4); }
+  .statusbar .hint kbd {
+    font-family: inherit; font-size: 10px;
+    border: 1px solid var(--border-2); padding: 0 4px;
+    color: var(--text-2); margin: 0 2px;
+  }
+
+  /* ── 唤出版本面板：纯文本块 + 分隔线 ── */
+  .panel {
+    position: absolute; right: 16px; top: 70px;
+    width: 320px;
+    background: var(--surface);
+    border: 1px solid var(--border-2);
+    z-index: 5;
+    font-size: 11px;
+  }
+  .panel .phead {
+    display: flex; align-items: center; gap: 8px;
+    padding: 5px 10px; border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+  .panel .phead .ptitle { color: var(--text-1); flex: 1; font-weight: 600; }
+  .panel .phead .pclose { color: var(--text-3); cursor: pointer; }
+  .panel .section { padding: 6px 10px; border-bottom: 1px solid var(--border); }
+  .panel .section:last-child { border-bottom: 0; }
+  .panel .slabel { color: var(--text-3); font-size: 9px; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 4px; }
+  .panel .row {
+    display: grid; grid-template-columns: 60px 28px 1fr 70px;
+    gap: 8px; padding: 2px 0;
+    border-bottom: 1px dotted var(--border);
+    font-size: 10px;
+  }
+  .panel .row:last-child { border-bottom: 0; }
+  .panel .row .age { color: var(--text-2); }
+  .panel .row .ver { color: var(--accent); }
+  .panel .row .desc { color: var(--text-1); }
+  .panel .row .delta { color: var(--ok); text-align: right; }
+  .panel .vrow {
+    display: grid; grid-template-columns: 28px 80px 1fr 50px;
+    gap: 8px; padding: 2px 0;
+    border-bottom: 1px dotted var(--border);
+    font-size: 10px;
+  }
+  .panel .vrow:last-child { border-bottom: 0; }
+  .panel .vrow.current { background: var(--accent-soft); }
+  .panel .vrow .v { color: var(--accent); font-weight: 600; }
+  .panel .vrow .v.dim { color: var(--text-2); font-weight: 400; }
+  .panel .vrow .status { color: var(--text-2); }
+  .panel .vrow .hash { color: var(--text-2); }
+  .panel .vrow .t { color: var(--text-3); text-align: right; }
+  .panel .status-tag { font-size: 9px; padding: 0 3px; border: 1px solid var(--border-2); color: var(--text-2); }
+  .panel .status-tag.ok { color: var(--ok); border-color: var(--ok); }
+  .panel .status-tag.cur { color: var(--accent); border-color: var(--accent); }
+
+  .legend {
+    position: absolute; left: 16px; bottom: 40px;
+    display: flex; gap: 12px; font-size: 9px; color: var(--text-3);
+    border: 1px solid var(--border-2); padding: 3px 8px;
+    background: var(--surface); z-index: 2;
+  }
+  .legend .item { display: flex; align-items: center; gap: 4px; }
+  .legend .swatch { width: 8px; height: 8px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- 顶 HUD -->
+  <div class="hud">
+    <div class="hud-row">
+      <span class="name">BTC RSI 均值回归</span>
+      <span class="sep">·</span>
+      <span class="ver">v3 draft</span>
+      <span class="sep">·</span>
+      <span class="hash">4f7a..b209</span>
+      <span class="sep">·</span>
+      <span class="age">2h ago</span>
+      <div class="spacer"></div>
+      <button class="btn accent">验证</button>
+      <button class="btn">复制</button>
+      <button class="btn">归档</button>
+      <button class="btn">绑定实盘</button>
+      <button class="btn primary">运行模拟</button>
+      <button class="btn">⋯</button>
+    </div>
+    <div class="hud-row" style="margin-top:3px">
+      <span class="stage">stage <span class="bar"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span> backtested 5/7</span>
+      <span class="sep">·</span>
+      <span class="readiness">准入 8/11</span>
+      <span class="sep">·</span>
+      <span class="next">next: <span class="arrow">运行模拟 →</span></span>
+      <div class="spacer"></div>
+      <span style="color:var(--text-3)">last backtest <span style="color:var(--ok)">+18.4%</span> WR 62% DD 9.1% Sharpe 1.7 06-12</span>
+    </div>
+  </div>
+
+  <!-- 画布 -->
+  <div class="canvas-wrap">
+    <div class="canvas-meta">
+      <span><span class="k">canvas</span>BTC/USDT 5m · Binance</span>
+      <span><span class="k">nodes</span>12</span>
+      <span><span class="k">edges</span>11</span>
+    </div>
+    <div class="zoom-ctl">
+      <button>−</button><button>100%</button><button>+</button><button>⌂</button>
+    </div>
+
+    <svg class="edges" viewBox="0 0 1440 700" preserveAspectRatio="none">
+      <path class="hot" d="M 280 180 C 350 180, 350 180, 420 180" />
+      <path class="hot" d="M 610 180 C 680 180, 680 180, 750 180" />
+      <path class="hot" d="M 940 180 C 1010 180, 1010 180, 1080 180" />
+      <path class="ctrl" d="M 520 240 C 520 320, 520 320, 520 380" />
+    </svg>
+
+    <!-- Signal -->
+    <div class="node" style="left:80px; top:140px;">
+      <div class="head"><span class="tag">SIG</span><span class="title">Signal Input</span></div>
+      <div class="body">
+        <div class="row"><span class="k">symbol</span><span class="v">BTC/USDT</span></div>
+        <div class="row"><span class="k">timeframe</span><span class="v">5m</span></div>
+        <div class="row"><span class="k">source</span><span class="v">signal_center</span></div>
+      </div>
+    </div>
+
+    <!-- RSI（选中） -->
+    <div class="node selected" style="left:420px; top:140px;">
+      <div class="head"><span class="tag">IND</span><span class="title">RSI 阈值</span></div>
+      <div class="body">
+        <div class="row"><span class="k">indicator</span><span class="v">rsi</span></div>
+        <div class="row"><span class="k">period</span><span class="v">14</span></div>
+        <div class="row"><span class="k">operator</span><span class="v">&lt;</span></div>
+        <div class="row"><span class="k">value</span><span class="v">30</span></div>
+      </div>
+    </div>
+
+    <!-- Vol 过滤（失败） -->
+    <div class="node invalid" style="left:750px; top:140px;">
+      <div class="head"><span class="tag">FLT</span><span class="title">成交量过滤</span></div>
+      <div class="body">
+        <div class="row"><span class="k">indicator</span><span class="v">volume</span></div>
+        <div class="row"><span class="k">operator</span><span class="v">&gt;</span></div>
+        <div class="row"><span class="k">value</span><span class="v">1.5×</span></div>
+      </div>
+      <div class="err">! DSL_INVALID_VALUE · value 必须为数值</div>
+    </div>
+
+    <!-- Exec -->
+    <div class="node" style="left:1080px; top:140px;">
+      <div class="head"><span class="tag">EXE</span><span class="title">Execution</span></div>
+      <div class="body">
+        <div class="row"><span class="k">entry</span><span class="v">AND</span></div>
+        <div class="row"><span class="k">exit</span><span class="v">OR</span></div>
+        <div class="row"><span class="k">schema</span><span class="v">2.5</span></div>
+      </div>
+    </div>
+
+    <!-- MTF Guard -->
+    <div class="node" style="left:420px; top:380px;">
+      <div class="head"><span class="tag">MTF</span><span class="title">MTF Guard</span></div>
+      <div class="body">
+        <div class="row"><span class="k">fast/slow</span><span class="v">5m/1h</span></div>
+        <div class="row"><span class="k">structure</span><span class="v">order_block</span></div>
+        <div class="row"><span class="k">shadow</span><span class="v">strict</span></div>
+      </div>
+    </div>
+
+    <!-- 版本面板 -->
+    <div class="panel">
+      <div class="phead">
+        <span class="ptitle">VERSIONS · CHANGES</span>
+        <span class="pclose">×</span>
+      </div>
+      <div class="section">
+        <div class="slabel">recent changes</div>
+        <div class="row"><span class="age">2h ago</span><span class="ver">v3</span><span class="desc">补 MTF Guard + Vol 过滤</span><span class="delta">+12 nodes</span></div>
+        <div class="row"><span class="age">1d ago</span><span class="ver">v2</span><span class="desc">RSI period 21→14</span><span class="delta">2 changed</span></div>
+        <div class="row"><span class="age">3d ago</span><span class="ver">v1</span><span class="desc">初始版本</span><span class="delta">+9 nodes</span></div>
+      </div>
+      <div class="section">
+        <div class="slabel">versions</div>
+        <div class="vrow current"><span class="v">v3</span><span class="status"><span class="status-tag cur">draft</span></span><span class="hash">4f7a..b209</span><span class="t">2h ago</span></div>
+        <div class="vrow"><span class="v dim">v2</span><span class="status"><span class="status-tag ok">backtested</span></span><span class="hash">3c1d..8af2</span><span class="t">1d ago</span></div>
+        <div class="vrow"><span class="v dim">v1</span><span class="status"><span class="status-tag">draft</span></span><span class="hash">1b9e..0c44</span><span class="t">3d ago</span></div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <div class="item"><span class="swatch" style="background:var(--accent)"></span>signal/ind</div>
+      <div class="item"><span class="swatch" style="background:var(--warn)"></span>filter</div>
+      <div class="item"><span class="swatch" style="background:var(--accent)"></span>exec</div>
+      <div class="item"><span class="swatch" style="background:var(--text-2)"></span>control</div>
+      <div class="item"><span class="swatch" style="background:var(--err)"></span>invalid</div>
+    </div>
+  </div>
+
+  <!-- 底状态栏 -->
+  <div class="statusbar">
+    <div class="item"><span class="dot ok"></span> valid</div>
+    <span class="sep">·</span>
+    <div class="item">v3 4f7a..b209</div>
+    <span class="sep">·</span>
+    <div class="item">2h ago</div>
+    <span class="sep">·</span>
+    <div class="item">12 nodes · 11 edges</div>
+    <div class="hint">
+      <kbd>⌘1</kbd>list <kbd>⌘2</kbd>node <kbd>⌘3</kbd>versions <kbd>⌘4</kbd>risk <kbd>⌘5</kbd>backtest <kbd>⌘6</kbd>readiness
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
