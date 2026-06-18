@@ -37,7 +37,8 @@ import app.domain.inference  # noqa: F401, E402
 import app.domain.mcp  # noqa: F401, E402
 import app.domain.reconciliation  # noqa: F401, E402
 import app.domain.archive  # noqa: F401, E402
-import app.domain.runtime  # noqa: F401, E402
+import app.domain.runtime  # noqa: F401
+import app.domain.activity_log  # noqa: F401, E402
 
 config = context.config
 

@@ -16,7 +16,7 @@ class InferenceJob(UUIDMixin, TimestampMixin, Base):
     job_type: Mapped[str] = mapped_column(String(64), nullable=False)
     model_name: Mapped[str] = mapped_column(String(128), nullable=False)
     provider_id: Mapped[uuid.UUID | None] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("ai_provider_configs.id"),
+        PG_UUID(as_uuid=True),
     )
     status: Mapped[str] = mapped_column(String(16), nullable=False, server_default="queued")
 

@@ -4,6 +4,8 @@ from sqlalchemy.orm import sessionmaker, Session
 from app.config import settings
 from app.database.base import Base
 
+from app.domain.activity_log import StrategyActivityLog  # noqa: F401
+
 engine = create_engine(settings.database_url)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
