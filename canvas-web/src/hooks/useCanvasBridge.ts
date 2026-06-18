@@ -1,4 +1,5 @@
 import { useEffect, useCallback, useRef } from 'react'
+import type { Dispatch, SetStateAction } from 'react'
 import type { Node, Edge } from '@xyflow/react'
 import { setBridgeHandler, sendToSwift } from '../bridge'
 import { graphToDsl } from '../converters/graphToDsl'
@@ -6,12 +7,13 @@ import { dslToGraph } from '../converters/dslToGraph'
 import type { SwiftToReactMessage, ValidationReport, AnyRulePackageDSL } from '../types'
 
 interface UseBridgeParams {
-  setNodes: (nodes: Node[]) => void
-  setEdges: (edges: Edge[]) => void
+  setNodes: Dispatch<SetStateAction<Node[]>>
+  setEdges: Dispatch<SetStateAction<Edge[]>>
   setValidation: (report: ValidationReport | null) => void
+  onReadOnlyChange?: (readOnly: boolean) => void
 }
 
-export function useCanvasBridge({ setNodes, setEdges, setValidation }: UseBridgeParams) {
+export function useCanvasBridge({ setNodes, setEdges, setValidation, onReadOnlyChange }: UseBridgeParams) {
   const nodesRef = useRef<Node[]>([])
   const edgesRef = useRef<Edge[]>([])
 
@@ -41,6 +43,14 @@ export function useCanvasBridge({ setNodes, setEdges, setValidation }: UseBridge
         setValidation(msg.payload)
         break
       }
+      case 'setReadOnly': {
+        onReadOnlyChange?.(msg.readOnly)
+        break
+      }
+      case 'updateNodeData': {
+        setNodes(ns => ns.map(n => n.id === msg.nodeId ? { ...n, data: msg.data } : n))
+        break
+      }
       case 'mtfGuardStateUpdate': {
         const { guardId, state, reasonCodes } = msg.payload
         // Update all edges whose data.guardId matches
@@ -63,7 +73,7 @@ export function useCanvasBridge({ setNodes, setEdges, setValidation }: UseBridge
         break
       }
     }
-  }, [setNodes, setEdges, setValidation])
+  }, [setNodes, setEdges, setValidation, onReadOnlyChange])
 
   useEffect(() => {
     setBridgeHandler(handleMessage)

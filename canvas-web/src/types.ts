@@ -179,12 +179,16 @@ export type SwiftToReactMessage =
   | { type: 'loadDSL'; payload: { dsl: AnyRulePackageDSL } }
   | { type: 'validationResult'; payload: ValidationReport }
   | { type: 'mtfGuardStateUpdate'; payload: { guardId: string; state: string; action: string; reasonCodes: string[] } }
+  | { type: 'setReadOnly'; readOnly: boolean }
+  | { type: 'updateNodeData'; nodeId: string; data: Record<string, unknown> }
 
 export type ReactToSwiftMessage =
   | { type: 'canvasReady' }
   | { type: 'graphChanged'; payload: { dsl: AnyRulePackageDSL | null; graphState: string } }
   | { type: 'requestValidation'; payload: { dsl: AnyRulePackageDSL } }
   | { type: 'requestSaveVersion'; payload: { dsl: AnyRulePackageDSL } }
+  | { type: 'selectionChanged'; selectedNode: { id: string; type: string; data: Record<string, unknown> } | null }
+  | { type: 'graphStats'; nodeCount: number; edgeCount: number; validation: 'valid' | 'invalid' | 'unvalidated' }
 
 export interface NodeValidationState {
   errors: DSLError[]

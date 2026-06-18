@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useMemo } from 'react'
+import { useState, useCallback, useRef, useMemo, useEffect } from 'react'
 import {
   ReactFlow, Controls, MiniMap, Background, BackgroundVariant,
   addEdge, useNodesState, useEdgesState,
@@ -20,6 +20,7 @@ import { NodeConfigPanel } from './panels/NodeConfigPanel'
 import { useCanvasBridge } from './hooks/useCanvasBridge'
 import { mapErrorsToNodes } from './hooks/useValidation'
 import { graphToDsl } from './converters/graphToDsl'
+import { sendToSwift } from './bridge'
 import type { ValidationReport } from './types'
 
 const nodeTypes: NodeTypes = {
@@ -64,6 +65,7 @@ export default function App() {
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
   const [validation, setValidation] = useState<ValidationReport | null>(null)
+  const [readOnly, setReadOnly] = useState(false)
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined)
   const nodesRef = useRef<Node[]>([])
   const edgesRef = useRef<Edge[]>([])
@@ -71,13 +73,14 @@ export default function App() {
   nodesRef.current = nodes
   edgesRef.current = edges
 
-  const bridgeSetNodes = useCallback((n: Node[]) => setNodes(n), [setNodes])
-  const bridgeSetEdges = useCallback((e: Edge[]) => setEdges(e), [setEdges])
+  const bridgeSetNodes = useCallback((n: Node[] | ((prev: Node[]) => Node[])) => setNodes(n), [setNodes])
+  const bridgeSetEdges = useCallback((e: Edge[] | ((prev: Edge[]) => Edge[])) => setEdges(e), [setEdges])
 
   const { notifyGraphChanged, requestValidation, requestSaveVersion } = useCanvasBridge({
     setNodes: bridgeSetNodes,
     setEdges: bridgeSetEdges,
     setValidation,
+    onReadOnlyChange: setReadOnly,
   })
 
   const selectedNode = useMemo(
@@ -101,6 +104,23 @@ export default function App() {
   const onPaneClick = useCallback(() => {
     setSelectedNodeId(null)
   }, [])
+
+  const onSelectionChange = useCallback(({ nodes }: { nodes: Node[] }) => {
+    const sel = nodes[0] ?? null
+    sendToSwift({
+      type: 'selectionChanged',
+      selectedNode: sel ? { id: sel.id, type: sel.type ?? '', data: sel.data as Record<string, unknown> } : null,
+    })
+  }, [])
+
+  useEffect(() => {
+    sendToSwift({
+      type: 'graphStats',
+      nodeCount: nodes.length,
+      edgeCount: edges.length,
+      validation: validation == null ? 'unvalidated' : validation.valid ? 'valid' : 'invalid',
+    })
+  }, [nodes.length, edges.length, validation?.valid])
 
   const scheduleNotify = useCallback(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
@@ -168,7 +188,7 @@ export default function App() {
       <div className="node-palette">
         <div className="palette-title">组件</div>
         {PALETTE.map(entry => (
-          <div key={entry.type} className="palette-item" onClick={() => addNode(entry)}>
+          <div key={entry.type} className={`palette-item${readOnly ? ' palette-readonly' : ''}`} onClick={readOnly ? undefined : () => addNode(entry)}>
             <span className="palette-icon">{entry.icon}</span>
             <span className="palette-label">{entry.label}</span>
           </div>
@@ -184,10 +204,14 @@ export default function App() {
           onConnect={handleConnect}
           onNodeClick={onNodeClick}
           onPaneClick={onPaneClick}
+          onSelectionChange={onSelectionChange}
+          nodesDraggable={!readOnly}
+          nodesConnectable={!readOnly}
+          elementsSelectable={true}
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
           fitView
-          deleteKeyCode="Delete"
+          deleteKeyCode={readOnly ? null : 'Delete'}
           multiSelectionKeyCode="Meta"
           defaultEdgeOptions={{
             type: 'smoothstep',
@@ -216,7 +240,7 @@ export default function App() {
         <div className="canvas-toolbar">
           <button className="toolbar-btn" onClick={handleValidate}>验证</button>
           <button className="toolbar-btn primary" onClick={handleSave}
-            disabled={!dslResult.dsl || (validation != null && !validation.valid)}>
+            disabled={readOnly || !dslResult.dsl || (validation != null && !validation.valid)}>
             保存
           </button>
         </div>
