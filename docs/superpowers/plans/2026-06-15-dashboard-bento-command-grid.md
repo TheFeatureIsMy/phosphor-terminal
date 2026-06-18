@@ -1,5 +1,10 @@
 # Dashboard Bento Command Grid — Implementation Plan
 
+> ⚠️ **SUPERSEDED 2026-06-17.** 原始 plan 在 2026-06-15 实施，交付了第一代 Dashboard。
+> 2026-06-17 完成了进一步重构：消除 `PositionRiskTable.mockPositions` 等所有硬编码假数据；扩充 APIOverview / DashboardViewModel 并行 7 源；改写 `LiveReadinessCard` 显示真实 11 项门禁；新增 ModePill / DashboardStatusStrip / ProviderHealthCard / AIModelStatusCard / SignalsFeedCard；Top bar 重构为两行（含 mode pill + 主动作 + 状态描点条）。
+> 详细重构见 [specs/2026-06-17-dashboard-live-readiness-refactor-design.md](../specs/2026-06-17-dashboard-live-readiness-refactor-design.md) 与 [archive/refactor/2026-06-17-dashboard-live-readiness-refactor.md](../../archive/refactor/2026-06-17-dashboard-live-readiness-refactor.md)。
+> 本文件保留作为历史参考；新变更请直接修改后续 spec，不要继续修改本 plan。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Rebuild the Dashboard as a PRD-driven trading operation control tower with Bento Command Grid layout, single BFF endpoint, reason_codes on every card, and bilingual L10n.

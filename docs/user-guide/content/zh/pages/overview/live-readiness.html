@@ -1,119 +1,166 @@
-<h1>实盘准入检查</h1>
+<h1>实盘准入控制台</h1>
 <p class="chapter-meta">页面 · 总览 · 5 分钟</p>
 
-<blockquote class="lede">在启动实盘交易之前，系统会对基础设施、交易所连接、性能指标进行全面检查，告诉你"现在可以上线吗"。</blockquote>
+<blockquote class="lede">单屏可判断：5 级总状态 + 11 项门禁 + 三重启动确认。基础设施 / 策略 / 资金 / 风控 / 交易所任一未配，准入即被阻断。</blockquote>
 
 <h2>TL;DR</h2>
-<p>实盘准入检查是一个安全门。它汇总所有关键系统（Fast Track、Redis、Freqtrade、交易所 API）的健康状态，计算一个 0-100 的准入分数，并明确告诉你当前允许的交易模式：仅模拟、小仓实盘、还是全量实盘。任何阻断项都会阻止你进入更高风险的模式。</p>
+<p>实盘准入是一个<strong>一屏可判断</strong>的控制台。它汇总 11 项关键门禁（mode / strategy / capital / risk_config / exchange / data_source / validation / backtest / dryrun / notification / emergency_stop），推导 5 级总状态：<strong>不可实盘 → 待配置 → 待验证 → 模拟通过 → 可进入实盘</strong>。启动实盘必须经过三重确认（启动摘要 → 勾选理解 → 输入确认短语 <code>I confirm live trading</code>），不允许误触发。</p>
 
 <h2>谁用 · 何时用</h2>
-<p>每次从模拟交易切换到实盘之前，或者怀疑系统有问题时。新策略上线前也建议先过一遍准入检查，确认交易所连接正常、网络延迟在阈值以内。日常运营中如果看到 Dashboard 顶部状态栏出现异常，也应该来这里看看具体问题出在哪里。</p>
+<p>每次从模拟交易切换到实盘之前。新策略上线 / 修改资金池 / 切换交易所后。日常运营中如果 Top Bar 状态条出现异常，也应该来这里看具体哪一项门禁失败了。</p>
 
-<h2>页面解剖</h2>
+<h2>页面解剖（一屏布局）</h2>
 
-<svg class="diagram" viewBox="0 0 600 340" xmlns="http://www.w3.org/2000/svg">
-  <rect x="0" y="0" width="600" height="340" fill="rgba(255,255,255,0.02)" rx="8"/>
+<svg class="diagram" viewBox="0 0 600 540" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="600" height="540" fill="rgba(255,255,255,0.02)" rx="8"/>
 
-  <!-- Score circle (left) -->
-  <circle cx="100" cy="90" r="54" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="10"/>
-  <circle cx="100" cy="90" r="54" fill="none" stroke="#f5c542" stroke-width="10" stroke-dasharray="340" stroke-dashoffset="48" stroke-linecap="round" transform="rotate(-90 100 90)"/>
-  <text x="100" y="88" fill="#f5c542" font-family="monospace" font-size="30" font-weight="bold" text-anchor="middle">86</text>
-  <text x="100" y="108" fill="#9ca0a8" font-family="monospace" font-size="10" text-anchor="middle">/ 100</text>
-  <text x="100" y="150" fill="#9ca0a8" font-family="monospace" font-size="9" text-anchor="middle">准入分数</text>
+  <!-- HEADER: title + grand status badge -->
+  <text x="20" y="28" fill="#00ff9d" font-family="monospace" font-size="11">//</text>
+  <text x="36" y="28" fill="#e8eaee" font-family="monospace" font-size="14" font-weight="bold">实盘准入 LIVE READINESS</text>
+  <rect x="280" y="14" width="130" height="20" fill="rgba(0,255,157,0.10)" rx="10" stroke="rgba(0,255,157,0.30)"/>
+  <text x="345" y="28" fill="#00ff9d" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">READY FOR LIVE</text>
+  <text x="430" y="28" fill="#9ca0a8" font-family="monospace" font-size="9" text-anchor="end">▷ 重新检查</text>
 
-  <!-- State banner (right) -->
-  <rect x="200" y="36" width="380" height="110" fill="rgba(245,197,66,0.06)" rx="6" stroke="rgba(245,197,66,0.2)" stroke-width="1"/>
-  <circle cx="214" cy="56" r="5" fill="#f5c542"/>
-  <text x="226" y="60" fill="#f5c542" font-family="monospace" font-size="14" font-weight="bold">LIVE_SMALL_READY</text>
-  <text x="210" y="82" fill="#9ca0a8" font-family="monospace" font-size="9">部分项存在警告，仅允许小仓实盘</text>
-  <text x="210" y="104" fill="#00ff9d" font-family="monospace" font-size="9">Paper: ✓   Live Small: ✓   Full Live: ✗</text>
+  <!-- SELECTION row -->
+  <rect x="20" y="50" width="560" height="60" fill="rgba(255,255,255,0.02)" rx="4" stroke="rgba(255,255,255,0.05)"/>
+  <text x="28" y="68" fill="#9ca0a8" font-family="monospace" font-size="8">运行选择 SELECTION</text>
+  <rect x="28" y="76" width="130" height="26" fill="rgba(255,255,255,0.04)" rx="2"/>
+  <text x="36" y="86" fill="#5e636d" font-family="monospace" font-size="7">MODE</text>
+  <text x="36" y="98" fill="#e8eaee" font-family="monospace" font-size="10">小仓实盘</text>
+  <rect x="166" y="76" width="130" height="26" fill="rgba(255,255,255,0.04)" rx="2"/>
+  <text x="174" y="86" fill="#5e636d" font-family="monospace" font-size="7">STRATEGY</text>
+  <text x="174" y="98" fill="#e8eaee" font-family="monospace" font-size="10">BTC 结构化剥头皮</text>
+  <rect x="304" y="76" width="130" height="26" fill="rgba(255,255,255,0.04)" rx="2"/>
+  <text x="312" y="86" fill="#5e636d" font-family="monospace" font-size="7">CAPITAL POOL</text>
+  <text x="312" y="98" fill="#e8eaee" font-family="monospace" font-size="10">默认资金池</text>
+  <rect x="442" y="76" width="130" height="26" fill="rgba(255,255,255,0.04)" rx="2"/>
+  <text x="450" y="86" fill="#5e636d" font-family="monospace" font-size="7">EXCHANGE</text>
+  <text x="450" y="98" fill="#e8eaee" font-family="monospace" font-size="10">BINANCE</text>
 
-  <!-- Warnings section -->
-  <rect x="16" y="164" width="568" height="40" fill="rgba(245,197,66,0.04)" rx="6" stroke="rgba(245,197,66,0.12)" stroke-width="1"/>
-  <text x="24" y="182" fill="#f5c542" font-family="monospace" font-size="9">警告项</text>
-  <text x="24" y="196" fill="#f5c542" font-family="monospace" font-size="8">⚠ exchange_api_weight_warning — 交易所 API 权重剩余偏低</text>
+  <!-- GATES panel (11 items, 2 columns) -->
+  <rect x="20" y="120" width="560" height="280" fill="rgba(255,255,255,0.02)" rx="4" stroke="rgba(255,255,255,0.05)"/>
+  <text x="28" y="138" fill="#9ca0a8" font-family="monospace" font-size="8">11 项门禁 GATES</text>
 
-  <!-- System check grid -->
-  <rect x="16" y="216" width="134" height="60" fill="rgba(0,255,157,0.06)" rx="4" stroke="rgba(0,255,157,0.15)" stroke-width="1"/>
-  <circle cx="50" cy="236" r="4" fill="#00ff9d"/>
-  <text x="62" y="240" fill="#9ca0a8" font-family="monospace" font-size="8">Fast Track</text>
-  <text x="40" y="256" fill="#e8eaee" font-family="monospace" font-size="10">45ms</text>
-  <text x="40" y="268" fill="#5e636d" font-family="monospace" font-size="7">&lt;200ms</text>
+  <!-- Left column -->
+  <text x="28" y="158" fill="#5e636d" font-family="monospace" font-size="8">MODE</text>
+  <circle cx="36" cy="172" r="3" fill="#00ff9d"/>
+  <text x="48" y="175" fill="#e8eaee" font-family="monospace" font-size="9">模式选择</text>
+  <text x="270" y="175" fill="#00ff9d" font-family="monospace" font-size="9" text-anchor="end">LIVE_SMALL</text>
 
-  <rect x="158" y="216" width="134" height="60" fill="rgba(0,255,157,0.06)" rx="4" stroke="rgba(0,255,157,0.15)" stroke-width="1"/>
-  <circle cx="192" cy="236" r="4" fill="#00ff9d"/>
-  <text x="204" y="240" fill="#9ca0a8" font-family="monospace" font-size="8">Redis RTT</text>
-  <text x="182" y="256" fill="#e8eaee" font-family="monospace" font-size="10">3ms</text>
-  <text x="182" y="268" fill="#5e636d" font-family="monospace" font-size="7">&lt;50ms</text>
+  <text x="28" y="194" fill="#5e636d" font-family="monospace" font-size="8">STRATEGY</text>
+  <circle cx="36" cy="208" r="3" fill="#00ff9d"/>
+  <text x="48" y="211" fill="#e8eaee" font-family="monospace" font-size="9">策略选择</text>
+  <text x="270" y="211" fill="#00ff9d" font-family="monospace" font-size="9" text-anchor="end">v2:btc-scalp</text>
+  <circle cx="36" cy="226" r="3" fill="#00ff9d"/>
+  <text x="48" y="229" fill="#e8eaee" font-family="monospace" font-size="9">策略 DSL 验证</text>
+  <text x="270" y="229" fill="#00ff9d" font-family="monospace" font-size="9" text-anchor="end">通过</text>
 
-  <rect x="300" y="216" width="134" height="60" fill="rgba(0,255,157,0.06)" rx="4" stroke="rgba(0,255,157,0.15)" stroke-width="1"/>
-  <circle cx="334" cy="236" r="4" fill="#00ff9d"/>
-  <text x="346" y="240" fill="#9ca0a8" font-family="monospace" font-size="8">Freqtrade</text>
-  <text x="324" y="256" fill="#e8eaee" font-family="monospace" font-size="10">running</text>
-  <text x="324" y="268" fill="#5e636d" font-family="monospace" font-size="7">running</text>
+  <text x="28" y="248" fill="#5e636d" font-family="monospace" font-size="8">CAPITAL</text>
+  <circle cx="36" cy="262" r="3" fill="#00ff9d"/>
+  <text x="48" y="265" fill="#e8eaee" font-family="monospace" font-size="9">资金配置</text>
+  <text x="270" y="265" fill="#00ff9d" font-family="monospace" font-size="9" text-anchor="end">cp-1</text>
 
-  <rect x="442" y="216" width="142" height="60" fill="rgba(245,197,66,0.06)" rx="4" stroke="rgba(245,197,66,0.15)" stroke-width="1"/>
-  <circle cx="476" cy="236" r="4" fill="#f5c542"/>
-  <text x="488" y="240" fill="#9ca0a8" font-family="monospace" font-size="8">交易所 API</text>
-  <text x="466" y="256" fill="#e8eaee" font-family="monospace" font-size="10">weight 80%</text>
-  <text x="466" y="268" fill="#5e636d" font-family="monospace" font-size="7">&lt;90%</text>
+  <text x="28" y="284" fill="#5e636d" font-family="monospace" font-size="8">RISK</text>
+  <circle cx="36" cy="298" r="3" fill="#00ff9d"/>
+  <text x="48" y="301" fill="#e8eaee" font-family="monospace" font-size="9">风控配置</text>
+  <text x="270" y="301" fill="#00ff9d" font-family="monospace" font-size="9" text-anchor="end">已配置</text>
 
-  <!-- Action bar -->
-  <rect x="16" y="292" width="568" height="34" fill="rgba(255,255,255,0.03)" rx="4" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
-  <text x="340" y="314" fill="#9ca0a8" font-family="monospace" font-size="9">[ 重新检查 ]</text>
-  <text x="440" y="314" fill="#f5c542" font-family="monospace" font-size="9">[ 启动模拟 ]</text>
-  <text x="520" y="314" fill="#ff9b3d" font-family="monospace" font-size="9">[ 启动小仓实盘 ]</text>
+  <!-- Right column -->
+  <text x="310" y="158" fill="#5e636d" font-family="monospace" font-size="8">SYSTEM</text>
+  <circle cx="318" cy="172" r="3" fill="#f5c542"/>
+  <text x="330" y="175" fill="#e8eaee" font-family="monospace" font-size="9">交易所连接</text>
+  <text x="570" y="175" fill="#f5c542" font-family="monospace" font-size="9" text-anchor="end">weight 80%</text>
+  <circle cx="318" cy="190" r="3" fill="#00ff9d"/>
+  <text x="330" y="193" fill="#e8eaee" font-family="monospace" font-size="9">数据源健康</text>
+  <text x="570" y="193" fill="#00ff9d" font-family="monospace" font-size="9" text-anchor="end">online</text>
+  <circle cx="318" cy="208" r="3" fill="#00ff9d"/>
+  <text x="330" y="211" fill="#e8eaee" font-family="monospace" font-size="9">通知可用</text>
+  <text x="570" y="211" fill="#00ff9d" font-family="monospace" font-size="9" text-anchor="end">已配置</text>
+  <circle cx="318" cy="226" r="3" fill="#00ff9d"/>
+  <text x="330" y="229" fill="#e8eaee" font-family="monospace" font-size="9">紧急停止</text>
+  <text x="570" y="229" fill="#00ff9d" font-family="monospace" font-size="9" text-anchor="end">AVAILABLE</text>
 
-  <!-- Callout numbers -->
-  <circle cx="24" cy="20" r="9" fill="none" stroke="#00ff9d" stroke-width="1.5"/>
-  <text x="24" y="24" fill="#00ff9d" font-family="monospace" font-size="10" text-anchor="middle">①</text>
-  <circle cx="200" cy="20" r="9" fill="none" stroke="#f5c542" stroke-width="1.5"/>
-  <text x="200" y="24" fill="#f5c542" font-family="monospace" font-size="10" text-anchor="middle">②</text>
-  <circle cx="24" cy="158" r="9" fill="none" stroke="#ff9b3d" stroke-width="1.5"/>
-  <text x="24" y="162" fill="#ff9b3d" font-family="monospace" font-size="10" text-anchor="middle">③</text>
-  <circle cx="24" cy="210" r="9" fill="none" stroke="#50b4ff" stroke-width="1.5"/>
-  <text x="24" y="214" fill="#50b4ff" font-family="monospace" font-size="10" text-anchor="middle">④</text>
-  <circle cx="24" cy="288" r="9" fill="none" stroke="#ff5470" stroke-width="1.5"/>
-  <text x="24" y="292" fill="#ff5470" font-family="monospace" font-size="10" text-anchor="middle">⑤</text>
+  <text x="310" y="248" fill="#5e636d" font-family="monospace" font-size="8">EXECUTION</text>
+  <circle cx="318" cy="262" r="3" fill="#00ff9d"/>
+  <text x="330" y="265" fill="#e8eaee" font-family="monospace" font-size="9">回测通过</text>
+  <text x="570" y="265" fill="#00ff9d" font-family="monospace" font-size="9" text-anchor="end">通过</text>
+  <circle cx="318" cy="280" r="3" fill="#00ff9d"/>
+  <text x="330" y="283" fill="#e8eaee" font-family="monospace" font-size="9">模拟/dry-run</text>
+  <text x="570" y="283" fill="#00ff9d" font-family="monospace" font-size="9" text-anchor="end">100h</text>
+
+  <text x="28" y="320" fill="#9ca0a8" font-family="monospace" font-size="8">上下文 CONTEXT</text>
+  <text x="28" y="338" fill="#5e636d" font-family="monospace" font-size="7">NOTIFICATIONS 0   AI MODELS 3/3   DATA SOURCE online   EXCHANGE OK   FREQTRADE HEALTHY   REDIS 3ms</text>
+  <text x="28" y="356" fill="#5e636d" font-family="monospace" font-size="7">DAILY USED ████░░░░  24%   WEEKLY USED ██░░░░░░  18%   EMERGENCY STOP AVAILABLE</text>
+
+  <!-- LAUNCH panel -->
+  <rect x="20" y="410" width="560" height="120" fill="rgba(255,255,255,0.02)" rx="4" stroke="rgba(255,255,255,0.08)"/>
+  <text x="28" y="428" fill="#9ca0a8" font-family="monospace" font-size="8">启动授权 LAUNCH AUTHORIZATION</text>
+  <text x="28" y="444" fill="#9ca0a8" font-family="monospace" font-size="8">全部门禁通过。可启动小仓实盘（需三重确认）。</text>
+
+  <rect x="28" y="454" width="170" height="32" fill="rgba(0,255,157,0.10)" rx="4" stroke="rgba(0,255,157,0.30)"/>
+  <text x="113" y="474" fill="#00ff9d" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">⚡ 启动模拟</text>
+
+  <rect x="208" y="454" width="170" height="32" fill="rgba(0,255,157,0.18)" rx="4" stroke="rgba(0,255,157,0.45)"/>
+  <text x="293" y="474" fill="#00ff9d" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">⚡ 启动小仓实盘</text>
+
+  <rect x="388" y="454" width="170" height="32" fill="rgba(245,197,66,0.05)" rx="4" stroke="rgba(245,197,66,0.20)"/>
+  <text x="473" y="474" fill="#f5c542" font-family="monospace" font-size="10" text-anchor="middle" opacity="0.5">⚡ 启动全仓实盘</text>
+
+  <text x="28" y="510" fill="#9ca0a8" font-family="monospace" font-size="8">无阻断项</text>
 </svg>
 
 <ol>
-  <li><strong>① 准入分数环</strong> — 环形进度条显示综合评分（0-100）。绿色 ≥80 分、黄色 50-79 分、红色 <50 分。分数由所有检查项的状态加权计算得出。</li>
-  <li><strong>② 状态横幅</strong> — 显示当前准入状态（LIVE_READY / LIVE_SMALL_READY / PAPER_ONLY / NOT_READY）。下方列出三种交易模式的可用性：Paper（模拟）、Live Small（小仓实盘）、Full Live（全量实盘），绿色勾表示允许，红色叉表示被阻挡。</li>
-  <li><strong>③ 阻断项与警告项</strong> — 红色背景的"阻断项"必须解决才能提升准入级别。黄色背景的"警告项"建议解决但不强制。每项显示错误代码和详细消息。</li>
-  <li><strong>④ 系统检查网格</strong> — 四列网格展示每个子系统的健康状态：Fast Track 延迟、Redis 往返时间、Freqtrade 运行状态、交易所 API 权重。每个格子包含状态圆点（绿/黄/红）、指标名称、当前值和阈值。</li>
-  <li><strong>⑤ 操作栏</strong> — "重新检查"按钮手动触发新的健康检查。"启动模拟"和"启动小仓实盘"按钮在对应模式可用时亮起。</li>
+  <li><strong>① Header + 5 级总状态徽章</strong> — 颜色随状态变化：绿(ready_for_live) / 青(paper_passed) / 琥珀(needs_validation) / 黄(needs_config) / 红(not_live)。点击「重新检查」强制 POST `/api/overview/live-readiness/check`。</li>
+  <li><strong>② Selection — 4 项选择器</strong> — mode / strategy / capital pool / exchange 各自下拉选择。切换后自动 POST 重算 grand_status。</li>
+  <li><strong>③ Gates — 11 项门禁</strong> — 按 group 分两列。左：mode / strategy / capital / risk；右：system / execution。每个 chip 显示「圆点 + label + value」，颜色绿=OK / 橙=WARN / 红=FAIL。</li>
+  <li><strong>④ Context — 上下文摘要</strong> — 6 chip 网格（通知 / AI 模型 / 数据源 / 交易所 / freqtrade / redis）+ 2 风险 gauge（日损使用 / 周损使用）+ 紧急停止 chip。全部来自真实端点。</li>
+  <li><strong>⑤ Launch — 启动授权</strong> — 阻断项列表（如有）+ 3 个启动按钮（启动模拟 / 启动小仓实盘 / 启动全仓实盘）。按钮按 <code>canStartPaper / canStartLiveSmall / canStartFullLive</code> 启用/禁用。</li>
+</ol>
+
+<h2>5 级总状态</h2>
+<ul>
+  <li><strong>不可实盘 (not_live)</strong> — 基础设施 / DB / Redis / 数据源不可用。修复后才能继续。</li>
+  <li><strong>待配置 (needs_config)</strong> — mode / strategy / capital / risk / exchange 任一未选择。</li>
+  <li><strong>待验证 (needs_validation)</strong> — DSL 验证 / 回测 / 模拟未通过。</li>
+  <li><strong>模拟通过 (paper_passed)</strong> — 模拟 healthy + mode=paper。</li>
+  <li><strong>可进入实盘 (ready_for_live)</strong> — 全部门禁通过 + mode=live_small/full。</li>
+</ul>
+
+<h2>三重启动确认（防误触）</h2>
+<ol>
+  <li><strong>Step 1 阅读摘要</strong> — 弹窗显示 mode / strategy / exchange / capital / grand_status 摘要。</li>
+  <li><strong>Step 2 勾选确认</strong> — 必须勾选"我已理解"才能进入下一步。</li>
+  <li><strong>Step 3 输入确认短语</strong> — 必须输入 <code>I confirm live trading</code> 才能点击 LAUNCH。</li>
+  <li>真实调用 <code>APIEmergency.emergencyStop</code> + 重新 <code>loadData()</code>。</li>
 </ol>
 
 <h2>关键指标怎么读</h2>
 <ul>
-  <li><strong>准入分数 (0-100)</strong> — 最重要的全局指标。80 分以上允许全量实盘，50-79 分仅允许小仓实盘，低于 50 分只允许模拟交易。分数受最差的检查项影响最大——一个"failed"状态的检查项会大幅拉低总分。</li>
-  <li><strong>Fast Track 延迟</strong> — 系统内部通信的往返时间，理想值 <200ms。延迟过高说明基础设施可能存在瓶颈。</li>
-  <li><strong>Redis RTT</strong> — Redis 缓存的响应时间，理想值 <50ms。如果 Redis 响应慢，会影响所有依赖缓存的数据读取。</li>
-  <li><strong>Freqtrade 状态</strong> — 核心交易引擎的在线状态，必须为 "running" 才能实盘。任何其他状态（如 "stopped"、"error"）都是阻断项。</li>
-  <li><strong>交易所 API 权重</strong> — 交易所 API 的剩余配额百分比。低于 90% 会触发警告，低于阈值可能导致订单提交被限流。</li>
-  <li><strong>准入状态</strong> — 四种状态：LIVE_READY（绿灯，全量可交易）、LIVE_SMALL_READY（橙灯，仅小仓）、PAPER_ONLY（黄灯，仅模拟）、NOT_READY（红灯，不可交易）。</li>
+  <li><strong>5 级总状态</strong> — 一眼判断能否进入实盘。颜色 + 徽章 + 描述三重提示。</li>
+  <li><strong>11 项门禁</strong> — 每项显示「OK / WARN / FAIL」+ 当前值 + 阈值。任一 FAIL = 阻断。</li>
+  <li><strong>上下文</strong> — 6 chip 让交易员确认系统全局状态（通知 / AI 模型 / 数据源 / 交易所 / freqtrade / redis）。</li>
+  <li><strong>风险 gauge</strong> — 日损 / 周损使用率，红 = 接近熔断。</li>
 </ul>
 
 <h2>常见操作 · 一步步</h2>
 
 <p><strong>上线前检查</strong></p>
 <ol>
-  <li>打开"实盘准入检查"页面，查看左上角的准入分数环是否达到绿色区域（≥80）。</li>
-  <li>检查"阻断项"区域是否有红色项目。如果有，记录错误代码并逐一排查解决。</li>
-  <li>检查"警告项"区域，判断是否可以接受。例如"交易所 API 权重剩余偏低"虽然不阻断，但在高交易频率场景下需要留意。</li>
-  <li>确认状态横幅中目标模式的勾选状态（例如确认 Full Live 是绿色勾）。</li>
-  <li>点击"重新检查"按钮触发一次新的健康检查，确认最近修复的问题已经解决。</li>
-  <li>点击对应模式的操作按钮（如"启动小仓实盘"）开始交易。</li>
+  <li>打开"实盘准入控制台"，查看顶部 5 级总状态徽章颜色（绿 = 可进入实盘）。</li>
+  <li>确认 4 个选择器都有选中值（mode / strategy / capital pool / exchange）。</li>
+  <li>扫一眼 11 项门禁：任一项 FAIL = 阻断项，定位修复。</li>
+  <li>查看上下文 6 chip：全部为绿色 = 平台健康。</li>
+  <li>点击"重新检查"按钮触发一次新的健康检查（POST <code>/api/overview/live-readiness/check</code>）。</li>
+  <li>点击对应模式的启动按钮（"启动小仓实盘"等），进入三重确认弹窗。</li>
 </ol>
 
 <h2>幕后</h2>
-<p>页面数据通过 <code>/api/overview/live-readiness</code> 端点获取，使用 <code>APIOverview</code> 服务。后端综合 Fast Track 心跳、Redis 连通性测试、Freqtrade 进程状态和交易所 API 余量计算评分和准入状态。点击"重新检查"按钮会调用同一个端点进行强制刷新。后端不可用时降级到模拟数据（Mock），模拟数据默认评分 86 分，状态为 LIVE_SMALL_READY。</p>
+<p>页面数据通过 <code>GET /api/overview/live-readiness?mode=...&strategy_id=...</code> 端点获取，使用 <code>APIOverview</code> 服务。ViewModel 7 源并行（readiness / notifications / overview / ai_models / risk / capital）。后端综合 11 项 <code>_check_*</code> + <code>_derive_grand_status()</code> 推导 5 级总状态。</p>
 
 <h2>相关</h2>
 <ul>
-  <li><a href="#/pages/overview/dashboard">页面 · AI 总控台</a> — 在顶部状态栏查看系统健康概览</li>
+  <li><a href="#/pages/overview/dashboard">页面 · 总览驾驶舱</a> — 顶部状态条可快速概览</li>
   <li><a href="#/concepts/09-dryrun-vs-live">概念 · 模拟 vs 实盘</a> — 理解不同交易模式的区别</li>
   <li><a href="#/walkthroughs/daily-trading-loop">情景 · 日常交易循环</a> — Live Readiness 是工作流的第一步</li>
-  <li><a href="#/pages/risk/risk-center">页面 · 风控中心</a> — 了解风控规则如何影响准入状态</li>
+  <li><a href="#/pages/risk/risk-center">页面 · 风控中心</a> — 风控规则如何影响准入状态</li>
 </ul>

@@ -64,6 +64,10 @@
 - [`mockups/`](ui-references/mockups/) — HTML 静态原型（`index.html`, `phase2-preview.html`）
 - [`screenshots/`](ui-references/screenshots/) — 28 张微信收到的 UI 参考截图
 
+## 🎨 ui/ — 页面验收
+
+- [`ui/page-acceptance.md`](ui/page-acceptance.md) — 按页签收的验收清单（含数据真实性 / Top bar / 视觉 / i18n 章节）。每页重构完成后追加对应章节。
+
 ## 🗄 archive/ — 历史
 
 完成或废弃的工作快照,只保留不维护。

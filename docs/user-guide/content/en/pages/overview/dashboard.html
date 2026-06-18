@@ -1,38 +1,91 @@
-<h1>Dashboard</h1>
+<h1>Dashboard Cockpit</h1>
 
-<p class="lead">The Dashboard is AlphaLoop's trading operation control tower — a single screen showing your account, strategies, positions, risk, decisions, and alerts.</p>
+<p class="lead">The Dashboard is AlphaLoop's <strong>production cockpit</strong>. Every metric comes from a real backend API: account, strategies, positions, risk, decisions, alerts, provider health, AI models, recent signals. The top bar shows current mode and platform-wide status. No placeholder values, no fabricated numbers.</p>
 
-<h2>Layout</h2>
-<p>The Dashboard uses a Bento grid layout, from top to bottom:</p>
+<h2>Top Bar</h2>
+<p>The top bar is split into two rows, persistent across the app:</p>
 
-<h3>Global Status Bar</h3>
-<p>A pinned infrastructure status bar showing system state, Freqtrade latency, Redis latency, exchange connection, and system-level reason codes.</p>
-
-<h3>Account Overview (Hero Card)</h3>
-<p>Left side displays total equity (animated counter) and 24h change. Right side shows four metrics: Today P&L, Week P&L, Max Drawdown, and Sharpe Ratio.</p>
-
-<h3>Suggested Actions</h3>
-<p>Context-aware quick action buttons the system recommends based on current state — deploy a strategy, review signals, tighten stops. Up to 3 shown.</p>
-
-<h3>Three-Column Metrics</h3>
+<h3>Row 1 — Brand + Mode + Primary Actions</h3>
 <ul>
-    <li><strong>Strategy Runtime</strong> — Running strategies, positions, pending orders, reconciling count</li>
-    <li><strong>Live Readiness</strong> — Current readiness lamp (Live Ready / Paper Only / Risk Locked) with gate pass status</li>
-    <li><strong>Global Risk</strong> — Risk state, daily/weekly loss remaining gauges</li>
+    <li><strong>Brand</strong> on the left: "弈机 AlphaLoop" (shown only on the Dashboard route; other routes show a breadcrumb instead)</li>
+    <li><strong>Mode Pill</strong> shows LIVE / PAPER / DRYRUN / STOPPED / MOCK / NOT READY in real time, with a color that changes by state</li>
+    <li><strong>Primary actions</strong>: language toggle / theme toggle / command palette (⌘K) / notifications (unread badge) / emergency stop (calls <code>APIEmergency</code> directly)</li>
 </ul>
 
-<h3>Position Risk Table</h3>
-<p>Full-width table of open positions: symbol, direction (green/red stripe), size, entry, P&L, risk level, and reason codes.</p>
-
-<h3>Decision Feed + Alert Timeline</h3>
-<p>Side-by-side columns:</p>
+<h3>Row 2 — Status Strip (DashboardStatusStrip)</h3>
+<p>7 status chips in a single row:</p>
 <ul>
-    <li><strong>Recent Decisions</strong> — Latest trading decisions with time, symbol, action (execute/hold/reduce/reject), and reason codes</li>
-    <li><strong>Alert Timeline</strong> — Chronological system and trading alerts at three severity levels (info/warning/error)</li>
+    <li><strong>PROVIDERS</strong> — shows healthy/total ratio</li>
+    <li><strong>EXCHANGE</strong> — OK / WARNING / DOWN</li>
+    <li><strong>REDIS</strong> — RTT in milliseconds</li>
+    <li><strong>FREQTRADE</strong> — HEALTHY / WARNING / DOWN</li>
+    <li><strong>RISK</strong> — NORMAL / WARNING / LOCKED</li>
+    <li><strong>POSITIONS</strong> — current open position count</li>
+    <li><strong>LAST UPDATE</strong> — last refresh time (15s polling)</li>
 </ul>
 
-<h3>Emergency Action Bar</h3>
-<p>A fixed bottom bar with "Halt All Trading" button. Requires confirmation before stopping all strategies and canceling pending orders.</p>
+<h2>Page Header</h2>
+<p>Fixed at the top of the Dashboard route:</p>
+<ul>
+    <li><strong>// 驾驶舱 COCKPIT</strong> — single page title (avoids duplication with the top bar)</li>
+    <li><strong>Data source badge</strong>: <code>LIVE</code> (green) / <code>DATA SOURCE UNAVAILABLE</code> (amber)</li>
+    <li><strong>Subtitle</strong>: real-time cockpit — every metric is sourced from the live backend</li>
+</ul>
+
+<h2>Card Layout (Bento Grid)</h2>
+
+<h3>DashboardStatusBar — Infrastructure Status</h3>
+<p>Single row, 4 cells: System / Freqtrade latency / Redis latency / Exchange. Backed by the BFF <code>system</code> field.</p>
+
+<h3>AccountHeroCard — Account Overview (Hero)</h3>
+<p>Left: large equity counter (with numeric text animation) + 24h change + ModePill + sparkline (from <code>/api/dashboard/equity-curve</code>).</p>
+<p>Right: 5 KPI columns — today P&L / week P&L / total P&L (from KPIs) / win rate (from KPIs) / Sharpe ratio. Equity uses BFF <code>account.equity</code>; when both sources are zero, shows <code>—</code> + a DATA SOURCE UNAVAILABLE badge.</p>
+
+<h3>AvailableActionsRow — Suggested Actions</h3>
+<p>Up to 3 context-aware action buttons, sourced from the BFF <code>availableActions</code>. Clicking dispatches to <code>viewModel.performAction(_:)</code>: emergency stop calls <code>APIEmergency.emergencyStop</code> directly; start-live / cancel-all navigate to the corresponding page.</p>
+
+<h3>Three-Column Metric Cards (Runtime / Readiness / Risk)</h3>
+<ul>
+    <li><strong>StrategyRuntimeCard</strong> — running strategy count + 3 colored dots for positions / pending / reconciling</li>
+    <li><strong>LiveReadinessCard</strong> — readiness lamp (Live Ready / Paper Only / Risk Locked / Emergency Locked) + the real <code>checks</code> list (<strong>no more 7 fabricated OK chips</strong>)</li>
+    <li><strong>GlobalRiskCard</strong> — global risk state pill + daily / weekly loss-remaining gauges</li>
+</ul>
+
+<h3>PositionRiskTable — Position Risk</h3>
+<p>Full-width table. Sourced from <code>GET /api/execution/positions</code> (<strong>mockPositions hardcoded array removed</strong>). Columns: symbol / direction (left stripe) / size / entry / mark / P&L / P&L % / state badge (in_sync / drift / local_only / exchange_only). Empty state when no positions; DATA SOURCE UNAVAILABLE when backend is down.</p>
+
+<h3>ProviderHealthCard + AIModelStatusCard</h3>
+<p>Two-column grid:</p>
+<ul>
+    <li><strong>Provider</strong>: healthy / warning / error counts + per-entry expansion (name, latency, last error)</li>
+    <li><strong>AI models</strong>: each model's provider / state / GPU memory</li>
+</ul>
+
+<h3>SignalsFeedCard — Signal Feed (with Source)</h3>
+<p>Sourced from <code>GET /api/agent-signals/signals</code>. Every signal explicitly shows 3 source-trace tags: <code>AGENT</code> / <code>STRATEGY</code> / <code>SNAPSHOT</code> (or <code>NO TRACE</code> when missing).</p>
+
+<h3>RecentDecisionFeed + AlertTimeline</h3>
+<p>Two-column layout. BFF <code>recent_decisions</code> and <code>alerts</code>; empty arrays render as <code>暂无决策</code> / <code>暂无告警</code> respectively.</p>
+
+<h3>EmergencyActionBar — Emergency Control</h3>
+<p>Pinned at the bottom: icon + description + red "Stop All Trading" button. Click → confirmation dialog → real <code>APIEmergency.emergencyStop</code>.</p>
+
+<h3>LearnAlphaLoopCard — Learn Card</h3>
+<p>Shown only when <code>state == "unknown"</code> and there is no data. Opens the user guide. Can be dismissed.</p>
 
 <h2>Data Refresh</h2>
-<p>The Dashboard auto-refreshes every 30 seconds via a single aggregated BFF endpoint for data consistency.</p>
+<p>30s page-level polling. 15s top-bar strip polling. Emergency button click → immediate <code>APIEmergency.emergencyStop</code> → toast feedback → reload <code>load()</code>.</p>
+
+<h2>Data-Source Failure Fallback</h2>
+<p>If any sub-endpoint fails:</p>
+<ul>
+    <li>The affected card renders an empty state with the failure tag; other cards are unaffected</li>
+    <li>If the overall BFF returns <code>state == "data_source_unavailable"</code>, the page renders <code>DataSourceUnavailableView</code> (icon + title + retry button)</li>
+</ul>
+
+<h2>See Also</h2>
+<ul>
+    <li><a href="#/pages/overview/live-readiness">Page · Live Readiness</a> — the must-check before going live</li>
+    <li><a href="#/concepts/05-risk-guard">Concept · Risk Guard</a> — understand GlobalRiskCard metrics</li>
+    <li><a href="#/walkthroughs/daily-trading-loop">Walkthrough · Daily Trading Loop</a> — Dashboard is the start of the workflow</li>
+</ul>

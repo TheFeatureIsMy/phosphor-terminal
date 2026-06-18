@@ -1,38 +1,91 @@
-<h1>总览仪表盘</h1>
+<h1>总览驾驶舱</h1>
 
-<p class="lead">仪表盘是 AlphaLoop 的交易运营总控台，一屏展示账户、策略、持仓、风控、决策和告警全貌。</p>
+<p class="lead">总览页是 AlphaLoop 的<strong>生产驾驶舱</strong>。所有指标来自后端真实 API：账户、策略、持仓、风控、决策、告警、Provider 健康、AI 模型、最新信号。顶部 bar 显示当前模式与全平台状态。无占位数值。</p>
 
-<h2>布局结构</h2>
-<p>仪表盘采用 Bento 网格布局，从上到下依次为：</p>
+<h2>Top Bar（顶部栏）</h2>
+<p>Top Bar 拆为两行，覆盖全应用：</p>
 
-<h3>全局状态栏</h3>
-<p>顶部固定的基础设施状态栏，展示系统状态、Freqtrade 延迟、Redis 延迟、交易所连接状态，以及系统级原因码标签。</p>
-
-<h3>账户总览（Hero 卡片）</h3>
-<p>左侧显示总权益（大字带动画）和24小时涨跌幅，右侧四列指标：今日盈亏、本周盈亏、最大回撤、夏普比率。</p>
-
-<h3>建议操作</h3>
-<p>系统根据当前状态推荐的快捷操作按钮，如部署策略、审核信号、收紧止损等。最多显示3个。</p>
-
-<h3>三列指标卡</h3>
+<h3>行 1 — 品牌 + 模式 + 主动作</h3>
 <ul>
-    <li><strong>策略运行</strong> — 运行中策略数、持仓数、挂单数、对账数</li>
-    <li><strong>实盘准入</strong> — 当前准入状态灯（实盘就绪/仅模拟/风控锁定）及检查通过情况</li>
-    <li><strong>全局风控</strong> — 风控状态、日损余额%、周损余额%进度条</li>
+    <li><strong>品牌</strong>：左侧 "弈机 AlphaLoop"（仅 Dashboard 路由显示，其它路由显示面包屑）</li>
+    <li><strong>模式胶裹（ModePill）</strong>：实时显示 LIVE / PAPER / DRYRUN / STOPPED / MOCK / NOT READY 之一，颜色随状态变化</li>
+    <li><strong>主动作</strong>：语言切换 / 主题切换 / 命令面板 (⌘K) / 通知（未读红点）/ 紧急停止（直接调用 <code>APIEmergency</code>）</li>
 </ul>
 
-<h3>持仓风险表</h3>
-<p>全宽表格展示当前持仓：品种、方向（左侧绿/红色条）、数量、开仓价、盈亏、风险等级和原因码。</p>
-
-<h3>决策流 + 告警时间线</h3>
-<p>左右双栏：</p>
+<h3>行 2 — 状态描点条（DashboardStatusStrip）</h3>
+<p>7 个状态 chip 横向排列：</p>
 <ul>
-    <li><strong>近期决策</strong> — 最近的交易决策，显示时间、品种、操作（执行/持有/减仓/拒绝）及原因码</li>
-    <li><strong>告警时间线</strong> — 按时间排列的系统和交易告警（信息/警告/错误三级）</li>
+    <li><strong>PROVIDERS</strong> — 显示 healthy/total 比例</li>
+    <li><strong>EXCHANGE</strong> — OK / WARNING / DOWN</li>
+    <li><strong>REDIS</strong> — RTT 毫秒</li>
+    <li><strong>FREQTRADE</strong> — HEALTHY / WARNING / DOWN</li>
+    <li><strong>RISK</strong> — NORMAL / WARNING / LOCKED</li>
+    <li><strong>POSITIONS</strong> — 当前持仓数</li>
+    <li><strong>LAST UPDATE</strong> — 上次刷新时间（15s 轮询）</li>
 </ul>
 
-<h3>紧急停止栏</h3>
-<p>底部固定的紧急控制栏，包含"停止全部交易"按钮。点击后需确认，确认后将停止所有策略并取消挂单。</p>
+<h2>Page Header（页面标题）</h2>
+<p>Dashboard 顶部固定显示：</p>
+<ul>
+    <li><strong>// 驾驶舱 COCKPIT</strong> — 单页标题（避免与 Top Bar 重复）</li>
+    <li><strong>数据源徽章</strong>：<code>LIVE</code>（绿）/ <code>DATA SOURCE UNAVAILABLE</code>（黄）</li>
+    <li><strong>副标题</strong>：实时驾驶舱 · 所有指标均为后端真实数据</li>
+</ul>
+
+<h2>卡片布局（Bento 网格）</h2>
+
+<h3>DashboardStatusBar — 基础设施状态条</h3>
+<p>单行 4 个单元：系统 / Freqtrade 延迟 / Redis 延迟 / 交易所。后端 BFF <code>system</code> 字段。</p>
+
+<h3>AccountHeroCard — 账户总览（Hero）</h3>
+<p>左：大字权益（带数字滚动动画）+ 24h 涨跌幅 + 模式胶裹 + sparkline（来自 <code>/api/dashboard/equity-curve</code>）。</p>
+<p>右：5 列 KPI — 今日盈亏 / 本周盈亏 / 累计盈亏（来自 KPIs）/ 胜率（来自 KPIs）/ 夏普比率。权益 = BFF `account.equity`；双源均为 0 时显示 <code>—</code> + DATA SOURCE UNAVAILABLE 徽章。</p>
+
+<h3>AvailableActionsRow — 建议操作</h3>
+<p>系统根据 BFF `availableActions` 显示最多 3 个按钮。点击走 <code>viewModel.performAction(_:)</code>：紧急停止直接调用 <code>APIEmergency.emergencyStop</code>；启动实盘 / 取消挂单等跳转到对应页面。</p>
+
+<h3>三列指标卡（Runtime / Readiness / Risk）</h3>
+<ul>
+    <li><strong>StrategyRuntimeCard</strong> — 运行中策略数 + 持仓 / 挂单 / 对账 三色描点</li>
+    <li><strong>LiveReadinessCard</strong> — 准入灯（实盘就绪 / 仅模拟 / 风控锁定 / 紧急锁定）+ 真实 <code>checks</code> 列表（<strong>不再硬塞 7 个 OK chip</strong>）</li>
+    <li><strong>GlobalRiskCard</strong> — 全局风控状态药丸 + 日损余额% / 周损余额% 进度条</li>
+</ul>
+
+<h3>PositionRiskTable — 持仓风险表</h3>
+<p>全宽表格。数据来自 <code>GET /api/execution/positions</code>（<strong>已删除硬编码 mockPositions</strong>）。列：品种 / 方向（左色条）/ 数量 / 开仓价 / 现价 / 盈亏 / 盈亏% / 状态徽章（本端/交易所同步 / 存在差异 / 仅本端 / 仅交易所）。无持仓时显示 <code>无持仓</code>；后端不可达时显示 <code>DATA SOURCE UNAVAILABLE</code>。</p>
+
+<h3>ProviderHealthCard + AIModelStatusCard</h3>
+<p>两列网格，分别显示：</p>
+<ul>
+    <li><strong>Provider</strong>：healthy / warning / error 三类计数 + per-entry 展开（名称、延迟、最近错误）</li>
+    <li><strong>AI 模型</strong>：每个模型 provider / state / GPU 内存</li>
+</ul>
+
+<h3>SignalsFeedCard — 信号流（含溯源）</h3>
+<p>来自 <code>GET /api/agent-signals/signals</code>。每个信号显式展示 3 个溯源标签：<code>AGENT</code> / <code>STRATEGY</code> / <code>SNAPSHOT</code>（未关联时显示 <code>NO TRACE</code>）。</p>
+
+<h3>RecentDecisionFeed + AlertTimeline</h3>
+<p>左右双栏。BFF <code>recent_decisions</code> 与 <code>alerts</code>，数据为空时分别显示 <code>暂无决策</code> / <code>暂无告警</code>。</p>
+
+<h3>EmergencyActionBar — 紧急控制</h3>
+<p>底部固定：图标 + 描述 + 红色「停止全部交易」按钮。点击 → 二次确认 → 真实 <code>APIEmergency.emergencyStop</code>。</p>
+
+<h3>LearnAlphaLoopCard — 学习卡</h3>
+<p>仅当 <code>state == "unknown"</code> 且无任何数据时显示，引导用户打开用户指南。可手动关闭。</p>
 
 <h2>数据刷新</h2>
-<p>仪表盘每30秒自动轮询刷新数据。所有数据来自单一 BFF 聚合接口，确保一致性。</p>
+<p>页面级 30s 轮询。Top bar 状态条 15s 轮询。紧急按钮点击 → 立即 <code>APIEmergency.emergencyStop</code> → toast 反馈 → 重新 <code>load()</code>。</p>
+
+<h2>数据源失败回退</h2>
+<p>任一卡片依赖的子端点失败：</p>
+<ul>
+    <li>该卡片渲染空态 + 标签，其它卡片不受影响</li>
+    <li>整体 BFF <code>state == "data_source_unavailable"</code> → 渲染 <code>DataSourceUnavailableView</code>（图标 + 标题 + 重试按钮）</li>
+</ul>
+
+<h2>相关</h2>
+<ul>
+    <li><a href="#/pages/overview/live-readiness">页面 · 实盘准入</a> — 启动实盘前的必查项</li>
+    <li><a href="#/concepts/05-risk-guard">概念 · 风控护栏</a> — 理解 GlobalRiskCard 的指标</li>
+    <li><a href="#/walkthroughs/daily-trading-loop">情景 · 日常交易循环</a> — Dashboard 是工作流的起点</li>
+</ul>
