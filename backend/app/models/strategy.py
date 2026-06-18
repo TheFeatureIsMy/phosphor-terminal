@@ -1,6 +1,8 @@
+import uuid
 from datetime import datetime, timezone
 
 from sqlalchemy import Column, Integer, String, Float, JSON, DateTime, Text, ForeignKey
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import relationship
 from app.database import Base
 
@@ -119,6 +121,8 @@ class BacktestRun(Base):
     strategy_version_id = Column(String, nullable=True, index=True)
     command_id = Column(String, nullable=True, index=True)
     dsl_hash = Column(String, nullable=True)
+    strategy_uuid = Column(PG_UUID(as_uuid=True), nullable=True, index=True)
+    strategy_version_uuid = Column(PG_UUID(as_uuid=True), nullable=True)
     status = Column(String, nullable=False, default="pending")
     start_date = Column(String, nullable=False)
     end_date = Column(String, nullable=False)

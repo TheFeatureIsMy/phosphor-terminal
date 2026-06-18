@@ -24,8 +24,12 @@ from __future__ import annotations
 
 import logging
 import time
+import uuid
+from datetime import datetime, timedelta, timezone
 from dataclasses import dataclass, field
 from typing import Optional
+
+from sqlalchemy import func
 
 from app.config import settings
 from app.services.runtime_redis_store import RuntimeRedisStore
@@ -273,6 +277,459 @@ class LiveReadinessService:
             await self._store.write_live_readiness(account_id, self._serialize(result), ttl=30)
         return result
 
+    # === Per-strategy readiness (for strategy workbench ⌘6 panel) ===
+
+    def compute_for_strategy(
+        self,
+        strategy_id: uuid.UUID,
+        db: "Session",
+        system_gates: list["ReadinessGate"] | None = None,
+    ) -> "PerStrategyReadinessResponse":
+        """Compute 6 per-strategy gates + reuse 5 system gates → PerStrategyReadinessResponse.
+
+        Args:
+            strategy_id: UUID of the strategy (strategies_v2.id).
+            db: SQLAlchemy Session.
+            system_gates: Optional pre-computed system gates (mode, exchange, data_source,
+                notification, emergency_stop). If None, a default healthy set is used.
+        """
+        from app.domain.execution import StrategyRun
+        from app.domain.risk import CapitalPool, StrategyRiskPolicyBinding
+        from app.domain.strategy import StrategyV2, StrategyVersion
+        from app.models.strategy import BacktestRun
+        from app.schemas.per_strategy_readiness import (
+            PerStrategyReadinessResponse,
+            ReadinessGate,
+            ReadinessNextAction,
+        )
+        from sqlalchemy.orm import Session  # type: ignore[unused-ignore]
+
+        # ── 6 strategy gates ──────────────────────────────────────────
+
+        strategy = db.get(StrategyV2, strategy_id)
+
+        # 1. validation
+        latest_version: StrategyVersion | None = (
+            db.query(StrategyVersion)
+            .filter(StrategyVersion.strategy_id == strategy_id)
+            .order_by(StrategyVersion.version_no.desc())
+            .first()
+        )
+        validation_gate = self._compute_validation_gate(latest_version)
+
+        # 2. backtest
+        backtest_gate = self._compute_backtest_gate(strategy_id, db, BacktestRun)
+
+        # 3. dryrun
+        dryrun_gate = self._compute_dryrun_gate(latest_version, db, StrategyRun)
+
+        # 4. risk_config
+        risk_config_gate = self._compute_risk_config_gate(latest_version, db, StrategyRiskPolicyBinding)
+
+        # 5. capital
+        capital_gate = self._compute_capital_gate(db, CapitalPool)
+
+        # 6. strategy (the strategy record itself)
+        strategy_gate = self._compute_strategy_gate(strategy)
+
+        strategy_gates = [
+            validation_gate,
+            backtest_gate,
+            dryrun_gate,
+            risk_config_gate,
+            capital_gate,
+            strategy_gate,
+        ]
+
+        # ── 5 system gates ────────────────────────────────────────────
+        if system_gates is None:
+            system_gates = self._default_healthy_system_gates()
+
+        # ── Grand status ──────────────────────────────────────────────
+        has_live_small_run = self._check_has_live_small_run(latest_version, db, StrategyRun)
+        grand_status = self._derive_per_strategy_grand_status(
+            strategy_gates, system_gates, has_live_small_run=has_live_small_run,
+        )
+
+        # ── Passed count ──────────────────────────────────────────────
+        passed_count = sum(
+            1 for g in strategy_gates + list(system_gates) if g.status == "healthy"
+        )
+
+        # ── Next action ───────────────────────────────────────────────
+        next_action = self._infer_next_action(strategy_gates, grand_status, latest_version, db)
+
+        return PerStrategyReadinessResponse(
+            passed_count=passed_count,
+            total=11,
+            grand_status=grand_status,
+            next_action=next_action,
+            strategy_gates=strategy_gates,
+            system_gates=list(system_gates),
+        )
+
+    # ── Strategy gate helpers ─────────────────────────────────────────
+
+    @staticmethod
+    def _compute_validation_gate(
+        latest_version: "StrategyVersion | None",
+    ) -> "ReadinessGate":
+        from app.schemas.per_strategy_readiness import ReadinessGate
+
+        if latest_version is None:
+            return ReadinessGate(
+                key="validation", status="failed",
+                value="no version", threshold="validated",
+                detail="no version", reason_codes=["no_version"],
+            )
+
+        healthy_statuses = {
+            "validated", "backtested", "paper_running", "paper_passed",
+            "live_pending", "live_small",
+        }
+        if latest_version.status in healthy_statuses:
+            return ReadinessGate(
+                key="validation", status="healthy",
+                value=latest_version.status, threshold="validated",
+            )
+        return ReadinessGate(
+            key="validation", status="failed",
+            value=latest_version.status, threshold="validated",
+            detail=f"version status: {latest_version.status}",
+            reason_codes=["validation_failed"],
+        )
+
+    @staticmethod
+    def _compute_backtest_gate(
+        strategy_id: uuid.UUID,
+        db: "Session",
+        BacktestRun: type,
+    ) -> "ReadinessGate":
+        from app.schemas.per_strategy_readiness import ReadinessGate
+
+        has_backtest = (
+            db.query(BacktestRun)
+            .filter(
+                BacktestRun.strategy_uuid == strategy_id,
+                BacktestRun.status == "completed",
+            )
+            .first()
+            is not None
+        )
+        if has_backtest:
+            return ReadinessGate(
+                key="backtest", status="healthy",
+                value="completed", threshold="≥1 completed",
+            )
+        return ReadinessGate(
+            key="backtest", status="failed",
+            value="none", threshold="≥1 completed",
+            detail="no completed backtest", reason_codes=["no_backtest"],
+        )
+
+    @staticmethod
+    def _compute_dryrun_gate(
+        latest_version: "StrategyVersion | None",
+        db: "Session",
+        StrategyRun: type,
+    ) -> "ReadinessGate":
+        from app.schemas.per_strategy_readiness import ReadinessGate
+
+        if latest_version is None:
+            return ReadinessGate(
+                key="dryrun", status="failed",
+                value="no version", threshold="≥72h",
+                detail="no strategy version", reason_codes=["no_version"],
+            )
+
+        # Find the most recent dry_run or paper run for any version of this strategy
+        from app.domain.strategy import StrategyVersion as SV
+
+        version_ids = [
+            r[0]
+            for r in db.query(SV.id).filter(SV.strategy_id == latest_version.strategy_id).all()
+        ]
+        if not version_ids:
+            return ReadinessGate(
+                key="dryrun", status="failed",
+                value="none", threshold="≥72h",
+                detail="no strategy versions", reason_codes=["no_dryrun"],
+            )
+
+        runs = (
+            db.query(StrategyRun)
+            .filter(
+                StrategyRun.strategy_version_id.in_(version_ids),
+                StrategyRun.mode.in_(["dry_run", "paper"]),
+            )
+            .order_by(StrategyRun.created_at.desc())
+            .all()
+        )
+
+        if not runs:
+            return ReadinessGate(
+                key="dryrun", status="failed",
+                value="none", threshold="≥72h",
+                detail="no dry_run or paper run", reason_codes=["no_dryrun"],
+            )
+
+        # Check the most recent relevant run
+        latest_run = runs[0]
+        now = datetime.utcnow()
+
+        if latest_run.status in ("running", "starting"):
+            # Running — check elapsed time
+            if latest_run.started_at:
+                elapsed_h = (now - latest_run.started_at).total_seconds() / 3600
+                if elapsed_h < 72:
+                    return ReadinessGate(
+                        key="dryrun", status="warning",
+                        value=f"{elapsed_h:.0f}h", threshold="≥72h",
+                        detail=f"paper run in progress: {elapsed_h:.0f}h elapsed",
+                        reason_codes=["dryrun_in_progress"],
+                    )
+                # Running but already 72h+ — still healthy (it passed the threshold)
+                return ReadinessGate(
+                    key="dryrun", status="healthy",
+                    value=f"{elapsed_h:.0f}h running", threshold="≥72h",
+                )
+            return ReadinessGate(
+                key="dryrun", status="warning",
+                value="running", threshold="≥72h",
+                detail="paper run in progress", reason_codes=["dryrun_in_progress"],
+            )
+
+        if latest_run.status == "stopped" and latest_run.started_at and latest_run.stopped_at:
+            elapsed_h = (latest_run.stopped_at - latest_run.started_at).total_seconds() / 3600
+            if elapsed_h >= 72:
+                return ReadinessGate(
+                    key="dryrun", status="healthy",
+                    value=f"{elapsed_h:.0f}h", threshold="≥72h",
+                )
+            return ReadinessGate(
+                key="dryrun", status="failed",
+                value=f"{elapsed_h:.0f}h", threshold="≥72h",
+                detail=f"paper run only {elapsed_h:.0f}h (need 72h+)",
+                reason_codes=["dryrun_insufficient"],
+            )
+
+        return ReadinessGate(
+            key="dryrun", status="failed",
+            value=latest_run.status, threshold="≥72h",
+            detail=f"unexpected run status: {latest_run.status}",
+            reason_codes=["dryrun_no_completion"],
+        )
+
+    @staticmethod
+    def _compute_risk_config_gate(
+        latest_version: "StrategyVersion | None",
+        db: "Session",
+        StrategyRiskPolicyBinding: type,
+    ) -> "ReadinessGate":
+        from app.schemas.per_strategy_readiness import ReadinessGate
+
+        if latest_version is None:
+            return ReadinessGate(
+                key="risk_config", status="failed",
+                value="no version", threshold="binding exists",
+                detail="no strategy version", reason_codes=["no_version"],
+            )
+
+        # Check any version of this strategy has a live_small binding
+        from app.domain.strategy import StrategyVersion as SV
+
+        has_binding = (
+            db.query(StrategyRiskPolicyBinding)
+            .filter(
+                StrategyRiskPolicyBinding.strategy_version_id.in_(
+                    db.query(SV.id).filter(SV.strategy_id == latest_version.strategy_id).scalar_subquery()
+                ),
+                StrategyRiskPolicyBinding.mode == "live_small",
+            )
+            .first()
+            is not None
+        )
+        if has_binding:
+            return ReadinessGate(
+                key="risk_config", status="healthy",
+                value="bound", threshold="binding exists",
+            )
+        return ReadinessGate(
+            key="risk_config", status="failed",
+            value="unbound", threshold="binding exists",
+            detail="no live_small risk policy binding",
+            reason_codes=["risk_config_unset"],
+        )
+
+    @staticmethod
+    def _compute_capital_gate(
+        db: "Session",
+        CapitalPool: type,
+    ) -> "ReadinessGate":
+        from app.schemas.per_strategy_readiness import ReadinessGate
+
+        pool = (
+            db.query(CapitalPool)
+            .filter(
+                CapitalPool.pool_type == "live_small",
+                CapitalPool.total_budget > 0,
+            )
+            .first()
+        )
+        if pool is not None:
+            return ReadinessGate(
+                key="capital", status="healthy",
+                value=f"{pool.total_budget:.2f} {pool.currency}",
+                threshold="> 0",
+            )
+        return ReadinessGate(
+            key="capital", status="failed",
+            value="no pool", threshold="> 0",
+            detail="no live_small capital pool with budget > 0",
+            reason_codes=["capital_unconfigured"],
+        )
+
+    @staticmethod
+    def _compute_strategy_gate(
+        strategy: "StrategyV2 | None",
+    ) -> "ReadinessGate":
+        from app.schemas.per_strategy_readiness import ReadinessGate
+
+        if strategy is None:
+            return ReadinessGate(
+                key="strategy", status="failed",
+                value="not found", threshold="exists",
+                detail="strategy not found", reason_codes=["strategy_not_found"],
+            )
+        if strategy.status == "archived":
+            return ReadinessGate(
+                key="strategy", status="failed",
+                value="archived", threshold="not archived",
+                detail="strategy is archived", reason_codes=["strategy_archived"],
+            )
+        return ReadinessGate(
+            key="strategy", status="healthy",
+            value=strategy.status, threshold="not archived",
+        )
+
+    @staticmethod
+    def _check_has_live_small_run(
+        latest_version: "StrategyVersion | None",
+        db: "Session",
+        StrategyRun: type,
+    ) -> bool:
+        """Check if any version of this strategy has a live_small run with status in (running, starting)."""
+        from app.domain.strategy import StrategyVersion as SV
+
+        if latest_version is None:
+            return False
+        version_ids = [
+            r[0]
+            for r in db.query(SV.id).filter(SV.strategy_id == latest_version.strategy_id).all()
+        ]
+        if not version_ids:
+            return False
+        return (
+            db.query(StrategyRun)
+            .filter(
+                StrategyRun.strategy_version_id.in_(version_ids),
+                StrategyRun.mode == "live_small",
+                StrategyRun.status.in_(["running", "starting"]),
+            )
+            .first()
+            is not None
+        )
+
+    # ── Grand status (per-strategy) ───────────────────────────────────
+
+    @staticmethod
+    def _derive_per_strategy_grand_status(
+        strategy_gates: list["ReadinessGate"],
+        system_gates: list["ReadinessGate"],
+        has_live_small_run: bool = False,
+    ) -> str:
+        by_key = {g.key: g for g in strategy_gates}
+
+        # 1. Any system gate failed → not_live
+        for g in system_gates:
+            if g.status == "failed":
+                return "not_live"
+
+        # 2. capital or risk_config failed → needs_config
+        for k in ("capital", "risk_config"):
+            g = by_key.get(k)
+            if g and g.status == "failed":
+                return "needs_config"
+
+        # 3. validation or backtest failed → needs_validation
+        for k in ("validation", "backtest"):
+            g = by_key.get(k)
+            if g and g.status == "failed":
+                return "needs_validation"
+
+        # 4. dryrun failed → needs_validation
+        dryrun = by_key.get("dryrun")
+        if dryrun and dryrun.status == "failed":
+            return "needs_validation"
+
+        # 5. All pass + a live_small StrategyRun exists → ready_for_live
+        if has_live_small_run:
+            return "ready_for_live"
+
+        # 6. All pass → paper_passed
+        return "paper_passed"
+
+    # ── Next action inference ─────────────────────────────────────────
+
+    @staticmethod
+    def _infer_next_action(
+        strategy_gates: list["ReadinessGate"],
+        grand_status: str,
+        latest_version: "StrategyVersion | None",
+        db: "Session",
+    ) -> "ReadinessNextAction":
+        from app.schemas.per_strategy_readiness import ReadinessNextAction
+
+        # Find the first non-healthy strategy gate
+        for gate in strategy_gates:
+            if gate.status != "healthy":
+                return ReadinessNextAction(
+                    code=gate.key,
+                    label=_next_action_label(gate.key),
+                    target_panel=_next_action_target(gate.key),
+                )
+
+        # All strategy gates pass — use grand_status
+        if grand_status == "paper_passed":
+            return ReadinessNextAction(
+                code="bind_live_small",
+                label="bind a live_small risk policy",
+                target_panel="risk",
+            )
+        if grand_status == "ready_for_live":
+            return ReadinessNextAction(
+                code="approve_live",
+                label="approve live_small deployment",
+                target_panel="readiness",
+            )
+        return ReadinessNextAction(
+            code="none",
+            label="no action required",
+            target_panel=None,
+        )
+
+    @staticmethod
+    def _default_healthy_system_gates() -> list["ReadinessGate"]:
+        from app.schemas.per_strategy_readiness import ReadinessGate
+
+        return [
+            ReadinessGate(key="mode", status="healthy", value="live_small", threshold="paper|live_small|live_full"),
+            ReadinessGate(key="exchange", status="healthy", value="BINANCE", threshold="connected"),
+            ReadinessGate(key="data_source", status="healthy", value="online", threshold="online"),
+            ReadinessGate(key="notification", status="healthy", value="configured", threshold="optional"),
+            ReadinessGate(key="emergency_stop", status="healthy", value="available", threshold="available"),
+        ]
+
     # === Grand status derivation ===
     @staticmethod
     def _derive_grand_status(checks: list[CheckResult], blockers: list[dict], selected_mode: str = "live_small") -> str:
@@ -507,3 +964,36 @@ class LiveReadinessService:
             "selected_capital_pool_id": result.selected_capital_pool_id,
             "selected_exchange": result.selected_exchange,
         }
+
+
+# ── Module-level helpers ──────────────────────────────────────────────
+
+def _next_action_label(code: str) -> str:
+    """Human-readable label for a next_action code."""
+    labels = {
+        "validation": "validate strategy DSL",
+        "backtest": "run backtest",
+        "dryrun": "run paper trading",
+        "risk_config": "configure risk policy",
+        "capital": "configure capital pool",
+        "strategy": "select or create strategy",
+        "bind_live_small": "bind a live_small risk policy",
+        "approve_live": "approve live_small deployment",
+        "none": "no action required",
+    }
+    return labels.get(code, code)
+
+
+def _next_action_target(code: str) -> str | None:
+    """Target panel for a next_action code."""
+    targets = {
+        "validation": None,
+        "backtest": "backtest",
+        "dryrun": "backtest",
+        "risk_config": "risk",
+        "capital": "risk",
+        "strategy": None,
+        "bind_live_small": "risk",
+        "approve_live": "readiness",
+    }
+    return targets.get(code)
