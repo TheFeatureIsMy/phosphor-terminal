@@ -445,21 +445,14 @@ class LiveReadinessService:
         # Find the most recent dry_run or paper run for any version of this strategy
         from app.domain.strategy import StrategyVersion as SV
 
-        version_ids = [
-            r[0]
-            for r in db.query(SV.id).filter(SV.strategy_id == latest_version.strategy_id).all()
-        ]
-        if not version_ids:
-            return ReadinessGate(
-                key="dryrun", status="failed",
-                value="none", threshold="≥72h",
-                detail="no strategy versions", reason_codes=["no_dryrun"],
-            )
+        version_ids_subq = (
+            db.query(SV.id).filter(SV.strategy_id == latest_version.strategy_id).scalar_subquery()
+        )
 
         runs = (
             db.query(StrategyRun)
             .filter(
-                StrategyRun.strategy_version_id.in_(version_ids),
+                StrategyRun.strategy_version_id.in_(version_ids_subq),
                 StrategyRun.mode.in_(["dry_run", "paper"]),
             )
             .order_by(StrategyRun.created_at.desc())
@@ -475,32 +468,36 @@ class LiveReadinessService:
 
         # Check the most recent relevant run
         latest_run = runs[0]
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         if latest_run.status in ("running", "starting"):
-            # Running — check elapsed time
-            if latest_run.started_at:
-                elapsed_h = (now - latest_run.started_at).total_seconds() / 3600
+            # Running - check elapsed time
+            started = _to_utc(latest_run.started_at)
+            if started:
+                elapsed_h = (now - started).total_seconds() / 3600
                 if elapsed_h < 72:
                     return ReadinessGate(
                         key="dryrun", status="warning",
-                        value=f"{elapsed_h:.0f}h", threshold="≥72h",
+                        value=f"{elapsed_h:.0f}h", threshold=">=72h",
                         detail=f"paper run in progress: {elapsed_h:.0f}h elapsed",
                         reason_codes=["dryrun_in_progress"],
                     )
-                # Running but already 72h+ — still healthy (it passed the threshold)
+                # Running but already 72h+ - still healthy (it passed the threshold)
                 return ReadinessGate(
                     key="dryrun", status="healthy",
-                    value=f"{elapsed_h:.0f}h running", threshold="≥72h",
+                    value=f"{elapsed_h:.0f}h running", threshold=">=72h",
                 )
             return ReadinessGate(
-                key="dryrun", status="warning",
-                value="running", threshold="≥72h",
-                detail="paper run in progress", reason_codes=["dryrun_in_progress"],
+                key="dryrun", status="failed",
+                value="running", threshold=">=72h",
+                detail="paper run in progress but no start time",
+                reason_codes=["dryrun_no_start_time"],
             )
 
         if latest_run.status == "stopped" and latest_run.started_at and latest_run.stopped_at:
-            elapsed_h = (latest_run.stopped_at - latest_run.started_at).total_seconds() / 3600
+            started = _to_utc(latest_run.started_at)
+            stopped = _to_utc(latest_run.stopped_at)
+            elapsed_h = (stopped - started).total_seconds() / 3600
             if elapsed_h >= 72:
                 return ReadinessGate(
                     key="dryrun", status="healthy",
@@ -568,6 +565,11 @@ class LiveReadinessService:
     ) -> "ReadinessGate":
         from app.schemas.per_strategy_readiness import ReadinessGate
 
+        # NOTE: remaining_budget is currently stubbed as total_budget.
+        # True remaining = total_budget - sum(active_position_exposure).
+        # Position exposure aggregation is deferred (no positions table query yet).
+        # When that query is added, replace the simple `total_budget > 0` check with
+        # `remaining_budget > minimum_per_trade`.
         pool = (
             db.query(CapitalPool)
             .filter(
@@ -623,16 +625,13 @@ class LiveReadinessService:
 
         if latest_version is None:
             return False
-        version_ids = [
-            r[0]
-            for r in db.query(SV.id).filter(SV.strategy_id == latest_version.strategy_id).all()
-        ]
-        if not version_ids:
-            return False
+        version_ids_subq = (
+            db.query(SV.id).filter(SV.strategy_id == latest_version.strategy_id).scalar_subquery()
+        )
         return (
             db.query(StrategyRun)
             .filter(
-                StrategyRun.strategy_version_id.in_(version_ids),
+                StrategyRun.strategy_version_id.in_(version_ids_subq),
                 StrategyRun.mode == "live_small",
                 StrategyRun.status.in_(["running", "starting"]),
             )
@@ -967,6 +966,16 @@ class LiveReadinessService:
 
 
 # ── Module-level helpers ──────────────────────────────────────────────
+
+
+def _to_utc(dt):
+    """Normalize a datetime to timezone-aware UTC (defensive: handles both PG and SQLite)."""
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt
+
 
 def _next_action_label(code: str) -> str:
     """Human-readable label for a next_action code."""

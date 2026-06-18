@@ -287,6 +287,37 @@ class TestDryrunGate:
         gate = _gate_by_key(result.strategy_gates, "dryrun")
         assert gate.status == "failed"
 
+    def test_dryrun_gate_handles_timezone_aware_datetimes(self, db_session, svc, healthy_system_gates):
+        """Regression: timezone-aware started_at must not raise TypeError (Fix 1)."""
+        s = _make_strategy(db_session)
+        v = _make_version(db_session, s.id, status="paper_running")
+        _make_dryrun(db_session, v.id, mode="dry_run", status="running",
+                      started_at=datetime.now(timezone.utc) - timedelta(hours=10),
+                      stopped_at=None)
+        result = _call(svc, s.id, db_session, healthy_system_gates)
+        gate = _gate_by_key(result.strategy_gates, "dryrun")
+        # Running under 72h with tz-aware started_at should produce warning (not crash)
+        assert gate.status == "warning"
+
+    def test_dryrun_gate_failed_when_running_without_started_at(self, db_session, svc, healthy_system_gates):
+        """Running/starting run with None started_at should be failed, not warning (Fix 3)."""
+        s = _make_strategy(db_session)
+        v = _make_version(db_session, s.id, status="draft")
+        # Create a run directly to bypass _make_dryrun's fallback defaults
+        sr = StrategyRun(
+            strategy_version_id=v.id,
+            mode="dry_run",
+            status="running",
+            started_at=None,
+            stopped_at=None,
+        )
+        db_session.add(sr)
+        db_session.flush()
+        result = _call(svc, s.id, db_session, healthy_system_gates)
+        gate = _gate_by_key(result.strategy_gates, "dryrun")
+        assert gate.status == "failed"
+        assert "dryrun_no_start_time" in (gate.reason_codes or [])
+
 
 class TestRiskConfigGate:
     def test_healthy_when_live_small_binding_exists(self, db_session, svc, healthy_system_gates):
