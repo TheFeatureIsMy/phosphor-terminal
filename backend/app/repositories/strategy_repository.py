@@ -89,3 +89,17 @@ class StrategyRepository:
     def delete_strategy(self, strategy: StrategyV2) -> None:
         self._s.delete(strategy)
         self._s.flush()
+
+    def clone_version_for(self, src_version: StrategyVersion, *, new_strategy_id: uuid.UUID, new_version_no: int, created_by: str) -> StrategyVersion:
+        import copy
+        from app.services.dsl_hasher import compute_dsl_hash
+        new_dsl = copy.deepcopy(src_version.rule_dsl)
+        return StrategyVersion(
+            strategy_id=new_strategy_id,
+            version_no=new_version_no,
+            status="draft",
+            dsl_version=src_version.dsl_version,
+            rule_dsl=new_dsl,
+            dsl_hash=compute_dsl_hash(new_dsl),
+            created_by=created_by,
+        )
