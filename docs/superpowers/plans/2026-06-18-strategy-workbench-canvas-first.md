@@ -19,6 +19,13 @@
 - **alembic up + down 双向可执行**：每次迁移本地 `alembic upgrade head && alembic downgrade -1 && alembic upgrade head` 必须通过。
 - **去 AI 味规则**：禁止 全大写+letter-spacing 装饰、磷光辉光、心跳脉冲、EDIT BAY/LAUNCH CONSOLE/MISSION CONTROL 词汇、等大 section card 网格。
 
+## Errata (pre-flight 2026-06-18)
+
+- **validate-dsl 端点已存在**：`backend/app/routers/strategies_v2.py:67` 已有 `POST /api/v2/strategies/validate-dsl`，不需要新增。HUD 验证按钮直接调用。
+- **Task 4 接口修正**：`StrategyArchiveService` 是 admin 强归档，不走 `strategy_transition`；Consumes 列已移除 `strategy_transition`。
+- **Task 5 文件落位修正**：异常类放 `services/strategy_binding_errors.py`，不放 `schemas/`（约定：schemas/=Pydantic 模型，services/=业务逻辑+异常）。
+- **Task 7 ActivityEntry schema 形状**：DB 列 flat (`ref_kind`, `ref_id`)，响应 schema 必须嵌套成 `ref: {kind, id}`（Swift 期望嵌套）。已在 Task 7 Step 1 加 model_validator 示例。
+
 ---
 
 ## Phase 1: 后端基础（数据库 + 模型）
@@ -548,11 +555,11 @@ git commit -m "feat(strategy-workspace): add StrategyDuplicateService"
 - Test: `backend/tests/test_strategy_archive_service.py`
 
 **Interfaces:**
-- Consumes: `StrategyActivityService`、`app.services.strategy_transition` (`validate_transition`、`is_system_only`、`ALLOWED_TRANSITIONS`)
+- Consumes: `StrategyActivityService`
 - Produces:
   - `StrategyArchiveService(db: Session, activity: StrategyActivityService)`
   - `.archive(strategy_id: UUID, *, reason: str | None = None, actor: str = "api") -> StrategyV2`
-  - 行为：所有 `version.status != 'archived'` 的 version 转 archived（**不验证 transition**——这是 admin 强归档；transition 校验仅用于普通用户路径）+ `strategy.status = 'archived'` + activity log `kind=archived summary="archived: {reason}" delta={"version_count": N}`；事务化；幂等（已 archived 的策略再调 idempotent）。
+  - 行为：所有 `version.status != 'archived'` 的 version 转 archived（**不走 strategy_transition 校验** —— 这是 admin 强归档；transition 校验仅用于普通用户路径）+ `strategy.status = 'archived'` + activity log `kind=archived summary="archived: {reason}" delta={"version_count": N}`；事务化；幂等（已 archived 的策略再调 idempotent）。
 
 - [ ] **Step 1: 写测试**
 
@@ -692,7 +699,8 @@ git commit -m "feat(strategy-workspace): add StrategyArchiveService"
 
 **Files:**
 - Create: `backend/app/services/strategy_binding_service.py`
-- Create: `backend/app/schemas/strategy_binding.py`
+- Create: `backend/app/schemas/strategy_binding.py` (Pydantic models only)
+- Create: `backend/app/services/strategy_binding_errors.py` (exception classes — keep services separate from schemas)
 - Modify: `backend/app/repositories/strategy_repository.py` (add `list_bindings_for_strategy`、`get_binding_by_id`)
 - Test: `backend/tests/test_strategy_binding_service.py`
 
@@ -757,8 +765,10 @@ class CreateBindingRequest(BaseModel):
     risk_policy_version_id: uuid.UUID
     capital_pool_id: uuid.UUID
     mode: str   # backtest | dry_run | shadow | live_small
+```
 
-
+```python
+# backend/app/services/strategy_binding_errors.py  (exception classes — NOT in schemas/)
 class BindingError(Exception):
     code: str = "BINDING_ERROR"
 
@@ -792,7 +802,7 @@ from app.repositories.strategy_repository import StrategyRepository
 from app.services.dsl_hasher import compute_dsl_hash
 from app.services.strategy_activity_service import StrategyActivityService
 from app.services.strategy_binding_service import StrategyBindingService
-from app.schemas.strategy_binding import (
+from app.services.strategy_binding_errors import (
     DuplicateBindingError, PoolMismatchError, PolicyArchivedError, BindingInUseError,
 )
 
@@ -952,7 +962,7 @@ from app.domain.risk import (
     CapitalPool, RiskPolicyVersion, StrategyRiskPolicyBinding,
 )
 from app.domain.strategy import StrategyVersion
-from app.schemas.strategy_binding import (
+from app.services.strategy_binding_errors import (
     DuplicateBindingError, PoolMismatchError, PolicyArchivedError, BindingInUseError,
 )
 from app.services.strategy_activity_service import StrategyActivityService
@@ -1071,7 +1081,7 @@ cd backend && python3 -m pytest tests/test_strategy_binding_service.py -v
 - [ ] **Step 6: Commit**
 
 ```bash
-git add backend/app/services/strategy_binding_service.py backend/app/schemas/strategy_binding.py backend/app/repositories/strategy_repository.py backend/tests/test_strategy_binding_service.py
+git add backend/app/services/strategy_binding_service.py backend/app/services/strategy_binding_errors.py backend/app/schemas/strategy_binding.py backend/app/repositories/strategy_repository.py backend/tests/test_strategy_binding_service.py
 git commit -m "feat(strategy-workspace): add StrategyBindingService"
 ```
 
@@ -1176,6 +1186,38 @@ git commit -m "feat(strategy-workspace): add LiveReadinessService.compute_for_st
   - `data_dependencies` 从 `rule_dsl.symbols` + 各 indicator 节点抽取
 
 - [ ] **Step 1: 写 schema** (`WorkspaceSnapshotResponse`，含 spec §6.1.A 列出的 11 个字段；嵌套 `BacktestRunSummary`、`StrategyRunSummary`、`SignalLogicSummary`、`DataDependencies`、`ActivityEntry`、`StrategyBindingResponse`、`PerStrategyReadinessResponse`)
+
+**关键 schema 形状（避免 flat-vs-nested 歧义）：** DB 模型 `StrategyActivityLog` 把 `ref_kind` 和 `ref_id` 存为两个 flat 列，但响应 schema **必须**把它们组合成嵌套 `ref: {kind, id}` 对象（Swift `ActivityEntry` 期望嵌套）。在 schema 加 model_validator：
+
+```python
+class ActivityEntryRef(BaseModel):
+    kind: str
+    id: uuid.UUID
+
+class ActivityEntry(BaseModel):
+    id: uuid.UUID
+    kind: str
+    occurred_at: datetime
+    actor: Optional[str] = None
+    summary: str
+    delta: Optional[dict] = None
+    ref: Optional[ActivityEntryRef] = None
+
+    @model_validator(mode='before')
+    @classmethod
+    def _nest_ref(cls, data):
+        if isinstance(data, dict):
+            return data  # already nested
+        # ORM object: combine flat ref_kind/ref_id into nested ref
+        ref = None
+        if getattr(data, 'ref_kind', None) and getattr(data, 'ref_id', None):
+            ref = {'kind': data.ref_kind, 'id': data.ref_id}
+        return {
+            'id': data.id, 'kind': data.kind, 'occurred_at': data.occurred_at,
+            'actor': data.actor, 'summary': data.summary, 'delta': data.delta,
+            'ref': ref,
+        }
+```
 
 - [ ] **Step 2: 写 helper 测试 + 实现**
 
