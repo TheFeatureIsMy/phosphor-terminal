@@ -68,10 +68,13 @@ class ReadinessCheck(BaseModel):
     status: str = "unknown"  # healthy / warning / failed / unknown
     value: str = ""
     threshold: str = ""
+    detail: str = ""
+    group: str = "system"  # mode | strategy | capital | risk | system | execution
 
 
 class LiveReadinessResponse(BaseModel):
     state: str = "NOT_READY"
+    grand_status: str = "not_live"  # not_live / needs_config / needs_validation / paper_passed / ready_for_live
     score: int = 0
     reason_codes: list[str] = Field(default_factory=list)
     available_actions: list[AvailableAction] = Field(default_factory=list)
@@ -81,6 +84,17 @@ class LiveReadinessResponse(BaseModel):
     blocking_reasons: list[dict] = Field(default_factory=list)
     warnings: list[dict] = Field(default_factory=list)
     checks: list[ReadinessCheck] = Field(default_factory=list)
+
+    # Selection context
+    selected_mode: str = ""           # "paper" | "live_small" | "live_full"
+    selected_strategy_id: str = ""
+    selected_capital_pool_id: str = ""
+    selected_exchange: str = ""
+
+    # Available options for the iOS pickers
+    available_strategies: list[dict] = Field(default_factory=list)
+    available_capital_pools: list[dict] = Field(default_factory=list)
+    available_exchanges: list[dict] = Field(default_factory=list)
 
 
 class GlobalStatusResponse(BaseModel):

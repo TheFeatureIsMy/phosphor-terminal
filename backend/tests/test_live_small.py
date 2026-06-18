@@ -441,3 +441,136 @@ class TestSecurityBoundary:
         src = inspect.getsource(circuit_breaker)
         assert "CommandBus" not in src
         assert "EmergencyStop" not in src
+
+
+# ══════════════════════════════════════════════════════════════════════
+# Live Readiness Service — 11 checks + 5-level grand_status
+# ══════════════════════════════════════════════════════════════════════
+
+class TestLiveReadinessService:
+    """Tests for the unified LiveReadinessService used by /api/overview/live-readiness."""
+
+    @pytest.fixture
+    def svc(self):
+        from app.services.live_readiness_service import LiveReadinessService
+        s = LiveReadinessService(redis_store=None, freqtrade_client=None)
+        # Stub infra checks to bypass DB/Redis/Freqtrade dependency
+        s._check_redis = _async_result("healthy", "1ms")
+        s._check_freqtrade = _async_result("healthy", "running")
+        s._check_database = lambda: _sync_result("healthy", "ok")
+        s._check_risk_state = _async_result("healthy", "normal")
+        return s
+
+    def test_returns_11_named_checks(self, svc):
+        import asyncio
+        r = asyncio.run(svc.evaluate(
+            selected_mode="live_small",
+            selected_strategy_id="s1",
+            selected_capital_pool_id="cp1",
+            selected_exchange="binance",
+        ))
+        keys = {c.key for c in r.checks}
+        expected = {"mode", "strategy", "capital", "risk_config", "exchange",
+                    "data_source", "validation", "backtest", "dryrun",
+                    "notification", "emergency_stop"}
+        assert expected.issubset(keys), f"missing checks: {expected - keys}"
+
+    def test_grand_status_ready_for_live(self, svc):
+        import asyncio
+        r = asyncio.run(svc.evaluate(selected_mode='live_small', selected_strategy_id='s1', selected_capital_pool_id='cp1', selected_exchange='binance'))
+        assert r.grand_status == "ready_for_live"
+        assert r.can_start_live_small is True
+        assert r.can_start_paper is True
+
+    def test_grand_status_paper_passed(self, svc):
+        import asyncio
+        r = asyncio.run(svc.evaluate(selected_mode='paper', selected_strategy_id='s1', selected_capital_pool_id='cp1', selected_exchange='binance'))
+        assert r.grand_status == "paper_passed"
+        assert r.can_start_paper is True
+        assert r.can_start_live_small is False
+
+    def test_grand_status_full_live(self, svc):
+        import asyncio
+        r = asyncio.run(svc.evaluate(selected_mode='live_full', selected_strategy_id='s1', selected_capital_pool_id='cp1', selected_exchange='binance'))
+        assert r.grand_status == "ready_for_live"
+        assert r.can_start_live_small is True
+        assert r.can_start_full_live is True
+
+    def test_grand_status_needs_config_when_strategy_missing(self, svc):
+        import asyncio
+        r = asyncio.run(svc.evaluate(selected_mode='live_small', selected_strategy_id='', selected_capital_pool_id='cp1', selected_exchange='binance'))
+        assert r.grand_status == "needs_config"
+        assert r.can_start_live_small is False
+
+    def test_grand_status_needs_config_when_all_empty(self, svc):
+        import asyncio
+        r = asyncio.run(svc.evaluate(selected_mode='', selected_strategy_id='', selected_capital_pool_id='', selected_exchange=''))
+        assert r.grand_status == "needs_config"
+
+    def test_grand_status_not_live_when_db_down(self, svc):
+        import asyncio
+        svc._check_database = lambda: _sync_result("failed", "error")
+        r = asyncio.run(svc.evaluate(selected_mode='live_small', selected_strategy_id='s1', selected_capital_pool_id='cp1', selected_exchange='binance'))
+        assert r.grand_status == "not_live"
+        assert r.can_start_live_small is False
+        assert r.can_start_paper is False
+
+    def test_grand_status_needs_validation_when_dryrun_fails(self, svc):
+        import asyncio
+        svc._check_dryrun = staticmethod(
+            lambda sid: _check_dryrun(sid, healthy=False)
+        )
+        r = asyncio.run(svc.evaluate(selected_mode='live_small', selected_strategy_id='s1', selected_capital_pool_id='cp1', selected_exchange='binance'))
+        assert r.grand_status == "needs_validation"
+
+    def test_selected_context_preserved(self, svc):
+        import asyncio
+        r = asyncio.run(svc.evaluate(selected_mode='live_small', selected_strategy_id='v2:btc-scalp', selected_capital_pool_id='cp-007', selected_exchange='binance'))
+        assert r.selected_mode == "live_small"
+        assert r.selected_strategy_id == "v2:btc-scalp"
+        assert r.selected_capital_pool_id == "cp-007"
+        assert r.selected_exchange == "binance"
+
+    def test_legacy_state_mapping(self, svc):
+        import asyncio
+        # ready_for_live → LIVE_READY
+        r = asyncio.run(svc.evaluate(selected_mode='live_small', selected_strategy_id='s1', selected_capital_pool_id='cp1', selected_exchange='binance'))
+        assert r.state == "LIVE_READY"
+        # paper_passed → LIVE_SMALL_READY
+        r = asyncio.run(svc.evaluate(selected_mode='paper', selected_strategy_id='s1', selected_capital_pool_id='cp1', selected_exchange='binance'))
+        assert r.state == "LIVE_SMALL_READY"
+        # needs_config → NOT_READY
+        r = asyncio.run(svc.evaluate(selected_mode='', selected_strategy_id='', selected_capital_pool_id='', selected_exchange=''))
+        assert r.state == "NOT_READY"
+
+    def test_serialize_round_trip(self, svc):
+        import asyncio
+        from app.services.live_readiness_service import LiveReadinessService
+        r = asyncio.run(svc.evaluate(selected_mode='live_small', selected_strategy_id='s1', selected_capital_pool_id='cp1', selected_exchange='binance'))
+        d = LiveReadinessService._serialize(r)
+        assert d["grand_status"] == "ready_for_live"
+        assert d["selected_mode"] == "live_small"
+        assert isinstance(d["checks"], list)
+        for c in d["checks"]:
+            assert {"key", "label", "status", "value", "threshold", "detail", "group"} <= c.keys()
+
+
+def _check_dryrun(strategy_id: str, healthy: bool = True):
+    from app.services.live_readiness_service import CheckResult
+    if healthy:
+        return CheckResult(key="dryrun", label="模拟/dry-run", status="healthy",
+                           value="100h", threshold="≥72h", group="execution")
+    return CheckResult(key="dryrun", label="模拟/dry-run", status="failed",
+                       value="0h", threshold="≥72h", group="execution")
+
+
+def _sync_result(status, value):
+    from app.services.live_readiness_service import CheckResult
+    return CheckResult(key="tbd", label="tbd", status=status, value=value)
+
+
+def _async_result(status, value):
+    from app.services.live_readiness_service import CheckResult
+    async def _inner(*args, **kwargs):
+        return CheckResult(key="tbd", label="tbd", status=status, value=value)
+    return _inner
