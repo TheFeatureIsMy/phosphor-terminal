@@ -17,8 +17,7 @@ struct AlphaLoopApp: App {
     private let pulseColors: PulseColors
     private let dependencyState: DependencyState
 
-    @State private var networkClient: any NetworkClientProtocol = MockNetworkClient()
-    @State private var isDetectingBackend = true
+    @State private var networkClient: any NetworkClientProtocol = LiveNetworkClient()
     @State private var isLiveMode = false
 
     private static func resolveForceMode() -> String? {
@@ -40,12 +39,10 @@ struct AlphaLoopApp: App {
         if forceMode == "live" {
             client = LiveNetworkClient()
             self._isLiveMode = State(initialValue: true)
-            self._isDetectingBackend = State(initialValue: false)
         } else if forceMode == "mock" {
             client = MockNetworkClient()
-            self._isDetectingBackend = State(initialValue: false)
         } else {
-            client = MockNetworkClient()
+            client = LiveNetworkClient()
         }
         self._networkClient = State(initialValue: client)
         self.dependencyState = DependencyState(client: client)
@@ -68,7 +65,7 @@ struct AlphaLoopApp: App {
                 .contentTransition(.opacity)
                 .animation(.easeInOut(duration: 0.35), value: themeManager.current)
                 .frame(minWidth: 900, minHeight: 600)
-                .task {
+                .task(id: appState.retryBackendTrigger) {
                     await detectBackendAndConfigure()
                 }
         }
@@ -92,24 +89,22 @@ struct AlphaLoopApp: App {
             let reachable = await LiveNetworkClient.isBackendReachable()
             if reachable {
                 NSLog("[AlphaLoop] Backend reachable — using Live mode")
-                networkClient = LiveNetworkClient()
                 isLiveMode = true
                 appState.isLiveMode = true
+                appState.backendUnavailable = false
                 wsManager.connectForLiveMode()
             } else {
-                NSLog("[AlphaLoop] Backend unreachable — using Mock mode")
+                NSLog("[AlphaLoop] Backend unreachable")
+                appState.backendUnavailable = true
+                appState.isDetectingBackend = false
+                return
             }
         } else if forcedMode == "live" {
             appState.isLiveMode = true
             wsManager.connectForLiveMode()
         }
 
-        isDetectingBackend = false
-
-        // Auto-login in mock mode
-        if !isLiveMode && !authState.isAuthenticated {
-            authState.mockLogin()
-        }
+        appState.isDetectingBackend = false
 
         // Initialize settings sync
         settingsState.configure(client: networkClient)
@@ -147,7 +142,15 @@ struct ContentView: View {
 
     var body: some View {
         Group {
-            if !appState.hasLaunched {
+            if appState.backendUnavailable {
+                BackendUnavailableView {
+                    appState.backendUnavailable = false
+                    appState.isDetectingBackend = true
+                    appState.retryBackendTrigger += 1
+                }
+            } else if appState.isDetectingBackend {
+                LandingView()
+            } else if !appState.hasLaunched {
                 LandingView()
             } else if authState.isAuthenticated {
                 AppShellView()

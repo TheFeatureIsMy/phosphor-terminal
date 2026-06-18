@@ -1,11 +1,15 @@
-// LiveReadinessCard.swift — Live readiness lamp + state text + gate chips
-// Pulsing lamp with radial gradient, ambient glow, and reason chips
+// LiveReadinessCard.swift — Live readiness lamp + checks (real data only).
+// Reads checks from `/api/overview/live-readiness`. Never fabricates chips.
 
 import SwiftUI
 
 struct LiveReadinessCard: View {
     @Environment(PulseColors.self) private var colors
-    let system: SystemOverviewResponse
+    @Environment(SettingsState.self) private var settingsState
+
+    let system: SystemOverviewResponse?
+    let readiness: LiveReadinessResponse?
+    let dataSourceAvailable: Bool
 
     @State private var isPulsing = false
 
@@ -14,104 +18,154 @@ struct LiveReadinessCard: View {
             VStack(alignment: .leading, spacing: PulseSpacing.sm) {
                 TerminalLabel(text: L10n.Dashboard.liveReadiness)
 
-                // Lamp + State text
                 HStack(spacing: 14) {
-                    // Pulsing lamp with ambient glow
-                    ZStack {
-                        // Ambient glow
-                        Circle()
-                            .fill(
-                                RadialGradient(
-                                    colors: [lampColor.opacity(0.06), .clear],
-                                    center: .center,
-                                    startRadius: 0,
-                                    endRadius: 40
-                                )
-                            )
-                            .frame(width: 80, height: 80)
-
-                        // Outer pulse ring
-                        Circle()
-                            .fill(lampColor.opacity(0.15))
-                            .frame(width: 28, height: 28)
-                            .scaleEffect(isPulsing ? 1.6 : 1.0)
-                            .opacity(isPulsing ? 0 : 0.6)
-
-                        // Main lamp
-                        Circle()
-                            .fill(
-                                RadialGradient(
-                                    colors: [
-                                        lampColor,
-                                        lampColor.opacity(0.6),
-                                        lampColor.opacity(0.2),
-                                        .clear
-                                    ],
-                                    center: .center,
-                                    startRadius: 0,
-                                    endRadius: 14
-                                )
-                            )
-                            .frame(width: 28, height: 28)
-                            .shadow(color: lampColor.opacity(0.35), radius: 12)
-                            .shadow(color: lampColor.opacity(0.1), radius: 24)
-                    }
-                    .frame(width: 44, height: 44)
-                    .onAppear {
-                        withAnimation(
-                            .easeInOut(duration: 2.5)
-                            .repeatForever(autoreverses: false)
-                        ) {
-                            isPulsing = true
-                        }
-                    }
-
-                    // Text block
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(stateLabel)
-                            .font(.system(size: 15, weight: .semibold, design: .monospaced))
-                            .foregroundStyle(lampColor)
-                            .tracking(0.5)
-
-                        Text(L10n.Dashboard.gatesPassed(7))
-                            .font(PulseFonts.monoLabel)
-                            .foregroundStyle(colors.textMuted)
-                    }
+                    lamp
+                    textBlock
                 }
 
-                // Reason chips
-                HStack(spacing: PulseSpacing.xxs) {
-                    ForEach(gateChips, id: \.self) { chip in
-                        gateChipView(chip)
+                if !dataSourceAvailable {
+                    EmptyStateView(
+                        icon: "antenna.radiowaves.left.and.right.slash",
+                        title: L10n.Dashboard.dataSourceUnavailable,
+                        description: ""
+                    )
+                    .frame(minHeight: 80)
+                } else if checks.isEmpty {
+                    EmptyStateView(
+                        icon: "checkmark.shield",
+                        title: L10n.Dashboard.readinessNoData,
+                        description: ""
+                    )
+                    .frame(minHeight: 80)
+                } else {
+                    VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
+                        Text(L10n.Dashboard.liveReadinessChecks)
+                            .font(PulseFonts.micro)
+                            .foregroundStyle(colors.textMuted)
+                            .textCase(.uppercase)
+                            .tracking(0.5)
+
+                        ForEach(checks, id: \.key) { check in
+                            checkRow(check)
+                        }
                     }
                 }
             }
-            .frame(minHeight: 140)
+            .frame(minHeight: 160)
+        }
+        .id(settingsState.language)
+    }
+
+    // MARK: - Lamp
+
+    private var lamp: some View {
+        ZStack {
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [lampColor.opacity(0.08), .clear],
+                        center: .center,
+                        startRadius: 0,
+                        endRadius: 40
+                    )
+                )
+                .frame(width: 80, height: 80)
+
+            Circle()
+                .fill(lampColor.opacity(0.18))
+                .frame(width: 28, height: 28)
+                .scaleEffect(isPulsing ? 1.7 : 1.0)
+                .opacity(isPulsing ? 0 : 0.6)
+
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [lampColor, lampColor.opacity(0.6), lampColor.opacity(0.2), .clear],
+                        center: .center,
+                        startRadius: 0,
+                        endRadius: 14
+                    )
+                )
+                .frame(width: 28, height: 28)
+                .shadow(color: lampColor.opacity(0.4), radius: 12)
+                .shadow(color: lampColor.opacity(0.12), radius: 24)
+        }
+        .frame(width: 44, height: 44)
+        .onAppear {
+            withAnimation(.easeInOut(duration: 2.5).repeatForever(autoreverses: false)) {
+                isPulsing = true
+            }
         }
     }
 
-    // MARK: - Lamp Color
+    // MARK: - Text
+
+    private var textBlock: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(stateLabel)
+                .font(.system(size: 15, weight: .semibold, design: .monospaced))
+                .foregroundStyle(lampColor)
+                .tracking(0.5)
+
+            if let score = readiness?.score, score > 0 {
+                Text("score \(score) · \(L10n.Dashboard.gatesPassed(checks.count))")
+                    .font(PulseFonts.monoLabel)
+                    .foregroundStyle(colors.textMuted)
+            } else {
+                Text(L10n.Dashboard.gatesPassed(checks.count))
+                    .font(PulseFonts.monoLabel)
+                    .foregroundStyle(colors.textMuted)
+            }
+        }
+    }
+
+    // MARK: - Check Row
+
+    private func checkRow(_ check: ReadinessCheckResponse) -> some View {
+        let tone = checkTone(check.status)
+        return HStack(spacing: 6) {
+            Circle().fill(tone.color).frame(width: 6, height: 6)
+                .shadow(color: tone.color.opacity(0.4), radius: 2)
+            Text(check.label)
+                .font(PulseFonts.micro)
+                .foregroundStyle(colors.textSecondary)
+                .textCase(.uppercase)
+            Spacer()
+            Text(check.value)
+                .font(PulseFonts.monoLabel)
+                .foregroundStyle(colors.textPrimary)
+            if !check.threshold.isEmpty {
+                Text("· \(check.threshold)")
+                    .font(PulseFonts.micro)
+                    .foregroundStyle(colors.textMuted)
+            }
+        }
+    }
+
+    // MARK: - Derived
+
+    private var checks: [ReadinessCheckResponse] {
+        readiness?.checks ?? []
+    }
 
     private var lampColor: Color {
-        switch system.liveReadinessState.lowercased() {
-        case "live_ready", "live_small_ready":
+        guard let state = system?.liveReadinessState.lowercased() else { return PulseColors.danger }
+        switch state {
+        case "live_ready", "live_small_ready", "live_full_ready", "live_running":
             return PulseColors.accent
         case "paper_only":
             return PulseColors.amber
-        case "risk_locked":
-            return PulseColors.danger
-        case "emergency_locked":
+        case "risk_locked", "emergency_locked":
             return PulseColors.danger
         default:
             return PulseColors.danger
         }
     }
 
-    // MARK: - State Label
-
     private var stateLabel: String {
-        switch system.liveReadinessState.lowercased() {
-        case "live_ready", "live_small_ready":
+        guard let state = system?.liveReadinessState.lowercased() else { return L10n.Dashboard.notReady }
+        switch state {
+        case "live_ready", "live_small_ready", "live_full_ready", "live_running":
             return L10n.Dashboard.liveReady
         case "paper_only":
             return L10n.Dashboard.paperOnly
@@ -124,42 +178,16 @@ struct LiveReadinessCard: View {
         }
     }
 
-    // MARK: - Gate Chips
-
-    private var gateChips: [String] {
-        // Derive reasonable gate labels from system state
-        var chips = [String]()
-        if system.freqtradeState.lowercased() == "healthy" || system.freqtradeState.lowercased() == "running" {
-            chips.append("freqtrade_ok")
+    private func checkTone(_ status: String) -> (color: Color, label: String) {
+        switch status.lowercased() {
+        case "healthy", "ok", "pass", "running":
+            return (PulseColors.StateColors.green, "OK")
+        case "warning", "degraded":
+            return (PulseColors.StateColors.amber, "WARN")
+        case "failed", "error", "down":
+            return (PulseColors.StateColors.red, "FAIL")
+        default:
+            return (colors.textMuted, status.uppercased())
         }
-        if system.redisRttMs < 50 {
-            chips.append("redis_ok")
-        }
-        if system.exchangeState.lowercased() == "ok" || system.exchangeState.lowercased() == "healthy" {
-            chips.append("exchange_ok")
-        }
-        if system.fastTrackLatencyMs < 200 {
-            chips.append("latency_ok")
-        }
-        // Add common defaults
-        chips.append(contentsOf: ["risk_budget_ok", "balance_ok", "config_ok"])
-        return Array(chips.prefix(7))
-    }
-
-    private func gateChipView(_ label: String) -> some View {
-        Text(label)
-            .font(PulseFonts.micro)
-            .foregroundStyle(PulseColors.accent.opacity(0.7))
-            .textCase(.uppercase)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2)
-            .background(
-                RoundedRectangle(cornerRadius: PulseRadii.xs)
-                    .fill(PulseColors.accent.opacity(0.04))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: PulseRadii.xs)
-                    .stroke(PulseColors.accent.opacity(0.12), lineWidth: 1)
-            )
     }
 }

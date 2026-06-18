@@ -80,6 +80,15 @@ final class AppState {
     /// 网络模式标记
     var isLiveMode: Bool = false
 
+    /// 后端连接检测中
+    var isDetectingBackend: Bool = true
+
+    /// 后端不可达（显示错误页）
+    var backendUnavailable: Bool = false
+
+    /// 重试后端检测的触发器（递增触发 .task(id:) 重新执行）
+    var retryBackendTrigger: Int = 0
+
     /// MRU 最近访问路由 (max 10)
     var recentRoutes: [AppRoute] = []
 

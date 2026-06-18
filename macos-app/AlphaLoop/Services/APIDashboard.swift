@@ -1,4 +1,4 @@
-// APIDashboard.swift — Dashboard BFF API (delegates to APIOverview)
+// APIDashboard.swift — Dashboard BFF API (delegates to APIOverview) + risk events
 
 import Foundation
 
@@ -10,7 +10,7 @@ struct APIDashboard {
         return try await api.getDashboard()
     }
 
-    // Legacy: equity curve for sparkline (kept until BFF includes it)
+    /// Legacy: equity curve sparkline.
     func getEquityCurve() async throws -> [EquityPoint] {
         try await client.get("/api/dashboard/equity-curve", mock: MockData.mockEquityCurve)
     }
