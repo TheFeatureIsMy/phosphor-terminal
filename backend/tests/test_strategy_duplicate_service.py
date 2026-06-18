@@ -54,7 +54,9 @@ def test_duplicate_clones_latest_version_as_v1_draft(db_session, source):
     assert len(versions) == 1
     assert versions[0].version_no == 1
     assert versions[0].status == "draft"
-    assert versions[0].rule_dsl == source.versions[0].rule_dsl if hasattr(source, 'versions') else True
+    src_versions = repo.list_versions(source.id)
+    assert len(src_versions) == 1
+    assert versions[0].rule_dsl == src_versions[0].rule_dsl
 
 
 def test_duplicate_uses_custom_name(db_session, source):
@@ -91,3 +93,14 @@ def test_duplicate_missing_source_raises(db_session):
     svc = StrategyDuplicateService(db_session, StrategyActivityService(db_session))
     with pytest.raises(ValueError, match="not found"):
         svc.duplicate(uuid.uuid4())
+
+
+def test_duplicate_source_with_no_version_raises(db_session):
+    s = StrategyV2(name="empty", strategy_type="rule_dsl", source_type="manual", status="draft")
+    StrategyRepository(db_session).create_strategy(s)
+    db_session.commit()
+    db_session.refresh(s)
+
+    svc = StrategyDuplicateService(db_session, StrategyActivityService(db_session))
+    with pytest.raises(ValueError, match="no version"):
+        svc.duplicate(s.id)
