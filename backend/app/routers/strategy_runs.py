@@ -7,6 +7,7 @@ from sqlalchemy import desc
 
 from app.database import get_db
 from app.domain.execution import StrategyRun, FreqtradeRun
+from app.domain.strategy import StrategyVersion
 from app.domain.order import ExecutionOrder
 from app.domain.ledger import ExecutionLedgerEvent
 from app.schemas.strategy_runs import StrategyRunView, StrategyRunDetail, FreqtradeRunView
@@ -18,6 +19,8 @@ router = APIRouter(prefix="/api/v2/strategy-runs", tags=["strategy-runs"])
 def list_strategy_runs(
     mode: str | None = None,
     status: str | None = None,
+    strategy_version_id: uuid.UUID | None = Query(None, description="Filter by strategy version UUID"),
+    strategy_id: uuid.UUID | None = Query(None, description="Filter by strategy UUID (joins through StrategyVersion)"),
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
@@ -27,6 +30,12 @@ def list_strategy_runs(
         q = q.filter(StrategyRun.mode == mode)
     if status:
         q = q.filter(StrategyRun.status == status)
+    if strategy_version_id:
+        q = q.filter(StrategyRun.strategy_version_id == strategy_version_id)
+    if strategy_id:
+        q = q.join(StrategyVersion, StrategyVersion.id == StrategyRun.strategy_version_id).filter(
+            StrategyVersion.strategy_id == strategy_id,
+        )
     runs = q.order_by(desc(StrategyRun.created_at)).offset(offset).limit(limit).all()
     return runs
 

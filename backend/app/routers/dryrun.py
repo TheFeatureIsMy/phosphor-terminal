@@ -3,7 +3,7 @@ import asyncio
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -137,9 +137,19 @@ def get_dryrun_status(command_id: uuid.UUID, db: Session = Depends(get_db)):
 
 
 @router.get("", response_model=list[DryRunRunResponse])
-def list_dryruns(limit: int = 50, offset: int = 0, db: Session = Depends(get_db)):
+def list_dryruns(
+    limit: int = 50,
+    offset: int = 0,
+    strategy_version_id: uuid.UUID | None = Query(
+        None, description="Filter by strategy version UUID (DryRunRun.strategy_version_id as text)",
+    ),
+    db: Session = Depends(get_db),
+):
+    query = db.query(DryRunRun)
+    if strategy_version_id is not None:
+        query = query.filter(DryRunRun.strategy_version_id == str(strategy_version_id))
     runs = (
-        db.query(DryRunRun)
+        query
         .order_by(DryRunRun.created_at.desc())
         .offset(offset)
         .limit(limit)

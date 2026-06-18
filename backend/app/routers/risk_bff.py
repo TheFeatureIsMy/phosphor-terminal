@@ -1,7 +1,8 @@
 """Risk BFF — Overview + Stop Protection + Circuit Breakers"""
 import logging
+import uuid
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 
 from app.schemas.risk_bff import (
     RiskOverviewResponse, RiskGuard,
@@ -18,7 +19,62 @@ logger = logging.getLogger(__name__)
 
 
 @router.get("/overview", response_model=RiskOverviewResponse)
-async def get_risk_overview():
+async def get_risk_overview(
+    strategy_id: uuid.UUID | None = Query(
+        None, description="Strategy UUID — when provided, returns per-strategy risk state",
+    ),
+    db: Session = Depends(get_db),
+):
+    if strategy_id is not None:
+        try:
+            from app.services.live_readiness_service import LiveReadinessService
+
+            svc = LiveReadinessService()
+            readiness = svc.compute_for_strategy(strategy_id, db)
+
+            # Extract risk_config and capital gates as risk guards
+            guards: list[RiskGuard] = []
+            key_label_map = {
+                "risk_config": "风控配置",
+                "capital": "资金配置",
+            }
+            for gate in readiness.strategy_gates:
+                if gate.key in key_label_map:
+                    guards.append(RiskGuard(
+                        key=gate.key,
+                        label=key_label_map[gate.key],
+                        current_value=1.0 if gate.status == "healthy" else 0.0,
+                        limit_value=1.0,
+                        remaining_pct=1.0 if gate.status == "healthy" else 0.0,
+                        status=gate.status,
+                        reason_codes=gate.reason_codes,
+                    ))
+
+            failed = [g for g in guards if g.status != "healthy"]
+            state = "healthy" if not failed else "warning"
+            account_state = readiness.grand_status
+
+            return RiskOverviewResponse(
+                state=state,
+                reason_codes=[r for g in failed for r in g.reason_codes],
+                available_actions=[],
+                account_state=account_state,
+                emergency_locked=readiness.grand_status == "not_live",
+                guards=guards,
+                active_locks=[],
+            ).model_dump()
+        except Exception as e:
+            logger.exception("[risk-overview] per-strategy path failed: %s", e)
+            return RiskOverviewResponse(
+                state="data_source_unavailable",
+                reason_codes=["data_source_unavailable", type(e).__name__],
+                available_actions=[],
+                account_state="unknown",
+                emergency_locked=False,
+                guards=[],
+                active_locks=[],
+            ).model_dump()
+
     try:
         from app.services.bff.risk_aggregator import RiskAggregator
         agg = RiskAggregator()

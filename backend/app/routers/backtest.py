@@ -120,11 +120,22 @@ def list_backtests(
     limit: int = 50,
     offset: int = 0,
     strategy_id: int | None = None,
+    strategy_uuid: uuid.UUID | None = Query(
+        None, description="Filter by strategy UUID (BacktestRun.strategy_uuid). "
+        "Deprecated: use strategy_uuid instead of legacy int strategy_id.",
+    ),
+    strategy_version_uuid: uuid.UUID | None = Query(
+        None, description="Filter by strategy version UUID (BacktestRun.strategy_version_uuid)",
+    ),
     db: Session = Depends(get_db),
 ):
     query = db.query(BacktestRun)
     if strategy_id is not None:
         query = query.filter(BacktestRun.strategy_id == strategy_id)
+    if strategy_uuid is not None:
+        query = query.filter(BacktestRun.strategy_uuid == strategy_uuid)
+    if strategy_version_uuid is not None:
+        query = query.filter(BacktestRun.strategy_version_uuid == strategy_version_uuid)
     runs = (
         query
         .order_by(BacktestRun.created_at.desc())
