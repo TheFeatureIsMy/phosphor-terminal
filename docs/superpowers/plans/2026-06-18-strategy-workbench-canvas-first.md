@@ -25,6 +25,7 @@
 - **Task 4 接口修正**：`StrategyArchiveService` 是 admin 强归档，不走 `strategy_transition`；Consumes 列已移除 `strategy_transition`。
 - **Task 5 文件落位修正**：异常类放 `services/strategy_binding_errors.py`，不放 `schemas/`（约定：schemas/=Pydantic 模型，services/=业务逻辑+异常）。
 - **Task 7 ActivityEntry schema 形状**：DB 列 flat (`ref_kind`, `ref_id`)，响应 schema 必须嵌套成 `ref: {kind, id}`（Swift 期望嵌套）。已在 Task 7 Step 1 加 model_validator 示例。
+- **Task 1 column rename (post-implementation)**：`backtest_runs` 已存在 VARCHAR 列名 `strategy_version_id`（来自初始 schema `cafb0a7659e2`）。新 UUID 列重命名为 `strategy_version_uuid`，配套的 `strategy_uuid` 列名一致。Task 9 / Task 14 / Task 25 / docs 更新都用 `strategy_version_uuid` 引用 backtest_runs 的新 UUID 列。**注意**：`StrategyRun.strategy_version_id`、`StrategyRiskPolicyBinding.strategy_version_id`、API 查询参数 `strategy_version_id` 都是**独立**的 UUID 字段，沿用原名不变。
 
 ---
 
@@ -42,7 +43,7 @@
 - Produces:
   - `app.domain.activity_log.StrategyActivityLog` SQLAlchemy 模型，列 = `id, strategy_id, kind, occurred_at, actor, summary, delta, ref_kind, ref_id`
   - `BacktestRun.strategy_uuid` (UUID, nullable, FK strategies_v2)
-  - `BacktestRun.strategy_version_id` (UUID, nullable, FK strategy_versions)
+  - `BacktestRun.strategy_version_uuid` (UUID, nullable, FK strategy_versions) — **note**: not `strategy_version_id`; that name is taken by an existing VARCHAR column from initial schema.
   - 索引 `idx_activity_strategy_time(strategy_id, occurred_at DESC)`、`idx_backtest_runs_strategy_uuid(strategy_uuid, completed_at DESC)`
 
 - [ ] **Step 1: 写 ActivityLog 模型**
@@ -94,7 +95,7 @@ alembic revision --autogenerate -m "strategy workspace foundation: activity log 
 打开生成的 `backend/alembic/versions/2026_06_18_xxxx_strategy_workspace_foundation*.py`，确认包含：
 - `op.create_table('strategy_activity_log', ...)` + 索引
 - `op.add_column('backtest_runs', sa.Column('strategy_uuid', UUID, ForeignKey('strategies_v2.id'), nullable=True))`
-- `op.add_column('backtest_runs', sa.Column('strategy_version_id', UUID, ForeignKey('strategy_versions.id'), nullable=True))`
+- `op.add_column('backtest_runs', sa.Column('strategy_version_uuid', UUID, ForeignKey('strategy_versions.id'), nullable=True))`  # named *_uuid because backtest_runs.strategy_version_id already exists as VARCHAR
 - `op.create_index('idx_backtest_runs_strategy_uuid', 'backtest_runs', ['strategy_uuid', 'completed_at'], postgresql_using='btree')` 注意 `completed_at DESC`
 
 如果 autogenerate 漏列，手工补齐到 `upgrade()`，并在 `downgrade()` 反向（先 drop_index → drop_column → drop_table）。
@@ -2398,7 +2399,7 @@ cd macos-app && swift test
 - [ ] **Step 6: 更新 docs**
 
 - 改 `docs/backend/api-contracts.md`：追加 7 个新端点 + 4 个改造端点的契约
-- 改 `docs/database/schema-notes.md`：追加 `strategy_activity_log` 表 + `backtest_runs.strategy_uuid/strategy_version_id` 列说明
+- 改 `docs/database/schema-notes.md`：追加 `strategy_activity_log` 表 + `backtest_runs.strategy_uuid` + `backtest_runs.strategy_version_uuid` 列说明
 - 改 `docs/README.md`：spec/plan 索引
 
 - [ ] **Step 7: Final commit**
