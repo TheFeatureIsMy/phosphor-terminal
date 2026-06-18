@@ -25,6 +25,7 @@ from app.routers import workflow
 from app.routers.admin.providers import router as admin_providers_router
 from app.routers.admin.system_settings import router as admin_system_settings_router
 from app.routers.providers_ws import router as providers_ws_router
+from app.routers.strategy_workspace import router as strategy_workspace_router
 from app.services.providers.realtime.ccxt_ticker_stream import run_binance_ticker_stream
 
 
@@ -121,3 +122,6 @@ app.include_router(shadow_strategy.router)
 
 # Workflow layer
 app.include_router(workflow.router)
+
+# Strategy workspace (7 endpoints, spec §6.1)
+app.include_router(strategy_workspace_router)
