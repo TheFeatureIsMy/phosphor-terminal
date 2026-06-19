@@ -165,5 +165,22 @@ extension L10n {
         static var timeAgoMinutes: String { zh("%d 分钟前", en: "%dm ago") }
         static var timeAgoHours: String { zh("%d 小时前", en: "%dh ago") }
         static var timeAgoDays: String { zh("%d 天前", en: "%dd ago") }
+
+        // Bottom status bar
+        static var statusValid: String { zh("验证通过", en: "Valid") }
+        static var statusInvalid: String { zh("%d 错误", en: "%d errors") }
+        static var statusUnvalidated: String { zh("未验证", en: "Unvalidated") }
+        static var statusNodes: String { zh("%d 节点", en: "%d nodes") }
+        static var statusEdges: String { zh("%d 连线", en: "%d edges") }
+        static var statusShortcutHint: String { zh("⌘1~⌘6 切换面板 · ⌘0 关闭", en: "⌘1–⌘6 panels · ⌘0 close") }
+
+        // Panels (chrome titles)
+        static var panelList: String { zh("策略列表", en: "Strategies") }
+        static var panelNode: String { zh("节点配置", en: "Node Config") }
+        static var panelVersion: String { zh("版本", en: "Versions") }
+        static var panelRisk: String { zh("风控绑定", en: "Risk Binding") }
+        static var panelBacktest: String { zh("回测/模拟", en: "Backtest/Dry-run") }
+        static var panelReadiness: String { zh("实盘准入", en: "Readiness") }
+        static var panelClose: String { zh("关闭", en: "Close") }
     }
 }
