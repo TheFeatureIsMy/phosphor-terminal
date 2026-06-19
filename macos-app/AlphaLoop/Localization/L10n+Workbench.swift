@@ -143,5 +143,27 @@ extension L10n {
         static var transitionReopen: String { zh("重新开启", en: "Reopen") }
         static var transitionFailed: String { zh("跃迁失败", en: "Transition failed") }
         static var transitionNoneAvailable: String { zh("当前状态无可用操作", en: "No actions available") }
+
+        // HUD (40px top bar)
+        static var hudStageLabel: String { zh("Stage", en: "Stage") }
+        static var hudReadinessLabel: String { zh("准入", en: "Readiness") }
+        static var hudNextLabel: String { zh("下一步", en: "Next") }
+        static var hudHashCopied: String { zh("已复制", en: "Copied") }
+        static var hudActionValidate: String { zh("验证", en: "Validate") }
+        static var hudActionDuplicate: String { zh("复制", en: "Duplicate") }
+        static var hudActionArchive: String { zh("归档", en: "Archive") }
+        static var hudActionBindLive: String { zh("绑定实盘", en: "Bind Live") }
+        static var hudActionRunDryrun: String { zh("运行模拟", en: "Run Dry-run") }
+        static var hudActionMore: String { zh("更多", en: "More") }
+        static var hudReasonAlreadyArchived: String { zh("策略已归档", en: "Strategy already archived") }
+        static var hudReasonNotPaperPassed: String { zh("仅 paper_passed 状态可绑定", en: "Only paper_passed can bind live") }
+        static var hudReasonNotRunnable: String { zh("当前状态不允许运行模拟", en: "Status does not allow dry-run") }
+        static var hudReasonNoStrategy: String { zh("未选中策略", en: "No strategy selected") }
+
+        // Time-ago labels (HUD identity strip)
+        static var timeAgoNow: String { zh("刚刚", en: "just now") }
+        static var timeAgoMinutes: String { zh("%d 分钟前", en: "%dm ago") }
+        static var timeAgoHours: String { zh("%d 小时前", en: "%dh ago") }
+        static var timeAgoDays: String { zh("%d 天前", en: "%dd ago") }
     }
 }
