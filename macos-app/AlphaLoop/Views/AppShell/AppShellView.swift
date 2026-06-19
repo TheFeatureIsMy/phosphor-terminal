@@ -94,7 +94,7 @@ struct AppShellView: View {
             if let vm = liveReadinessVM { LiveReadinessView(viewModel: vm) } else { LoadingView(type: .detail) }
         // STRATEGY
         case .strategyWorkspace:
-            StrategyWorkspaceConsoleView()
+            StrategyCanvasWorkspaceView()
         case .backtestSimulation:
             BacktestLabView()
         // STRUCTURE
@@ -141,15 +141,6 @@ struct AppShellView: View {
             DataSourcesView()
         case .systemSettings:
             SettingsView()
-        // Internal
-        case .strategyDetail:
-            if let v2Id = appState.selectedStrategyV2Id {
-                StrategyDetailView(strategyId: v2Id, client: networkClient)
-            } else if let id = appState.selectedStrategyId {
-                StrategyDetailView(strategyId: "\(id)", client: networkClient)
-            } else {
-                LoadingView(type: .detail)
-            }
         }
     }
 

@@ -34,7 +34,7 @@ struct StrategyLabRootView: View {
     private var content: some View {
         switch appState.selectedRoute {
         case .strategyWorkspace:
-            StrategyWorkspaceConsoleView()
+            StrategyCanvasWorkspaceView()
         case .backtestSimulation:
             BacktestLabView()
         case .aiResearchRoom:
@@ -51,21 +51,8 @@ struct StrategyLabRootView: View {
             FailureClusteringView()
         case .strategyOptimization:
             StrategyOptimizationView()
-        case .strategyDetail:
-            strategyDetailRoute
         default:
             EmptyView()
-        }
-    }
-
-    @ViewBuilder
-    private var strategyDetailRoute: some View {
-        if let v2Id = appState.selectedStrategyV2Id {
-            StrategyDetailView(strategyId: v2Id, client: networkClient)
-        } else if let id = appState.selectedStrategyId {
-            StrategyDetailView(strategyId: "\(id)", client: networkClient)
-        } else {
-            LoadingView(type: .detail)
         }
     }
 }

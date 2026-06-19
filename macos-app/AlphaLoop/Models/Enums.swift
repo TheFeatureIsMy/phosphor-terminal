@@ -282,8 +282,6 @@ enum AppRoute: String, CaseIterable, Identifiable {
     case serviceManagement
     case dataSourceManagement
     case systemSettings
-    // Internal
-    case strategyDetail
 
     var id: String { rawValue }
 
@@ -312,7 +310,6 @@ enum AppRoute: String, CaseIterable, Identifiable {
         case .serviceManagement: return "server.rack"
         case .dataSourceManagement: return "externaldrive.connected.to.line.below"
         case .systemSettings: return "gearshape"
-        case .strategyDetail: return "doc.text"
         }
     }
 
@@ -341,7 +338,6 @@ enum AppRoute: String, CaseIterable, Identifiable {
         case .serviceManagement: return L10n.Nav.serviceManagement
         case .dataSourceManagement: return L10n.Nav.dataSourceManagement
         case .systemSettings: return L10n.Nav.systemSettings
-        case .strategyDetail: return L10n.zh("策略详情", en: "Strategy Detail")
         }
     }
 
@@ -355,13 +351,10 @@ enum AppRoute: String, CaseIterable, Identifiable {
         case .aiResearchRoom, .agentPlatform, .signalCenter, .marketSentiment: return .aiResearch
         case .growthReview, .failureClustering, .strategyOptimization: return .growth
         case .serviceManagement, .dataSourceManagement, .systemSettings: return .system
-        case .strategyDetail: return .strategy
         }
     }
 
-    var sidebarVisible: Bool {
-        self != .strategyDetail
-    }
+    var sidebarVisible: Bool { true }
 
     var primaryWorkspace: PrimaryWorkspace {
         switch self {
@@ -372,12 +365,40 @@ enum AppRoute: String, CaseIterable, Identifiable {
             return .tradingConsole
         case .strategyWorkspace, .backtestSimulation,
              .aiResearchRoom, .signalCenter, .marketSentiment,
-             .growthReview, .failureClustering, .strategyOptimization,
-             .strategyDetail:
+             .growthReview, .failureClustering, .strategyOptimization:
             return .strategyLab
         case .agentPlatform,
              .serviceManagement, .dataSourceManagement, .systemSettings:
             return .operations
+        }
+    }
+}
+
+// MARK: - Strategy Workbench Panels (⌘1–⌘6 floating panels)
+enum WorkbenchPanel: String, CaseIterable, Identifiable {
+    case list, node, version, risk, backtest, readiness
+
+    var id: String { rawValue }
+
+    var shortcut: KeyEquivalent {
+        switch self {
+        case .list: return "1"
+        case .node: return "2"
+        case .version: return "3"
+        case .risk: return "4"
+        case .backtest: return "5"
+        case .readiness: return "6"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .list: return "list.bullet.rectangle"
+        case .node: return "rectangle.connected.to.line.below"
+        case .version: return "clock.arrow.circlepath"
+        case .risk: return "shield.lefthalf.filled"
+        case .backtest: return "play.rectangle.on.rectangle"
+        case .readiness: return "checkmark.seal"
         }
     }
 }

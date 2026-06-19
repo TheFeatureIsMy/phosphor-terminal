@@ -1,5 +1,4 @@
 // BacktestLabView.swift — 回测实验室（3 列：Run Rail | Comparison | Inspector）
-// 取代旧的 BacktestDryrunView 单 run 流程。模拟监控保留在 DryrunMonitorView。
 
 import SwiftUI
 

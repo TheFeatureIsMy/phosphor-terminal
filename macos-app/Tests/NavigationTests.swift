@@ -39,12 +39,8 @@ struct NavigationTests {
         #expect(visible.count == 23)
     }
 
-    @Test func strategyDetailIsNotSidebarVisible() {
-        #expect(AppRoute.strategyDetail.sidebarVisible == false)
-    }
-
     @Test func totalRouteCount() {
-        #expect(AppRoute.allCases.count == 24)
+        #expect(AppRoute.allCases.count == 23)
     }
 
     @Test func overviewSectionRoutes() {
@@ -56,10 +52,9 @@ struct NavigationTests {
 
     @Test func strategySectionRoutes() {
         let strategyRoutes = AppRoute.allCases.filter { $0.section == .strategy }
-        #expect(strategyRoutes.count == 3)
+        #expect(strategyRoutes.count == 2)
         #expect(strategyRoutes.contains(.strategyWorkspace))
         #expect(strategyRoutes.contains(.backtestSimulation))
-        #expect(strategyRoutes.contains(.strategyDetail))
     }
 
     @Test func structureSectionRoutes() {
