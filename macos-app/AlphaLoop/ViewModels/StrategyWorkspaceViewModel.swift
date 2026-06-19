@@ -14,7 +14,7 @@ final class StrategyWorkspaceViewModel {
     var selectedStrategyId: String?
 
     /// 当前选中策略的聚合快照
-    var snapshot: WorkspaceSnapshot?
+    var snapshot: LegacyWorkspaceSnapshot?
 
     var isLoadingList = true
     var isLoadingSnapshot = false
@@ -140,7 +140,7 @@ final class StrategyWorkspaceViewModel {
             let risk_ = try await risk
             let bt = try await backtests
 
-            snapshot = WorkspaceSnapshot(
+            snapshot = LegacyWorkspaceSnapshot(
                 strategy: s,
                 versions: v,
                 runs: r,
@@ -155,9 +155,9 @@ final class StrategyWorkspaceViewModel {
     }
 }
 
-// MARK: - WorkspaceSnapshot
+// MARK: - LegacyWorkspaceSnapshot (Task 15 will rewrite this VM and remove this struct)
 
-struct WorkspaceSnapshot {
+struct LegacyWorkspaceSnapshot {
     let strategy: StrategyV2
     let versions: [StrategyVersionV2]
     let runs: [StrategyRunV2]

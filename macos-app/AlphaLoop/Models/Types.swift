@@ -918,3 +918,202 @@ struct DataVacuumJob: Codable, Identifiable {
         case createdAt = "created_at"
     }
 }
+
+// MARK: - Strategy Workbench (canvas-first)
+// 1:1 with backend app/schemas/strategy_workspace.py + per_strategy_readiness.py + strategy_binding.py
+// Spec §6.1.A / §6.4
+
+struct RiskPolicySummary: Codable, Identifiable, Hashable {
+    let id: String
+    let name: String
+    let versionNo: Int
+    let policyJsonSummary: [String: AnyCodable]
+
+    enum CodingKeys: String, CodingKey {
+        case id, name
+        case versionNo = "version_no"
+        case policyJsonSummary = "policy_json_summary"
+    }
+}
+
+struct CapitalPoolSummary: Codable, Identifiable, Hashable {
+    let id: String
+    let name: String
+    let poolType: String
+    let totalBudget: Double
+    let currency: String
+    let remainingBudget: Double
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, currency
+        case poolType = "pool_type"
+        case totalBudget = "total_budget"
+        case remainingBudget = "remaining_budget"
+    }
+}
+
+struct StrategyBinding: Codable, Identifiable, Hashable {
+    let id: String
+    let strategyVersionId: String
+    let versionNo: Int
+    let riskPolicy: RiskPolicySummary
+    let capitalPool: CapitalPoolSummary
+    let mode: String                // backtest | dry_run | shadow | live_small
+    let createdAt: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, mode
+        case strategyVersionId = "strategy_version_id"
+        case versionNo = "version_no"
+        case riskPolicy = "risk_policy"
+        case capitalPool = "capital_pool"
+        case createdAt = "created_at"
+    }
+}
+
+struct BacktestRunSummary: Codable, Identifiable, Hashable {
+    let id: Int
+    let startedAt: String?
+    let completedAt: String?
+    let status: String
+    let totalReturn: Double?
+    let winRate: Double?
+    let maxDrawdown: Double?
+    let sharpeRatio: Double?
+
+    enum CodingKeys: String, CodingKey {
+        case id, status
+        case startedAt = "started_at"
+        case completedAt = "completed_at"
+        case totalReturn = "total_return"
+        case winRate = "win_rate"
+        case maxDrawdown = "max_drawdown"
+        case sharpeRatio = "sharpe_ratio"
+    }
+}
+
+struct StrategyRunSummary: Codable, Identifiable, Hashable {
+    let id: String
+    let mode: String
+    let status: String
+    let startedAt: String?
+    let stoppedAt: String?
+    let createdAt: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, mode, status
+        case startedAt = "started_at"
+        case stoppedAt = "stopped_at"
+        case createdAt = "created_at"
+    }
+}
+
+struct ActivityEntryRef: Codable, Hashable {
+    let kind: String                // version | binding | run | backtest
+    let id: String
+}
+
+struct ActivityEntry: Codable, Identifiable, Hashable {
+    let id: String
+    let kind: String                // version_created | version_status_changed | binding_added | …
+    let occurredAt: String
+    let actor: String?
+    let summary: String
+    let delta: [String: AnyCodable]?
+    let ref: ActivityEntryRef?
+
+    enum CodingKeys: String, CodingKey {
+        case id, kind, actor, summary, delta, ref
+        case occurredAt = "occurred_at"
+    }
+}
+
+struct ReadinessGate: Codable, Identifiable, Hashable {
+    var id: String { key }
+    let key: String
+    let status: String              // healthy | warning | failed | unknown
+    let value: String
+    let threshold: String
+    let detail: String
+    let reasonCodes: [String]
+
+    enum CodingKeys: String, CodingKey {
+        case key, status, value, threshold, detail
+        case reasonCodes = "reason_codes"
+    }
+}
+
+struct ReadinessNextAction: Codable, Hashable {
+    let code: String                // gate-specific code
+    let label: String
+    let targetPanel: String?        // "risk" | "backtest" | "readiness" | nil
+
+    enum CodingKeys: String, CodingKey {
+        case code, label
+        case targetPanel = "target_panel"
+    }
+}
+
+struct PerStrategyReadiness: Codable, Hashable {
+    let passedCount: Int
+    let total: Int
+    let grandStatus: String         // not_live | needs_config | needs_validation | paper_passed | ready_for_live
+    let nextAction: ReadinessNextAction
+    let strategyGates: [ReadinessGate]
+    let systemGates: [ReadinessGate]
+
+    enum CodingKeys: String, CodingKey {
+        case total
+        case passedCount = "passed_count"
+        case grandStatus = "grand_status"
+        case nextAction = "next_action"
+        case strategyGates = "strategy_gates"
+        case systemGates = "system_gates"
+    }
+}
+
+struct SignalLogicSummary: Codable, Hashable {
+    let entryText: String
+    let exitText: String
+    let filterCount: Int
+
+    enum CodingKeys: String, CodingKey {
+        case entryText = "entry_text"
+        case exitText = "exit_text"
+        case filterCount = "filter_count"
+    }
+}
+
+struct DataDependencies: Codable, Hashable {
+    let symbols: [String]
+    let timeframes: [String]
+    let indicators: [String]
+    let signalSources: [String]
+
+    enum CodingKeys: String, CodingKey {
+        case symbols, timeframes, indicators
+        case signalSources = "signal_sources"
+    }
+}
+
+struct WorkspaceSnapshot: Codable, Hashable {
+    let strategy: StrategyV2
+    let versions: [StrategyVersionV2]
+    let latestVersionId: String?
+    let bindings: [StrategyBinding]
+    let recentBacktests: [BacktestRunSummary]
+    let recentDryruns: [StrategyRunSummary]
+    let readiness: PerStrategyReadiness
+    let activity: [ActivityEntry]
+    let signalLogicSummary: SignalLogicSummary
+    let dataDependencies: DataDependencies
+
+    enum CodingKeys: String, CodingKey {
+        case strategy, versions, bindings, readiness, activity
+        case latestVersionId = "latest_version_id"
+        case recentBacktests = "recent_backtests"
+        case recentDryruns = "recent_dryruns"
+        case signalLogicSummary = "signal_logic_summary"
+        case dataDependencies = "data_dependencies"
+    }
+}
