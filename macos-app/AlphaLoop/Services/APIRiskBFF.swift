@@ -133,8 +133,10 @@ struct CircuitBreakersBFFResponse: Codable {
 struct APIRiskBFF {
     let client: NetworkClientProtocol
 
-    func getOverview() async throws -> RiskOverviewBFFResponse {
-        try await client.get("/api/risk/overview", mock: MockRiskBFF.overview)
+    func getOverview(strategyId: String? = nil) async throws -> RiskOverviewBFFResponse {
+        var path = "/api/risk/overview"
+        if let strategyId { path += "?strategy_id=\(strategyId)" }
+        return try await client.get(path, mock: MockRiskBFF.overview)
     }
 
     func getStopProtection() async throws -> StopProtectionBFFResponse {

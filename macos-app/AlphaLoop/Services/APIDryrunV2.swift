@@ -43,8 +43,15 @@ struct APIDryrunV2 {
         }
     }
 
-    func listDryruns(limit: Int = 20) async throws -> [DryRunStatusV2] {
-        try await client.get("/api/v2/dryrun?limit=\(limit)") {
+    func listDryruns(
+        strategyId: String? = nil,
+        strategyVersionId: String? = nil,
+        limit: Int = 20
+    ) async throws -> [DryRunStatusV2] {
+        var path = "/api/v2/dryrun?limit=\(limit)"
+        if let strategyId { path += "&strategy_id=\(strategyId)" }
+        if let strategyVersionId { path += "&strategy_version_id=\(strategyVersionId)" }
+        return try await client.get(path) {
             [
                 DryRunStatusV2(
                     commandId: UUID().uuidString,

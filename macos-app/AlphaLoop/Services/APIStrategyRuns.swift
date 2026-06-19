@@ -5,10 +5,18 @@ import Foundation
 struct APIStrategyRuns {
     let client: NetworkClientProtocol
 
-    func listRuns(mode: String? = nil, status: String? = nil, limit: Int = 20) async throws -> [StrategyRunV2] {
+    func listRuns(
+        mode: String? = nil,
+        status: String? = nil,
+        strategyId: String? = nil,
+        strategyVersionId: String? = nil,
+        limit: Int = 20
+    ) async throws -> [StrategyRunV2] {
         var path = "/api/v2/strategy-runs?limit=\(limit)"
         if let mode { path += "&mode=\(mode)" }
         if let status { path += "&status=\(status)" }
+        if let strategyId { path += "&strategy_id=\(strategyId)" }
+        if let strategyVersionId { path += "&strategy_version_id=\(strategyVersionId)" }
         return try await client.get(path) {
             [
                 StrategyRunV2(
