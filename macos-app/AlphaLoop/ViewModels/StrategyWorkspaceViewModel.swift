@@ -1,60 +1,61 @@
-// StrategyWorkspaceViewModel.swift — 发射控制台聚合 ViewModel
-// 用 async let 并行聚合 7 个数据源；后端实现 /workspace BFF 后可换成单调用。
+// StrategyWorkspaceViewModel.swift — Canvas-first workbench ViewModel.
+// Spec §7.2 / Plan 2026-06-18 Task 15.
+//
+// Drives the strategy workbench shell: list rail (⌘1), HUD actions, ⌘1–⌘6
+// floating panel state, and canvas bridge counters. Reads everything via the
+// /workspace BFF aggregator (single round-trip) instead of fan-out async let.
 
 import SwiftUI
 
 @Observable
 @MainActor
 final class StrategyWorkspaceViewModel {
-    // MARK: - Public state
 
-    /// 左轨：候补策略列表
+    // MARK: - Data
+
     var strategies: [StrategyV2] = []
-    /// 当前选中策略 ID（与 selectedStrategy.id 同步）
     var selectedStrategyId: String?
-
-    /// 当前选中策略的聚合快照
-    var snapshot: LegacyWorkspaceSnapshot?
+    var snapshot: WorkspaceSnapshot?
 
     var isLoadingList = true
     var isLoadingSnapshot = false
     var listError: String?
     var snapshotError: String?
 
-    /// 左轨过滤桶
-    var filter: TrackFilter = .all
-    var search: String = ""
+    // MARK: - UI state
 
-    /// 工作区视图模式（与画布融合，互斥切换）
-    var mode: WorkspaceMode = .console
-    /// 上下文抽屉折叠（仅 console 模式生效）
-    var drawerCollapsed = true
-    /// 上下文抽屉浮层选中的 tab；nil 表示未打开
-    var inspectorTab: InspectorTab?
-    /// 策略切换下拉是否展开
-    var switcherOpen = false
+    /// Currently open floating panel; nil = canvas full-screen.
+    var activePanel: WorkbenchPanel?
+
+    /// Left-rail filter & search.
+    var search: String = ""
+    var filter: TrackFilter = .all
+
+    /// Canvas bridge state (written by CanvasWebViewModel from canvas-web messages).
+    var selectedCanvasNodeId: String?
+    var canvasNodeCount: Int = 0
+    var canvasEdgeCount: Int = 0
+    var canvasValidationValid: Bool?
 
     // MARK: - Internals
 
     private let client: NetworkClientProtocol
     private let strategiesAPI: APIStrategiesV2
-    private let runsAPI: APIStrategyRuns
-    private let backtestAPI: APIBacktest
-    private let riskAPI: APIRiskBFF
+    private let workspaceAPI: APIStrategyWorkspace
+    private let dryrunAPI: APIDryrunV2
 
     init(client: NetworkClientProtocol) {
         self.client = client
         self.strategiesAPI = APIStrategiesV2(client: client)
-        self.runsAPI = APIStrategyRuns(client: client)
-        self.backtestAPI = APIBacktest(client: client)
-        self.riskAPI = APIRiskBFF(client: client)
+        self.workspaceAPI = APIStrategyWorkspace(client: client)
+        self.dryrunAPI = APIDryrunV2(client: client)
     }
 
     // MARK: - Derived
 
     var selectedStrategy: StrategyV2? {
         guard let id = selectedStrategyId else { return nil }
-        return strategies.first { $0.id == id }
+        return strategies.first { $0.id == id } ?? snapshot?.strategy
     }
 
     var filteredStrategies: [StrategyV2] {
@@ -64,11 +65,23 @@ final class StrategyWorkspaceViewModel {
             arr = arr.filter { $0.name.lowercased().contains(q) }
         }
         switch filter {
-        case .all: return arr
+        case .all:   return arr
         case .draft: return arr.filter { $0.status == "draft" }
-        case .paper: return arr.filter { $0.status == "active" || $0.status == "paused" }
-        case .live:  return arr.filter { $0.status == "active" }
+        case .paper: return arr.filter { $0.status == "paper_running" || $0.status == "paper_passed" || $0.status == "paused" }
+        case .live:  return arr.filter { $0.status == "live_pending" || $0.status == "live_small" || $0.status == "active" }
         }
+    }
+
+    /// Quick accessor for HUD "下一步" action chip.
+    var nextActionCode: String? {
+        snapshot?.readiness.nextAction.code
+    }
+
+    var latestVersion: StrategyVersionV2? {
+        guard let id = snapshot?.latestVersionId else {
+            return snapshot?.versions.max(by: { $0.versionNo < $1.versionNo })
+        }
+        return snapshot?.versions.first { $0.id == id }
     }
 
     // MARK: - Load
@@ -79,7 +92,6 @@ final class StrategyWorkspaceViewModel {
         do {
             let list = try await strategiesAPI.list()
             strategies = list
-            // 自动选中第一个，提供首屏内容
             if selectedStrategyId == nil, let first = list.first {
                 await select(strategyId: first.id)
             }
@@ -91,136 +103,154 @@ final class StrategyWorkspaceViewModel {
 
     func select(strategyId: String) async {
         selectedStrategyId = strategyId
+        snapshot = nil
+        selectedCanvasNodeId = nil
         await reloadSnapshot()
-    }
-
-    /// 触发 lifecycle transition：在 latest version 上执行；成功后刷新快照。
-    /// 后端会做合法性校验；若 409 / 403，错误填到 snapshotError 并维持原状态。
-    func performTransition(_ transition: LifecycleTransition) async {
-        guard let strategyId = selectedStrategyId,
-              let version = snapshot?.latestVersion else {
-            snapshotError = L10n.Workbench.transitionNoneAvailable
-            return
-        }
-        do {
-            _ = try await strategiesAPI.transitionVersionStatus(
-                strategyId: strategyId,
-                versionId: version.id,
-                toStatus: transition.toStatus
-            )
-            await reloadSnapshot()
-            // 列表里也同步更新状态字段，避免 switcher 旧标签残留
-            if let idx = strategies.firstIndex(where: { $0.id == strategyId }) {
-                strategies[idx].status = transition.toStatus
-            }
-        } catch {
-            snapshotError = "\(L10n.Workbench.transitionFailed): \(error.localizedDescription)"
-        }
     }
 
     func reloadSnapshot() async {
         guard let id = selectedStrategyId else { return }
         isLoadingSnapshot = true
         snapshotError = nil
-
-        async let strategy   = strategiesAPI.get(id: id)
-        async let versions   = strategiesAPI.listVersions(strategyId: id)
-        async let runs       = runsAPI.listRuns(limit: 5)
-        async let signals    = client.listAgentSignals()
-        async let risk       = riskAPI.getOverview()
-        async let backtests  = backtestAPI.list(limit: 3)
-
         do {
-            // 注意：当前 APIStrategyRuns/Signals/Backtest 尚未按 strategyId 过滤；
-            // 后端补齐前，这里先在客户端做 best-effort 过滤。
-            let s = try await strategy
-            let v = try await versions
-            let r = try await runs
-            let sig = try await signals
-            let risk_ = try await risk
-            let bt = try await backtests
-
-            snapshot = LegacyWorkspaceSnapshot(
-                strategy: s,
-                versions: v,
-                runs: r,
-                signals: sig,
-                risk: risk_,
-                backtests: bt
-            )
+            snapshot = try await workspaceAPI.getSnapshot(strategyId: id)
         } catch {
             snapshotError = error.localizedDescription
         }
         isLoadingSnapshot = false
     }
-}
 
-// MARK: - LegacyWorkspaceSnapshot (Task 15 will rewrite this VM and remove this struct)
-
-struct LegacyWorkspaceSnapshot {
-    let strategy: StrategyV2
-    let versions: [StrategyVersionV2]
-    let runs: [StrategyRunV2]
-    let signals: [AgentSignal]
-    let risk: RiskOverviewBFFResponse
-    let backtests: [Backtest]
-
-    var latestVersion: StrategyVersionV2? {
-        versions.max(by: { $0.versionNo < $1.versionNo })
-    }
-    var currentRun: StrategyRunV2? {
-        runs.first(where: { $0.status == "running" }) ?? runs.first
-    }
-    var latestBacktest: Backtest? { backtests.first }
-
-    // 顶部 KPI 抽取（按 backtest/latestRun 推断）
-    var equity: Double {
-        if let bt = latestBacktest { return 10_000 + bt.totalReturn * 100 }
-        return 10_000
-    }
-    var pnlPct: Double { latestBacktest?.totalReturn ?? 0 }
-    var winRate: Double { latestBacktest?.winRate ?? 0 }
-    var maxDrawdown: Double { latestBacktest?.maxDrawdown ?? 0 }
-    var sharpe: Double { latestBacktest?.sharpeRatio ?? 0 }
-}
-
-// MARK: - Workspace mode
-
-enum WorkspaceMode: String, CaseIterable, Identifiable {
-    case console
-    case canvas
-    var id: String { rawValue }
-    var label: String {
-        switch self {
-        case .console: return L10n.Workbench.modeConsole
-        case .canvas:  return L10n.Workbench.modeCanvas
+    /// Refetch only the bindings list (cheap optimistic reload after binding sheet apply).
+    func bindingsRefresh() async {
+        guard let id = selectedStrategyId, var current = snapshot else { return }
+        do {
+            let bindings = try await workspaceAPI.listBindings(strategyId: id)
+            current = WorkspaceSnapshot(
+                strategy: current.strategy,
+                versions: current.versions,
+                latestVersionId: current.latestVersionId,
+                bindings: bindings,
+                recentBacktests: current.recentBacktests,
+                recentDryruns: current.recentDryruns,
+                readiness: current.readiness,
+                activity: current.activity,
+                signalLogicSummary: current.signalLogicSummary,
+                dataDependencies: current.dataDependencies
+            )
+            snapshot = current
+        } catch {
+            snapshotError = error.localizedDescription
         }
     }
-    var icon: String {
-        switch self {
-        case .console: return "rectangle.grid.2x2"
-        case .canvas:  return "point.3.connected.trianglepath.dotted"
-        }
-    }
-}
 
-enum InspectorTab: String, CaseIterable, Identifiable {
-    case decision, reason, logs
-    var id: String { rawValue }
-    var icon: String {
-        switch self {
-        case .decision: return "checkmark.seal"
-        case .reason:   return "exclamationmark.bubble"
-        case .logs:     return "clock.arrow.circlepath"
+    // MARK: - Actions
+
+    // NOTE: validate(dsl:) and startBacktest(...) are called from the canvas
+    // bridge layer (Phase 8 HUD wiring) — they take [String:Any] DSL payloads
+    // that aren't Sendable across actor boundaries, so they sit on the
+    // CanvasWebViewModel side rather than this MainActor VM.
+
+    @discardableResult
+    func duplicate(name: String? = nil) async -> StrategyV2? {
+        guard let id = selectedStrategyId else { return nil }
+        do {
+            let copy = try await workspaceAPI.duplicate(strategyId: id, name: name)
+            strategies.insert(copy, at: 0)
+            await select(strategyId: copy.id)
+            return copy
+        } catch {
+            snapshotError = error.localizedDescription
+            return nil
         }
     }
-    var label: String {
-        switch self {
-        case .decision: return L10n.Workbench.drawerDecision
-        case .reason:   return L10n.Workbench.drawerReason
-        case .logs:     return L10n.Workbench.drawerLogs
+
+    func archive(reason: String? = nil) async {
+        guard let id = selectedStrategyId else { return }
+        do {
+            let updated = try await workspaceAPI.archive(strategyId: id, reason: reason)
+            if let idx = strategies.firstIndex(where: { $0.id == id }) {
+                strategies[idx] = updated
+            }
+            await reloadSnapshot()
+        } catch {
+            snapshotError = error.localizedDescription
         }
     }
+
+    /// Reuses backend strategy_transition validator. system-only transitions are not exposed.
+    func transitionStatus(_ transition: LifecycleTransition) async {
+        guard let id = selectedStrategyId, let version = latestVersion else {
+            snapshotError = L10n.Workbench.transitionNoneAvailable
+            return
+        }
+        do {
+            _ = try await strategiesAPI.transitionVersionStatus(
+                strategyId: id,
+                versionId: version.id,
+                toStatus: transition.toStatus
+            )
+            if let idx = strategies.firstIndex(where: { $0.id == id }) {
+                strategies[idx].status = transition.toStatus
+            }
+            await reloadSnapshot()
+        } catch {
+            snapshotError = "\(L10n.Workbench.transitionFailed): \(error.localizedDescription)"
+        }
+    }
+
+    /// Kick off a dry-run command. Returns commandId for the caller (typically routes user to ⌘5).
+    @discardableResult
+    func startDryrun() async -> String? {
+        guard let id = selectedStrategyId, let version = latestVersion else { return nil }
+        let body: [String: Any] = [
+            "strategy_id": id,
+            "strategy_version_id": version.id,
+        ]
+        do {
+            let resp = try await dryrunAPI.startDryrun(body)
+            await reloadSnapshot()
+            return resp.commandId
+        } catch {
+            snapshotError = error.localizedDescription
+            return nil
+        }
+    }
+
+    func createBinding(versionId: String, policyVersionId: String, poolId: String, mode: String) async {
+        guard let id = selectedStrategyId else { return }
+        do {
+            _ = try await workspaceAPI.createBinding(
+                strategyId: id,
+                versionId: versionId,
+                policyVersionId: policyVersionId,
+                poolId: poolId,
+                mode: mode
+            )
+            await bindingsRefresh()
+        } catch {
+            snapshotError = error.localizedDescription
+        }
+    }
+
+    func deleteBinding(_ bindingId: String) async {
+        guard let id = selectedStrategyId else { return }
+        do {
+            try await workspaceAPI.deleteBinding(strategyId: id, bindingId: bindingId)
+            await bindingsRefresh()
+        } catch {
+            snapshotError = error.localizedDescription
+        }
+    }
+
+    // MARK: - Panel control
+
+    func openPanel(_ p: WorkbenchPanel) { activePanel = p }
+
+    func togglePanel(_ p: WorkbenchPanel) {
+        activePanel = (activePanel == p) ? nil : p
+    }
+
+    func closePanel() { activePanel = nil }
 }
 
 // MARK: - Filter
@@ -263,7 +293,8 @@ enum LifecycleStage: Int, CaseIterable, Identifiable {
         }
     }
 
-    /// 10 态后端 → 7 节点 happy-path 映射（off-path 走 paused/archived/rejected 由 LifecycleOffPath 表示）
+    /// 10 backend statuses → 7-node happy-path rail. Off-path states (paused/archived/rejected)
+    /// are surfaced via LifecycleOffPath instead.
     static func from(status: String) -> LifecycleStage {
         switch status {
         case "draft", "rejected":            return .draft
@@ -273,14 +304,14 @@ enum LifecycleStage: Int, CaseIterable, Identifiable {
         case "paper_passed":                 return .paperPass
         case "live_pending":                 return .livePending
         case "live_small", "active":         return .liveSmall
-        case "paused":                       return .paperRun  // paused 从 paper_running 走来
-        case "archived":                     return .draft     // 显示停在起点
+        case "paused":                       return .paperRun
+        case "archived":                     return .draft
         default:                             return .draft
         }
     }
 }
 
-/// 偏离 happy-path 的版本状态。nil 表示策略在主航道。
+/// Off-happy-path version states. nil = on the main rail.
 enum LifecycleOffPath: String, CaseIterable, Identifiable {
     case paused, archived, rejected
     var id: String { rawValue }
@@ -310,8 +341,7 @@ enum LifecycleOffPath: String, CaseIterable, Identifiable {
     }
 }
 
-/// 用户可触发的 lifecycle transition；ALLOWED_TRANSITIONS 与 backend/app/services/strategy_transition.py 镜像。
-/// system-only 跃迁 (validated→backtested、paper_running→paper_passed) 不暴露给用户。
+/// User-triggerable lifecycle transitions; mirrors backend ALLOWED_TRANSITIONS minus system-only edges.
 enum LifecycleTransition: String, CaseIterable, Identifiable {
     case validate       // draft → validated
     case startPaper     // backtested → paper_running
@@ -319,8 +349,8 @@ enum LifecycleTransition: String, CaseIterable, Identifiable {
     case approveLive    // live_pending → live_small
     case pause          // paper_running/live_small → paused
     case resume         // paused → paper_running
-    case archive        // 多个状态 → archived
-    case reject         // pre-live 状态 → rejected
+    case archive
+    case reject
     case reopen         // rejected → draft
 
     var id: String { rawValue }
@@ -357,7 +387,6 @@ enum LifecycleTransition: String, CaseIterable, Identifiable {
         self == .archive || self == .reject
     }
 
-    /// 后端目标 status 字符串
     var toStatus: String {
         switch self {
         case .validate:    return "validated"
@@ -372,7 +401,6 @@ enum LifecycleTransition: String, CaseIterable, Identifiable {
         }
     }
 
-    /// 根据当前 status 返回允许的用户跃迁集合（镜像 backend ALLOWED_TRANSITIONS 减去 system-only）。
     static func allowed(from status: String) -> [LifecycleTransition] {
         switch status {
         case "draft":          return [.validate, .archive, .reject]
