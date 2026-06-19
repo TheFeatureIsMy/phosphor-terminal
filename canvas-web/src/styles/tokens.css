@@ -1,0 +1,62 @@
+/* ProofAlpha tokens — mirrors macos-app DesignTokens.swift dark theme.
+   Single source of truth for canvas-web colors/typography/spacing.
+   No glow shadows, no uppercase letter-spacing, no decorative animations. */
+
+:root {
+  /* Background & surfaces */
+  --pa-bg: #0A0A0A;
+  --pa-card: #171B26;
+  --pa-card-translucent: rgba(24, 24, 27, 0.55);
+  --pa-surface: rgba(255, 255, 255, 0.04);
+  --pa-surface-elevated: rgba(255, 255, 255, 0.06);
+
+  /* Borders */
+  --pa-border: rgba(255, 255, 255, 0.08);
+  --pa-border-strong: rgba(255, 255, 255, 0.16);
+  --pa-border-accent: rgba(0, 255, 157, 0.25);
+
+  /* Brand & status colors */
+  --pa-accent: #00FF9D;
+  --pa-warning: #FFB800;
+  --pa-amber: #FFB800;
+  --pa-danger: #FF3B3B;
+  --pa-cyan: #00C2FF;
+  --pa-info: #00C2FF;
+  --pa-purple: #A855F7;
+
+  /* Text */
+  --pa-text-primary: #E0E0E0;
+  --pa-text-secondary: #888888;
+  --pa-text-muted: #555555;
+
+  /* Node category dots (header strip) */
+  --pa-node-signal: var(--pa-cyan);
+  --pa-node-condition: var(--pa-cyan);
+  --pa-node-filter: var(--pa-amber);
+  --pa-node-sizing: var(--pa-accent);
+  --pa-node-risk: var(--pa-amber);
+  --pa-node-output: var(--pa-accent);
+  --pa-node-structure: var(--pa-amber);
+  --pa-node-account: var(--pa-amber);
+  --pa-node-mtf: var(--pa-purple);
+
+  /* Edges */
+  --pa-edge-default: rgba(255, 255, 255, 0.18);
+  --pa-edge-hot: var(--pa-accent);
+  --pa-edge-mtf: var(--pa-purple);
+
+  /* Typography */
+  --pa-font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Inter', 'Helvetica Neue', sans-serif;
+  --pa-font-mono: 'SF Mono', ui-monospace, 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Radii */
+  --pa-radius-sm: 4px;
+  --pa-radius-md: 8px;
+  --pa-radius-lg: 12px;
+
+  /* Spacing */
+  --pa-space-1: 4px;
+  --pa-space-2: 8px;
+  --pa-space-3: 12px;
+  --pa-space-4: 16px;
+}

@@ -1,0 +1,121 @@
+/* Canvas node visuals — ProofAlpha aligned.
+   Compact 188px tabular cards with category dot header. No glow, no uppercase.
+   Spec ref: docs/superpowers/specs/2026-06-17-strategy-workbench-canvas-first-design.md §4.3 */
+
+.pa-node {
+  width: 188px;
+  background: var(--pa-card);
+  border: 1px solid var(--pa-border);
+  border-radius: var(--pa-radius-md);
+  font-family: var(--pa-font-sans);
+  font-size: 12px;
+  color: var(--pa-text-primary);
+  position: relative;
+  transition: border-color 140ms ease;
+}
+
+.pa-node:hover {
+  border-color: var(--pa-border-strong);
+}
+
+.pa-node.is-selected {
+  border-color: var(--pa-accent);
+  box-shadow: 0 0 0 1px var(--pa-border-accent);
+}
+
+.pa-node.is-invalid {
+  border-color: var(--pa-danger);
+}
+
+.pa-node.is-invalid::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 2px;
+  background: var(--pa-danger);
+  border-top-left-radius: var(--pa-radius-md);
+  border-bottom-left-radius: var(--pa-radius-md);
+}
+
+.pa-node-header {
+  display: flex;
+  align-items: center;
+  gap: var(--pa-space-2);
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--pa-border);
+}
+
+.pa-node-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.pa-node-type {
+  font-size: 10px;
+  color: var(--pa-text-muted);
+  font-weight: 500;
+}
+
+.pa-node-title {
+  flex: 1;
+  font-size: 12px;
+  color: var(--pa-text-primary);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pa-node-body {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: var(--pa-space-3);
+  row-gap: 4px;
+  padding: 8px 12px;
+}
+
+.pa-node-row-key {
+  color: var(--pa-text-secondary);
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.pa-node-row-val {
+  color: var(--pa-text-primary);
+  font-size: 11px;
+  font-weight: 500;
+  font-family: var(--pa-font-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pa-node-error {
+  border-top: 1px solid var(--pa-border);
+  padding: 6px 12px;
+  font-size: 11px;
+  color: var(--pa-danger);
+  font-family: var(--pa-font-mono);
+}
+
+/* Ports — 8px circles, card-color background, subtle border */
+.pa-handle {
+  width: 8px !important;
+  height: 8px !important;
+  background: var(--pa-card) !important;
+  border: 1px solid var(--pa-border-strong) !important;
+  border-radius: 50% !important;
+  transition: background 140ms ease, border-color 140ms ease !important;
+}
+
+.pa-handle:hover {
+  border-color: var(--pa-accent) !important;
+  background: var(--pa-accent) !important;
+}

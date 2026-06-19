@@ -1,8 +1,11 @@
-import { Handle, Position, type NodeProps } from '@xyflow/react'
-import type { MTFGuardNodeData } from '../types'
+import { Position, type NodeProps } from '@xyflow/react'
+import type { DSLError, MTFGuardNodeData } from '../types'
+import { NodeShell } from './NodeShell'
 
 export default function MTFGuardNode({ data, selected }: NodeProps) {
-  const d = data as MTFGuardNodeData
+  const d = data as MTFGuardNodeData & { validationErrors?: DSLError[] }
+  const errors = d.validationErrors ?? []
+  const invalid = errors.some(e => e.severity === 'error')
   const fastTf = d.fastTimeframe ?? '5m'
   const slowTf = d.slowTimeframe ?? '1h'
   const structureType = d.structureType ?? 'order_block'
@@ -15,31 +18,23 @@ export default function MTFGuardNode({ data, selected }: NodeProps) {
   }
 
   return (
-    <div className={`canvas-node ${selected ? 'selected' : ''}`}>
-      <Handle type="target" position={Position.Left} id="guard-in" className="handle-in" />
-      <div className="node-header mtf-guard">
-        <span className="node-icon">🔀</span>
-        <span className="node-title">{name}</span>
-      </div>
-      <div className="node-body">
-        <div className="node-field">
-          <span className="field-label">Timeframes</span>
-          <span className="field-value">{fastTf} ↔ {slowTf}</span>
-        </div>
-        <div className="node-field">
-          <span className="field-label">Structure</span>
-          <span className="field-value">{structureType.replace(/_/g, ' ')}</span>
-        </div>
-        <div className="node-field">
-          <span className="field-label">On Violation</span>
-          <span className="field-value">{violationPolicy.temporaryViolation}</span>
-        </div>
-        <div className="node-field">
-          <span className="field-label">On Break</span>
-          <span className="field-value">{violationPolicy.confirmedBreak}</span>
-        </div>
-      </div>
-      <Handle type="source" position={Position.Right} id="guard-out" className="handle-out" />
-    </div>
+    <NodeShell
+      type="mtfGuard"
+      title={name}
+      dotColor="var(--pa-node-mtf)"
+      rows={[
+        { k: 'timeframes', v: `${fastTf} ↔ ${slowTf}` },
+        { k: 'structure', v: structureType.replace(/_/g, ' ') },
+        { k: 'on violation', v: violationPolicy.temporaryViolation },
+        { k: 'on break', v: violationPolicy.confirmedBreak },
+      ]}
+      selected={selected}
+      invalid={invalid}
+      errMessage={invalid ? errors[0]?.code : undefined}
+      ports={[
+        { type: 'target', position: Position.Left, id: 'guard-in' },
+        { type: 'source', position: Position.Right, id: 'guard-out' },
+      ]}
+    />
   )
 }

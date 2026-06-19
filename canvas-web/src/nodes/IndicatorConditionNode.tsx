@@ -1,9 +1,10 @@
-import { Handle, Position, type NodeProps } from '@xyflow/react'
+import { Position, type NodeProps } from '@xyflow/react'
 import type { DSLError } from '../types'
+import { NodeShell } from './NodeShell'
 
 export function IndicatorConditionNode({ data, selected }: NodeProps) {
   const errors = (data.validationErrors ?? []) as DSLError[]
-  const hasError = errors.some(e => e.severity === 'error')
+  const invalid = errors.some(e => e.severity === 'error')
   const ruleType = data.ruleType as string
   const indicator = data.indicator as string
   const operator = data.operator as string
@@ -20,34 +21,28 @@ export function IndicatorConditionNode({ data, selected }: NodeProps) {
   } else if (['between', 'not_between'].includes(operator)) {
     conditionText = `${minValue ?? '?'} ~ ${maxValue ?? '?'}`
   } else {
-    conditionText = `${operator} ${value ?? '?'}`
+    conditionText = `${operator ?? ''} ${value ?? '?'}`.trim()
   }
 
+  const rows = [
+    { k: '指标', v: indicator?.toUpperCase() ?? '未选择' },
+    { k: '条件', v: conditionText },
+  ]
+  if (params.period != null) rows.push({ k: '周期', v: String(params.period) })
+
   return (
-    <div className={`canvas-node node-condition ${selected ? 'selected' : ''} ${hasError ? 'has-error' : ''}`}>
-      <div className="node-header condition">
-        <span className="node-icon">📊</span>
-        <span className="node-title">指标条件</span>
-        {errors.length > 0 && <span className="error-badge">{errors.length}</span>}
-      </div>
-      <div className="node-body">
-        <div className="node-field">
-          <span className="field-label">指标</span>
-          <span className="field-value">{indicator?.toUpperCase() ?? '未选择'}</span>
-        </div>
-        <div className="node-field">
-          <span className="field-label">条件</span>
-          <span className="field-value">{conditionText}</span>
-        </div>
-        {params.period != null && (
-          <div className="node-field">
-            <span className="field-label">周期</span>
-            <span className="field-value">{params.period}</span>
-          </div>
-        )}
-      </div>
-      <Handle type="target" position={Position.Left} id="signal" className="handle-in" />
-      <Handle type="source" position={Position.Right} id="condition" className="handle-out" />
-    </div>
+    <NodeShell
+      type="indicatorCondition"
+      title="指标条件"
+      dotColor="var(--pa-node-condition)"
+      rows={rows}
+      selected={selected}
+      invalid={invalid}
+      errMessage={invalid ? errors[0]?.code : undefined}
+      ports={[
+        { type: 'target', position: Position.Left, id: 'signal' },
+        { type: 'source', position: Position.Right, id: 'condition' },
+      ]}
+    />
   )
 }
