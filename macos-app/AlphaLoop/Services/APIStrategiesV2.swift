@@ -167,9 +167,10 @@ final class APIStrategiesV2: @unchecked Sendable {
         })
     }
 
-    func listBacktests(strategyId: Int? = nil, limit: Int = 20) async throws -> [BacktestRunV2] {
+    func listBacktests(strategyId: Int? = nil, strategyUuid: String? = nil, limit: Int = 20) async throws -> [BacktestRunV2] {
         var path = "/api/v2/backtest?limit=\(limit)"
         if let sid = strategyId { path += "&strategy_id=\(sid)" }
+        if let uuid = strategyUuid { path += "&strategy_uuid=\(uuid)" }
         return try await client.get(path, mock: { [] })
     }
 }

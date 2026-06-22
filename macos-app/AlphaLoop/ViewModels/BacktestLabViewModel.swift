@@ -14,6 +14,9 @@ final class BacktestLabViewModel {
     /// 当前策略下的全部回测 run
     var runs: [BacktestRunV2] = []
 
+    /// 当前策略最新版本下的 dryruns（合并显示在 RunRail 底部）
+    var dryruns: [StrategyRunV2] = []
+
     /// 多选对比：最多 3 个
     var comparedRunIds: Set<Int> = []
     /// Inspector 显示的 run；默认 = comparedRunIds 最后一个 / runs[0]
@@ -28,10 +31,12 @@ final class BacktestLabViewModel {
 
     private let client: NetworkClientProtocol
     private let strategiesAPI: APIStrategiesV2
+    private let runsAPI: APIStrategyRuns
 
     init(client: NetworkClientProtocol) {
         self.client = client
         self.strategiesAPI = APIStrategiesV2(client: client)
+        self.runsAPI = APIStrategyRuns(client: client)
     }
 
     // MARK: - Derived
@@ -79,15 +84,20 @@ final class BacktestLabViewModel {
         selectedStrategyId = id
         comparedRunIds = []
         inspectedRunId = nil
+        dryruns = []
         await loadRuns()
     }
 
     func loadRuns() async {
-        guard selectedStrategyId != nil else { runs = []; return }
+        guard let strategyUuid = selectedStrategyId else { runs = []; dryruns = []; return }
         do {
-            // 后端 listBacktests 走 Int strategyId；v2 strategy 没有 int id，先取全量再按 createdAt 排序
-            let all = try await strategiesAPI.listBacktests(limit: 25)
-            runs = all.sorted { ($0.completedAt ?? $0.createdAt ?? "") > ($1.completedAt ?? $1.createdAt ?? "") }
+            // Backtests filtered by strategy UUID (backend supports strategy_uuid query)
+            async let all = strategiesAPI.listBacktests(strategyUuid: strategyUuid, limit: 25)
+            // Dryruns: filter by strategy_id (backend accepts strategyUuid as the strategy_id query)
+            async let drs = runsAPI.listRuns(mode: nil, status: nil, strategyId: strategyUuid, limit: 25)
+            let allRuns = try await all
+            runs = allRuns.sorted { ($0.completedAt ?? $0.createdAt ?? "") > ($1.completedAt ?? $1.createdAt ?? "") }
+            dryruns = (try await drs).sorted { ($0.startedAt ?? $0.createdAt) > ($1.startedAt ?? $1.createdAt) }
             // 默认勾选第一个 + Inspect
             if comparedRunIds.isEmpty, let first = runs.first {
                 comparedRunIds.insert(first.id)

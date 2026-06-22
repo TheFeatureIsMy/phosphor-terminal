@@ -157,7 +157,7 @@ private struct RunRail: View {
             Divider().overlay(colors.border)
 
             ScrollView {
-                if vm.runs.isEmpty {
+                if vm.runs.isEmpty && vm.dryruns.isEmpty {
                     emptyState
                 } else {
                     LazyVStack(spacing: 6) {
@@ -170,6 +170,22 @@ private struct RunRail: View {
                                 onToggleCompare: { vm.toggleCompare(run.id) },
                                 onInspect: { vm.inspect(run.id) }
                             )
+                        }
+                        if !vm.dryruns.isEmpty {
+                            Divider().overlay(colors.border).padding(.vertical, 6)
+                            HStack {
+                                Text(L10n.BacktestLab.dryrunSection)
+                                    .font(PulseFonts.micro).tracking(0.8)
+                                    .foregroundStyle(colors.textMuted)
+                                Spacer()
+                                Text("\(vm.dryruns.count)")
+                                    .font(PulseFonts.micro.monospaced())
+                                    .foregroundStyle(colors.textMuted)
+                            }
+                            .padding(.horizontal, 4)
+                            ForEach(vm.dryruns) { dr in
+                                DryrunRow(run: dr)
+                            }
                         }
                     }
                     .padding(10)
@@ -270,6 +286,58 @@ private struct RunRow: View {
         case "failed": return PulseColors.danger
         default: return colors.textMuted
         }
+    }
+}
+
+// MARK: - Dry-run row
+
+private struct DryrunRow: View {
+    @Environment(PulseColors.self) private var colors
+    let run: StrategyRunV2
+
+    var body: some View {
+        HStack(spacing: 8) {
+            statusDot
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 6) {
+                    Text(run.mode.uppercased())
+                        .font(PulseFonts.micro).tracking(0.6)
+                        .foregroundStyle(PulseColors.amber)
+                    Text(String(run.id.prefix(8)))
+                        .font(PulseFonts.captionMedium.monospaced())
+                        .foregroundStyle(colors.textPrimary)
+                    Spacer(minLength: 0)
+                    Text(run.status)
+                        .font(.system(size: 10, design: .monospaced))
+                        .foregroundStyle(colors.textSecondary)
+                }
+                if let started = run.startedAt ?? Optional(run.createdAt) {
+                    Text(started)
+                        .font(PulseFonts.micro.monospaced())
+                        .foregroundStyle(colors.textMuted)
+                        .lineLimit(1)
+                }
+            }
+        }
+        .padding(8)
+        .background(colors.surface)
+        .overlay(
+            RoundedRectangle(cornerRadius: PulseRadii.sm)
+                .stroke(colors.border.opacity(0.4), lineWidth: 0.5)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: PulseRadii.sm))
+    }
+
+    private var statusDot: some View {
+        let color: Color = {
+            switch run.status {
+            case "running", "active": return PulseColors.success
+            case "stopped":           return colors.textMuted
+            case "error":             return PulseColors.danger
+            default:                  return PulseColors.amber
+            }
+        }()
+        return Circle().fill(color).frame(width: 6, height: 6)
     }
 }
 

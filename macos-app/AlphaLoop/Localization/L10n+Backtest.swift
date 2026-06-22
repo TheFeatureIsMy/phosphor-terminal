@@ -15,6 +15,7 @@ extension L10n {
         static var runEmptyHint: String  { zh("点右上「新建 Run」开始", en: "Tap “New Run” to start") }
         static var compareHint: String   { zh("最多对比 3 个 run", en: "Up to 3 runs compared") }
         static var championBadge: String { zh("冠军", en: "CHAMP") }
+        static var dryrunSection: String { zh("模拟运行", en: "DRY-RUNS") }
         static var runStatusRunning: String   { zh("运行中", en: "Running") }
         static var runStatusCompleted: String { zh("完成", en: "Done") }
         static var runStatusFailed: String    { zh("失败", en: "Failed") }
