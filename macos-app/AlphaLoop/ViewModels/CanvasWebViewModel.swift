@@ -15,6 +15,17 @@ final class CanvasWebViewModel {
     var saveSuccess = false
     var error: String?
 
+    /// Bridge-reported canvas stats. Written by onGraphStats; read by the workbench shell.
+    var nodeCount: Int = 0
+    var edgeCount: Int = 0
+    var bridgeValidationState: String = "unvalidated"  // "valid" | "invalid" | "unvalidated"
+    /// Bridge-reported current selection. nil when nothing is selected.
+    var selectedNodeId: String?
+
+    /// Outbound callbacks — set by the workbench shell to mirror bridge events into its own VM.
+    var onSelectionChanged: ((CanvasNodeSelection?) -> Void)?
+    var onGraphStats: ((CanvasGraphStats) -> Void)?
+
     weak var webView: WKWebView?
     var errorHandler: ErrorHandler?
 
@@ -45,6 +56,50 @@ final class CanvasWebViewModel {
         validationValid = nil
         validationErrors = 0
         saveSuccess = false
+    }
+
+    /// Bridge → Swift: selection changed (canvas-web sends {selectedNode:{id,type,data}|null}).
+    func onSelectionChanged(payload: [String: Any]) {
+        let selection: CanvasNodeSelection?
+        if let node = payload["selectedNode"] as? [String: Any],
+           let id = node["id"] as? String {
+            selection = CanvasNodeSelection(
+                id: id,
+                type: node["type"] as? String ?? "",
+                data: node["data"] as? [String: Any] ?? [:]
+            )
+        } else {
+            selection = nil
+        }
+        selectedNodeId = selection?.id
+        onSelectionChanged?(selection)
+    }
+
+    /// Bridge → Swift: graph stats (nodeCount / edgeCount / validation state).
+    func onGraphStats(payload: [String: Any]) {
+        let stats = CanvasGraphStats(
+            nodeCount: payload["nodeCount"] as? Int ?? 0,
+            edgeCount: payload["edgeCount"] as? Int ?? 0,
+            validation: payload["validation"] as? String ?? "unvalidated"
+        )
+        nodeCount = stats.nodeCount
+        edgeCount = stats.edgeCount
+        bridgeValidationState = stats.validation
+        onGraphStats?(stats)
+    }
+
+    /// Swift → Bridge: toggle canvas read-only (e.g. after archive).
+    func setReadOnly(_ readOnly: Bool) {
+        sendMessageToCanvas(["type": "setReadOnly", "readOnly": readOnly])
+    }
+
+    /// Swift → Bridge: write back node data after a ⌘2 panel edit.
+    func updateNodeData(nodeId: String, data: [String: Any]) {
+        sendMessageToCanvas([
+            "type": "updateNodeData",
+            "nodeId": nodeId,
+            "data": data,
+        ])
     }
 
     func validateAndSendResult(dsl: [String: Any]) async {
@@ -152,4 +207,23 @@ final class CanvasWebViewModel {
             "warnings": warnings,
         ]
     }
+}
+
+// MARK: - Bridge payload structs
+
+/// Canvas bridge selection event payload.
+struct CanvasNodeSelection: Hashable {
+    let id: String
+    let type: String
+    let data: [String: Any]
+
+    func hash(into hasher: inout Hasher) { hasher.combine(id) }
+    static func == (lhs: CanvasNodeSelection, rhs: CanvasNodeSelection) -> Bool { lhs.id == rhs.id }
+}
+
+/// Canvas bridge graph-stats event payload.
+struct CanvasGraphStats: Hashable {
+    let nodeCount: Int
+    let edgeCount: Int
+    let validation: String  // "valid" | "invalid" | "unvalidated"
 }

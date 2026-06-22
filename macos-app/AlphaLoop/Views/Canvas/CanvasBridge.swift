@@ -38,6 +38,14 @@ final class CanvasBridge: NSObject, WKScriptMessageHandler, WKNavigationDelegate
                     await viewModel.saveVersion(dsl: dsl)
                 }
 
+            case "selectionChanged":
+                // canvas-web sends {type:'selectionChanged', selectedNode:{...}|null} (flat, no payload wrapper)
+                viewModel.onSelectionChanged(payload: body)
+
+            case "graphStats":
+                // canvas-web sends {type:'graphStats', nodeCount, edgeCount, validation} (flat)
+                viewModel.onGraphStats(payload: body)
+
             default:
                 break
             }
