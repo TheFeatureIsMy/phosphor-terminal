@@ -243,5 +243,16 @@ extension L10n {
         static var bindingGuardDailyLoss: String { zh("单日亏损上限", en: "Daily Loss") }
         static var bindingGuardDrawdown: String { zh("回撤上限", en: "Drawdown") }
         static var bindingGuardExposure: String { zh("总敞口", en: "Total Exposure") }
+
+        // Backtest/Dryrun panel (⌘5)
+        static var btLatestBacktest: String { zh("最近回测", en: "Latest Backtest") }
+        static var btLatestDryrun: String { zh("最近模拟", en: "Latest Dry-run") }
+        static var btAllRuns: String { zh("全部运行", en: "All Runs") }
+        static var btSeeAll: String { zh("查看全部", en: "See All") }
+        static var btKindBacktest: String { zh("回测", en: "Backtest") }
+        static var btKindDryrun: String { zh("模拟", en: "Dry-run") }
+        static var btEmpty: String { zh("暂无运行记录", en: "No runs yet") }
+        static var btReturn: String { zh("收益", en: "Return") }
+        static var btErrorReason: String { zh("失败原因", en: "Error Reason") }
     }
 }
