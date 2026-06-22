@@ -5,7 +5,7 @@ import uuid
 from datetime import datetime
 from typing import Any, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class StartBacktestRequest(BaseModel):
@@ -42,6 +42,25 @@ class BacktestRunMetrics(BaseModel):
     worst_trade: float = 0
 
 
+class EquityPoint(BaseModel):
+    timestamp: str
+    equity: float
+    drawdown: float = 0
+
+
+class TradeRow(BaseModel):
+    open_time: str
+    close_time: str
+    pair: str
+    side: str
+    open_price: float
+    close_price: float
+    quantity: float
+    profit: float
+    duration: str
+    mtf_state: Optional[str] = None
+
+
 class BacktestRunResponse(BaseModel):
     id: int
     strategy_id: int
@@ -55,6 +74,8 @@ class BacktestRunResponse(BaseModel):
     symbols: list[str] = []
     config: dict[str, Any] = {}
     result: dict[str, Any] = {}
+    equity_curve: list[EquityPoint] = []
+    trades: list[TradeRow] = []
     sharpe_ratio: float = 0
     max_drawdown: float = 0
     win_rate: float = 0
@@ -66,6 +87,16 @@ class BacktestRunResponse(BaseModel):
     completed_at: Optional[datetime] = None
 
     model_config = {"from_attributes": True}
+
+    @model_validator(mode="after")
+    def _extract_result_fields(self):
+        if self.result and not self.equity_curve:
+            raw_eq = self.result.get("equity_curve", [])
+            self.equity_curve = [EquityPoint(**p) for p in raw_eq if isinstance(p, dict)]
+        if self.result and not self.trades:
+            raw_tr = self.result.get("trades", [])
+            self.trades = [TradeRow(**t) for t in raw_tr if isinstance(t, dict)]
+        return self
 
 
 class BacktestStatusResponse(BaseModel):
