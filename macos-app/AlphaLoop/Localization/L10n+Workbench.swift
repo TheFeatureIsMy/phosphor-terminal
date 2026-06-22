@@ -222,5 +222,26 @@ extension L10n {
         static var versionsList: String { zh("版本列表", en: "Versions") }
         static var versionsLatest: String { zh("最新", en: "Latest") }
         static var versionsActivityEmpty: String { zh("暂无活动", en: "No activity") }
+
+        // Risk binding panel (⌘4)
+        static var bindingNoneTitle: String { zh("未绑定风控", en: "No risk binding") }
+        static var bindingNoneDesc: String { zh("绑定到 live_small 资金池后即可走实盘准入", en: "Bind to a live_small pool to enable live trading.") }
+        static var bindingBindLiveSmall: String { zh("绑定 live_small", en: "Bind live_small") }
+        static var bindingActive: String { zh("已生效", en: "Active") }
+        static var bindingPolicyLabel: String { zh("策略", en: "Policy") }
+        static var bindingPoolLabel: String { zh("资金池", en: "Pool") }
+        static var bindingModeLabel: String { zh("模式", en: "Mode") }
+        static var bindingRemaining: String { zh("余额", en: "Remaining") }
+        static var bindingSheetTitle: String { zh("绑定风控策略", en: "Bind Risk Policy") }
+        static var bindingSheetPick: String { zh("选择策略版本", en: "Pick a policy version") }
+        static var bindingSheetPickPool: String { zh("选择资金池", en: "Pick a capital pool") }
+        static var bindingSheetMode: String { zh("绑定模式", en: "Binding Mode") }
+        static var bindingSheetApply: String { zh("绑定", en: "Apply") }
+        static var bindingSheetCancel: String { zh("取消", en: "Cancel") }
+        static var bindingGuardsTitle: String { zh("风控守卫", en: "Guards") }
+        static var bindingGuardMaxPosition: String { zh("最大单笔", en: "Max Position") }
+        static var bindingGuardDailyLoss: String { zh("单日亏损上限", en: "Daily Loss") }
+        static var bindingGuardDrawdown: String { zh("回撤上限", en: "Drawdown") }
+        static var bindingGuardExposure: String { zh("总敞口", en: "Total Exposure") }
     }
 }

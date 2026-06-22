@@ -125,3 +125,7 @@ app.include_router(workflow.router)
 
 # Strategy workspace (7 endpoints, spec §6.1)
 app.include_router(strategy_workspace_router)
+
+# Risk lookup (binding picker for ⌘4 panel) — list active risk policy versions + capital pools
+from app.routers.risk_lookup import router as risk_lookup_router
+app.include_router(risk_lookup_router)
