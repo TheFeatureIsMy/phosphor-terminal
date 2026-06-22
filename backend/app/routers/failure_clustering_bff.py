@@ -135,13 +135,15 @@ async def get_failure_summary(
 @router.get("/failure-clusters")
 async def get_failure_clusters(
     strategy_id: str | None = Query(None),
+    strategy_uuid: str | None = Query(None, description="Alias for strategy_id; accepts UUID string"),
     db: Session = Depends(get_db),
 ):
+    effective_strategy_id = strategy_id or strategy_uuid
     # Try DB first
     try:
         from app.services.failure_clustering import load_clusters
 
-        records = load_clusters(db, strategy_id=strategy_id)
+        records = load_clusters(db, strategy_id=effective_strategy_id)
         if records:
             clusters = _db_records_to_cluster_responses(records)
             return {
