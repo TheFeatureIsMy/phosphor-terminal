@@ -254,3 +254,41 @@ class TestConfigCleanup:
         assert not config_path.exists(), (
             f"Temp config {config_path} should have been cleaned up after run"
         )
+
+
+# ---------------------------------------------------------------------------
+# Slippage tests (Task 2)
+# ---------------------------------------------------------------------------
+
+
+def test_build_config_applies_slippage_to_fee(tmp_path):
+    runner = FreqtradeBacktestRunner(freqtrade_dir=tmp_path)
+    config_path = runner._build_config(
+        symbols=["BTC/USDT"],
+        initial_capital=10000,
+        stake_amount=100,
+        max_open_trades=5,
+        exchange="binance",
+        fee=0.0005,
+        slippage_bps=3.0,
+        run_id="test",
+    )
+    config = json.loads(Path(config_path).read_text())
+    # 0.0005 + 3/10000 = 0.0008
+    assert abs(config["trading_fee"] - 0.0008) < 1e-9
+
+
+def test_build_config_without_slippage_keeps_fee(tmp_path):
+    runner = FreqtradeBacktestRunner(freqtrade_dir=tmp_path)
+    config_path = runner._build_config(
+        symbols=["BTC/USDT"],
+        initial_capital=10000,
+        stake_amount=100,
+        max_open_trades=5,
+        exchange="binance",
+        fee=0.0005,
+        slippage_bps=None,
+        run_id="test",
+    )
+    config = json.loads(Path(config_path).read_text())
+    assert config["trading_fee"] == 0.0005

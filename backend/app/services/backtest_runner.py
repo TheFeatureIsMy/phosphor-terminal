@@ -76,6 +76,7 @@ class FreqtradeBacktestRunner:
         fee: float | None = None,
         timeout_sec: int = 600,
         run_id: str = "",
+        slippage_bps: float | None = None,
     ) -> BacktestResult:
         rules_path = self._write_rules(dsl, run_id)
         config_path = self._build_config(
@@ -86,6 +87,7 @@ class FreqtradeBacktestRunner:
             exchange=exchange,
             fee=fee,
             run_id=run_id,
+            slippage_bps=slippage_bps,
         )
         export_filename = f"backtest-result-{run_id}" if run_id else "backtest-result"
 
@@ -119,11 +121,16 @@ class FreqtradeBacktestRunner:
         exchange: str,
         fee: float | None,
         run_id: str,
+        slippage_bps: float | None = None,
     ) -> Path:
         if self._base_config.exists():
             base = json.loads(self._base_config.read_text(encoding="utf-8"))
         else:
             base = {}
+
+        effective_fee = fee if fee is not None else 0.0005
+        if slippage_bps is not None:
+            effective_fee = effective_fee + slippage_bps / 10000.0
 
         config = {
             **base,
@@ -139,8 +146,11 @@ class FreqtradeBacktestRunner:
             },
         }
 
-        if fee is not None:
-            config["trading_fee"] = fee
+        if fee is not None or slippage_bps is not None:
+            effective_fee = fee if fee is not None else 0.0005
+            if slippage_bps is not None:
+                effective_fee = effective_fee + slippage_bps / 10000.0
+            config["trading_fee"] = effective_fee
 
         config.pop("api_server", None)
 
