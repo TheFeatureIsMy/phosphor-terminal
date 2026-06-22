@@ -12,7 +12,7 @@ struct APIBacktestV2Tests {
 
     @Test func startBacktestBuildsRequest() async throws {
         let resp = try await client.startBacktestV2(
-            dsl: ["version": "2.5"],
+            dsl: ["version": AnyCodable("2.5")],
             timerange: "20240101-20240601",
             symbols: ["BTC/USDT"],
             initialCapital: 10000,

@@ -7,7 +7,7 @@ import Foundation
 // MARK: - Request/Response types
 
 struct StartBacktestV2Request: Encodable {
-    let dsl: [String: String]
+    let dsl: [String: AnyCodable]
     let timerange: String
     let symbols: [String]
     let initial_capital: Double
@@ -39,26 +39,12 @@ struct BacktestCommandResponseV2: Decodable, Hashable {
     }
 }
 
-struct BacktestStatusResponseV2: Decodable, Hashable {
-    let commandId: String
-    let commandStatus: String
-    let backtestRun: BacktestRunV2?
-    let errorMessage: String?
-
-    enum CodingKeys: String, CodingKey {
-        case commandId = "command_id"
-        case commandStatus = "command_status"
-        case backtestRun = "backtest_run"
-        case errorMessage = "error_message"
-    }
-}
-
 // MARK: - NetworkClientProtocol extension
 
 extension NetworkClientProtocol {
 
     func startBacktestV2(
-        dsl: [String: String],
+        dsl: [String: AnyCodable],
         timerange: String,
         symbols: [String],
         initialCapital: Double,
@@ -82,9 +68,9 @@ extension NetworkClientProtocol {
         }
     }
 
-    func backtestStatusV2(commandId: String) async throws -> BacktestStatusResponseV2 {
+    func backtestStatusV2(commandId: String) async throws -> BacktestStatusV2 {
         try await get("/api/v2/backtest/status/\(commandId)") {
-            MockDataV2.mockBacktestStatusResponseV2()
+            MockDataV2.mockBacktestStatusV2()
         }
     }
 
@@ -113,8 +99,8 @@ extension MockDataV2 {
         )
     }
 
-    static func mockBacktestStatusResponseV2() -> BacktestStatusResponseV2 {
-        BacktestStatusResponseV2(
+    static func mockBacktestStatusV2() -> BacktestStatusV2 {
+        BacktestStatusV2(
             commandId: UUID().uuidString,
             commandStatus: "completed",
             backtestRun: MockDataV2.mockBacktestRunV2(id: 1),

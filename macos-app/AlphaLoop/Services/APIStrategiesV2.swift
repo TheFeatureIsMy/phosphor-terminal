@@ -123,6 +123,7 @@ final class APIStrategiesV2: @unchecked Sendable {
 
     // MARK: - Backtest (Command Bus)
 
+    @available(*, deprecated, message: "Use startBacktestV2 on NetworkClientProtocol (APIBacktestV2.swift)")
     func startBacktest(
         dsl: [String: Any],
         timerange: String,
@@ -161,12 +162,14 @@ final class APIStrategiesV2: @unchecked Sendable {
         )
     }
 
+    @available(*, deprecated, message: "Use backtestStatusV2 on NetworkClientProtocol (APIBacktestV2.swift)")
     func backtestStatus(commandId: String) async throws -> BacktestStatusV2 {
         try await client.get("/api/v2/backtest/status/\(commandId)", mock: {
             BacktestStatusV2Mock.completed()
         })
     }
 
+    @available(*, deprecated, message: "Use listBacktestsV2 on NetworkClientProtocol (APIBacktestV2.swift)")
     func listBacktests(strategyId: Int? = nil, strategyUuid: String? = nil, limit: Int = 20) async throws -> [BacktestRunV2] {
         var path = "/api/v2/backtest?limit=\(limit)"
         if let sid = strategyId { path += "&strategy_id=\(sid)" }

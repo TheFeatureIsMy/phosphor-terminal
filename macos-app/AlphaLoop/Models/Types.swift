@@ -735,6 +735,21 @@ struct BacktestStatusV2: Codable, Hashable {
     let errorCode: String?
     let errorMessage: String?
 
+    // Memberwise init for programmatic construction (e.g., mock factories)
+    internal init(
+        commandId: String,
+        commandStatus: String,
+        backtestRun: BacktestRunV2? = nil,
+        errorCode: String? = nil,
+        errorMessage: String? = nil
+    ) {
+        self.commandId = commandId
+        self.commandStatus = commandStatus
+        self.backtestRun = backtestRun
+        self.errorCode = errorCode
+        self.errorMessage = errorMessage
+    }
+
     enum CodingKeys: String, CodingKey {
         case backtestRun
         case commandId = "command_id"
