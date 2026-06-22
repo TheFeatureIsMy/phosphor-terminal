@@ -13,6 +13,8 @@ struct AlphaLoopApp: App {
     @State private var errorHandler = ErrorHandler()
     @State private var wsManager = WebSocketManager()
     @State private var toastManager = ToastManager()
+    @State private var environmentReady = false
+    @State private var environmentChecked = false
     private let themeManager: ThemeManager
     private let pulseColors: PulseColors
     private let dependencyState: DependencyState
@@ -129,11 +131,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 }
 
-// MARK: - 内容视图（启动页 → 登录 → 主界面）
+// MARK: - 内容视图（环境检测 → 登录 → 主界面）
 struct ContentView: View {
     @Environment(AppState.self) private var appState
     @Environment(AuthState.self) private var authState
     @Environment(\.dependencyState) private var depState
+
+    @StateObject private var dockerService = DockerEnvironmentService()
+    @State private var showEnvironmentSetup = false
 
     private var showSetupSheet: Bool {
         !UserDefaults.standard.bool(forKey: "setupCompleted")
@@ -142,7 +147,9 @@ struct ContentView: View {
 
     var body: some View {
         Group {
-            if appState.backendUnavailable {
+            if showEnvironmentSetup {
+                EnvironmentSetupView()
+            } else if appState.backendUnavailable {
                 BackendUnavailableView {
                     appState.backendUnavailable = false
                     appState.isDetectingBackend = true
@@ -156,6 +163,18 @@ struct ContentView: View {
                 AppShellView()
             } else {
                 LoginPlaceholderView()
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("EnvironmentReady"))) { _ in
+            showEnvironmentSetup = false
+            appState.isDetectingBackend = false
+        }
+        .task {
+            await dockerService.checkAll()
+            // 如果 3 秒后服务仍不健康，显示安装引导页
+            try? await Task.sleep(for: .seconds(3))
+            if dockerService.overallStatus() != .allHealthy {
+                showEnvironmentSetup = true
             }
         }
         .sheet(isPresented: Binding(
