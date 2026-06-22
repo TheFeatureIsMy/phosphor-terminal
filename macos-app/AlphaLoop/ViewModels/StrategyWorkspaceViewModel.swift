@@ -151,6 +151,19 @@ final class StrategyWorkspaceViewModel {
     // CanvasWebViewModel side rather than this MainActor VM.
 
     @discardableResult
+    func createDraft(name: String) async -> StrategyV2? {
+        do {
+            let created = try await strategiesAPI.create(name: name)
+            strategies.insert(created, at: 0)
+            await select(strategyId: created.id)
+            return created
+        } catch {
+            listError = error.localizedDescription
+            return nil
+        }
+    }
+
+    @discardableResult
     func duplicate(name: String? = nil) async -> StrategyV2? {
         guard let id = selectedStrategyId else { return nil }
         do {
