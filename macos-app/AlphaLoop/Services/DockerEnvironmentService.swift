@@ -42,15 +42,40 @@ final class DockerEnvironmentService: ObservableObject {
     }()
     private var healthCheckTask: Task<Void, Never>?
 
-    // MARK: - 全量检测
+    // MARK: - 全量检测 + 静默自动启动
 
-    func checkAll() async {
+    func checkAllAndAutoStart() async {
         async let d1 = checkDockerInstalled()
         async let d2 = checkDockerRunning()
         _ = await (d1, d2)
+
+        // 自动启动 Docker（如果已安装但没运行）
+        if case .healthy = dockerInstalled, case .notRunning = dockerRunning {
+            lastLog = "正在启动 Docker..."
+            do {
+                _ = try await shell("open -a Docker 2>&1")
+                for _ in 0..<15 { // 最多等 15 秒
+                    try? await Task.sleep(for: .seconds(1))
+                    await checkDockerRunning()
+                    if case .healthy = dockerRunning { break }
+                }
+            } catch {
+                lastLog = "Docker 启动失败"
+            }
+        }
+
         guard case .healthy = dockerRunning else { return }
-        // 只有 Docker 运行中才检测服务健康
+
+        // 检测当前服务健康
         await checkAllServices()
+        let healthyCount = [postgresStatus, redisStatus, freqtradeStatus, apiStatus]
+            .filter { $0 == .healthy }.count
+
+        // 如果服务不全，静默启动 compose
+        if healthyCount < 4 && !isStarting {
+            lastLog = "正在启动后端服务..."
+            await startAll()
+        }
     }
 
     func overallStatus() -> OverallStatus {

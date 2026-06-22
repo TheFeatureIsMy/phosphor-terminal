@@ -4,7 +4,7 @@ import SwiftUI
 
 struct EnvironmentSetupView: View {
     @Environment(PulseColors.self) private var colors
-    @StateObject private var dockerService = DockerEnvironmentService()
+    @ObservedObject var dockerService: DockerEnvironmentService
     @State private var hasLaunched = false
 
     var body: some View {
@@ -16,15 +16,28 @@ struct EnvironmentSetupView: View {
             VStack(spacing: 32) {
                 // Header
                 VStack(spacing: 8) {
-                    Image(systemName: "cpu.and.display")
-                        .font(.system(size: 44))
-                        .foregroundStyle(PulseColors.accent)
-                    Text("环境配置")
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundStyle(colors.textPrimary)
-                    Text("AlphaLoop 需要后端服务支持，一键启动即可")
-                        .font(.system(size: 13))
-                        .foregroundStyle(colors.textSecondary)
+                    if dockerService.overallStatus() == .starting {
+                        ProgressView()
+                            .controlSize(.large)
+                            .tint(PulseColors.accent)
+                            .padding(.bottom, 8)
+                        Text("正在启动后端服务")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundStyle(colors.textPrimary)
+                        Text("请稍候，首次启动需下载镜像（约 1-2 分钟）")
+                            .font(.system(size: 13))
+                            .foregroundStyle(colors.textSecondary)
+                    } else {
+                        Image(systemName: "cpu.and.display")
+                            .font(.system(size: 44))
+                            .foregroundStyle(PulseColors.accent)
+                        Text("环境配置")
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundStyle(colors.textPrimary)
+                        Text("AlphaLoop 需要后端服务支持，一键启动即可")
+                            .font(.system(size: 13))
+                            .foregroundStyle(colors.textSecondary)
+                    }
                 }
 
                 // 4 个服务状态卡
@@ -77,7 +90,7 @@ struct EnvironmentSetupView: View {
                             .foregroundStyle(colors.textMuted)
                     } else if dockerService.overallStatus() == .dockerNotRunning {
                         Button {
-                            Task { await dockerService.checkAll() }
+                            Task { await dockerService.checkAllAndAutoStart() }
                         } label: {
                             HStack(spacing: 8) {
                                 Image(systemName: "arrow.clockwise")
@@ -126,9 +139,6 @@ struct EnvironmentSetupView: View {
                 }
             }
             .frame(maxWidth: 480)
-        }
-        .task {
-            await dockerService.checkAll()
         }
     }
 

@@ -148,7 +148,7 @@ struct ContentView: View {
     var body: some View {
         Group {
             if showEnvironmentSetup {
-                EnvironmentSetupView()
+                EnvironmentSetupView(dockerService: dockerService)
             } else if appState.backendUnavailable {
                 BackendUnavailableView {
                     appState.backendUnavailable = false
@@ -170,11 +170,11 @@ struct ContentView: View {
             appState.isDetectingBackend = false
         }
         .task {
-            await dockerService.checkAll()
-            // 如果 3 秒后服务仍不健康，显示安装引导页
-            try? await Task.sleep(for: .seconds(3))
-            if dockerService.overallStatus() != .allHealthy {
-                showEnvironmentSetup = true
+            showEnvironmentSetup = true // 先显示启动中遮罩
+            await dockerService.checkAllAndAutoStart()
+            if dockerService.overallStatus() == .allHealthy {
+                showEnvironmentSetup = false
+                appState.isDetectingBackend = false
             }
         }
         .sheet(isPresented: Binding(
