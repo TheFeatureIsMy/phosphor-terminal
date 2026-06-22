@@ -638,6 +638,47 @@ struct BacktestRunV2: Codable, Identifiable, Hashable {
         case trades
     }
 
+    // Memberwise init for programmatic construction (e.g., mock factories)
+    internal init(
+        id: Int, strategyId: Int, strategyVersionId: String? = nil,
+        commandId: String? = nil, dslHash: String? = nil,
+        status: String, startDate: String, endDate: String,
+        initialCapital: Double, symbols: [String],
+        config: [String: AnyCodable] = [:],
+        result: [String: AnyCodable] = [:],
+        sharpeRatio: Double = 0, maxDrawdown: Double = 0,
+        winRate: Double = 0, totalReturn: Double = 0,
+        profitFactor: Double = 0, totalTrades: Int = 0,
+        errorMessage: String? = nil, createdAt: String? = nil,
+        completedAt: String? = nil,
+        equityCurve: [BacktestEquityPoint] = [],
+        trades: [TradeRow] = []
+    ) {
+        self.id = id
+        self.strategyId = strategyId
+        self.strategyVersionId = strategyVersionId
+        self.commandId = commandId
+        self.dslHash = dslHash
+        self.status = status
+        self.startDate = startDate
+        self.endDate = endDate
+        self.initialCapital = initialCapital
+        self.symbols = symbols
+        self.config = config
+        self.result = result
+        self.sharpeRatio = sharpeRatio
+        self.maxDrawdown = maxDrawdown
+        self.winRate = winRate
+        self.totalReturn = totalReturn
+        self.profitFactor = profitFactor
+        self.totalTrades = totalTrades
+        self.errorMessage = errorMessage
+        self.createdAt = createdAt
+        self.completedAt = completedAt
+        self.equityCurve = equityCurve
+        self.trades = trades
+    }
+
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id = try c.decode(Int.self, forKey: .id)
