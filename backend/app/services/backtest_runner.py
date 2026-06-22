@@ -128,10 +128,6 @@ class FreqtradeBacktestRunner:
         else:
             base = {}
 
-        effective_fee = fee if fee is not None else 0.0005
-        if slippage_bps is not None:
-            effective_fee = effective_fee + slippage_bps / 10000.0
-
         config = {
             **base,
             "dry_run": True,
