@@ -254,5 +254,17 @@ extension L10n {
         static var btEmpty: String { zh("暂无运行记录", en: "No runs yet") }
         static var btReturn: String { zh("收益", en: "Return") }
         static var btErrorReason: String { zh("失败原因", en: "Error Reason") }
+
+        // Readiness panel (⌘6)
+        static var readinessStrategyGates: String { zh("策略门禁", en: "Strategy Gates") }
+        static var readinessSystemGates: String { zh("系统门禁", en: "System Gates") }
+        static var readinessNextStep: String { zh("下一步", en: "Next Step") }
+        static var readinessPassed: String { zh("已通过", en: "Passed") }
+        static var readinessGoFix: String { zh("前往修复", en: "Go fix") }
+        static var readinessGrandNotLive: String { zh("尚未实盘", en: "Not Live") }
+        static var readinessGrandNeedsConfig: String { zh("待配置", en: "Needs Config") }
+        static var readinessGrandNeedsValidation: String { zh("待验证", en: "Needs Validation") }
+        static var readinessGrandPaperPassed: String { zh("已通过模拟", en: "Paper Passed") }
+        static var readinessGrandReadyLive: String { zh("可实盘", en: "Ready for Live") }
     }
 }
