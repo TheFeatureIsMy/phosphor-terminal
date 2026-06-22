@@ -21,6 +21,8 @@ final class CanvasWebViewModel {
     var bridgeValidationState: String = "unvalidated"  // "valid" | "invalid" | "unvalidated"
     /// Bridge-reported current selection. nil when nothing is selected.
     var selectedNodeId: String?
+    /// Full selection object (id+type+data) — kept so ⌘2 NodeConfigPanel can route by type.
+    var selectedNode: CanvasNodeSelection?
 
     /// Outbound callbacks — set by the workbench shell to mirror bridge events into its own VM.
     var onSelectionChanged: ((CanvasNodeSelection?) -> Void)?
@@ -72,6 +74,7 @@ final class CanvasWebViewModel {
             selection = nil
         }
         selectedNodeId = selection?.id
+        selectedNode = selection
         onSelectionChanged?(selection)
     }
 

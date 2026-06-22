@@ -182,5 +182,39 @@ extension L10n {
         static var panelBacktest: String { zh("回测/模拟", en: "Backtest/Dry-run") }
         static var panelReadiness: String { zh("实盘准入", en: "Readiness") }
         static var panelClose: String { zh("关闭", en: "Close") }
+
+        // Node config (⌘2 panel)
+        static var nodeNoSelection: String { zh("画布中未选中节点", en: "No node selected") }
+        static var nodeSignalInput: String { zh("信号输入", en: "Signal Input") }
+        static var nodeIndicatorCondition: String { zh("指标条件", en: "Indicator Condition") }
+        static var nodeFilter: String { zh("过滤器", en: "Filter") }
+        static var nodePositionSizing: String { zh("仓位管理", en: "Position Sizing") }
+        static var nodeRiskPolicy: String { zh("风控策略", en: "Risk Policy") }
+        static var nodeExecutionOutput: String { zh("执行输出", en: "Execution Output") }
+        static var nodeStructureDefense: String { zh("结构防御", en: "Structure Defense") }
+        static var nodeAccountRisk: String { zh("账户风控", en: "Account Risk Firewall") }
+        static var nodeMTFGuard: String { zh("多周期守卫", en: "MTF Guard") }
+        static var nodeFieldSymbols: String { zh("标的", en: "Symbols") }
+        static var nodeFieldTimeframe: String { zh("周期", en: "Timeframe") }
+        static var nodeFieldSource: String { zh("来源", en: "Source") }
+        static var nodeFieldIndicator: String { zh("指标", en: "Indicator") }
+        static var nodeFieldOperator: String { zh("条件", en: "Operator") }
+        static var nodeFieldValue: String { zh("阈值", en: "Value") }
+        static var nodeFieldPositionPct: String { zh("仓位百分比", en: "Position %") }
+        static var nodeFieldStoploss: String { zh("止损", en: "Stop Loss") }
+        static var nodeFieldMaxOpen: String { zh("最大持仓", en: "Max Open Trades") }
+        static var nodeFieldTrailing: String { zh("追踪止损", en: "Trailing Stop") }
+        static var nodeFieldEntry: String { zh("入场逻辑", en: "Entry Logic") }
+        static var nodeFieldExit: String { zh("出场逻辑", en: "Exit Logic") }
+        static var nodeFieldStructures: String { zh("结构类型", en: "Structures") }
+        static var nodeFieldMinScore: String { zh("最小评分", en: "Min Score") }
+        static var nodeFieldDailyLoss: String { zh("单日最大亏损", en: "Daily Loss") }
+        static var nodeFieldWeeklyLoss: String { zh("单周最大亏损", en: "Weekly Loss") }
+        static var nodeFieldConsecLoss: String { zh("连续亏损上限", en: "Max Consec Loss") }
+        static var nodeFieldFastTf: String { zh("快周期", en: "Fast TF") }
+        static var nodeFieldSlowTf: String { zh("慢周期", en: "Slow TF") }
+        static var nodeFieldStructureType: String { zh("结构类型", en: "Structure Type") }
+        static var nodeFieldRuleType: String { zh("类型", en: "Rule Type") }
+        static var nodeFieldCandles: String { zh("冷却K线", en: "Candles") }
     }
 }

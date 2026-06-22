@@ -95,7 +95,7 @@ struct StrategyCanvasWorkspaceView: View {
     private func panelView(panel: WorkbenchPanel, vm: StrategyWorkspaceViewModel) -> some View {
         switch panel {
         case .list:      StrategyListPanel(vm: vm)
-        case .node:      NodeConfigPanel(vm: vm)
+        case .node:      NodeConfigPanel(vm: vm, canvasVM: canvasVM)
         case .version:   VersionsPanel(vm: vm)
         case .risk:      RiskBindingPanel(vm: vm)
         case .backtest:  BacktestDryrunPanel(vm: vm)
