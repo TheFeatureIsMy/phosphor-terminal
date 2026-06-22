@@ -17,6 +17,8 @@ class StartBacktestRequest(BaseModel):
     max_open_trades: int = Field(default=5, ge=1)
     exchange: str = Field(default="binance")
     fee: Optional[float] = Field(default=None, ge=0, le=0.1)
+    slippage_bps: Optional[float] = Field(default=None, ge=0, le=100,
+        description="Slippage in basis points; applied by adjusting effective fee")
     strategy_id: int = Field(default=0)
     strategy_version_id: Optional[str] = None
 
