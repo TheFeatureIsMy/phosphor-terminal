@@ -216,5 +216,11 @@ extension L10n {
         static var nodeFieldStructureType: String { zh("结构类型", en: "Structure Type") }
         static var nodeFieldRuleType: String { zh("类型", en: "Rule Type") }
         static var nodeFieldCandles: String { zh("冷却K线", en: "Candles") }
+
+        // Versions panel (⌘3)
+        static var versionsRecent: String { zh("最近变更", en: "Recent Changes") }
+        static var versionsList: String { zh("版本列表", en: "Versions") }
+        static var versionsLatest: String { zh("最新", en: "Latest") }
+        static var versionsActivityEmpty: String { zh("暂无活动", en: "No activity") }
     }
 }
