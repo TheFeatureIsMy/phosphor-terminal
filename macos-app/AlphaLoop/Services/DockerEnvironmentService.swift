@@ -32,16 +32,13 @@ final class DockerEnvironmentService: ObservableObject {
     @Published var isStarting: Bool = false
 
     // 从 app bundle 路径推导项目根目录（.app 位于 macos-app/.build/arm64-apple-macosx/debug/）
-    // 真实打包时，docker-compose.yml 随 app bundle 分发
+    // 真实打包时，docker-compose.yml 随 app bundle 分发到 Resources
     private let projectRoot: String = {
-        let bundlePath = Bundle.main.bundlePath
-        // macos-app/.build/arm64-apple-macosx/debug/AlphaLoop.app -> 向上 4 层到 phosphor-terminal 根
-        let path = (bundlePath as NSString)
-            .deletingLastPathComponent
-            .deletingLastPathComponent
-            .deletingLastPathComponent
-            .deletingLastPathComponent
-        return path
+        let bundleURL = URL(fileURLWithPath: Bundle.main.bundlePath)
+        // 向上 4 层: .build/xxx/debug/AlphaLoop.app → .build/xxx/debug → .build/xxx → .build → macos-app → phosphor-terminal
+        var root = bundleURL
+        for _ in 0..<4 { root = root.deletingLastPathComponent() }
+        return root.path
     }()
     private var healthCheckTask: Task<Void, Never>?
 
