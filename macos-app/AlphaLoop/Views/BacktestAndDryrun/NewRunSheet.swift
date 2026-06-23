@@ -152,15 +152,24 @@ struct NewRunSheet: View {
         error = nil
         defer { submitting = false }
         do {
-            let timerange = stringTimerange()
-            let slipBps: Double? = slippageModel == "bps" ? slippageBps
-                                  : slippageModel == "pct" ? slippagePct * 100 : nil
-            try await viewModel.startBacktest(
-                timerange: timerange,
-                symbols: Array(selectedSymbols),
-                capital: capital,
-                slippageBps: slipBps
-            )
+            if mode == .backtest {
+                let timerange = stringTimerange()
+                let slipBps: Double? = slippageModel == "bps" ? slippageBps
+                                      : slippageModel == "pct" ? slippagePct * 100 : nil
+                try await viewModel.startBacktest(
+                    timerange: timerange,
+                    symbols: Array(selectedSymbols),
+                    capital: capital,
+                    slippageBps: slipBps
+                )
+            } else {
+                try await viewModel.startDryrun(
+                    symbols: Array(selectedSymbols),
+                    stakeAmount: stakeAmount,
+                    maxOpenTrades: maxOpenTrades,
+                    capital: capital
+                )
+            }
             dismiss()
         } catch {
             self.error = error.localizedDescription

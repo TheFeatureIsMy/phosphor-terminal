@@ -213,6 +213,29 @@ final class BacktestLabViewModel {
         startPolling(commandId: resp.commandId)
     }
 
+    // MARK: - Start dryrun
+
+    func startDryrun(symbols: [String], stakeAmount: Double, maxOpenTrades: Int, capital: Double) async throws {
+        guard let s = selectedStrategy else { return }
+        let api = APIDryrunV2(client: networkClient)
+        var body: [String: Any] = [
+            "dsl": [:] as [String: Any],
+            "symbols": symbols,
+            "stake_amount": stakeAmount,
+            "max_open_trades": maxOpenTrades,
+            "initial_wallet": capital,
+            "exchange": "binance",
+        ]
+        if let uuid = UUID(uuidString: s.id) {
+            body["strategy_id"] = uuid.uuidString
+        } else {
+            body["strategy_id"] = s.id
+        }
+        let _ = try await api.startDryrun(body)
+        // Dryruns are long-running (live paper trading); "command queued" is the success condition.
+        phase = .completed
+    }
+
     // MARK: - Polling
 
     private func startPolling(commandId: String) {
