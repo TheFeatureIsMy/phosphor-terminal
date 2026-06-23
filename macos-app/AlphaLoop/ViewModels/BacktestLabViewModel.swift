@@ -1,114 +1,286 @@
-// BacktestLabViewModel.swift — 回测实验室聚合 ViewModel
+// BacktestLabViewModel.swift — 回测实验室聚合 ViewModel (Phase 状态机 + 轮询)
+//
+// Task 11 rewrite: Phase state machine (idle/configuring/running/completed/failed),
+// polling logic (2s interval, 15-min hard timeout), workspace snapshot loading.
+//
+// Preserves old API surface (strategies, runs, dryruns, comparedRunIds, etc.)
+// for BacktestLabView.swift compatibility. Task 17 will remove the legacy surface.
 
+import Foundation
 import SwiftUI
+
+// MARK: - NetworkClientProtocol extension for workspace snapshot
+
+extension NetworkClientProtocol {
+    /// GET /api/v2/strategies/{id}/workspace — full BFF aggregation.
+    func getWorkspaceSnapshot(strategyId: String) async throws -> WorkspaceSnapshot {
+        try await APIStrategyWorkspace(client: self).getSnapshot(strategyId: strategyId)
+    }
+}
 
 @Observable
 @MainActor
 final class BacktestLabViewModel {
-    // MARK: - State
 
-    /// 所有可选策略（左侧选择器 + 默认锁定当前选中）
+    // MARK: - Phase state machine
+
+    enum Phase: Equatable {
+        case idle, configuring, running, completed, failed
+    }
+
+    var phase: Phase = .idle
+
+    // MARK: - New properties (Task 11 rewrite)
+
+    var selectedStrategy: StrategyV2?
+    var selectedRun: BacktestRunV2?
+    var recentBacktests: [BacktestRunV2] = []
+    var recentDryruns: [StrategyRunV2] = []
+    var comparedRuns: [BacktestRunV2] = []
+    var comparedRunIds: Set<Int> = []
+    var strategyFailureClusters: [FailureClusterSummary] = []
+    var readiness: PerStrategyReadiness?
+    var errorMessage: String?
+
+    // Network client with mock toggle
+    var networkClient: NetworkClientProtocol = MockNetworkClient()
+    var useMockClient: Bool = true {
+        didSet { networkClient = useMockClient ? MockNetworkClient() : LiveNetworkClient() }
+    }
+
+    // Polling
+    var pollingTask: Task<Void, Never>?
+    var pollStartTime: Date?
+    private let pollTimeout: TimeInterval = 15 * 60  // 15-minute hard limit
+
+    // MARK: - Legacy API surface (preserved for BacktestLabView.swift, to be removed in Task 17)
+
     var strategies: [StrategyV2] = []
     var selectedStrategyId: String?
-
-    /// 当前策略下的全部回测 run
-    var runs: [BacktestRunV2] = []
-
-    /// 当前策略最新版本下的 dryruns（合并显示在 RunRail 底部）
-    var dryruns: [StrategyRunV2] = []
-
-    /// 多选对比：最多 3 个
-    var comparedRunIds: Set<Int> = []
-    /// Inspector 显示的 run；默认 = comparedRunIds 最后一个 / runs[0]
-    var inspectedRunId: Int?
-
-    var isLoading = false
-    var loadError: String?
-
     var showNewRunSheet = false
-
-    // MARK: - Deps
-
-    private let client: NetworkClientProtocol
-    private let strategiesAPI: APIStrategiesV2
-    private let runsAPI: APIStrategyRuns
-
-    init(client: NetworkClientProtocol) {
-        self.client = client
-        self.strategiesAPI = APIStrategiesV2(client: client)
-        self.runsAPI = APIStrategyRuns(client: client)
+    var isLoading = false
+    var loadError: String? {
+        get { errorMessage }
+        set { errorMessage = newValue }
     }
 
-    // MARK: - Derived
+    /// Legacy alias — maps to recentBacktests
+    var runs: [BacktestRunV2] { recentBacktests }
 
-    var selectedStrategy: StrategyV2? {
-        guard let id = selectedStrategyId else { return nil }
-        return strategies.first { $0.id == id }
-    }
+    /// Legacy alias — maps to recentDryruns
+    var dryruns: [StrategyRunV2] { recentDryruns }
+
+    var inspectedRunId: Int?
 
     var inspectedRun: BacktestRunV2? {
         guard let id = inspectedRunId else { return nil }
-        return runs.first { $0.id == id }
+        return recentBacktests.first { $0.id == id }
     }
 
-    var comparedRuns: [BacktestRunV2] {
-        runs.filter { comparedRunIds.contains($0.id) }
-            .sorted { ($0.completedAt ?? "") > ($1.completedAt ?? "") }
-    }
-
-    /// 冠军：completed 中 Sharpe 最高且 maxDD > -25 的 run
+    /// Champion: completed run with highest Sharpe, maxDD > -25
     var championRun: BacktestRunV2? {
-        let pool = runs.filter { $0.status == "completed" && $0.maxDrawdown > -25 }
+        let pool = recentBacktests.filter { $0.status == "completed" && $0.maxDrawdown > -25 }
         return pool.max { $0.sharpeRatio < $1.sharpeRatio }
     }
 
-    // MARK: - Load
+    // MARK: - Init
 
-    func bootstrap() async {
-        isLoading = true
-        loadError = nil
-        do {
-            strategies = try await strategiesAPI.list()
-            // 默认选中：app state 里 strategyV2Id > 列表第一个
-            if selectedStrategyId == nil {
-                selectedStrategyId = strategies.first?.id
-            }
-            await loadRuns()
-        } catch {
-            loadError = error.localizedDescription
-        }
-        isLoading = false
+    init() {}
+
+    /// Legacy init for BacktestLabView.swift (injects network client)
+    convenience init(client: NetworkClientProtocol) {
+        self.init()
+        self.networkClient = client
+        self.useMockClient = client is MockNetworkClient
     }
+
+    // MARK: - Test helper
+
+    func injectPhaseForTest(_ p: Phase) { self.phase = p }
+
+    // MARK: - Strategy selection (new — takes StrategyV2)
+
+    func selectStrategy(_ s: StrategyV2) async {
+        cancelPolling()
+        selectedStrategy = s
+        selectedStrategyId = s.id
+        selectedRun = nil
+        comparedRuns = []
+        comparedRunIds = []
+        strategyFailureClusters = []
+        readiness = nil
+        phase = .configuring
+        await loadWorkspaceSnapshot()
+    }
+
+    // MARK: - Strategy selection (legacy — takes id string)
 
     func selectStrategy(_ id: String) async {
-        selectedStrategyId = id
-        comparedRunIds = []
-        inspectedRunId = nil
-        dryruns = []
-        await loadRuns()
+        if let s = strategies.first(where: { $0.id == id }) {
+            await selectStrategy(s)
+        } else {
+            selectedStrategyId = id
+            phase = .configuring
+            await loadWorkspaceSnapshot()
+        }
     }
 
-    func loadRuns() async {
-        guard let strategyUuid = selectedStrategyId else { runs = []; dryruns = []; return }
+    // MARK: - Load workspace snapshot
+
+    func loadWorkspaceSnapshot() async {
+        guard let sId = selectedStrategyId else { return }
+        isLoading = true
         do {
-            // Backtests filtered by strategy UUID (backend supports strategy_uuid query)
-            async let all = strategiesAPI.listBacktests(strategyUuid: strategyUuid, limit: 25)
-            // Dryruns: filter by strategy_id (backend accepts strategyUuid as the strategy_id query)
-            async let drs = runsAPI.listRuns(mode: nil, status: nil, strategyId: strategyUuid, limit: 25)
-            let allRuns = try await all
-            runs = allRuns.sorted { ($0.completedAt ?? $0.createdAt ?? "") > ($1.completedAt ?? $1.createdAt ?? "") }
-            dryruns = (try await drs).sorted { ($0.startedAt ?? $0.createdAt) > ($1.startedAt ?? $1.createdAt) }
-            // 默认勾选第一个 + Inspect
-            if comparedRunIds.isEmpty, let first = runs.first {
+            let snap = try await networkClient.getWorkspaceSnapshot(strategyId: sId)
+
+            // Map BacktestRunSummary → BacktestRunV2
+            self.recentBacktests = snap.recentBacktests.map { summary in
+                BacktestRunV2(
+                    id: summary.id,
+                    strategyId: 0,
+                    strategyVersionId: nil,
+                    commandId: nil,
+                    dslHash: nil,
+                    status: summary.status,
+                    startDate: summary.startedAt ?? "",
+                    endDate: summary.completedAt ?? "",
+                    initialCapital: 0,
+                    symbols: [],
+                    config: [:],
+                    result: [:],
+                    sharpeRatio: summary.sharpeRatio ?? 0,
+                    maxDrawdown: -(summary.maxDrawdown ?? 0),
+                    winRate: (summary.winRate ?? 0),
+                    totalReturn: (summary.totalReturn ?? 0),
+                    profitFactor: 0,
+                    totalTrades: 0,
+                    errorMessage: nil,
+                    createdAt: summary.startedAt,
+                    completedAt: summary.completedAt,
+                    equityCurve: [],
+                    trades: []
+                )
+            }
+
+            // Map StrategyRunSummary → StrategyRunV2
+            self.recentDryruns = snap.recentDryruns.map { srs in
+                StrategyRunV2(
+                    id: srs.id,
+                    strategyVersionId: "",
+                    mode: srs.mode,
+                    status: srs.status,
+                    startedAt: srs.startedAt,
+                    stoppedAt: srs.stoppedAt,
+                    createdAt: srs.createdAt ?? "",
+                    configSnapshot: nil,
+                    resultSummary: nil
+                )
+            }
+
+            self.readiness = snap.readiness
+
+            // Auto-select first backtest for inspector
+            if comparedRunIds.isEmpty, let first = self.recentBacktests.first {
                 comparedRunIds.insert(first.id)
                 inspectedRunId = first.id
             }
         } catch {
-            loadError = error.localizedDescription
+            self.errorMessage = error.localizedDescription
+        }
+        isLoading = false
+    }
+
+    // MARK: - Start backtest
+
+    func startBacktest(
+        timerange: String,
+        symbols: [String],
+        capital: Double,
+        slippageBps: Double? = nil
+    ) async throws {
+        guard selectedStrategy != nil else { return }
+        let resp = try await networkClient.startBacktestV2(
+            dsl: [:],
+            timerange: timerange,
+            symbols: symbols,
+            initialCapital: capital,
+            slippageBps: slippageBps,
+            strategyId: 0,
+            strategyVersionId: nil
+        )
+        phase = .running
+        pollStartTime = Date()
+        startPolling(commandId: resp.commandId)
+    }
+
+    // MARK: - Polling
+
+    private func startPolling(commandId: String) {
+        cancelPolling()
+        pollingTask = Task { [weak self] in
+            while !Task.isCancelled {
+                guard let self else { return }
+                if let start = self.pollStartTime, Date().timeIntervalSince(start) > self.pollTimeout {
+                    await MainActor.run { self.phase = .failed; self.errorMessage = "运行超时" }
+                    return
+                }
+                do {
+                    let status = try await self.networkClient.backtestStatusV2(commandId: commandId)
+                    if status.commandStatus == "completed", let run = status.backtestRun {
+                        await MainActor.run {
+                            self.selectedRun = run
+                            self.phase = .completed
+                        }
+                        await self.loadFailureClusters()
+                        return
+                    }
+                    if ["failed", "error", "cancelled"].contains(status.commandStatus) {
+                        await MainActor.run {
+                            self.phase = .failed
+                            self.errorMessage = status.errorMessage ?? "运行失败"
+                        }
+                        return
+                    }
+                } catch {
+                    // Network transient error — continue polling
+                }
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
+            }
         }
     }
 
-    // MARK: - Compare / inspect actions
+    func cancelPolling() {
+        pollingTask?.cancel()
+        pollingTask = nil
+    }
+
+    // MARK: - Select run
+
+    func selectRun(_ run: BacktestRunV2) async {
+        selectedRun = run
+        if phase != .running { phase = .completed }
+        await loadFailureClusters()
+    }
+
+    // MARK: - Toggle compare (async — new)
+
+    func toggleCompare(runId: Int) async {
+        if comparedRunIds.contains(runId) {
+            comparedRunIds.remove(runId)
+            comparedRuns.removeAll { $0.id == runId }
+        } else {
+            guard comparedRunIds.count < 3 else { return }
+            comparedRunIds.insert(runId)
+            do {
+                let r = try await networkClient.getBacktestV2(id: runId)
+                comparedRuns.append(r)
+            } catch {
+                self.errorMessage = error.localizedDescription
+            }
+        }
+    }
+
+    // MARK: - Toggle compare (legacy — non-async, for view compatibility)
 
     func toggleCompare(_ runId: Int) {
         if comparedRunIds.contains(runId) {
@@ -118,7 +290,6 @@ final class BacktestLabViewModel {
             }
         } else {
             if comparedRunIds.count >= 3 {
-                // 替换最早加入的
                 if let first = comparedRunIds.first { comparedRunIds.remove(first) }
             }
             comparedRunIds.insert(runId)
@@ -131,7 +302,43 @@ final class BacktestLabViewModel {
         comparedRunIds.insert(runId)
     }
 
-    // MARK: - New run submission
+    // MARK: - Failure clusters
+
+    private func loadFailureClusters() async {
+        guard let s = selectedStrategy else { return }
+        // StrategyV2.id is a String UUID; try direct parse, fall back to deterministic UUID
+        let uuid = UUID(uuidString: s.id)
+            ?? UUID(uuidString: "00000000-0000-4000-8000-\(s.id.prefix(12).padding(toLength: 12, withPad: "0", startingAt: 0))")
+            ?? UUID()
+        do {
+            self.strategyFailureClusters = try await networkClient.getFailureClusters(strategyUuid: uuid)
+        } catch {
+            // Silent fail — cluster section shows empty state
+        }
+    }
+
+    // MARK: - Legacy bootstrap / loadRuns / submitNewRun
+
+    func bootstrap() async {
+        isLoading = true
+        loadError = nil
+        do {
+            strategies = try await APIStrategiesV2(client: networkClient).list()
+            if selectedStrategyId == nil {
+                selectedStrategyId = strategies.first?.id
+            }
+            if let id = selectedStrategyId, let s = strategies.first(where: { $0.id == id }) {
+                await selectStrategy(s)
+            }
+        } catch {
+            loadError = error.localizedDescription
+        }
+        isLoading = false
+    }
+
+    func loadRuns() async {
+        await loadWorkspaceSnapshot()
+    }
 
     func submitNewRun(
         versionId: String?,
@@ -140,21 +347,20 @@ final class BacktestLabViewModel {
         capital: Double,
         symbols: [String]
     ) async -> Bool {
-        guard let _ = selectedStrategyId else { return false }
         do {
-            _ = try await strategiesAPI.startBacktest(
-                dsl: [:],
+            try await startBacktest(
                 timerange: "\(start)-\(end)",
                 symbols: symbols,
-                initialCapital: capital,
-                strategyVersionId: versionId
+                capital: capital
             )
-            // 刷新列表（mock 模式下立刻拿到新 run）
-            await loadRuns()
             return true
         } catch {
-            loadError = error.localizedDescription
+            errorMessage = error.localizedDescription
             return false
         }
+    }
+
+    func onDisappear() {
+        cancelPolling()
     }
 }
