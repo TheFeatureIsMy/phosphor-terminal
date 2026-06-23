@@ -316,12 +316,6 @@ struct APIServiceTests {
         #expect(!result.isEmpty)
     }
 
-    @Test func dashboardGetSystemStatus() async throws {
-        let api = APIDashboard(client: client)
-        let result = try await api.getSystemStatus()
-        #expect(!result.uptime.isEmpty)
-    }
-
     @Test func dashboardGetRiskEvents() async throws {
         let api = APIDashboard(client: client)
         let _ = try await api.getRiskEvents()

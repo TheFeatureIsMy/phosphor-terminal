@@ -10,41 +10,15 @@ struct ViewModelTests {
 
     // MARK: - DashboardViewModel
 
-    @MainActor @Test func dashboardViewModelLoadAll() async {
+    @MainActor @Test func dashboardViewModelLoad() async {
         let client = MockNetworkClient()
         let vm = DashboardViewModel(client: client)
 
-        await vm.loadAll()
+        await vm.load()
 
         #expect(vm.isLoading == false)
         #expect(vm.error == nil)
         #expect(!vm.equityCurve.isEmpty)
-    }
-
-    @MainActor @Test func dashboardViewModelApproveConfirmation() async {
-        let client = MockNetworkClient()
-        let vm = DashboardViewModel(client: client)
-
-        await vm.loadAll()
-
-        let countBefore = vm.pendingConfirmations.count
-        if let first = vm.pendingConfirmations.first {
-            vm.approveConfirmation(first.id)
-            #expect(vm.pendingConfirmations.count == countBefore - 1)
-        }
-    }
-
-    @MainActor @Test func dashboardViewModelRejectConfirmation() async {
-        let client = MockNetworkClient()
-        let vm = DashboardViewModel(client: client)
-
-        await vm.loadAll()
-
-        let countBefore = vm.pendingConfirmations.count
-        if let first = vm.pendingConfirmations.first {
-            vm.rejectConfirmation(first.id)
-            #expect(vm.pendingConfirmations.count == countBefore - 1)
-        }
     }
 
     // MARK: - LiveReadinessViewModel

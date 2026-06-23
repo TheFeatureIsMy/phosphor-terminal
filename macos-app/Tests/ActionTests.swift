@@ -204,34 +204,13 @@ struct ActionTests {
 
     // MARK: - Dashboard Approve/Reject
 
-    @MainActor @Test func dashboardApproveConfirmation() async {
+    @MainActor @Test func dashboardLoad() async {
         let client = MockNetworkClient()
         let vm = DashboardViewModel(client: client)
 
-        await vm.loadAll()
+        await vm.load()
 
-        let countBefore = vm.pendingConfirmations.count
-        if countBefore > 0 {
-            let id = vm.pendingConfirmations[0].id
-            vm.approveConfirmation(id)
-            #expect(vm.pendingConfirmations.count == countBefore - 1)
-            #expect(vm.pendingConfirmations.first { $0.id == id } == nil)
-        }
-    }
-
-    @MainActor @Test func dashboardRejectConfirmation() async {
-        let client = MockNetworkClient()
-        let vm = DashboardViewModel(client: client)
-
-        await vm.loadAll()
-
-        let countBefore = vm.pendingConfirmations.count
-        if countBefore > 0 {
-            let id = vm.pendingConfirmations[0].id
-            vm.rejectConfirmation(id)
-            #expect(vm.pendingConfirmations.count == countBefore - 1)
-            #expect(vm.pendingConfirmations.first { $0.id == id } == nil)
-        }
+        #expect(vm.error == nil)
     }
 
     // MARK: - Global Status Polling
