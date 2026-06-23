@@ -221,7 +221,7 @@ final class BacktestLabViewModel {
             while !Task.isCancelled {
                 guard let self else { return }
                 if let start = self.pollStartTime, Date().timeIntervalSince(start) > self.pollTimeout {
-                    await MainActor.run { self.phase = .failed; self.errorMessage = "运行超时" }
+                    await MainActor.run { self.phase = .failed; self.errorMessage = L10n.BacktestLab.timeoutError }
                     return
                 }
                 do {
@@ -237,7 +237,7 @@ final class BacktestLabViewModel {
                     if ["failed", "error", "cancelled"].contains(status.commandStatus) {
                         await MainActor.run {
                             self.phase = .failed
-                            self.errorMessage = status.errorMessage ?? "运行失败"
+                            self.errorMessage = status.errorMessage ?? L10n.BacktestLab.runFailed
                         }
                         return
                     }
@@ -306,14 +306,14 @@ final class BacktestLabViewModel {
 
     private func loadFailureClusters() async {
         guard let s = selectedStrategy else { return }
-        // StrategyV2.id is a String UUID; try direct parse, fall back to deterministic UUID
-        let uuid = UUID(uuidString: s.id)
-            ?? UUID(uuidString: "00000000-0000-4000-8000-\(s.id.prefix(12).padding(toLength: 12, withPad: "0", startingAt: 0))")
-            ?? UUID()
+        guard let uuid = UUID(uuidString: s.id) else {
+            // strategy id isn't a UUID — skip failure clusters silently
+            return
+        }
         do {
             self.strategyFailureClusters = try await networkClient.getFailureClusters(strategyUuid: uuid)
         } catch {
-            // Silent fail — cluster section shows empty state
+            // silent: clusters section shows empty state
         }
     }
 

@@ -105,6 +105,8 @@ extension L10n {
         static var statusNoRun: String { zh("尚无运行记录", en: "No runs yet") }
         static var statusViewLog: String { zh("查看日志", en: "View Log") }
         static var statusTimeout: String { zh("运行超时", en: "Run timed out") }
+        static var timeoutError: String   { zh("运行超时", en: "Run timed out") }
+        static var runFailed: String      { zh("运行失败", en: "Run failed") }
 
         // MARK: - SummaryPanel
         static var metricReturn: String { zh("收益", en: "Return") }
