@@ -1,96 +1,57 @@
 <h1>Manipulation Radar</h1>
-<p class="chapter-meta">Page · Structure · 5 min</p>
+<p class="chapter-meta">Page · Structure · 6 min</p>
 
-<blockquote class="lede">Scan any trading pair for market manipulation signals — stop hunting, holder concentration, pump &amp; dump, and liquidity traps — and get a composite risk score with a clear trading recommendation.</blockquote>
+<blockquote class="lede">A nine-section narrative flow centered on a single suspected manipulation case. Surfaces multi-layer evidence, lifecycle stage, conservative/aggressive defense options, and the real impact on currently enabled strategies — while honestly flagging missing data and uncertainty.</blockquote>
 
 <h2>TL;DR</h2>
-<p>The Manipulation Radar is an interactive market manipulation detection tool. Enter a symbol and hit Scan to get a composite manipulation score (0-100) plus four sub-scores: Stop Hunt, Holder Concentration, Pump &amp; Dump, and Liquidity Trap. Each result can be expanded to reveal detailed evidence across five categories (candlestick anomaly, volume anomaly, funding/OI anomaly, on-chain/wallet activity, and news/KOL coordination), along with a trading recommendation (Allow, Reduce, Paper Only, or Reject).</p>
+<p>The Manipulation Radar is not a verdict system — it is a <strong>statistical inference</strong> engine built on multi-source data signals. The top of the page is a horizontally scrolling Active Cases Strip (Hero Strip); click any card to switch the focused case. Below, the page unfolds the focused case through nine sections: Verdict → Lifecycle Timeline → 5-Layer Evidence Matrix (price/volume, orderbook liquidity, on-chain, social/news, cross-market) → Whale &amp; Concentration → Cross-Market Pressure → Social Acceleration → Defense &amp; Strategy Impact (conservative/aggressive side by side) → Alerts + Similar Historical Cases.</p>
 
 <h2>Who uses it &amp; when</h2>
-<p>Every trader — especially those trading altcoins and low-liquidity pairs. Scan an unfamiliar symbol before deciding to trade it. Also useful when you spot unusual price action: was that sudden spike a normal move or engineered manipulation?</p>
+<p>Every trader — especially those involved in altcoins and low-liquidity perpetuals. Two typical user profiles:</p>
+<ul>
+  <li><strong>Conservative</strong> — quickly verify "is this symbol being manipulated?" before trading. If the page shows "likely distribution stage" or "likely collapse stage", stay away.</li>
+  <li><strong>Aggressive</strong> — understand the lifecycle of manipulation and ride the early stages (accumulate / markup). The Defense panel always presents both stances so you can compare.</li>
+</ul>
 
-<h2>Page Anatomy</h2>
-<svg class="diagram" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg">
-  <rect x="0" y="0" width="600" height="320" fill="rgba(255,255,255,0.02)" rx="8"/>
-
-  <!-- ① Header -->
-  <text x="16" y="30" fill="#e8eaee" font-family="monospace" font-size="16" font-weight="bold">Manipulation Radar</text>
-  <circle cx="16" cy="42" r="3" fill="#00ff9d"/>
-  <text x="24" y="46" fill="#9ca0a8" font-family="monospace" font-size="10">Market conditions normal</text>
-
-  <text x="16" y="66" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2460; Page title + overall status indicator</text>
-
-  <!-- ② Scan bar -->
-  <rect x="16" y="76" width="568" height="36" fill="rgba(255,255,255,0.02)" rx="4"/>
-  <rect x="16" y="76" width="568" height="36" stroke="rgba(255,255,255,0.08)" stroke-width="1" fill="none" rx="4"/>
-  <text x="30" y="100" fill="#9ca0a8" font-family="monospace" font-size="11">&#x1F50D; Enter trading pair (e.g. BTC/USDT)</text>
-  <rect x="500" y="82" width="72" height="24" fill="rgba(0,255,157,0.15)" rx="4"/>
-  <text x="512" y="99" fill="#00ff9d" font-family="monospace" font-size="11">Scan</text>
-
-  <text x="16" y="132" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2461; Search bar: type a symbol and hit Enter or click Scan</text>
-
-  <!-- ③ Summary cards -->
-  <rect x="16" y="144" width="140" height="50" fill="rgba(80,180,255,0.06)" rx="4" stroke="rgba(80,180,255,0.15)" stroke-width="1"/>
-  <text x="28" y="162" fill="#5e636d" font-family="monospace" font-size="8">SCANNED</text>
-  <text x="28" y="185" fill="#50b4ff" font-family="monospace" font-size="18" font-weight="bold">5</text>
-
-  <rect x="170" y="144" width="140" height="50" fill="rgba(255,84,112,0.06)" rx="4" stroke="rgba(255,84,112,0.15)" stroke-width="1"/>
-  <text x="182" y="162" fill="#5e636d" font-family="monospace" font-size="8">HIGH RISK</text>
-  <text x="182" y="185" fill="#ff5470" font-family="monospace" font-size="18" font-weight="bold">2</text>
-
-  <rect x="324" y="144" width="140" height="50" fill="rgba(255,155,61,0.06)" rx="4" stroke="rgba(255,155,61,0.15)" stroke-width="1"/>
-  <text x="336" y="162" fill="#5e636d" font-family="monospace" font-size="8">BLOCKED</text>
-  <text x="336" y="185" fill="#ff9b3d" font-family="monospace" font-size="18" font-weight="bold">1</text>
-
-  <text x="16" y="212" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2462; Stat cards: total scanned, high risk count, blocked (critical risk) count</text>
-
-  <!-- ④ Score row -->
-  <rect x="16" y="224" width="568" height="80" fill="rgba(255,255,255,0.02)" rx="4"/>
-  <rect x="16" y="224" width="568" height="80" stroke="rgba(255,255,255,0.08)" stroke-width="1" fill="none" rx="4"/>
-
-  <text x="28" y="246" fill="#e8eaee" font-family="monospace" font-size="13" font-weight="bold">SOL/USDT</text>
-  <rect x="100" y="235" width="44" height="16" fill="rgba(255,84,112,0.15)" rx="3"/>
-  <text x="106" y="247" fill="#ff5470" font-family="monospace" font-size="8">HIGH</text>
-  <rect x="150" y="235" width="50" height="16" fill="rgba(255,84,112,0.15)" rx="3"/>
-  <text x="154" y="247" fill="#ff5470" font-family="monospace" font-size="8">REJECT</text>
-
-  <rect x="28" y="258" width="250" height="4" fill="rgba(255,255,255,0.06)" rx="2"/>
-  <rect x="28" y="258" width="175" height="4" fill="#ff5470" rx="2"/>
-  <text x="28" y="275" fill="#5e636d" font-family="monospace" font-size="8">Manipulation Score</text>
-  <text x="130" y="275" fill="#ff5470" font-family="monospace" font-size="8">72</text>
-
-  <text x="28" y="295" fill="#9ca0a8" font-family="monospace" font-size="8">Stop Hunt 55  Concentration 80  Pump &amp; Dump 65  Liquidity Trap 45</text>
-
-  <text x="16" y="318" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2463; Score row: symbol + risk badge + suggestion badge + composite bar + four sub-scores</text>
-</svg>
+<h2>Page Anatomy (Nine Sections)</h2>
 <ol>
-  <li><strong>① Page title</strong> — Displays "Manipulation Radar" and the current overall status (normal or anomalous signals detected).</li>
-  <li><strong>② Search bar</strong> — Type a symbol (e.g. SOL/USDT) and press Enter or click Scan to initiate detection.</li>
-  <li><strong>③ Stat cards</strong> — Three cards show total scanned, high risk count, and blocked count (critical risk auto-blocks trading).</li>
-  <li><strong>④ Score row</strong> — Each scanned symbol appears as a row showing: symbol name, risk level badge, suggestion badge, composite manipulation score bar (0-100), and four sub-scores (Stop Hunt, Holder Concentration, Pump &amp; Dump, Liquidity Trap).</li>
+  <li><strong>Masthead</strong> — Title + system-level disclaimer: <em>"Manipulation radar is a statistical inference system; it surfaces evidence-based suspicions, not verdicts."</em></li>
+  <li><strong>§0 Active Cases Strip</strong> — Horizontally scrolling thumbnail cards for currently active cases. Each card: symbol · M-type · current stage · confidence. Clicking a card switches focus across all sections below.</li>
+  <li><strong>§1 Verdict Panel</strong> — Conclusion for the focused case: M-type chip · lifecycle stage progress · confidence ring · risk level · data completeness (N/5 layers). All copy uses probabilistic prefixes ("Likely" / "Evidence consistent with") — never a definitive judgment.</li>
+  <li><strong>§2 Lifecycle Timeline</strong> — Horizontal timeline of 5 stage nodes (SUSPECTED → ACCUMULATE → MARKUP → DISTRIBUTE → COLLAPSE). The current node glows, past nodes are filled, future nodes are dashed outlines. Click a node to expand: entry time + confidence at that moment + key feature snapshot.</li>
+  <li><strong>§3 Evidence Matrix</strong> — 5 rows × n columns: Layer A Price/Volume · Layer B Orderbook Liquidity · Layer C On-Chain · Layer D Social &amp; News · Layer E Cross-Market. Each row shows its composite anomaly score + a <code>data_quality</code> badge (0-1). Layers with <code>data_quality &lt; 0.3</code> are marked "Data unavailable" and excluded from the verdict. Expand any row to see individual features + z-scores + historical percentiles.</li>
+  <li><strong>§4 Whale &amp; Concentration</strong> (Layer C detail) — Top-10 holder concentration trend + recent 24h large transfers + exchange net inflow.</li>
+  <li><strong>§5 Cross-Market Pressure</strong> (Layer E detail) — Funding rate z-score + spot-perpetual basis + open interest change + long/short ratio + 24h liquidation volume.</li>
+  <li><strong>§6 Social Acceleration</strong> (Layer D detail, may be missing) — Twitter / Telegram mention velocity + KOL mention timeline + sentiment extremity. If the layer is unavailable, the entire section honestly displays "Data unavailable".</li>
+  <li><strong>§7 Defense &amp; Strategy Impact</strong> — Side-by-side columns: <em>Conservative</em> recommendation (blue, e.g. "Exit now") and <em>Aggressive</em> recommendation (amber, e.g. "Reduce or short"). Below: affected symbols chip list + strategy-impact table (each enabled strategy shows whether its ManipulationFilter is enabled / would block this case / its reason codes) + a button jumping to risk configuration.</li>
+  <li><strong>§8 Alerts + Similar Historical Cases</strong> — Left half: real-time alert timeline for this case (stage transitions, anomaly spikes), pushed via WebSocket. Right half: top-N historical completed cases matched by evidence-vector similarity, including their outcomes (peak change / collapse depth / duration) for calibration.</li>
 </ol>
 
 <h2>Reading the Key Metrics</h2>
 <ul>
-  <li><strong>Composite Manipulation Score</strong> — 0-100. Above 70 indicates highly suspicious manipulation, 40-70 means caution, below 40 is normal. The score is a weighted combination of four sub-scores.</li>
-  <li><strong>Stop Hunt</strong> — Detects whether price repeatedly spikes to critical liquidity levels to harvest stop-loss orders. A high score means the price action has a clear "hunting" pattern.</li>
-  <li><strong>Holder Concentration</strong> — Analyzes on-chain holder distribution. If the top few addresses hold a very high percentage of the circulating supply, whales have the power to manipulate price.</li>
-  <li><strong>Pump &amp; Dump</strong> — Detects abnormal volume spikes accompanied by rapid price surges and dumps within short time windows. Classic PnD pattern.</li>
-  <li><strong>Liquidity Trap</strong> — Detects spoofing behavior where large orders are placed to create false depth and then canceled. A high score suggests the market maker may be setting deceptive orders.</li>
-  <li><strong>Suggestion Badge</strong> — Allowed = trade freely; Reduce = lower position size; Paper Only = use paper trading only; Reject = do not trade this symbol at all.</li>
+  <li><strong>Confidence</strong> — 0-1, the strength with which evidence supports the verdict. Capped by data completeness: missing layers lower the ceiling (<code>max_confidence = min(completeness × 1.2, 1.0)</code>).</li>
+  <li><strong>Data completeness</strong> — How many layers (out of 5) supply trustworthy data. 3/5 means only 3 layers contributed; the verdict is grounded in those 3 and never "imagines" missing ones.</li>
+  <li><strong>data_quality badge</strong> — Per-layer reliability marker. <code>&gt;0.7</code> reliable, <code>0.3-0.7</code> reference only, <code>&lt;0.3</code> treated as unavailable.</li>
+  <li><strong>Risk level</strong> — low / medium / high / extreme, derived from composite anomaly score combined with current lifecycle stage. Distribution / collapse stages naturally escalate the level.</li>
+  <li><strong>Dual-profile recommendations</strong> — Conservative gives defensive guidance ("avoid / cautious entry / exit now"); Aggressive gives same-evidence trend-following guidance ("small ambush / ride / reverse short"). Both are shown side by side — the user chooses a stance based on their own risk profile and position context; the system does not decide for them.</li>
+  <li><strong>Strategy impact</strong> — Lists currently enabled strategies whose symbols match this case. Each row notes whether the strategy's <code>manipulation_score_filter</code> rule is enabled, whether it would block, and the block reason codes.</li>
 </ul>
 
 <h2>Common Actions, Step by Step</h2>
 <ol>
-  <li>Type a symbol in the search bar (e.g. AVAX/USDT) and press Enter or click Scan.</li>
-  <li>Wait a few seconds — the backend analyzes multiple data sources (candles, volume, holder distribution, on-chain transfers, social sentiment).</li>
-  <li>Check the composite manipulation score and risk level badge. If it says "High" or "Critical", review the sub-scores to understand where the risk comes from.</li>
-  <li>Click "Expand Evidence" on a score row to see detailed evidence across five categories, each with a 0-3 severity bar.</li>
-  <li>Follow the suggestion badge: if it says "Reject", do not trade this symbol live. If "Paper Only", observe in paper trading first.</li>
+  <li>Open the Manipulation Radar page; the Hero Strip defaults to focusing the first active case.</li>
+  <li>Click any card in the Strip to switch focus — all sections below load the new case in parallel via three endpoints (detail / strategy-impact / similar).</li>
+  <li>Read the §1 Verdict panel; pay attention to the confidence ring and "N/5 layers". If completeness is only 2/5, treat the verdict as an "early signal" rather than a firm conclusion.</li>
+  <li>Follow §2 Lifecycle Timeline to understand which stage the case is in. Click any node for entry time and feature snapshot.</li>
+  <li>In §3 Evidence Matrix find the highest-scoring layer; expand it to see the specific features (e.g. <code>volume_zscore = 2.4</code>, <code>top_10_concentration = 0.62</code>).</li>
+  <li>Jump to §7 Defense &amp; Strategy Impact; compare the two stances and decide. If a strategy's ManipulationFilter is shown as disabled, click "Open risk config" to inspect in Risk Center.</li>
+  <li>Read §8 similar historical cases — how deep did similar manipulations finally collapse? How long did they last? Calibrate your expectations accordingly.</li>
 </ol>
 
 <h2>Behind the Scenes</h2>
-<p>Data comes from the <code>/api/manipulation/scores</code> (list) and <code>/api/manipulation/scan</code> (scan) endpoints. The backend collects data from multiple dimensions: exchange OHLCV data for PnD and stop-hunt pattern detection; on-chain data (via blockchain APIs) for holder concentration analysis; order book snapshots for liquidity trap detection; and social media / NLP for coordinated KOL shilling detection. Results are sorted by risk level (Critical &gt; High &gt; Medium &gt; Low). The mock client provides sample data for demonstration and testing.</p>
+<p>Page data comes from the <code>/api/v2/manipulation/*</code> endpoint family: <code>/radar</code> (overview + active list), <code>/cases/{id}</code> (case v2 with per-layer evidence + data_quality + dual-profile signal), <code>/cases/{id}/strategy-impact</code> (strategy scan), <code>/cases/{id}/similar</code> (similar historical cases), <code>/alerts</code> (polled alerts), and <code>WS /stream</code> (real-time push of stage transitions and new cases — falls back to 30s polling on disconnect).</p>
+<p>The detection engine runs a three-layer architecture: <em>Layer 1 Anomaly Detectors</em> (per-layer z-score + data_quality) → <em>Layer 2 Pattern Classifier</em> (M1-M8 rule engine, ML in future iterations) → <em>Layer 3 Lifecycle Tracker</em> (FSM: suspected → accumulate → markup → distribute → collapse → completed / false_alarm). The case repository is in-memory in v1 — active cases are lost on restart; historical cases are rediscovered offline by the <code>HistoricalManipulationScanner</code>.</p>
+<p>Engine design: <a href="https://github.com/your-org/repo/blob/main/docs/superpowers/specs/2026-06-15-manipulation-radar-engine-design.md"><code>2026-06-15-manipulation-radar-engine-design.md</code></a>. Page narrative refactor: <a href="https://github.com/your-org/repo/blob/main/docs/superpowers/specs/2026-06-23-manipulation-radar-narrative-refactor-design.md"><code>2026-06-23-manipulation-radar-narrative-refactor-design.md</code></a>.</p>
 
 <h2>See Also</h2>
 <ul>

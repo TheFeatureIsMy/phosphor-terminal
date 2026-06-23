@@ -1,96 +1,57 @@
 <h1>操纵雷达</h1>
-<p class="chapter-meta">页面 · 结构 · 5 分钟</p>
+<p class="chapter-meta">页面 · 结构 · 6 分钟</p>
 
-<blockquote class="lede">扫描任意交易对，检测市场操纵信号——止损猎杀、持仓集中、拉盘砸盘和流动性陷阱，获得综合风险评分和交易建议。</blockquote>
+<blockquote class="lede">围绕单个疑似操纵案例的九段叙事流。展示多层证据、生命周期阶段、保守/激进两种应对策略与对当前策略的实际影响——并诚实地标注数据缺失和不确定性。</blockquote>
 
 <h2>TL;DR</h2>
-<p>操纵雷达是一个可交互的市场操纵检测工具。输入交易对点击扫描，页面会返回一个综合操纵评分（0-100）以及四个子评分：止损猎杀、持仓集中、拉盘砸盘和流动性陷阱。每个评分结果可以展开查看详细的证据类别（K 线异常、成交量异常、资金费率/OI 异常、链上/钱包异动、新闻/KOL 协调），并给出交易建议（允许、减仓、仅模拟或拒绝）。</p>
+<p>操纵雷达不是定罪系统，而是基于多源数据信号的<strong>统计推断</strong>引擎。页面顶部是横向滚动的活跃案例条（Hero Strip），点击切换聚焦；下方按九段顺序展开当前聚焦案例的完整证据：判定结论 → 生命周期时间线 → 5 层证据矩阵（价格量能 / 盘口流动性 / 链上 / 社交新闻 / 跨市场）→ 巨鲸与筹码集中 → 跨市场压力 → 社交加速 → 防御与策略联动（保守/激进双栏并列）→ 实时告警 + 相似历史案例。</p>
 
 <h2>谁用 · 何时用</h2>
-<p>所有交易者——特别是山寨币和低流动性币种的交易者。在决定交易一个不熟悉的标的之前，先用操纵雷达扫描一遍。也适合在发现异常价格行为时用来排查：刚才的急涨急跌是正常波动还是人为操纵？</p>
+<p>所有交易者——尤其是山寨币、低流动性合约的参与者。两类典型使用方式：</p>
+<ul>
+  <li><strong>谨慎型</strong>——在交易前快速核查"这个币是否正在被操纵"。如果显示"疑似派发期"或"疑似崩盘期"，远离。</li>
+  <li><strong>激进型</strong>——理解操纵的生命周期，在建仓/拉升阶段顺势埋伏（系统在防御章节同时给出两种立场的建议供对比）。</li>
+</ul>
 
-<h2>页面解剖</h2>
-<svg class="diagram" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg">
-  <rect x="0" y="0" width="600" height="320" fill="rgba(255,255,255,0.02)" rx="8"/>
-
-  <!-- ① Header -->
-  <text x="16" y="30" fill="#e8eaee" font-family="monospace" font-size="16" font-weight="bold">操纵雷达</text>
-  <circle cx="16" cy="42" r="3" fill="#00ff9d"/>
-  <text x="24" y="46" fill="#9ca0a8" font-family="monospace" font-size="10">市场状态正常</text>
-
-  <text x="16" y="66" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2460; 页面标题 + 整体状态指示</text>
-
-  <!-- ② Scan bar -->
-  <rect x="16" y="76" width="568" height="36" fill="rgba(255,255,255,0.02)" rx="4"/>
-  <rect x="16" y="76" width="568" height="36" stroke="rgba(255,255,255,0.08)" stroke-width="1" fill="none" rx="4"/>
-  <text x="30" y="100" fill="#9ca0a8" font-family="monospace" font-size="11">&#x1F50D; 输入交易对（如 BTC/USDT）</text>
-  <rect x="500" y="82" width="72" height="24" fill="rgba(0,255,157,0.15)" rx="4"/>
-  <text x="512" y="99" fill="#00ff9d" font-family="monospace" font-size="11">扫描</text>
-
-  <text x="16" y="132" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2461; 搜索栏：输入交易对名称，按回车或点击"扫描"</text>
-
-  <!-- ③ Summary cards -->
-  <rect x="16" y="144" width="140" height="50" fill="rgba(80,180,255,0.06)" rx="4" stroke="rgba(80,180,255,0.15)" stroke-width="1"/>
-  <text x="28" y="162" fill="#5e636d" font-family="monospace" font-size="8">已扫描</text>
-  <text x="28" y="185" fill="#50b4ff" font-family="monospace" font-size="18" font-weight="bold">5</text>
-
-  <rect x="170" y="144" width="140" height="50" fill="rgba(255,84,112,0.06)" rx="4" stroke="rgba(255,84,112,0.15)" stroke-width="1"/>
-  <text x="182" y="162" fill="#5e636d" font-family="monospace" font-size="8">高风险</text>
-  <text x="182" y="185" fill="#ff5470" font-family="monospace" font-size="18" font-weight="bold">2</text>
-
-  <rect x="324" y="144" width="140" height="50" fill="rgba(255,155,61,0.06)" rx="4" stroke="rgba(255,155,61,0.15)" stroke-width="1"/>
-  <text x="336" y="162" fill="#5e636d" font-family="monospace" font-size="8">已拦截</text>
-  <text x="336" y="185" fill="#ff9b3d" font-family="monospace" font-size="18" font-weight="bold">1</text>
-
-  <text x="16" y="212" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2462; 统计卡片：已扫描总数、高风险数量、被拦截（严重风险）数量</text>
-
-  <!-- ④ Score row -->
-  <rect x="16" y="224" width="568" height="80" fill="rgba(255,255,255,0.02)" rx="4"/>
-  <rect x="16" y="224" width="568" height="80" stroke="rgba(255,255,255,0.08)" stroke-width="1" fill="none" rx="4"/>
-
-  <text x="28" y="246" fill="#e8eaee" font-family="monospace" font-size="13" font-weight="bold">SOL/USDT</text>
-  <rect x="100" y="235" width="44" height="16" fill="rgba(255,84,112,0.15)" rx="3"/>
-  <text x="106" y="247" fill="#ff5470" font-family="monospace" font-size="8">高危</text>
-  <rect x="150" y="235" width="36" height="16" fill="rgba(255,84,112,0.15)" rx="3"/>
-  <text x="154" y="247" fill="#ff5470" font-family="monospace" font-size="8">拒绝</text>
-
-  <rect x="28" y="258" width="250" height="4" fill="rgba(255,255,255,0.06)" rx="2"/>
-  <rect x="28" y="258" width="175" height="4" fill="#ff5470" rx="2"/>
-  <text x="28" y="275" fill="#5e636d" font-family="monospace" font-size="8">操纵评分</text>
-  <text x="100" y="275" fill="#ff5470" font-family="monospace" font-size="8">72</text>
-
-  <text x="28" y="295" fill="#9ca0a8" font-family="monospace" font-size="8">止损猎杀 55  持仓集中 80  拉盘砸盘 65  流动性陷阱 45</text>
-
-  <text x="16" y="318" fill="#9ca0a8" font-family="monospace" font-size="9">&#x2463; 评分行：交易对名称 + 风险等级 Badge + 建议 Badge + 综合评分条 + 四个子评分</text>
-</svg>
+<h2>页面解剖（九段）</h2>
 <ol>
-  <li><strong>① 页面标题</strong> — 显示"操纵雷达"和当前整体状态（正常/检测到异常信号）。</li>
-  <li><strong>② 搜索栏</strong> — 输入交易对名称（如 SOL/USDT），按回车或点击"扫描"发起检测。</li>
-  <li><strong>③ 统计卡片</strong> — 三张卡片分别显示已扫描总数、高风险数量和已拦截数量（严重风险自动拦截）。</li>
-  <li><strong>④ 评分行</strong> — 每个已扫描的交易对显示为一行。包含交易对名称、风险等级 Badge、建议 Badge、综合操纵评分条（0-100），以及四个子评分：止损猎杀、持仓集中、拉盘砸盘、流动性陷阱。</li>
+  <li><strong>Masthead</strong> — 顶部标题 + 系统级免责声明：<em>"操纵雷达是统计推断系统，输出基于证据的怀疑而非定罪"</em>。</li>
+  <li><strong>§0 活跃案例条 Hero Strip</strong> — 横向滚动的活跃案例缩略卡。每张卡显示：交易对 · M 类型 · 当前阶段 · 置信度。点击切换下方所有章节的聚焦案例。</li>
+  <li><strong>§1 判定 Verdict Panel</strong> — 当前案例的判定结论：M 类型标签 · 生命周期阶段进度条 · 置信度环 · 风险等级 · 数据完整度（N/5 layers）。所有文案使用概率前缀（"疑似" / "证据指向"），不下定论。</li>
+  <li><strong>§2 生命周期 Lifecycle Timeline</strong> — 水平时间线，5 个阶段节点（SUSPECTED → ACCUMULATE → MARKUP → DISTRIBUTE → COLLAPSE）。当前阶段节点放大发光，已过阶段实心，未到阶段虚线。每个节点可点击展开，看到进入时间 + 当时置信度 + 关键特征快照。</li>
+  <li><strong>§3 证据矩阵 Evidence Matrix</strong> — 5 行 × n 列：Layer A 价格量能 / Layer B 盘口流动性 / Layer C 链上 / Layer D 社交新闻 / Layer E 跨市场。每行显示该层的综合异常分 + <code>data_quality</code> 徽章（数据可靠度 0-1）。<code>data_quality &lt; 0.3</code> 的层标 "Data unavailable" 不参与判定。每行可展开查看具体特征 + z-score + 历史分位。</li>
+  <li><strong>§4 巨鲸与筹码集中</strong>（Layer C 详情放大）— Top-10 持仓集中度变化曲线 + 近 24h 大额转账列表 + 交易所充值净流入。</li>
+  <li><strong>§5 跨市场压力</strong>（Layer E 详情放大）— 资金费率 z-score + 现货-永续基差 + 持仓量变化 + 多空比 + 24h 爆仓金额。</li>
+  <li><strong>§6 社交加速</strong>（Layer D 详情放大，可缺失）— Twitter / Telegram 提及增速 + KOL 提及时间线 + 情绪极端度。若该层数据不可用，整段诚实地显示 "Data unavailable"。</li>
+  <li><strong>§7 防御与策略联动 Defense &amp; Strategy Impact</strong> — 左右双栏并列：<em>保守型</em>建议（蓝色调，例如"立即清仓"）与<em>激进型</em>建议（琥珀色调，例如"减仓或反手做空"）。下方共享区：影响交易对 chip 列表 + 当前策略联动表（每个 enabled 策略显示 ManipulationFilter 是否启用 / 是否会阻断 / reason codes）+ 跳转风控配置按钮。</li>
+  <li><strong>§8 实时告警 + 相似历史案例</strong> — 左半：该案例的实时告警时间线（阶段切换、异常飙升），通过 WebSocket 推送。右半：基于证据向量相似度匹配的 top-N 历史已完成案例，含 outcome 结局（峰值变化 / 崩盘深度 / 持续天数）作对照。</li>
 </ol>
 
 <h2>关键指标怎么读</h2>
 <ul>
-  <li><strong>综合操纵评分</strong> — 0-100。70+ 表示高度疑似操纵，40-70 表示需谨慎，低于 40 表示正常。评分基于四个子评分的加权组合。</li>
-  <li><strong>止损猎杀</strong> — 检测价格是否反复在关键流动性区域急拉急跌，收割止损单。高分意味着价格行为带有明显的"猎杀"特征。</li>
-  <li><strong>持仓集中</strong> — 分析链上持仓分布。如果前几名地址持有极高比例的流通量，巨鲸有能力操纵价格。</li>
-  <li><strong>拉盘砸盘</strong> — 检测短时间内是否存在异常放量的急涨急跌模式，伴随成交量突增。典型 PnD 特征。</li>
-  <li><strong>流动性陷阱</strong> — 检测是否存在制造虚假流动性深度后撤单的行为。高分表示做市商可能设置了欺骗性挂单。</li>
-  <li><strong>建议 Badge</strong> — 允许 = 可以正常交易；减仓 = 降低仓位规模；仅模拟 = 只用模拟盘；拒绝 = 禁止交易该标的。</li>
+  <li><strong>置信度（confidence）</strong> — 0-1 区间。表示证据对该判定的支持强度。受数据完整度限制：缺失越多 layer，置信上限越低（<code>max_confidence = min(completeness × 1.2, 1.0)</code>）。</li>
+  <li><strong>数据完整度（data completeness）</strong> — 当前案例有几层数据可用（满分 5）。3/5 表示只有 3 个 layer 提供了可信数据；判定基于这 3 层，不会用缺失的层"想象"。</li>
+  <li><strong>data_quality 徽章</strong> — 每个 layer 单独标注的数据可靠度。<code>&gt;0.7</code> 可信，<code>0.3-0.7</code> 仅供参考，<code>&lt;0.3</code> 视为不可用。</li>
+  <li><strong>风险等级</strong> — low / medium / high / extreme，基于综合异常分 + 当前生命周期阶段联合判定。派发期/崩盘期天然上调。</li>
+  <li><strong>双画像建议</strong> — 保守型给出"远离 / 谨慎参与 / 立即清仓"等防御指引；激进型在同样的证据下给出"小仓埋伏 / 上车 / 反手做空"等顺势建议。两者并列，让用户根据自己的风险偏好与仓位上下文选择立场，而不是系统替你决定。</li>
+  <li><strong>策略联动</strong> — 列出当前已 enabled 且交易对命中该案例的策略。每条标注其 <code>manipulation_score_filter</code> 规则是否启用、是否会阻断、阻断 reason codes。</li>
 </ul>
 
 <h2>常见操作 · 一步步</h2>
 <ol>
-  <li>在搜索栏输入你想检查的交易对名称（如 AVAX/USDT），然后按回车或点击"扫描"。</li>
-  <li>等待几秒钟——后端会分析多个数据源（K 线、成交量、持仓分布、链上转账、社交媒体情绪）。</li>
-  <li>查看综合操纵评分和风险等级 Badge。如果显示"高危"或"严重"，仔细阅读子评分了解具体风险来源。</li>
-  <li>点击评分行上的"展开证据"查看详细证据类别。每个证据有 0-3 的严重度指示条。</li>
-  <li>根据建议采取行动：如果建议"拒绝"，不要在实盘中交易该标的。如果建议"仅模拟"，先在模拟盘中观察。</li>
+  <li>打开操纵雷达页面，顶部 Hero Strip 默认聚焦在第一个活跃案例上。</li>
+  <li>点击 Strip 中的任意一张卡片切换聚焦——下方所有章节会并行加载新案例的 detail / strategy-impact / similar 三个端点。</li>
+  <li>读 §1 Verdict 判定结论，注意置信度环和"N/5 layers"——如果完整度只有 2/5，请把这个判定当作"早期信号"而非"明确结论"。</li>
+  <li>跟着 §2 Lifecycle Timeline 理解案例处于哪个阶段。点击节点查看进入时间和当时特征快照。</li>
+  <li>在 §3 Evidence Matrix 找到分数最高的 Layer，展开看具体特征（如 <code>volume_zscore=2.4</code>、<code>top_10_concentration=0.62</code>）。</li>
+  <li>跳到 §7 Defense & Strategy Impact，对比保守与激进两种立场，决定行动。如果"当前策略联动表"显示某策略的 ManipulationFilter 未启用，点"跳转风控配置"去 Risk Center 检查。</li>
+  <li>在 §8 看相似历史案例的 outcome——同类操纵历史上最终崩了多少？持续多久？以此校准心理预期。</li>
 </ol>
 
 <h2>幕后</h2>
-<p>数据来自 <code>/api/manipulation/scores</code>（获取列表）和 <code>/api/manipulation/scan</code>（发起扫描）端点。后端从多个维度收集数据：交易所 K 线数据用于 PnD 检测和止损猎杀模式识别；链上数据（通过区块链 API）用于持仓集中度分析；订单簿快照用于流动性陷阱检测；社交媒体/NLP 用于 KOL 协调喊单检测。评分结果按风险等级排序（严重 &gt; 高危 &gt; 中等 &gt; 低风险）。Mock 客户端提供示例数据用于演示和测试。</p>
+<p>页面数据来自后端 <code>/api/v2/manipulation/*</code> 端点族：<code>/radar</code>（总览 + 活跃案例列表）、<code>/cases/{id}</code>（案例 v2 含分 Layer evidence + data_quality + 双画像信号）、<code>/cases/{id}/strategy-impact</code>（策略联动扫描）、<code>/cases/{id}/similar</code>（相似历史案例）、<code>/alerts</code>（告警轮询）以及 <code>WS /stream</code>（阶段切换 + 新案例实时推送，断线自动退化为 30s polling）。</p>
+<p>识别引擎运行三层架构：<em>Layer 1 异常检测器</em>（每层独立计算 z-score + data_quality）→ <em>Layer 2 模式分类器</em>（M1-M8 规则引擎，未来加 ML）→ <em>Layer 3 生命周期追踪器</em>（状态机，suspected→accumulate→markup→distribute→collapse→completed/false_alarm）。案例库在内存中维护（v1），重启会丢失活跃案例；历史案例由 <code>HistoricalManipulationScanner</code> 离线扫描重新发现。</p>
+<p>引擎层完整设计：<a href="https://github.com/your-org/repo/blob/main/docs/superpowers/specs/2026-06-15-manipulation-radar-engine-design.md"><code>2026-06-15-manipulation-radar-engine-design.md</code></a>。页面叙事流设计：<a href="https://github.com/your-org/repo/blob/main/docs/superpowers/specs/2026-06-23-manipulation-radar-narrative-refactor-design.md"><code>2026-06-23-manipulation-radar-narrative-refactor-design.md</code></a>。</p>
 
 <h2>相关</h2>
 <ul>

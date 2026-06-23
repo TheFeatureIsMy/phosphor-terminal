@@ -4,6 +4,8 @@ status: draft
 date: 2026-06-15
 authors: claude (product design)
 supersedes: none
+superseded-by:
+  - docs/superpowers/specs/2026-06-23-manipulation-radar-narrative-refactor-design.md (only §8 "前端 UI 设计方向"; engine layer §1–§7, §9–§13 still in force)
 related:
   - docs/product/ia_backend_redesign.md (§4.3 Manipulation Radar)
   - docs/architecture/00_master_architecture_decision_v2_5.md (ADR-004 ManipulationFilter)
