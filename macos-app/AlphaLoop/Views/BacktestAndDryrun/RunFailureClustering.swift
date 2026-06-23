@@ -16,17 +16,48 @@ public struct RunFailureCluster: Identifiable, Hashable {
 
 private func durationBucket(_ d: String) -> String {
     let lower = d.lowercased()
-    if lower.contains("m") && !lower.contains("h") { return "<1h" }
-    if let h = Double(lower.replacingOccurrences(of: "h", with: "")) {
-        switch h {
-        case ..<1: return "<1h"
-        case 1..<4: return "1-4h"
-        case 4..<12: return "4-12h"
-        case 12..<24: return "12-24h"
-        default: return ">24h"
+    var hours: Double = 0
+
+    // Try HH:MM:SS or H:MM:SS
+    let parts = lower.split(separator: ":")
+    if parts.count >= 2, let h = Double(parts[0]), let m = Double(parts[1]) {
+        hours = h + m / 60.0
+    } else if lower.contains("day") {
+        // "1 day, 02:00:00" or "1 day"
+        let segments = lower.components(separatedBy: ",")
+        if let dayPart = segments.first,
+           let dayStr = dayPart.split(separator: " ").first,
+           let d = Double(dayStr) {
+            hours = d * 24
+        }
+        if segments.count > 1 {
+            let timePart = segments[1].trimmingCharacters(in: .whitespaces)
+            let subParts = timePart.split(separator: ":")
+            if subParts.count >= 2, let h = Double(subParts[0]), let m = Double(subParts[1]) {
+                hours += h + m / 60.0
+            }
+        }
+    } else {
+        // Plain "2.5h" or "30m"
+        let stripped = lower.replacingOccurrences(of: " ", with: "")
+        if stripped.hasSuffix("h") {
+            hours = Double(stripped.dropLast()) ?? 0
+        } else if stripped.hasSuffix("m") {
+            hours = (Double(stripped.dropLast()) ?? 0) / 60.0
+        } else if stripped.hasSuffix("d") {
+            hours = (Double(stripped.dropLast()) ?? 0) * 24
+        } else {
+            return "unknown"
         }
     }
-    return "unknown"
+
+    switch hours {
+    case ..<1: return "<1h"
+    case 1..<4: return "1-4h"
+    case 4..<12: return "4-12h"
+    case 12..<24: return "12-24h"
+    default: return ">24h"
+    }
 }
 
 private func hourBucket(_ openTime: String) -> String {

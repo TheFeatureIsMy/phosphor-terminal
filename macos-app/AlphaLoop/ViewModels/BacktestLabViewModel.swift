@@ -173,24 +173,12 @@ final class BacktestLabViewModel {
     // MARK: - Start dryrun
 
     func startDryrun(symbols: [String], stakeAmount: Double, maxOpenTrades: Int, capital: Double) async throws {
-        guard let s = selectedStrategy else { return }
-        let api = APIDryrunV2(client: networkClient)
-        var body: [String: Any] = [
-            "dsl": [:] as [String: Any],
-            "symbols": symbols,
-            "stake_amount": stakeAmount,
-            "max_open_trades": maxOpenTrades,
-            "initial_wallet": capital,
-            "exchange": "binance",
-        ]
-        if let uuid = UUID(uuidString: s.id) {
-            body["strategy_id"] = uuid.uuidString
-        } else {
-            body["strategy_id"] = s.id
-        }
-        let _ = try await api.startDryrun(body)
-        // Dryruns are long-running (live paper trading); "command queued" is the success condition.
-        phase = .completed
+        guard selectedStrategy != nil else { return }
+        throw NSError(
+            domain: "BacktestLab",
+            code: 501,
+            userInfo: [NSLocalizedDescriptionKey: "Dry-run requires strategy DSL — fetch via strategy version (not yet wired). Use the dedicated Dry-run Monitor page for now."]
+        )
     }
 
     // MARK: - Polling
@@ -237,7 +225,14 @@ final class BacktestLabViewModel {
     // MARK: - Select run
 
     func selectRun(_ run: BacktestRunV2) async {
-        selectedRun = run
+        do {
+            let full = try await networkClient.getBacktestV2(id: run.id)
+            selectedRun = full
+        } catch {
+            // Fall back to summary if fetch fails
+            selectedRun = run
+            errorMessage = error.localizedDescription
+        }
         if phase != .running { phase = .completed }
         await loadFailureClusters()
     }
