@@ -4,100 +4,146 @@
 <blockquote class="lede">在投入真金白银之前，用历史数据检验你的策略表现，或在模拟环境中观察它的实时行为。</blockquote>
 
 <h2>TL;DR</h2>
-<p>回测与模拟是验证策略的两个阶段。回测使用历史数据（可指定时间范围、初始资金、交易对）运行策略，计算总收益率、夏普比率、最大回撤、胜率等指标，并展示权益曲线和逐笔交易明细。模拟（纸交易）让策略在实时市场中运行但不下真实订单，你可以观察它的表现和信号。两者都在策略详情页的"回测"和"模拟"标签页中操作。回测支持 Command Bus 轮询模式 — 提交后系统异步执行，前端每 3 秒轮询一次状态。</p>
+<p>回测与模拟是验证策略的两个阶段。BacktestLab 页面采用双栏布局：左侧 Run Rail（240pt）列出历史回测记录，右侧是一个可滚动的叙事流面板，包含 9 个依次解锁的区域。回测经历 idle → configuring → running → completed → failed 五个阶段，区域 3-8（Summary、Curve、TradeList、Compare、Risk、Promotion）仅在 completed 后可见。页面支持对比模式（Run Rail 中勾选最多 3 个回测），风险面板检查 5 项规则（最大回撤、盈亏比、交易数、胜率、夏普比率），失败聚类分为运行级和策略级两个层次。底部的推广门汇总 11 项就绪检查，CTA 跳转到 Live Readiness 页面（不从此页面启动实盘交易）。</p>
 
 <h2>谁用 · 何时用</h2>
-<p>所有策略作者。回测是上线前的必由之路 — 每次修改 DSL 规则或画布后，都应该运行一次回测。模拟则是在回测结果满意后、上线前的最后一步：让策略在模拟环境中运行几天到几周，观察实际市场下的表现。独立页面（从侧边栏进入）提供更完整的回测引擎界面，包含历史回测记录列表。</p>
+<p>所有策略作者。回测是上线前的必由之路 — 每次修改 DSL 规则或画布后，都应该运行一次回测。BacktestLab 页面（从侧边栏进入）提供完整的回测引擎界面，包含 Run Rail 历史记录和叙事流面板。模拟（纸交易）则在回测结果满意后、上线前的最后一步使用。</p>
 
 <h2>页面解剖</h2>
-<svg class="diagram" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg">
-  <rect x="0" y="0" width="600" height="320" fill="rgba(255,255,255,0.02)" rx="8"/>
+<svg class="diagram" viewBox="0 0 720 520" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="720" height="520" fill="rgba(255,255,255,0.02)" rx="8"/>
 
-  <!-- Tab bar -->
-  <rect x="12" y="10" width="576" height="28" fill="rgba(255,255,255,0.03)" rx="4"/>
-  <rect x="12" y="10" width="100" height="28" fill="rgba(0,255,157,0.08)" rx="4"/>
-  <text x="62" y="30" fill="#00ff9d" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">回测引擎</text>
-  <rect x="112" y="10" width="100" height="28" fill="rgba(255,255,255,0.02)" rx="4"/>
-  <text x="162" y="30" fill="#9ca0a8" font-family="monospace" font-size="9" text-anchor="middle">模拟监控</text>
+  <!-- Left column: Run Rail -->
+  <rect x="12" y="10" width="170" height="500" fill="rgba(255,255,255,0.03)" rx="6" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+  <text x="97" y="34" fill="#00ff9d" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">Run Rail</text>
 
-  <!-- ① Config section -->
-  <rect x="12" y="46" width="576" height="120" fill="rgba(255,255,255,0.03)" rx="6" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
-  <text x="20" y="66" fill="#00ff9d" font-family="monospace" font-size="10" font-weight="bold">$ 回测配置</text>
+  <!-- Run 1 -->
+  <rect x="20" y="46" width="154" height="40" fill="rgba(255,255,255,0.04)" rx="4"/>
+  <rect x="24" y="54" width="10" height="10" fill="rgba(0,255,157,0.3)" rx="2"/>
+  <text x="38" y="62" fill="#e8eaee" font-family="monospace" font-size="8">#142 · 2026-06-01</text>
+  <text x="38" y="78" fill="#00ff9d" font-family="monospace" font-size="8">+42.5%</text>
 
-  <!-- Date range -->
-  <text x="20" y="88" fill="#9ca0a8" font-family="monospace" font-size="8">时间范围</text>
-  <rect x="20" y="94" width="150" height="22" fill="rgba(255,255,255,0.04)" rx="3" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
-  <text x="26" y="110" fill="#e8eaee" font-family="monospace" font-size="9">2025-01-01</text>
-  <text x="180" y="108" fill="#5e636d" font-family="monospace" font-size="9">→</text>
-  <rect x="200" y="94" width="150" height="22" fill="rgba(255,255,255,0.04)" rx="3" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
-  <text x="206" y="110" fill="#e8eaee" font-family="monospace" font-size="9">2026-06-01</text>
+  <!-- Run 2 -->
+  <rect x="20" y="94" width="154" height="40" fill="rgba(255,255,255,0.04)" rx="4"/>
+  <rect x="24" y="102" width="10" height="10" fill="rgba(50,180,255,0.3)" rx="2"/>
+  <text x="38" y="110" fill="#e8eaee" font-family="monospace" font-size="8">#141 · 2026-05-28</text>
+  <text x="38" y="126" fill="#f5c542" font-family="monospace" font-size="8">+18.2%</text>
 
-  <!-- Initial capital + symbols -->
-  <text x="20" y="140" fill="#9ca0a8" font-family="monospace" font-size="8">初始资金 (USDT)</text>
-  <rect x="20" y="146" width="100" height="22" fill="rgba(255,255,255,0.04)" rx="3" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
-  <text x="26" y="162" fill="#e8eaee" font-family="monospace" font-size="9">100,000</text>
+  <!-- Run 3 -->
+  <rect x="20" y="142" width="154" height="40" fill="rgba(255,255,255,0.04)" rx="4"/>
+  <rect x="24" y="150" width="10" height="10" fill="rgba(255,84,112,0.3)" rx="2"/>
+  <text x="38" y="158" fill="#e8eaee" font-family="monospace" font-size="8">#140 · 2026-05-25</text>
+  <text x="38" y="174" fill="#ff5470" font-family="monospace" font-size="8">-5.3%</text>
 
-  <text x="140" y="140" fill="#9ca0a8" font-family="monospace" font-size="8">交易标的</text>
-  <rect x="140" y="146" width="160" height="22" fill="rgba(255,255,255,0.04)" rx="3" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
-  <text x="146" y="162" fill="#e8eaee" font-family="monospace" font-size="9">BTC/USDT, ETH/USDT</text>
+  <!-- Compare badge -->
+  <rect x="50" y="196" width="94" height="20" fill="rgba(0,255,157,0.08)" rx="10" stroke="rgba(0,255,157,0.3)" stroke-width="1"/>
+  <text x="97" y="210" fill="#00ff9d" font-family="monospace" font-size="8" text-anchor="middle">对比模式 (0/3)</text>
 
-  <!-- Run button -->
-  <rect x="460" y="146" width="120" height="24" fill="#00ff9d" rx="4"/>
-  <text x="520" y="164" fill="#000" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">启动回测</text>
+  <!-- Separator -->
+  <line x1="190" y1="10" x2="190" y2="510" stroke="rgba(255,255,255,0.08)" stroke-width="1" stroke-dasharray="4,4"/>
 
-  <!-- ② Results grid -->
-  <rect x="12" y="174" width="576" height="138" fill="rgba(255,255,255,0.03)" rx="6" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
-  <text x="20" y="194" fill="#f5c542" font-family="monospace" font-size="10" font-weight="bold">回测结果</text>
+  <!-- Right column: Narrative flow -->
+  <text x="200" y="34" fill="#9ca0a8" font-family="monospace" font-size="9">叙事流（可滚动）</text>
 
-  <!-- KPI cells -->
-  <rect x="16" y="202" width="135" height="44" fill="rgba(255,255,255,0.02)" rx="4"/>
-  <text x="84" y="216" fill="#00ff9d" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">+42.50%</text>
-  <text x="84" y="236" fill="#9ca0a8" font-family="monospace" font-size="7" text-anchor="middle">总收益率</text>
+  <!-- 1 ConfigPanel -->
+  <rect x="196" y="46" width="510" height="60" fill="rgba(0,255,157,0.06)" rx="4" stroke="rgba(0,255,157,0.2)" stroke-width="1"/>
+  <circle cx="210" cy="56" r="6" fill="#00ff9d"/>
+  <text x="210" y="60" fill="#000" font-family="monospace" font-size="8" font-weight="bold" text-anchor="middle">1</text>
+  <text x="224" y="60" fill="#e8eaee" font-family="monospace" font-size="9" font-weight="bold">ConfigPanel</text>
+  <text x="224" y="76" fill="#9ca0a8" font-family="monospace" font-size="7">时间范围 · 初始资金 · 交易对 · 启动回测</text>
+  <text x="224" y="92" fill="#5e636d" font-family="monospace" font-size="7">阶段：始终可见</text>
 
-  <rect x="157" y="202" width="135" height="44" fill="rgba(255,255,255,0.02)" rx="4"/>
-  <text x="225" y="216" fill="#f5c542" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">1.85</text>
-  <text x="225" y="236" fill="#9ca0a8" font-family="monospace" font-size="7" text-anchor="middle">Sharpe 比率</text>
+  <!-- Arrow -->
+  <polygon points="450,108 444,104 444,112" fill="#5e636d"/>
 
-  <rect x="298" y="202" width="135" height="44" fill="rgba(255,255,255,0.02)" rx="4"/>
-  <text x="366" y="216" fill="#ff5470" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">-12.30%</text>
-  <text x="366" y="236" fill="#9ca0a8" font-family="monospace" font-size="7" text-anchor="middle">最大回撤</text>
+  <!-- 2 StatusPanel -->
+  <rect x="196" y="116" width="510" height="50" fill="rgba(245,197,66,0.06)" rx="4" stroke="rgba(245,197,66,0.2)" stroke-width="1"/>
+  <circle cx="210" cy="126" r="6" fill="#f5c542"/>
+  <text x="210" y="130" fill="#000" font-family="monospace" font-size="8" font-weight="bold" text-anchor="middle">2</text>
+  <text x="224" y="130" fill="#e8eaee" font-family="monospace" font-size="9" font-weight="bold">StatusPanel</text>
+  <text x="224" y="146" fill="#9ca0a8" font-family="monospace" font-size="7">进度指示器 · 已用时间 · 阶段：configuring→running</text>
+  <text x="224" y="158" fill="#5e636d" font-family="monospace" font-size="7">阶段：configuring / running 时可见</text>
 
-  <rect x="439" y="202" width="135" height="44" fill="rgba(255,255,255,0.02)" rx="4"/>
-  <text x="507" y="216" fill="#00ff9d" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">58.2%</text>
-  <text x="507" y="236" fill="#9ca0a8" font-family="monospace" font-size="7" text-anchor="middle">胜率</text>
+  <!-- Arrow -->
+  <polygon points="450,168 444,164 444,172" fill="#5e636d"/>
 
-  <!-- Equity curve area -->
-  <rect x="16" y="252" width="280" height="52" fill="rgba(255,255,255,0.01)" rx="4"/>
-  <text x="20" y="268" fill="#9ca0a8" font-family="monospace" font-size="7">权益曲线</text>
-  <!-- Simple bars -->
-  <rect x="16" y="278" width="6" height="20" fill="rgba(0,255,157,0.4)" rx="1"/>
-  <rect x="24" y="282" width="6" height="16" fill="rgba(0,255,157,0.4)" rx="1"/>
-  <rect x="32" y="286" width="6" height="12" fill="rgba(255,84,112,0.4)" rx="1"/>
-  <rect x="40" y="280" width="6" height="18" fill="rgba(0,255,157,0.4)" rx="1"/>
-  <rect x="48" y="276" width="6" height="22" fill="rgba(0,255,157,0.5)" rx="1"/>
-  <rect x="56" y="284" width="6" height="14" fill="rgba(255,84,112,0.4)" rx="1"/>
-  <rect x="64" y="278" width="6" height="20" fill="rgba(0,255,157,0.5)" rx="1"/>
-  <rect x="72" y="274" width="6" height="24" fill="rgba(0,255,157,0.6)" rx="1"/>
-  <rect x="80" y="272" width="6" height="26" fill="rgba(0,255,157,0.6)" rx="1"/>
-  <rect x="88" y="276" width="6" height="22" fill="rgba(0,255,157,0.5)" rx="1"/>
-  <rect x="96" y="286" width="6" height="12" fill="rgba(255,84,112,0.4)" rx="1"/>
-  <rect x="104" y="280" width="6" height="18" fill="rgba(0,255,157,0.4)" rx="1"/>
-  <rect x="112" y="270" width="6" height="28" fill="rgba(0,255,157,0.7)" rx="1"/>
-  <rect x="120" y="274" width="6" height="24" fill="rgba(0,255,157,0.5)" rx="1"/>
+  <!-- 3-8: unlocked after completed -->
+  <rect x="196" y="176" width="510" height="30" fill="rgba(255,255,255,0.02)" rx="4" stroke="rgba(0,255,157,0.15)" stroke-width="1" stroke-dasharray="3,3"/>
+  <text x="450" y="196" fill="#5e636d" font-family="monospace" font-size="8" text-anchor="middle">completed → 区域 3-8 解锁</text>
 
-  <!-- Callouts -->
-  <circle cx="8" cy="56" r="7" fill="#00ff9d" opacity="0.9"/>
-  <text x="8" y="60" fill="#000" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">①</text>
-  <circle cx="8" cy="184" r="7" fill="#f5c542" opacity="0.9"/>
-  <text x="8" y="188" fill="#000" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">②</text>
-  <circle cx="8" cy="260" r="7" fill="#50b4ff" opacity="0.9"/>
-  <text x="8" y="264" fill="#000" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">③</text>
+  <!-- 3 SummaryPanel -->
+  <rect x="196" y="214" width="510" height="36" fill="rgba(0,255,157,0.04)" rx="3"/>
+  <circle cx="210" cy="224" r="5" fill="#00ff9d" opacity="0.7"/>
+  <text x="210" y="228" fill="#000" font-family="monospace" font-size="7" font-weight="bold" text-anchor="middle">3</text>
+  <text x="224" y="228" fill="#e8eaee" font-family="monospace" font-size="8" font-weight="bold">SummaryPanel</text>
+  <text x="320" y="228" fill="#9ca0a8" font-family="monospace" font-size="7">8 项 KPI 指标卡</text>
+  <text x="500" y="228" fill="#5e636d" font-family="monospace" font-size="7">仅 completed</text>
+
+  <!-- 4 CurvePanel -->
+  <rect x="196" y="254" width="510" height="36" fill="rgba(0,255,157,0.04)" rx="3"/>
+  <circle cx="210" cy="264" r="5" fill="#00ff9d" opacity="0.7"/>
+  <text x="210" y="268" fill="#000" font-family="monospace" font-size="7" font-weight="bold" text-anchor="middle">4</text>
+  <text x="224" y="268" fill="#e8eaee" font-family="monospace" font-size="8" font-weight="bold">CurvePanel</text>
+  <text x="320" y="268" fill="#9ca0a8" font-family="monospace" font-size="7">权益曲线</text>
+  <text x="500" y="268" fill="#5e636d" font-family="monospace" font-size="7">仅 completed</text>
+
+  <!-- 5 TradeListPanel -->
+  <rect x="196" y="294" width="510" height="36" fill="rgba(0,255,157,0.04)" rx="3"/>
+  <circle cx="210" cy="304" r="5" fill="#00ff9d" opacity="0.7"/>
+  <text x="210" y="308" fill="#000" font-family="monospace" font-size="7" font-weight="bold" text-anchor="middle">5</text>
+  <text x="224" y="308" fill="#e8eaee" font-family="monospace" font-size="8" font-weight="bold">TradeListPanel</text>
+  <text x="320" y="308" fill="#9ca0a8" font-family="monospace" font-size="7">逐笔交易明细</text>
+  <text x="500" y="308" fill="#5e636d" font-family="monospace" font-size="7">仅 completed</text>
+
+  <!-- 6 ComparePanel -->
+  <rect x="196" y="334" width="510" height="36" fill="rgba(50,180,255,0.04)" rx="3"/>
+  <circle cx="210" cy="344" r="5" fill="#50b4ff" opacity="0.7"/>
+  <text x="210" y="348" fill="#000" font-family="monospace" font-size="7" font-weight="bold" text-anchor="middle">6</text>
+  <text x="224" y="348" fill="#e8eaee" font-family="monospace" font-size="8" font-weight="bold">ComparePanel</text>
+  <text x="320" y="348" fill="#9ca0a8" font-family="monospace" font-size="7">对比矩阵 · 权益叠加（≥2 个勾选）</text>
+  <text x="500" y="348" fill="#5e636d" font-family="monospace" font-size="7">completed + 勾选</text>
+
+  <!-- 7 RiskPanel -->
+  <rect x="196" y="374" width="510" height="36" fill="rgba(255,84,112,0.04)" rx="3"/>
+  <circle cx="210" cy="384" r="5" fill="#ff5470" opacity="0.7"/>
+  <text x="210" y="388" fill="#000" font-family="monospace" font-size="7" font-weight="bold" text-anchor="middle">7</text>
+  <text x="224" y="388" fill="#e8eaee" font-family="monospace" font-size="8" font-weight="bold">RiskPanel</text>
+  <text x="320" y="388" fill="#9ca0a8" font-family="monospace" font-size="7">5 项风险规则检查</text>
+  <text x="500" y="388" fill="#5e636d" font-family="monospace" font-size="7">仅 completed</text>
+
+  <!-- 8 PromotionPanel -->
+  <rect x="196" y="414" width="510" height="36" fill="rgba(200,160,255,0.04)" rx="3"/>
+  <circle cx="210" cy="424" r="5" fill="#c8a0ff" opacity="0.7"/>
+  <text x="210" y="428" fill="#000" font-family="monospace" font-size="7" font-weight="bold" text-anchor="middle">8</text>
+  <text x="224" y="428" fill="#e8eaee" font-family="monospace" font-size="8" font-weight="bold">PromotionPanel</text>
+  <text x="320" y="428" fill="#9ca0a8" font-family="monospace" font-size="7">11 项就绪门 · CTA → Live Readiness</text>
+  <text x="500" y="428" fill="#5e636d" font-family="monospace" font-size="7">仅 completed</text>
+
+  <!-- 9 DataSourceFooter (always visible) -->
+  <rect x="196" y="460" width="510" height="44" fill="rgba(255,255,255,0.02)" rx="4" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+  <circle cx="210" cy="470" r="5" fill="#9ca0a8" opacity="0.7"/>
+  <text x="210" y="474" fill="#000" font-family="monospace" font-size="7" font-weight="bold" text-anchor="middle">9</text>
+  <text x="224" y="474" fill="#e8eaee" font-family="monospace" font-size="8" font-weight="bold">DataSourceFooter</text>
+  <text x="224" y="490" fill="#9ca0a8" font-family="monospace" font-size="7">Freqtrade 引擎 · OHLCV 源 · 执行时间 · DSL 哈希</text>
+  <text x="500" y="490" fill="#5e636d" font-family="monospace" font-size="7">始终可见</text>
 </svg>
 
 <ol>
-  <li><strong>① 回测配置区</strong> — 设置时间范围（YYYYMMDD-YYYYMMDD 格式）、初始资金（USDT）、交易标的（逗号分隔）。策略版本从当前策略自动获取。点击"启动回测"提交任务。</li>
-  <li><strong>② 回测结果指标卡</strong> — 运行完成后显示 8 项核心指标：总收益率（绿/红）、夏普比率（≥1.5 绿）、最大回撤（红色标注）、胜率（≥50% 绿）、盈亏比（≥1.5 绿）、总交易数、初始资金、交易对。每个指标用颜色区分好坏。</li>
-  <li><strong>③ 权益曲线与交易明细</strong> — 简化的条形图显示资金变化趋势（绿色=盈利日，红色=亏损日）。下方表格列出最近交易的时间、方向、价格、数量和盈亏。</li>
+  <li><strong>① Run Rail</strong> — 左侧 240pt 的竖栏，列出该策略的历史回测记录。每条记录显示序号、日期和收益率（绿色=盈利，红色=亏损）。每条记录左侧有复选框，最多勾选 3 条进入对比模式。列表顶部的"对比模式 (N/3)"徽章显示当前选中数。</li>
+  <li><strong>② 叙事流面板</strong> — 右侧滚动区域，按顺序排列 9 个区域。区域 1（ConfigPanel）和区域 2（StatusPanel）在回测运行期间可见；区域 3-8 仅在回测完成后解锁（completed 阶段）；区域 9（DataSourceFooter）始终可见。</li>
+</ol>
+
+<h2>区域参考</h2>
+<ol>
+  <li><strong>ConfigPanel</strong> — 回测配置区。设置时间范围（YYYY-MM-DD 格式）、初始资金（USDT）、交易对（逗号分隔）。策略版本自动从当前策略获取。点击"启动回测"提交任务。始终可见。</li>
+  <li><strong>StatusPanel</strong> — 执行进度面板。回测运行中显示阶段指示器（configuring→running）和已用时间。完成后自动切换为结果展示。</li>
+  <li><strong>SummaryPanel</strong> — 8 项核心指标卡：总收益率、夏普比率、最大回撤、胜率、盈亏比、总交易数、初始资金、交易对。每个指标用颜色区分好坏。仅 completed 阶段可见。</li>
+  <li><strong>CurvePanel</strong> — 权益曲线图。显示回测期间资金变化趋势。仅 completed 阶段可见。</li>
+  <li><strong>TradeListPanel</strong> — 逐笔交易明细表。列出每笔交易的时间、方向、价格、数量和盈亏。仅 completed 阶段可见。</li>
+  <li><strong>ComparePanel</strong> — 对比面板。在 Run Rail 中勾选 2-3 条记录后展开，显示对比矩阵（各指标并排比较）和权益曲线叠加图。仅 completed + 勾选 ≥2 条时可见。</li>
+  <li><strong>RiskPanel</strong> — 风险规则面板。检查 5 项规则：最大回撤阈值、盈亏比下限、最低交易数、胜率下限、夏普比率下限。每项规则显示 pass / warn / fail。仅 completed 阶段可见。</li>
+  <li><strong>PromotionPanel</strong> — 推广门面板。汇总 11 项就绪检查（策略版本、回测通过、风险合规等），显示通过/未通过状态。CTA 按钮跳转到 Live Readiness 页面 — 不从此页面启动实盘交易，仅作为就绪度入口。</li>
+  <li><strong>DataSourceFooter</strong> — 数据源信息栏。显示 Freqtrade 引擎版本、OHLCV 数据源、回测执行耗时、DSL 哈希值。始终可见。</li>
 </ol>
 
 <h2>关键指标怎么读</h2>
@@ -111,14 +157,23 @@
 
 <h2>常见操作 · 一步步</h2>
 <ol>
-  <li><strong>运行回测</strong> — 在策略详情页进入"回测"标签页（或从侧边栏进入独立的回测引擎页面）。确认策略已有保存的版本（没有则先在 DSL 规则中保存）。填写时间范围、初始资金、交易对。点击"启动回测"。</li>
-  <li><strong>查看结果</strong> — 回测异步执行，前端每 3 秒轮询一次状态。完成后指标卡和权益曲线自动出现。查看 Sharpe 比率和最大回撤来判断策略是否值得进一步优化。</li>
-  <li><strong>启动模拟运行</strong> — 在策略详情页进入"模拟"标签页。系统自动列出该策略的活跃模拟运行。每个运行卡片显示模式、状态、开始时间。运行中（绿色）表示策略在模拟环境中实时产生信号。</li>
-  <li><strong>查看历史回测</strong> — 在独立的回测引擎页面，底部显示最近 10 次回测记录。每行显示交易对、时间范围、收益率和 Sharpe 比率。点击可查看详细结果。</li>
+  <li><strong>运行回测</strong> — 从侧边栏进入 BacktestLab 页面。确认策略已有保存的版本。在 ConfigPanel 中填写时间范围、初始资金、交易对。点击"启动回测"。</li>
+  <li><strong>查看进度</strong> — 回测异步执行。StatusPanel 显示当前阶段和已用时间。前端每 3 秒轮询一次状态。</li>
+  <li><strong>解读结果</strong> — 回测完成后 SummaryPanel（指标卡）、CurvePanel（权益曲线）、TradeListPanel（交易明细）自动出现。查看夏普比率和最大回撤判断策略是否值得优化。</li>
+  <li><strong>对比多个回测</strong> — 在 Run Rail 中勾选 2-3 条历史记录，ComparePanel 自动展开。对比矩阵并排显示各指标，权益叠加图展示多条曲线的差异。</li>
+  <li><strong>检查风险</strong> — RiskPanel 对 5 项规则进行 pass/warn/fail 评估。红色标记的规则需要优化后重新回测。</li>
+  <li><strong>检查就绪度</strong> — PromotionPanel 汇总 11 项就绪门。点击 CTA 跳转到 Live Readiness 页面查看完整就绪度详情（不在此页面启动实盘交易）。</li>
+  <li><strong>查看数据来源</strong> — DataSourceFooter 显示回测使用的引擎、数据源和执行信息，便于审计和复现。</li>
 </ol>
 
+<h2>失败聚类</h2>
+<p>回测失败分两个层次排查：<strong>运行级失败</strong> — 数据源不可用、引擎崩溃、超时，此类失败重启即可；<strong>策略级失败</strong> — DSL 语法错误、策略逻辑异常、指标计算错误，此类失败需要修改策略后重新提交。StatusPanel 会明确标注失败层级，帮助快速定位问题。</p>
+
+<h2>模拟运行（纸交易）</h2>
+<p>纸交易监控在独立页面中运行。策略在模拟环境中接收实时市场数据并产生信号，但不执行真实订单。从侧边栏进入 Dryrun Monitor 页面查看活跃的模拟运行，每个运行卡片显示模式、状态、开始时间和最新信号。</p>
+
 <h2>幕后</h2>
-<p>回测通过 Command Bus 异步执行。点击"启动回测"后，前端调用 <code>api.startBacktest()</code> 提交任务，后端返回一个 <code>commandId</code>。前端随后每 3 秒调用 <code>api.backtestStatus(commandId:)</code> 轮询状态。当 <code>commandStatus</code> 变为 <code>completed</code> 时，结果被解析为 <code>BacktestRunV2</code> 对象并在 <code>BacktestResultCardView</code> 中显示。模拟运行通过 <code>APIStrategyRuns.listRuns(mode: "dryrun")</code> 获取，过滤出当前策略的运行记录。模拟状态（运行中/已完成/已停止/失败）由后端实时更新。</p>
+<p>回测通过 Command Bus 异步执行。点击"启动回测"后，前端调用 <code>api.startBacktest()</code> 提交任务，后端返回 <code>commandId</code>。前端随后每 3 秒轮询 <code>api.backtestStatus(commandId:)</code>。页面状态机经历 idle → configuring → running → completed / failed 五个阶段，区域 3-8 根据状态机阶段解锁显示。对比模式下，前端收集选中回测的 <code>runId</code> 列表，调用 <code>api.compareBacktests(runIds:)</code> 获取对比矩阵数据。风险规则在前端本地计算，基于回测结果中的 KPI 与预设阈值比较。模拟运行通过 <code>APIStrategyRuns.listRuns(mode: "dryrun")</code> 获取。</p>
 
 <h2>相关</h2>
 <ul>

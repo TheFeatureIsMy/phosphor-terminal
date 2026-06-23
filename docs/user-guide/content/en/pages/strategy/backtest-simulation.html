@@ -4,98 +4,146 @@
 <blockquote class="lede">Validate your strategy against historical data before committing real capital, or observe its real-time behavior in a paper trading environment.</blockquote>
 
 <h2>TL;DR</h2>
-<p>Backtest and Simulation are the two stages of strategy validation. Backtesting replays your strategy against historical data over a configurable date range with specified initial capital and trading pairs. It computes key metrics: Total Return, Sharpe Ratio, Max Drawdown, Win Rate, Profit Factor, and Total Trades, plus an equity curve and trade-by-trade breakdown. Paper Trading (simulation) runs the strategy against live market data without placing real orders. Both are accessible from the strategy detail page's "Backtest" and "Paper Trading" tabs. Backtesting uses a Command Bus polling pattern — the task runs asynchronously on the backend, and the frontend polls every 3 seconds for completion.</p>
+<p>Backtest and Simulation are the two stages of strategy validation. The BacktestLab page uses a two-column layout: a Run Rail (240pt) on the left lists historical backtest runs, and a scrollable narrative flow panel on the right contains 9 progressively unlocked sections. Backtests progress through five phases: idle → configuring → running → completed → failed. Sections 3-8 (Summary, Curve, TradeList, Compare, Risk, Promotion) only appear after completion. The page supports compare mode (check up to 3 runs in the Run Rail), a risk panel with 5 rules (Max Drawdown, Profit Factor, Trades, Win Rate, Sharpe), and two-level failure clustering (run-internal and strategy-level). The Promotion Panel summarizes 11 readiness gates, with a CTA that navigates to the Live Readiness page (it does not start live trading from this page).</p>
 
 <h2>Who uses it & when</h2>
-<p>Every strategy author. Backtesting is mandatory before going live — run it after every DSL or canvas change. Paper trading is the final step after satisfactory backtest results: let the strategy run in simulation for days or weeks to observe real-market behavior. The standalone page (from the sidebar) offers a more complete backtest engine interface with a history of recent runs.</p>
+<p>Every strategy author. Backtesting is mandatory before going live — run it after every DSL or canvas change. The BacktestLab page (from the sidebar) offers the full backtest engine with Run Rail history and the narrative flow panel. Paper trading (simulation) is the final step after satisfactory backtest results, used before going live.</p>
 
 <h2>Page Anatomy</h2>
-<svg class="diagram" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg">
-  <rect x="0" y="0" width="600" height="320" fill="rgba(255,255,255,0.02)" rx="8"/>
+<svg class="diagram" viewBox="0 0 720 520" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="720" height="520" fill="rgba(255,255,255,0.02)" rx="8"/>
 
-  <!-- Tab bar -->
-  <rect x="12" y="10" width="576" height="28" fill="rgba(255,255,255,0.03)" rx="4"/>
-  <rect x="12" y="10" width="100" height="28" fill="rgba(0,255,157,0.08)" rx="4"/>
-  <text x="62" y="30" fill="#00ff9d" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">Backtest Engine</text>
-  <rect x="112" y="10" width="120" height="28" fill="rgba(255,255,255,0.02)" rx="4"/>
-  <text x="172" y="30" fill="#9ca0a8" font-family="monospace" font-size="9" text-anchor="middle">Paper Trading Monitor</text>
+  <!-- Left column: Run Rail -->
+  <rect x="12" y="10" width="170" height="500" fill="rgba(255,255,255,0.03)" rx="6" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+  <text x="97" y="34" fill="#00ff9d" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">Run Rail</text>
 
-  <!-- ① Config section -->
-  <rect x="12" y="46" width="576" height="120" fill="rgba(255,255,255,0.03)" rx="6" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
-  <text x="20" y="66" fill="#00ff9d" font-family="monospace" font-size="10" font-weight="bold">$ Backtest Configuration</text>
+  <!-- Run 1 -->
+  <rect x="20" y="46" width="154" height="40" fill="rgba(255,255,255,0.04)" rx="4"/>
+  <rect x="24" y="54" width="10" height="10" fill="rgba(0,255,157,0.3)" rx="2"/>
+  <text x="38" y="62" fill="#e8eaee" font-family="monospace" font-size="8">#142 · 2026-06-01</text>
+  <text x="38" y="78" fill="#00ff9d" font-family="monospace" font-size="8">+42.5%</text>
 
-  <!-- Date range -->
-  <text x="20" y="88" fill="#9ca0a8" font-family="monospace" font-size="8">Date Range</text>
-  <rect x="20" y="94" width="150" height="22" fill="rgba(255,255,255,0.04)" rx="3" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
-  <text x="26" y="110" fill="#e8eaee" font-family="monospace" font-size="9">2025-01-01</text>
-  <text x="180" y="108" fill="#5e636d" font-family="monospace" font-size="9">→</text>
-  <rect x="200" y="94" width="150" height="22" fill="rgba(255,255,255,0.04)" rx="3" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
-  <text x="206" y="110" fill="#e8eaee" font-family="monospace" font-size="9">2026-06-01</text>
+  <!-- Run 2 -->
+  <rect x="20" y="94" width="154" height="40" fill="rgba(255,255,255,0.04)" rx="4"/>
+  <rect x="24" y="102" width="10" height="10" fill="rgba(50,180,255,0.3)" rx="2"/>
+  <text x="38" y="110" fill="#e8eaee" font-family="monospace" font-size="8">#141 · 2026-05-28</text>
+  <text x="38" y="126" fill="#f5c542" font-family="monospace" font-size="8">+18.2%</text>
 
-  <!-- Initial capital + symbols -->
-  <text x="20" y="140" fill="#9ca0a8" font-family="monospace" font-size="8">Initial Capital (USDT)</text>
-  <rect x="20" y="146" width="100" height="22" fill="rgba(255,255,255,0.04)" rx="3" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
-  <text x="26" y="162" fill="#e8eaee" font-family="monospace" font-size="9">100,000</text>
+  <!-- Run 3 -->
+  <rect x="20" y="142" width="154" height="40" fill="rgba(255,255,255,0.04)" rx="4"/>
+  <rect x="24" y="150" width="10" height="10" fill="rgba(255,84,112,0.3)" rx="2"/>
+  <text x="38" y="158" fill="#e8eaee" font-family="monospace" font-size="8">#140 · 2026-05-25</text>
+  <text x="38" y="174" fill="#ff5470" font-family="monospace" font-size="8">-5.3%</text>
 
-  <text x="140" y="140" fill="#9ca0a8" font-family="monospace" font-size="8">Trading Pairs</text>
-  <rect x="140" y="146" width="160" height="22" fill="rgba(255,255,255,0.04)" rx="3" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
-  <text x="146" y="162" fill="#e8eaee" font-family="monospace" font-size="9">BTC/USDT, ETH/USDT</text>
+  <!-- Compare badge -->
+  <rect x="50" y="196" width="94" height="20" fill="rgba(0,255,157,0.08)" rx="10" stroke="rgba(0,255,157,0.3)" stroke-width="1"/>
+  <text x="97" y="210" fill="#00ff9d" font-family="monospace" font-size="8" text-anchor="middle">Compare (0/3)</text>
 
-  <!-- Run button -->
-  <rect x="460" y="146" width="120" height="24" fill="#00ff9d" rx="4"/>
-  <text x="520" y="164" fill="#000" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">Start Backtest</text>
+  <!-- Separator -->
+  <line x1="190" y1="10" x2="190" y2="510" stroke="rgba(255,255,255,0.08)" stroke-width="1" stroke-dasharray="4,4"/>
 
-  <!-- ② Results -->
-  <rect x="12" y="174" width="576" height="138" fill="rgba(255,255,255,0.03)" rx="6" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
-  <text x="20" y="194" fill="#f5c542" font-family="monospace" font-size="10" font-weight="bold">Backtest Results</text>
+  <!-- Right column: Narrative flow -->
+  <text x="200" y="34" fill="#9ca0a8" font-family="monospace" font-size="9">Narrative Flow (scrollable)</text>
 
-  <!-- KPI cells -->
-  <rect x="16" y="202" width="135" height="44" fill="rgba(255,255,255,0.02)" rx="4"/>
-  <text x="84" y="216" fill="#00ff9d" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">+42.50%</text>
-  <text x="84" y="236" fill="#9ca0a8" font-family="monospace" font-size="7" text-anchor="middle">Total Return</text>
+  <!-- 1 ConfigPanel -->
+  <rect x="196" y="46" width="510" height="60" fill="rgba(0,255,157,0.06)" rx="4" stroke="rgba(0,255,157,0.2)" stroke-width="1"/>
+  <circle cx="210" cy="56" r="6" fill="#00ff9d"/>
+  <text x="210" y="60" fill="#000" font-family="monospace" font-size="8" font-weight="bold" text-anchor="middle">1</text>
+  <text x="224" y="60" fill="#e8eaee" font-family="monospace" font-size="9" font-weight="bold">ConfigPanel</text>
+  <text x="224" y="76" fill="#9ca0a8" font-family="monospace" font-size="7">Date Range · Capital · Pairs · Start Backtest</text>
+  <text x="224" y="92" fill="#5e636d" font-family="monospace" font-size="7">Phase: always visible</text>
 
-  <rect x="157" y="202" width="135" height="44" fill="rgba(255,255,255,0.02)" rx="4"/>
-  <text x="225" y="216" fill="#f5c542" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">1.85</text>
-  <text x="225" y="236" fill="#9ca0a8" font-family="monospace" font-size="7" text-anchor="middle">Sharpe Ratio</text>
+  <!-- Arrow -->
+  <polygon points="450,108 444,104 444,112" fill="#5e636d"/>
 
-  <rect x="298" y="202" width="135" height="44" fill="rgba(255,255,255,0.02)" rx="4"/>
-  <text x="366" y="216" fill="#ff5470" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">-12.30%</text>
-  <text x="366" y="236" fill="#9ca0a8" font-family="monospace" font-size="7" text-anchor="middle">Max Drawdown</text>
+  <!-- 2 StatusPanel -->
+  <rect x="196" y="116" width="510" height="50" fill="rgba(245,197,66,0.06)" rx="4" stroke="rgba(245,197,66,0.2)" stroke-width="1"/>
+  <circle cx="210" cy="126" r="6" fill="#f5c542"/>
+  <text x="210" y="130" fill="#000" font-family="monospace" font-size="8" font-weight="bold" text-anchor="middle">2</text>
+  <text x="224" y="130" fill="#e8eaee" font-family="monospace" font-size="9" font-weight="bold">StatusPanel</text>
+  <text x="224" y="146" fill="#9ca0a8" font-family="monospace" font-size="7">Progress indicator · Elapsed time · Phase: configuring→running</text>
+  <text x="224" y="158" fill="#5e636d" font-family="monospace" font-size="7">Phase: configuring / running</text>
 
-  <rect x="439" y="202" width="135" height="44" fill="rgba(255,255,255,0.02)" rx="4"/>
-  <text x="507" y="216" fill="#00ff9d" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">58.2%</text>
-  <text x="507" y="236" fill="#9ca0a8" font-family="monospace" font-size="7" text-anchor="middle">Win Rate</text>
+  <!-- Arrow -->
+  <polygon points="450,168 444,164 444,172" fill="#5e636d"/>
 
-  <!-- Equity curve area -->
-  <rect x="16" y="252" width="280" height="52" fill="rgba(255,255,255,0.01)" rx="4"/>
-  <text x="20" y="268" fill="#9ca0a8" font-family="monospace" font-size="7">Equity Curve</text>
-  <rect x="16" y="278" width="6" height="20" fill="rgba(0,255,157,0.4)" rx="1"/>
-  <rect x="24" y="282" width="6" height="16" fill="rgba(0,255,157,0.4)" rx="1"/>
-  <rect x="32" y="286" width="6" height="12" fill="rgba(255,84,112,0.4)" rx="1"/>
-  <rect x="40" y="280" width="6" height="18" fill="rgba(0,255,157,0.4)" rx="1"/>
-  <rect x="48" y="276" width="6" height="22" fill="rgba(0,255,157,0.5)" rx="1"/>
-  <rect x="56" y="284" width="6" height="14" fill="rgba(255,84,112,0.4)" rx="1"/>
-  <rect x="64" y="278" width="6" height="20" fill="rgba(0,255,157,0.5)" rx="1"/>
-  <rect x="72" y="274" width="6" height="24" fill="rgba(0,255,157,0.6)" rx="1"/>
-  <rect x="80" y="272" width="6" height="26" fill="rgba(0,255,157,0.6)" rx="1"/>
-  <rect x="88" y="276" width="6" height="22" fill="rgba(0,255,157,0.5)" rx="1"/>
-  <rect x="96" y="286" width="6" height="12" fill="rgba(255,84,112,0.4)" rx="1"/>
-  <rect x="104" y="280" width="6" height="18" fill="rgba(0,255,157,0.4)" rx="1"/>
-  <rect x="112" y="270" width="6" height="28" fill="rgba(0,255,157,0.7)" rx="1"/>
-  <rect x="120" y="274" width="6" height="24" fill="rgba(0,255,157,0.5)" rx="1"/>
+  <!-- 3-8: unlocked after completed -->
+  <rect x="196" y="176" width="510" height="30" fill="rgba(255,255,255,0.02)" rx="4" stroke="rgba(0,255,157,0.15)" stroke-width="1" stroke-dasharray="3,3"/>
+  <text x="450" y="196" fill="#5e636d" font-family="monospace" font-size="8" text-anchor="middle">completed → sections 3-8 unlock</text>
 
-  <circle cx="8" cy="56" r="7" fill="#00ff9d" opacity="0.9"/>
-  <text x="8" y="60" fill="#000" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">①</text>
-  <circle cx="8" cy="184" r="7" fill="#f5c542" opacity="0.9"/>
-  <text x="8" y="188" fill="#000" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">②</text>
-  <circle cx="8" cy="260" r="7" fill="#50b4ff" opacity="0.9"/>
-  <text x="8" y="264" fill="#000" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">③</text>
+  <!-- 3 SummaryPanel -->
+  <rect x="196" y="214" width="510" height="36" fill="rgba(0,255,157,0.04)" rx="3"/>
+  <circle cx="210" cy="224" r="5" fill="#00ff9d" opacity="0.7"/>
+  <text x="210" y="228" fill="#000" font-family="monospace" font-size="7" font-weight="bold" text-anchor="middle">3</text>
+  <text x="224" y="228" fill="#e8eaee" font-family="monospace" font-size="8" font-weight="bold">SummaryPanel</text>
+  <text x="320" y="228" fill="#9ca0a8" font-family="monospace" font-size="7">8 KPI metric cards</text>
+  <text x="500" y="228" fill="#5e636d" font-family="monospace" font-size="7">completed only</text>
+
+  <!-- 4 CurvePanel -->
+  <rect x="196" y="254" width="510" height="36" fill="rgba(0,255,157,0.04)" rx="3"/>
+  <circle cx="210" cy="264" r="5" fill="#00ff9d" opacity="0.7"/>
+  <text x="210" y="268" fill="#000" font-family="monospace" font-size="7" font-weight="bold" text-anchor="middle">4</text>
+  <text x="224" y="268" fill="#e8eaee" font-family="monospace" font-size="8" font-weight="bold">CurvePanel</text>
+  <text x="320" y="268" fill="#9ca0a8" font-family="monospace" font-size="7">Equity curve chart</text>
+  <text x="500" y="268" fill="#5e636d" font-family="monospace" font-size="7">completed only</text>
+
+  <!-- 5 TradeListPanel -->
+  <rect x="196" y="294" width="510" height="36" fill="rgba(0,255,157,0.04)" rx="3"/>
+  <circle cx="210" cy="304" r="5" fill="#00ff9d" opacity="0.7"/>
+  <text x="210" y="308" fill="#000" font-family="monospace" font-size="7" font-weight="bold" text-anchor="middle">5</text>
+  <text x="224" y="308" fill="#e8eaee" font-family="monospace" font-size="8" font-weight="bold">TradeListPanel</text>
+  <text x="320" y="308" fill="#9ca0a8" font-family="monospace" font-size="7">Trade-by-trade breakdown</text>
+  <text x="500" y="308" fill="#5e636d" font-family="monospace" font-size="7">completed only</text>
+
+  <!-- 6 ComparePanel -->
+  <rect x="196" y="334" width="510" height="36" fill="rgba(50,180,255,0.04)" rx="3"/>
+  <circle cx="210" cy="344" r="5" fill="#50b4ff" opacity="0.7"/>
+  <text x="210" y="348" fill="#000" font-family="monospace" font-size="7" font-weight="bold" text-anchor="middle">6</text>
+  <text x="224" y="348" fill="#e8eaee" font-family="monospace" font-size="8" font-weight="bold">ComparePanel</text>
+  <text x="320" y="348" fill="#9ca0a8" font-family="monospace" font-size="7">Matrix · Equity overlay (≥2 checked)</text>
+  <text x="500" y="348" fill="#5e636d" font-family="monospace" font-size="7">completed + checked</text>
+
+  <!-- 7 RiskPanel -->
+  <rect x="196" y="374" width="510" height="36" fill="rgba(255,84,112,0.04)" rx="3"/>
+  <circle cx="210" cy="384" r="5" fill="#ff5470" opacity="0.7"/>
+  <text x="210" y="388" fill="#000" font-family="monospace" font-size="7" font-weight="bold" text-anchor="middle">7</text>
+  <text x="224" y="388" fill="#e8eaee" font-family="monospace" font-size="8" font-weight="bold">RiskPanel</text>
+  <text x="320" y="388" fill="#9ca0a8" font-family="monospace" font-size="7">5 risk rule checks</text>
+  <text x="500" y="388" fill="#5e636d" font-family="monospace" font-size="7">completed only</text>
+
+  <!-- 8 PromotionPanel -->
+  <rect x="196" y="414" width="510" height="36" fill="rgba(200,160,255,0.04)" rx="3"/>
+  <circle cx="210" cy="424" r="5" fill="#c8a0ff" opacity="0.7"/>
+  <text x="210" y="428" fill="#000" font-family="monospace" font-size="7" font-weight="bold" text-anchor="middle">8</text>
+  <text x="224" y="428" fill="#e8eaee" font-family="monospace" font-size="8" font-weight="bold">PromotionPanel</text>
+  <text x="320" y="428" fill="#9ca0a8" font-family="monospace" font-size="7">11 readiness gates · CTA → Live Readiness</text>
+  <text x="500" y="428" fill="#5e636d" font-family="monospace" font-size="7">completed only</text>
+
+  <!-- 9 DataSourceFooter (always visible) -->
+  <rect x="196" y="460" width="510" height="44" fill="rgba(255,255,255,0.02)" rx="4" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+  <circle cx="210" cy="470" r="5" fill="#9ca0a8" opacity="0.7"/>
+  <text x="210" y="474" fill="#000" font-family="monospace" font-size="7" font-weight="bold" text-anchor="middle">9</text>
+  <text x="224" y="474" fill="#e8eaee" font-family="monospace" font-size="8" font-weight="bold">DataSourceFooter</text>
+  <text x="224" y="490" fill="#9ca0a8" font-family="monospace" font-size="7">Freqtrade engine · OHLCV source · Exec time · DSL hash</text>
+  <text x="500" y="490" fill="#5e636d" font-family="monospace" font-size="7">always visible</text>
 </svg>
 
 <ol>
-  <li><strong>① Backtest configuration</strong> — Set the date range (YYYY-MM-DD format), initial capital in USDT, and trading pairs (comma-separated). The strategy version is auto-selected from the current strategy. Click "Start Backtest" to submit the task.</li>
-  <li><strong>② Results metric cards</strong> — After completion, 8 core metrics are displayed: Total Return (green/red), Sharpe Ratio (green if >=1.5), Max Drawdown (always red), Win Rate (green if >=50%), Profit Factor (green if >=1.5), Total Trades, Initial Capital, and Trading Pairs. Each metric is color-coded for quick assessment.</li>
-  <li><strong>③ Equity curve & trade list</strong> — A simplified bar chart shows capital trend (green bars = profitable days, red = losing days). Below, a table lists recent trades with time, side, price, quantity, and P&L.</li>
+  <li><strong>① Run Rail</strong> — The left 240pt rail lists historical backtest runs for this strategy. Each entry shows a run number, date, and return percentage (green for profit, red for loss). Each entry has a checkbox; select up to 3 to enter compare mode. The "Compare (N/3)" badge at the top shows the current selection count.</li>
+  <li><strong>② Narrative flow panel</strong> — The right scrollable area contains 9 sections in sequence. Sections 1 (ConfigPanel) and 2 (StatusPanel) are visible during execution; sections 3-8 unlock only after the backtest completes (completed phase); section 9 (DataSourceFooter) is always visible.</li>
+</ol>
+
+<h2>Section Reference</h2>
+<ol>
+  <li><strong>ConfigPanel</strong> — Backtest configuration. Set the date range (YYYY-MM-DD format), initial capital (USDT), and trading pairs (comma-separated). The strategy version is auto-selected from the current strategy. Click "Start Backtest" to submit. Always visible.</li>
+  <li><strong>StatusPanel</strong> — Execution progress panel. Shows the phase indicator (configuring → running) and elapsed time during backtest execution. Automatically transitions to results display on completion.</li>
+  <li><strong>SummaryPanel</strong> — 8 core KPI metric cards: Total Return, Sharpe Ratio, Max Drawdown, Win Rate, Profit Factor, Total Trades, Initial Capital, and Trading Pairs. Each metric is color-coded for quick assessment. Visible only in the completed phase.</li>
+  <li><strong>CurvePanel</strong> — Equity curve chart showing capital trends over the backtest period. Visible only in the completed phase.</li>
+  <li><strong>TradeListPanel</strong> — Trade-by-trade breakdown table listing time, side, price, quantity, and P&amp;L for each trade. Visible only in the completed phase.</li>
+  <li><strong>ComparePanel</strong> — Compare panel. Expands when 2-3 runs are checked in the Run Rail, displaying a comparison matrix (side-by-side metrics) and an equity curve overlay chart. Visible only when completed and ≥2 runs are selected.</li>
+  <li><strong>RiskPanel</strong> — Risk rule panel. Checks 5 rules: Max Drawdown threshold, Profit Factor minimum, minimum trades, Win Rate minimum, and Sharpe Ratio minimum. Each rule shows pass / warn / fail. Visible only in the completed phase.</li>
+  <li><strong>PromotionPanel</strong> — Promotion gate panel. Summarizes 11 readiness checks (strategy version, backtest passed, risk compliance, etc.) with pass/fail status. The CTA button navigates to the Live Readiness page — it does NOT start live trading from this page, it serves as a readiness entry point only.</li>
+  <li><strong>DataSourceFooter</strong> — Data source info bar. Shows Freqtrade engine version, OHLCV data source, backtest execution time, and DSL hash. Always visible.</li>
 </ol>
 
 <h2>Reading the Key Metrics</h2>
@@ -109,14 +157,23 @@
 
 <h2>Common Actions, Step by Step</h2>
 <ol>
-  <li><strong>Run a backtest</strong> — Go to the "Backtest" tab inside the strategy detail page (or open the standalone backtest engine from the sidebar). Make sure the strategy has a saved version (save one in DSL Rules first). Fill in the date range, initial capital, and trading pairs. Click "Start Backtest".</li>
-  <li><strong>Review results</strong> — The backtest runs asynchronously; the frontend polls every 3 seconds for status. Once complete, the metric cards and equity curve appear automatically. Check the Sharpe Ratio and Max Drawdown to decide if the strategy needs optimization.</li>
-  <li><strong>Start paper trading</strong> — Go to the "Paper Trading" tab inside the strategy detail page. The system lists active simulation runs for this strategy. Each run card shows mode, status, and start time. "Running" (green) means the strategy is generating signals in a simulated environment.</li>
-  <li><strong>Browse backtest history</strong> — On the standalone backtest engine page, the bottom section lists the 10 most recent runs. Each row shows trading pairs, date range, return, and Sharpe ratio. Click to view detailed results.</li>
+  <li><strong>Run a backtest</strong> — Open the BacktestLab page from the sidebar. Make sure the strategy has a saved version. Fill in the date range, initial capital, and trading pairs in ConfigPanel. Click "Start Backtest".</li>
+  <li><strong>Monitor progress</strong> — The backtest runs asynchronously. StatusPanel shows the current phase and elapsed time. The frontend polls every 3 seconds for status updates.</li>
+  <li><strong>Review results</strong> — After completion, SummaryPanel (metric cards), CurvePanel (equity curve), and TradeListPanel (trade list) appear automatically. Check the Sharpe Ratio and Max Drawdown to decide if the strategy needs optimization.</li>
+  <li><strong>Compare multiple runs</strong> — Check 2-3 historical runs in the Run Rail. The ComparePanel expands automatically with a side-by-side metrics matrix and an equity curve overlay.</li>
+  <li><strong>Check risk compliance</strong> — The RiskPanel evaluates 5 rules with pass/warn/fail indicators. Red-flagged rules require optimization before the next backtest.</li>
+  <li><strong>Check readiness</strong> — The PromotionPanel summarizes 11 readiness gates. Click the CTA to navigate to the Live Readiness page for full details (live trading is not started from this page).</li>
+  <li><strong>Review data sources</strong> — The DataSourceFooter displays the engine, data source, and execution info used for the backtest, useful for audit and reproducibility.</li>
 </ol>
 
+<h2>Failure Clustering</h2>
+<p>Backtest failures are diagnosed at two levels: <strong>Run-level failures</strong> — data source unavailable, engine crash, timeout; these can be retried by restarting. <strong>Strategy-level failures</strong> — DSL syntax error, strategy logic exception, indicator calculation error; these require strategy edits before resubmission. The StatusPanel explicitly labels the failure level to help quickly identify the root cause.</p>
+
+<h2>Paper Trading</h2>
+<p>Paper trading monitoring runs on a separate page. The strategy receives live market data and generates signals in a simulated environment without placing real orders. Open the Dryrun Monitor page from the sidebar to view active simulation runs. Each run card shows mode, status, start time, and the latest signal.</p>
+
 <h2>Behind the Scenes</h2>
-<p>Backtesting runs asynchronously via the Command Bus. When you click "Start Backtest", the frontend calls <code>api.startBacktest()</code> and receives a <code>commandId</code>. It then polls <code>api.backtestStatus(commandId:)</code> every 3 seconds. When <code>commandStatus</code> becomes <code>completed</code>, the result is parsed into a <code>BacktestRunV2</code> object and displayed in <code>BacktestResultCardView</code>. Paper trading runs are fetched via <code>APIStrategyRuns.listRuns(mode: "dryrun")</code> filtered by strategy ID. Run statuses (running / completed / stopped / failed) are updated by the backend in real time.</p>
+<p>Backtesting runs asynchronously via the Command Bus. When you click "Start Backtest", the frontend calls <code>api.startBacktest()</code> and receives a <code>commandId</code>. It then polls <code>api.backtestStatus(commandId:)</code> every 3 seconds. The page state machine transitions through idle → configuring → running → completed / failed; sections 3-8 unlock based on the state machine phase. In compare mode, the frontend collects the selected <code>runId</code> list and calls <code>api.compareBacktests(runIds:)</code> to fetch comparison matrix data. Risk rules are computed locally on the frontend by comparing KPIs from backtest results against preset thresholds. Paper trading runs are fetched via <code>APIStrategyRuns.listRuns(mode: "dryrun")</code>.</p>
 
 <h2>See Also</h2>
 <ul>
