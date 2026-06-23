@@ -49,7 +49,7 @@ struct BacktestLabView: View {
             }
         }
         .sheet(isPresented: Binding(get: { vm.showNewRunSheet }, set: { vm.showNewRunSheet = $0 })) {
-            NewRunSheet(vm: vm)
+            NewRunSheet(viewModel: vm)
         }
     }
 }

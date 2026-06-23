@@ -1,118 +1,175 @@
-// NewRunSheet.swift — 抽离的回测配置 sheet
+// NewRunSheet.swift — 新建 Run sheet（回测 / 模拟运行配置）
+// Real form controls: DatePicker, NumberFormatter, multi-select toggles for symbols
 
 import SwiftUI
 
 struct NewRunSheet: View {
     @Environment(PulseColors.self) private var colors
     @Environment(\.dismiss) private var dismiss
-    let vm: BacktestLabViewModel
+    @Bindable var viewModel: BacktestLabViewModel
 
-    @State private var startDate: String = "2025-01-01"
-    @State private var endDate: String = "2026-06-01"
-    @State private var capital: String = "100000"
-    @State private var symbols: String = "BTC/USDT"
-    @State private var versionId: String = ""
+    enum Mode: String, CaseIterable, Identifiable {
+        case backtest, dryrun
+        var id: String { rawValue }
+        var label: String {
+            switch self {
+            case .backtest: return L10n.BacktestLab.sheetTitleBacktest
+            case .dryrun: return L10n.BacktestLab.sheetTitleDryrun
+            }
+        }
+    }
+
+    @State private var mode: Mode = .backtest
+    @State private var startDate: Date = Calendar.current.date(byAdding: .month, value: -1, to: Date()) ?? Date()
+    @State private var endDate: Date = Date()
+    @State private var capital: Double = 10000
+    @State private var feeModel: String = "default"  // default | custom
+    @State private var customFee: Double = 0.05
+    @State private var slippageModel: String = "none"  // none | bps | pct
+    @State private var slippageBps: Double = 3
+    @State private var slippagePct: Double = 0.03
+    @State private var selectedSymbols: Set<String> = []
+    @State private var stakeAmount: Double = 100
+    @State private var maxOpenTrades: Int = 5
     @State private var submitting = false
-    @State private var errorMsg: String?
+    @State private var error: String?
+
+    /// Common crypto pairs used as default symbol options.
+    /// StrategyV2 does not expose symbols directly, so we provide a curated list.
+    private static let defaultSymbols: [String] = [
+        "BTC/USDT", "ETH/USDT", "SOL/USDT", "BNB/USDT",
+        "DOGE/USDT", "XRP/USDT", "ADA/USDT", "AVAX/USDT"
+    ]
 
     var body: some View {
-        VStack(spacing: 14) {
+        VStack(alignment: .leading, spacing: PulseSpacing.md) {
             header
-            Divider().overlay(colors.border)
-            VStack(spacing: 10) {
-                row(label: L10n.BacktestLab.fieldVersion, placeholder: vm.selectedStrategy?.name ?? "", text: $versionId)
-                HStack(spacing: 10) {
-                    row(label: L10n.BacktestLab.fieldStart, placeholder: "2025-01-01", text: $startDate)
-                    row(label: L10n.BacktestLab.fieldEnd, placeholder: "2026-06-01", text: $endDate)
-                }
-                row(label: L10n.BacktestLab.fieldCapital, placeholder: "100000", text: $capital)
-                row(label: L10n.BacktestLab.fieldSymbols, placeholder: L10n.BacktestLab.hintSymbols, text: $symbols)
-            }
 
-            if let err = errorMsg {
-                HStack(spacing: 4) {
-                    Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(PulseColors.danger)
-                    Text(err).font(PulseFonts.caption).foregroundStyle(PulseColors.danger)
+            Picker("Mode", selection: $mode) {
+                ForEach(Mode.allCases) { Text($0.label).tag($0) }
+            }
+            .pickerStyle(.segmented)
+
+            Form {
+                Section(L10n.BacktestLab.fieldSymbols) {
+                    ForEach(availableSymbols, id: \.self) { s in
+                        Toggle(s, isOn: Binding(
+                            get: { selectedSymbols.contains(s) },
+                            set: { v in if v { selectedSymbols.insert(s) } else { selectedSymbols.remove(s) } }
+                        ))
+                    }
                 }
+
+                if mode == .backtest {
+                    Section(L10n.BacktestLab.fieldDateRange) {
+                        DatePicker(L10n.BacktestLab.fieldDateRange, selection: $startDate, displayedComponents: .date)
+                        DatePicker("—", selection: $endDate, in: startDate..., displayedComponents: .date)
+                    }
+                }
+
+                Section(L10n.BacktestLab.fieldCapital) {
+                    TextField(L10n.BacktestLab.fieldCapital, value: $capital, format: .number)
+                        .textFieldStyle(.roundedBorder)
+                }
+
+                Section(L10n.BacktestLab.fieldFee) {
+                    Picker(L10n.BacktestLab.fieldFee, selection: $feeModel) {
+                        Text(L10n.BacktestLab.feeExchangeDefault).tag("default")
+                        Text(L10n.BacktestLab.feeCustom).tag("custom")
+                    }
+                    if feeModel == "custom" {
+                        TextField("fee %", value: $customFee, format: .number)
+                            .textFieldStyle(.roundedBorder)
+                    }
+                }
+
+                Section(L10n.BacktestLab.fieldSlippage) {
+                    Picker(L10n.BacktestLab.fieldSlippage, selection: $slippageModel) {
+                        Text(L10n.BacktestLab.fieldSlippageNone).tag("none")
+                        Text(L10n.BacktestLab.fieldSlippageBps).tag("bps")
+                        Text(L10n.BacktestLab.fieldSlippagePct).tag("pct")
+                    }
+                    if slippageModel == "bps" {
+                        TextField("bps", value: $slippageBps, format: .number)
+                            .textFieldStyle(.roundedBorder)
+                    } else if slippageModel == "pct" {
+                        TextField("%", value: $slippagePct, format: .number)
+                            .textFieldStyle(.roundedBorder)
+                    }
+                }
+
+                if mode == .dryrun {
+                    Section("Stake") {
+                        TextField("stake_amount", value: $stakeAmount, format: .number)
+                            .textFieldStyle(.roundedBorder)
+                        TextField("max_open_trades", value: $maxOpenTrades, format: .number)
+                            .textFieldStyle(.roundedBorder)
+                    }
+                }
+            }
+            .formStyle(.grouped)
+
+            if let error {
+                Text(error)
+                    .foregroundStyle(PulseColors.danger)
+                    .font(PulseFonts.caption)
             }
 
             HStack {
-                Button(L10n.BacktestLab.cancel) { dismiss() }
-                    .buttonStyle(.bordered)
+                Button(L10n.BacktestLab.sheetCancel) { dismiss() }
                 Spacer()
-                Button {
+                Button(L10n.BacktestLab.sheetSubmit) {
                     Task { await submit() }
-                } label: {
-                    HStack(spacing: 5) {
-                        if submitting {
-                            ProgressView().controlSize(.mini).tint(colors.background)
-                        } else {
-                            Image(systemName: "play.fill").font(.system(size: 10))
-                        }
-                        Text(submitting ? L10n.BacktestLab.submitting : L10n.BacktestLab.submit)
-                            .font(PulseFonts.monoLabel).tracking(0.6)
-                    }
-                    .foregroundStyle(colors.background)
-                    .padding(.horizontal, 16).padding(.vertical, 8)
-                    .background(PulseColors.accent)
-                    .clipShape(RoundedRectangle(cornerRadius: PulseRadii.sm))
                 }
-                .buttonStyle(.plain)
-                .disabled(submitting)
+                .buttonStyle(.borderedProminent)
+                .disabled(submitting || !isValid)
             }
         }
-        .padding(20)
-        .frame(width: 460)
-        .background(colors.background)
+        .padding()
+        .frame(minWidth: 480, minHeight: 560)
     }
 
     private var header: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "play.circle.fill")
-                .font(.system(size: 14)).foregroundStyle(PulseColors.accent)
-            Text(L10n.BacktestLab.sheetTitle)
-                .font(PulseFonts.displaySubheading)
-                .foregroundStyle(colors.textPrimary)
-            Spacer()
-        }
+        Text(mode == .backtest ? L10n.BacktestLab.sheetTitleBacktest : L10n.BacktestLab.sheetTitleDryrun)
+            .font(PulseFonts.displayHeading)
     }
 
-    private func row(label: String, placeholder: String, text: Binding<String>) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(label)
-                .font(PulseFonts.micro).tracking(0.6).textCase(.uppercase)
-                .foregroundStyle(colors.textMuted)
-            TextField(placeholder, text: text)
-                .textFieldStyle(.plain)
-                .font(PulseFonts.caption)
-                .foregroundStyle(colors.textPrimary)
-                .padding(.horizontal, 8).padding(.vertical, 6)
-                .background(colors.surface)
-                .overlay(RoundedRectangle(cornerRadius: PulseRadii.sm).stroke(colors.border, lineWidth: 0.5))
-                .clipShape(RoundedRectangle(cornerRadius: PulseRadii.sm))
-        }
-        .frame(maxWidth: .infinity)
+    /// Symbols available for selection. StrategyV2 has no symbols field,
+    /// so we use a static default list of common crypto pairs.
+    private var availableSymbols: [String] {
+        Self.defaultSymbols
+    }
+
+    private var isValid: Bool {
+        guard !selectedSymbols.isEmpty else { return false }
+        if capital <= 0 { return false }
+        if mode == .backtest && startDate >= endDate { return false }
+        return true
     }
 
     private func submit() async {
         submitting = true
-        errorMsg = nil
-        let symbolArr = symbols.split(separator: ",")
-            .map { $0.trimmingCharacters(in: .whitespaces) }
-            .filter { !$0.isEmpty }
-        let cap = Double(capital) ?? 100_000
-        let ok = await vm.submitNewRun(
-            versionId: versionId.isEmpty ? nil : versionId,
-            start: startDate,
-            end: endDate,
-            capital: cap,
-            symbols: symbolArr
-        )
-        submitting = false
-        if ok {
+        error = nil
+        defer { submitting = false }
+        do {
+            let timerange = stringTimerange()
+            let slipBps: Double? = slippageModel == "bps" ? slippageBps
+                                  : slippageModel == "pct" ? slippagePct * 100 : nil
+            try await viewModel.startBacktest(
+                timerange: timerange,
+                symbols: Array(selectedSymbols),
+                capital: capital,
+                slippageBps: slipBps
+            )
             dismiss()
-        } else {
-            errorMsg = L10n.BacktestLab.submitFailed
+        } catch {
+            self.error = error.localizedDescription
         }
+    }
+
+    private func stringTimerange() -> String {
+        let fmt = DateFormatter()
+        fmt.dateFormat = "yyyyMMdd"
+        return "\(fmt.string(from: startDate))-\(fmt.string(from: endDate))"
     }
 }
