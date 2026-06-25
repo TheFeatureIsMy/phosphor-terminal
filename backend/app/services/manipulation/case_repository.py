@@ -2,10 +2,14 @@
 from __future__ import annotations
 
 import logging
+import math
 import uuid
 from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
+
+LAYER_KEYS = ("A_price", "B_orderbook", "C_onchain", "D_social", "E_cross_market")
+COMPLETED_STAGES = {"completed", "false_alarm"}
 
 
 class ManipulationCaseRepository:
@@ -17,7 +21,8 @@ class ManipulationCaseRepository:
 
     def create_case(
         self, symbol: str, market: str, manipulation_type: str,
-        confidence: float, evidence: dict, source: str = "rule_engine"
+        confidence: float, evidence: dict, source: str = "rule_engine",
+        evidence_layers: dict[str, dict] | None = None,
     ) -> dict:
         case_id = str(uuid.uuid4())
         now = datetime.now(timezone.utc).isoformat()
@@ -29,6 +34,7 @@ class ManipulationCaseRepository:
             "lifecycle_stage": "suspected",
             "confidence": confidence,
             "evidence": evidence,
+            "evidence_layers": evidence_layers,
             "timeline": [{"stage": "suspected", "entered_at": now, "confidence": confidence}],
             "outcome": {},
             "similar_cases": [],
@@ -117,6 +123,53 @@ class ManipulationCaseRepository:
             "high_risk_symbols": list(set(high_risk)),
             "recent_alerts": self.get_alerts(limit=10),
         }
+
+    def find_similar(self, case_id: str, top_n: int = 5) -> list[dict]:
+        """Find top-N completed cases by cosine similarity over per-layer scores."""
+        focal = self._cases.get(case_id)
+        if not focal or not focal.get("evidence_layers"):
+            return []
+        focal_vec = self._layer_vector(focal["evidence_layers"])
+        if not any(focal_vec):
+            return []
+        scored: list[tuple[float, dict]] = []
+        for other in self._cases.values():
+            if other["id"] == case_id:
+                continue
+            if other["lifecycle_stage"] not in COMPLETED_STAGES:
+                continue
+            if not other.get("evidence_layers"):
+                continue
+            other_vec = self._layer_vector(other["evidence_layers"])
+            sim = self._cosine(focal_vec, other_vec)
+            scored.append((sim, other))
+        scored.sort(key=lambda t: t[0], reverse=True)
+        return [{
+            "id": c["id"],
+            "symbol": c["symbol"],
+            "manipulation_type": c["manipulation_type"],
+            "similarity": round(sim, 4),
+            "outcome": c.get("outcome") or {},
+            "completed_at": c.get("completed_at"),
+        } for sim, c in scored[:top_n]]
+
+    @staticmethod
+    def _layer_vector(layers: dict[str, dict]) -> list[float]:
+        vec = []
+        for key in LAYER_KEYS:
+            entry = layers.get(key) or {}
+            score = entry.get("score")
+            vec.append(float(score) if score is not None else 0.0)
+        return vec
+
+    @staticmethod
+    def _cosine(a: list[float], b: list[float]) -> float:
+        dot = sum(x * y for x, y in zip(a, b))
+        na = math.sqrt(sum(x * x for x in a))
+        nb = math.sqrt(sum(y * y for y in b))
+        if na == 0 or nb == 0:
+            return 0.0
+        return dot / (na * nb)
 
     def _add_alert(self, case_id: str, alert_type: str, severity: str, title: str,
                    detail: dict | None = None, trading_signal: dict | None = None):

@@ -181,3 +181,82 @@ class TestDualSignal:
         signals = tracker.generate_dual_signal("nonexistent")
         assert signals["conservative"]["action"] == "WATCH"
         assert signals["aggressive"]["action"] == "WATCH"
+
+
+class TestCaseRepoEvidenceLayers:
+    def test_create_case_stores_evidence_layers(self):
+        from app.services.manipulation.case_repository import ManipulationCaseRepository
+        repo = ManipulationCaseRepository()
+        layers = {
+            "A_price": {"available": True, "data_quality": 0.9, "score": 0.7, "features": []},
+            "B_orderbook": {"available": True, "data_quality": 0.6, "score": 0.4, "features": []},
+            "D_social": {"available": False, "data_quality": 0.1, "score": None, "features": []},
+        }
+        case = repo.create_case(
+            symbol="SOL/USDT", market="crypto", manipulation_type="M5",
+            confidence=0.78, evidence={"volume_zscore": 2.4},
+            evidence_layers=layers,
+        )
+        stored = repo.get_case(case["id"])
+        assert stored["evidence_layers"] == layers
+        assert stored["evidence"] == {"volume_zscore": 2.4}
+
+    def test_create_case_without_evidence_layers_defaults_none(self):
+        from app.services.manipulation.case_repository import ManipulationCaseRepository
+        repo = ManipulationCaseRepository()
+        case = repo.create_case(
+            symbol="BTC/USDT", market="crypto", manipulation_type="M1",
+            confidence=0.5, evidence={},
+        )
+        assert case.get("evidence_layers") is None
+
+
+class TestFindSimilar:
+    def _layers(self, a, b, c, d, e):
+        return {
+            "A_price": {"available": True, "data_quality": 0.9, "score": a, "features": []},
+            "B_orderbook": {"available": True, "data_quality": 0.9, "score": b, "features": []},
+            "C_onchain": {"available": True, "data_quality": 0.9, "score": c, "features": []},
+            "D_social": {"available": True, "data_quality": 0.9, "score": d, "features": []},
+            "E_cross_market": {"available": True, "data_quality": 0.9, "score": e, "features": []},
+        }
+
+    def test_find_similar_returns_completed_cases_by_cosine(self):
+        from app.services.manipulation.case_repository import ManipulationCaseRepository
+        repo = ManipulationCaseRepository()
+        focal = repo.create_case(symbol="SOL/USDT", market="crypto", manipulation_type="M5",
+                                 confidence=0.7, evidence={},
+                                 evidence_layers=self._layers(0.8, 0.6, 0.7, 0.0, 0.9))
+        sim = repo.create_case(symbol="LUNA/USDT", market="crypto", manipulation_type="M5",
+                               confidence=0.7, evidence={},
+                               evidence_layers=self._layers(0.78, 0.62, 0.71, 0.0, 0.88))
+        repo.update_stage(sim["id"], "collapse", confidence=0.9)
+        repo.update_stage(sim["id"], "completed", confidence=0.0)
+        repo.set_outcome(sim["id"], {"peak_change": 2.4, "collapse_depth": -0.9, "duration_days": 14})
+        dis = repo.create_case(symbol="DOGE/USDT", market="crypto", manipulation_type="M6",
+                               confidence=0.4, evidence={},
+                               evidence_layers=self._layers(0.1, 0.1, 0.1, 0.9, 0.1))
+        repo.update_stage(dis["id"], "completed", confidence=0.0)
+
+        results = repo.find_similar(focal["id"], top_n=5)
+        assert len(results) == 2
+        assert results[0]["id"] == sim["id"]
+        assert results[0]["similarity"] > results[1]["similarity"]
+        assert results[0]["outcome"]["peak_change"] == 2.4
+        ids = [r["id"] for r in results]
+        assert focal["id"] not in ids
+
+    def test_find_similar_empty_when_no_completed_cases(self):
+        from app.services.manipulation.case_repository import ManipulationCaseRepository
+        repo = ManipulationCaseRepository()
+        focal = repo.create_case(symbol="SOL/USDT", market="crypto", manipulation_type="M5",
+                                 confidence=0.7, evidence={},
+                                 evidence_layers=self._layers(0.8, 0.6, 0.7, 0.0, 0.9))
+        assert repo.find_similar(focal["id"]) == []
+
+    def test_find_similar_returns_empty_when_focal_has_no_layers(self):
+        from app.services.manipulation.case_repository import ManipulationCaseRepository
+        repo = ManipulationCaseRepository()
+        focal = repo.create_case(symbol="SOL/USDT", market="crypto",
+                                 manipulation_type="M5", confidence=0.7, evidence={})
+        assert repo.find_similar(focal["id"]) == []
