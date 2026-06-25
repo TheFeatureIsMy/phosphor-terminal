@@ -47,6 +47,19 @@ class ManipulationCaseRepository:
         self._cases[case_id] = case
         self._add_alert(case_id, "new_case", "info",
                         f"New manipulation case: {symbol} ({manipulation_type})")
+        try:
+            from app.services.manipulation.pubsub import publish_event
+            publish_event({
+                "type": "new_case",
+                "case_id": case_id,
+                "symbol": symbol,
+                "manipulation_type": manipulation_type,
+                "initial_stage": "suspected",
+                "confidence": confidence,
+                "timestamp": now,
+            })
+        except Exception:
+            pass
         return case
 
     def get_case(self, case_id: str) -> dict | None:
@@ -93,6 +106,19 @@ class ManipulationCaseRepository:
             case_id, "stage_change", severity,
             f"{case['symbol']}: {old_stage} → {new_stage}"
         )
+        try:
+            from app.services.manipulation.pubsub import publish_event
+            publish_event({
+                "type": "stage_change",
+                "case_id": case_id,
+                "symbol": case["symbol"],
+                "old_stage": old_stage,
+                "new_stage": new_stage,
+                "confidence": confidence,
+                "timestamp": now,
+            })
+        except Exception:
+            pass
         logger.info("Case %s stage: %s → %s (confidence=%.2f)", case_id, old_stage, new_stage, confidence)
         return case
 

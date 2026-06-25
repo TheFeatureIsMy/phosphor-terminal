@@ -260,3 +260,56 @@ class TestFindSimilar:
         focal = repo.create_case(symbol="SOL/USDT", market="crypto",
                                  manipulation_type="M5", confidence=0.7, evidence={})
         assert repo.find_similar(focal["id"]) == []
+
+
+
+class TestPubsub:
+    def test_publish_event_broadcasts_to_all_subscribers(self):
+        from app.services.manipulation.pubsub import subscribe, unsubscribe, publish_event
+        q1 = subscribe()
+        q2 = subscribe()
+        try:
+            publish_event({"type": "new_case", "case_id": "x"})
+            assert q1.get_nowait()["case_id"] == "x"
+            assert q2.get_nowait()["case_id"] == "x"
+        finally:
+            unsubscribe(q1)
+            unsubscribe(q2)
+
+    def test_unsubscribe_stops_receiving(self):
+        from app.services.manipulation.pubsub import subscribe, unsubscribe, publish_event
+        q = subscribe()
+        unsubscribe(q)
+        publish_event({"type": "noop"})
+        assert q.empty()
+
+    def test_create_case_publishes_new_case_event(self):
+        from app.services.manipulation.case_repository import ManipulationCaseRepository
+        from app.services.manipulation.pubsub import subscribe, unsubscribe
+        q = subscribe()
+        try:
+            repo = ManipulationCaseRepository()
+            repo.create_case(symbol="SOL/USDT", market="crypto",
+                             manipulation_type="M5", confidence=0.7, evidence={})
+            evt = q.get_nowait()
+            assert evt["type"] == "new_case"
+            assert evt["symbol"] == "SOL/USDT"
+            assert evt["initial_stage"] == "suspected"
+        finally:
+            unsubscribe(q)
+
+    def test_update_stage_publishes_stage_change_event(self):
+        from app.services.manipulation.case_repository import ManipulationCaseRepository
+        from app.services.manipulation.pubsub import subscribe, unsubscribe
+        repo = ManipulationCaseRepository()
+        case = repo.create_case(symbol="SOL/USDT", market="crypto",
+                                manipulation_type="M5", confidence=0.7, evidence={})
+        q = subscribe()
+        try:
+            repo.update_stage(case["id"], "markup", confidence=0.8)
+            evt = q.get_nowait()
+            assert evt["type"] == "stage_change"
+            assert evt["old_stage"] == "suspected"
+            assert evt["new_stage"] == "markup"
+        finally:
+            unsubscribe(q)
