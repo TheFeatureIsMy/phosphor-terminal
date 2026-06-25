@@ -161,3 +161,23 @@ class TestLifecycleEngine:
         assert pred.manipulation_type != "none"
         assert pred.confidence > 0
         assert len(pred.type_probabilities) > 0
+
+
+class TestDualSignal:
+    def test_dual_signal_returns_both_profiles(self):
+        from app.services.manipulation.lifecycle import ManipulationLifecycleTracker
+        tracker = ManipulationLifecycleTracker()
+        signals = tracker.generate_dual_signal("distribute")
+        assert set(signals.keys()) == {"conservative", "aggressive"}
+        assert signals["conservative"]["action"] == "EXIT"
+        assert signals["aggressive"]["action"] == "EXIT_OR_SHORT"
+        for profile in ("conservative", "aggressive"):
+            for key in ("action", "direction", "sizing", "stop_loss", "rationale", "risk_level"):
+                assert key in signals[profile]
+
+    def test_dual_signal_unknown_stage_falls_back_to_suspected(self):
+        from app.services.manipulation.lifecycle import ManipulationLifecycleTracker
+        tracker = ManipulationLifecycleTracker()
+        signals = tracker.generate_dual_signal("nonexistent")
+        assert signals["conservative"]["action"] == "WATCH"
+        assert signals["aggressive"]["action"] == "WATCH"

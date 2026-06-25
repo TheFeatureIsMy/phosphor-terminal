@@ -118,6 +118,15 @@ class ManipulationLifecycleTracker:
         signals = AGGRESSIVE_SIGNALS if user_profile == "aggressive" else CONSERVATIVE_SIGNALS
         return signals.get(stage, CONSERVATIVE_SIGNALS["suspected"])
 
+    def generate_dual_signal(self, stage: str) -> dict[str, dict]:
+        """Return both conservative and aggressive trading signals for a stage."""
+        conservative = CONSERVATIVE_SIGNALS.get(stage, CONSERVATIVE_SIGNALS["suspected"])
+        aggressive = AGGRESSIVE_SIGNALS.get(stage, AGGRESSIVE_SIGNALS["suspected"])
+        return {
+            "conservative": conservative.to_dict(),
+            "aggressive": aggressive.to_dict(),
+        }
+
     def retrospective_label(
         self, price_series: list[float], features_timeline: list[dict[str, float]]
     ) -> list[dict]:
