@@ -7,6 +7,8 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.schemas.manipulation import ManipulationScanRequest, ManipulationScoreResponse
 from app.services.manipulation.radar_service import ManipulationRadarService
+from app.services.manipulation.lifecycle import ManipulationLifecycleTracker
+from app.services.manipulation.strategy_impact import compute_strategy_impact
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +18,9 @@ router = APIRouter(prefix="/api/v2/manipulation", tags=["manipulation-radar"])
 # Lazy singleton for case repository
 # ---------------------------------------------------------------------------
 _case_repo = None
+_LIFECYCLE_TRACKER = ManipulationLifecycleTracker()
+
+LAYER_KEYS = ("A_price", "B_orderbook", "C_onchain", "D_social", "E_cross_market")
 
 
 def _get_case_repo():
@@ -24,6 +29,55 @@ def _get_case_repo():
         from app.services.manipulation.case_repository import ManipulationCaseRepository
         _case_repo = ManipulationCaseRepository()
     return _case_repo
+
+
+def _risk_level_from_stage(stage: str) -> str:
+    if stage in ("distribute", "collapse"):
+        return "high"
+    if stage == "markup":
+        return "medium"
+    return "low"
+
+
+def _completeness(layers: dict | None) -> float:
+    if not layers:
+        return 0.0
+    available = sum(1 for k in LAYER_KEYS if layers.get(k) and layers[k].get("available"))
+    return round(available / len(LAYER_KEYS), 4)
+
+
+def _build_case_detail_v2(case: dict) -> dict:
+    layers = case.get("evidence_layers")
+    completeness = _completeness(layers)
+    max_confidence = round(min(completeness * 1.2, 1.0), 4)
+    dual = _LIFECYCLE_TRACKER.generate_dual_signal(case["lifecycle_stage"])
+    return {
+        "id": case["id"],
+        "symbol": case["symbol"],
+        "market": case["market"],
+        "manipulation_type": case["manipulation_type"],
+        "lifecycle_stage": case["lifecycle_stage"],
+        "confidence": case["confidence"],
+        "risk_level": _risk_level_from_stage(case["lifecycle_stage"]),
+        "evidence": case.get("evidence", {}),
+        "evidence_layers": layers,
+        "completeness": completeness,
+        "max_confidence": max_confidence,
+        "timeline": case.get("timeline", []),
+        "trading_signal": dual,
+        "affected_symbols": [case["symbol"]],
+        "sources": [{
+            "type": case.get("source", "rule_engine"),
+            "rule_id": case["manipulation_type"],
+            "version": "v1",
+        }],
+        "outcome": case.get("outcome") or {},
+        "auto_discovered": case.get("auto_discovered", True),
+        "source": case.get("source", "rule_engine"),
+        "created_at": case["created_at"],
+        "updated_at": case["updated_at"],
+        "completed_at": case.get("completed_at"),
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -108,7 +162,7 @@ async def get_case(case_id: str):
         case = repo.get_case(case_id)
         if not case:
             raise HTTPException(404, "Case not found")
-        return case
+        return _build_case_detail_v2(case)
     except HTTPException:
         raise
     except Exception as exc:
@@ -117,6 +171,50 @@ async def get_case(case_id: str):
             "state": "data_source_unavailable",
             "reason_codes": ["data_source_unavailable", type(exc).__name__],
         })
+
+
+@router.get("/cases/{case_id}/strategy-impact")
+async def get_strategy_impact(case_id: str, db: Session = Depends(get_db)):
+    try:
+        repo = _get_case_repo()
+        case = repo.get_case(case_id)
+        if not case:
+            raise HTTPException(404, "Case not found")
+        return compute_strategy_impact(case, db)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Strategy impact failed: %s", exc)
+        return {
+            "case_id": case_id,
+            "affected_strategies": [],
+            "total_affected": 0,
+            "total_protected": 0,
+            "state": "data_source_unavailable",
+            "reason_codes": ["data_source_unavailable", type(exc).__name__],
+        }
+
+
+@router.get("/cases/{case_id}/similar")
+async def get_similar(case_id: str, top_n: int = 5):
+    try:
+        repo = _get_case_repo()
+        case = repo.get_case(case_id)
+        if not case:
+            raise HTTPException(404, "Case not found")
+        similar = repo.find_similar(case_id, top_n=top_n)
+        return {"case_id": case_id, "similar": similar, "total": len(similar)}
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Similar cases failed: %s", exc)
+        return {
+            "case_id": case_id,
+            "similar": [],
+            "total": 0,
+            "state": "data_source_unavailable",
+            "reason_codes": ["data_source_unavailable", type(exc).__name__],
+        }
 
 
 @router.get("/alerts")

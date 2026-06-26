@@ -313,3 +313,87 @@ class TestPubsub:
             assert evt["new_stage"] == "markup"
         finally:
             unsubscribe(q)
+
+
+
+class TestCaseDetailV2:
+    @pytest.mark.anyio
+    async def test_case_detail_includes_evidence_layers_and_dual_signal(self, client):
+        from app.routers.manipulation import _get_case_repo
+        repo = _get_case_repo()
+        layers = {
+            "A_price": {"available": True, "data_quality": 0.9, "score": 0.7, "features": []},
+            "B_orderbook": {"available": True, "data_quality": 0.6, "score": 0.4, "features": []},
+            "C_onchain": {"available": True, "data_quality": 0.55, "score": 0.65, "features": []},
+            "D_social": {"available": False, "data_quality": 0.1, "score": None, "features": []},
+            "E_cross_market": {"available": True, "data_quality": 0.85, "score": 0.89, "features": []},
+        }
+        case = repo.create_case(
+            symbol="SOL/USDT", market="crypto", manipulation_type="M5",
+            confidence=0.78, evidence={"volume_zscore": 2.4},
+            evidence_layers=layers,
+        )
+
+        r = await client.get(f"/api/v2/manipulation/cases/{case['id']}")
+        assert r.status_code == 200
+        body = r.json()
+        assert "evidence" in body
+        for key in ("evidence_layers", "completeness", "max_confidence",
+                    "trading_signal", "affected_symbols", "sources"):
+            assert key in body, f"missing {key}"
+        ts = body["trading_signal"]
+        assert ts is not None
+        assert "conservative" in ts and "aggressive" in ts
+        assert "action" in ts["conservative"]
+        assert 0.0 <= body["completeness"] <= 1.0
+        assert 0.0 <= body["max_confidence"] <= 1.0
+        assert body["completeness"] == 0.8
+        # create_case defaults lifecycle_stage to suspected → risk_level low
+        assert body["risk_level"] == "low"
+
+    @pytest.mark.anyio
+    async def test_case_detail_404_when_missing(self, client):
+        r = await client.get("/api/v2/manipulation/cases/nonexistent-case-id")
+        assert r.status_code == 404
+
+
+class TestStrategyImpactEndpoint:
+    @pytest.mark.anyio
+    async def test_strategy_impact_endpoint_returns_shape(self, client):
+        from app.routers.manipulation import _get_case_repo
+        repo = _get_case_repo()
+        case = repo.create_case(
+            symbol="SOL/USDT", market="crypto", manipulation_type="M5",
+            confidence=0.7, evidence={},
+        )
+        r = await client.get(f"/api/v2/manipulation/cases/{case['id']}/strategy-impact")
+        assert r.status_code == 200
+        body = r.json()
+        assert body["case_id"] == case["id"]
+        assert "affected_strategies" in body
+        assert "total_affected" in body
+        assert "total_protected" in body
+
+
+class TestSimilarEndpoint:
+    @pytest.mark.anyio
+    async def test_similar_endpoint_returns_shape(self, client):
+        from app.routers.manipulation import _get_case_repo
+        repo = _get_case_repo()
+        focal = repo.create_case(
+            symbol="SOL/USDT", market="crypto", manipulation_type="M5",
+            confidence=0.7, evidence={},
+            evidence_layers={
+                "A_price": {"available": True, "data_quality": 0.9, "score": 0.8, "features": []},
+                "B_orderbook": {"available": True, "data_quality": 0.9, "score": 0.6, "features": []},
+                "C_onchain": {"available": True, "data_quality": 0.9, "score": 0.7, "features": []},
+                "D_social": {"available": True, "data_quality": 0.9, "score": 0.0, "features": []},
+                "E_cross_market": {"available": True, "data_quality": 0.9, "score": 0.9, "features": []},
+            },
+        )
+        r = await client.get(f"/api/v2/manipulation/cases/{focal['id']}/similar")
+        assert r.status_code == 200
+        body = r.json()
+        assert body["case_id"] == focal["id"]
+        assert "similar" in body
+        assert "total" in body
