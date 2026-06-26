@@ -26,6 +26,7 @@ from app.routers.admin.providers import router as admin_providers_router
 from app.routers.admin.system_settings import router as admin_system_settings_router
 from app.routers.providers_ws import router as providers_ws_router
 from app.routers.strategy_workspace import router as strategy_workspace_router
+from app.routers.manipulation_ws import router as manipulation_ws_router
 from app.services.providers.realtime.ccxt_ticker_stream import run_binance_ticker_stream
 
 
@@ -97,6 +98,7 @@ app.include_router(websocket.router)
 app.include_router(growth.router)
 app.include_router(live_small.router)
 app.include_router(manipulation.router)
+app.include_router(manipulation_ws_router)
 
 # v2.5 new routers
 app.include_router(signals_v2.router)

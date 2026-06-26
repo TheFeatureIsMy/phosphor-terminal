@@ -397,3 +397,28 @@ class TestSimilarEndpoint:
         assert body["case_id"] == focal["id"]
         assert "similar" in body
         assert "total" in body
+
+
+class TestManipulationStream:
+    def test_stream_sends_snapshot_and_forwards_stage_change(self):
+        from fastapi.testclient import TestClient
+        from app.main import app
+        from app.routers.manipulation import _get_case_repo
+
+        client = TestClient(app)
+        with client.websocket_connect("/api/v2/manipulation/stream") as ws:
+            snap = ws.receive_json()
+            assert snap["type"] == "snapshot"
+            assert "active_cases" in snap
+
+            repo = _get_case_repo()
+            case = repo.create_case(symbol="DOGE/USDT", market="crypto",
+                                    manipulation_type="M8", confidence=0.4, evidence={})
+            evt = ws.receive_json()
+            assert evt["type"] == "new_case"
+            assert evt["symbol"] == "DOGE/USDT"
+
+            repo.update_stage(case["id"], "markup", confidence=0.6)
+            evt2 = ws.receive_json()
+            assert evt2["type"] == "stage_change"
+            assert evt2["new_stage"] == "markup"
