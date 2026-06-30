@@ -177,6 +177,26 @@ extension L10n {
         static var mockBadge: String { zh("MOCK", en: "MOCK") }
         static var mockNoHistory: String { zh("mock 模式不提供历史数据", en: "Mock mode provides no historical data") }
 
+        // MARK: - Right Context Rail
+        enum Context {
+            static var strategyMeta: String { zh("策略信息", en: "Strategy") }
+            static var strategy: String { zh("策略", en: "Strategy") }
+            static var strategyType: String { zh("类型", en: "Type") }
+            static var dslHash: String { zh("DSL 哈希", en: "DSL Hash") }
+            static var mode: String { zh("模式", en: "Mode") }
+            static var engine: String { zh("引擎", en: "Engine") }
+            static var execTime: String { zh("完成时间", en: "Completed") }
+            static var risk: String { zh("风险警告", en: "Risk Warnings") }
+            static var noRisk: String { zh("未触发风险阈值", en: "No risk thresholds triggered") }
+            static var smallSample: String { zh("样本不足，结论谨慎", en: "Small sample, treat cautiously") }
+            static var strategyClusters: String { zh("策略级失败聚类", en: "Strategy-level Clusters") }
+            static var promotion: String { zh("晋级实盘", en: "Live Promotion") }
+            static var ready: String { zh("已就绪", en: "Ready") }
+            static var notReady: String { zh("未就绪", en: "Not Ready") }
+            static var goLive: String { zh("前往实盘准备", en: "Go to Live Readiness") }
+            static var noReadiness: String { zh("无就绪数据", en: "No readiness data") }
+        }
+
         // MARK: - NewRunSheet
         static var sheetTitleBacktest: String { zh("新建回测", en: "New Backtest") }
         static var sheetTitleDryrun: String { zh("新建模拟", en: "New Dry-run") }

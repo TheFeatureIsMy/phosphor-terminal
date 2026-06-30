@@ -1,11 +1,16 @@
-// ContextRailView.swift — Right rail: context inspector (filled in Task 10).
+// ContextRailView.swift — Right rail: strategy meta + risk + promotion (always visible).
 
 import SwiftUI
 
 struct ContextRailView: View {
     var body: some View {
-        VStack {
-            Text("Context Rail")
+        ScrollView {
+            VStack(spacing: PulseSpacing.lg) {
+                StrategyMetaPanel()
+                RiskWarningsPanel()
+                PromotionGatePanel()
+            }
+            .padding(PulseSpacing.lg)
         }
     }
 }
