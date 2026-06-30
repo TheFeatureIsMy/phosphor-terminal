@@ -251,6 +251,29 @@ class StartBacktestHandler(CommandHandler):
                 "worst_trade": m.worst_trade_pct,
             },
             "trade_count": len(result.trades),
+            "equity_curve": [
+                {
+                    "timestamp": p.get("timestamp", ""),
+                    "equity": p.get("equity", 0.0),
+                    "drawdown": p.get("drawdown", 0.0),
+                }
+                for p in result.equity_curve
+            ],
+            "trades": [
+                {
+                    "open_time": t.get("open_time", ""),
+                    "close_time": t.get("close_time", ""),
+                    "pair": t.get("pair", ""),
+                    "side": t.get("side", ""),
+                    "open_price": t.get("open_price", 0.0),
+                    "close_price": t.get("close_price", 0.0),
+                    "quantity": t.get("quantity", 0.0),
+                    "profit": t.get("profit", 0.0),
+                    "duration": t.get("duration", ""),
+                    "mtf_state": t.get("mtf_state"),
+                }
+                for t in result.trades
+            ],
         }
         backtest_run.completed_at = _utcnow()
         session.flush()
