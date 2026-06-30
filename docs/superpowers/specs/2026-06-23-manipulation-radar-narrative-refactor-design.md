@@ -1,10 +1,13 @@
 ---
 title: Manipulation Radar — 九段叙事流页面重构
-status: draft
+status: superseded
 date: 2026-06-23
 authors: claude (product design)
 supersedes:
   - docs/superpowers/specs/2026-06-15-manipulation-radar-engine-design.md (§8 UI 设计方向)
+superseded-by:
+  - docs/superpowers/specs/2026-07-01-manipulation-radar-refactor-design.md
+
 related:
   - docs/superpowers/specs/2026-06-10-market-structure-causal-storyboard-design.md
   - docs/superpowers/specs/2026-06-10-structure-matrix-htf-tribunal-design.md
