@@ -379,12 +379,11 @@ final class BacktestLabViewModel {
             comparedRunIds.remove(runId)
             comparedRuns.removeAll { $0.id == runId }
         } else {
-            guard comparedRunIds.count < 3 else {
+            if comparedRunIds.count >= 3 {
                 // Max 3; remove oldest to make room
                 let oldest = comparedRunIds.first!
                 comparedRunIds.remove(oldest)
                 comparedRuns.removeAll { $0.id == oldest }
-                return
             }
             comparedRunIds.insert(runId)
             do {
