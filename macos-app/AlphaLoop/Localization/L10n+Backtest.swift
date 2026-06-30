@@ -2,6 +2,15 @@
 
 extension L10n {
     enum BacktestLab {
+        // Tab bar
+        static var backtestTab: String { zh("回测", en: "Backtest") }
+        static var dryrunTab: String { zh("模拟", en: "Dryrun") }
+
+        enum RunRail {
+            static var newRun: String { zh("新建运行", en: "New Run") }
+            static var stop: String { zh("停止", en: "Stop") }
+        }
+
         // Header
         static var title: String         { zh("回测实验室", en: "Backtest Lab") }
         static var subtitle: String      { zh("多 run 对比 · 推进准入", en: "Multi-run compare · Promotion gate") }

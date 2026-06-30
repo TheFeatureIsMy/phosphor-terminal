@@ -1,6 +1,8 @@
-// BacktestLabView.swift — 回测实验室主视图（九段装配）
-// Nine-section narrative flow: Config → Status → Summary → Curve → TradeList → Compare → Risk → Promotion → DataSource
-// Run Rail (left, 240pt) + ScrollView (right, sections)
+// BacktestLabView.swift — Three-column linked-flow backtest/dryrun lab.
+//
+// Left rail (240pt): RunRailView — run history + compare + new run.
+// Center (flexible): tab bar + scrollable section cards (filled in Tasks 9-11).
+// Right rail (280pt): ContextRailView — context inspector (filled in Task 10).
 
 import SwiftUI
 
@@ -9,119 +11,94 @@ struct BacktestLabView: View {
     @State private var showingNewRunSheet = false
     @Environment(\.networkClient) private var networkClient
     @Environment(AppState.self) private var appState
+    @Environment(PulseColors.self) private var colors
 
     var body: some View {
-        VStack(spacing: 0) {
-            header
-            Divider()
-            HStack(spacing: 0) {
-                runRail
-                    .frame(width: 240)
-                    .background(Color.black.opacity(0.2))
-                Divider()
-                ScrollView {
-                    VStack(alignment: .leading, spacing: PulseSpacing.lg) {
-                        ConfigPanel(viewModel: viewModel)
-                        StatusPanel(viewModel: viewModel)
-                        SummaryPanel(viewModel: viewModel)
-                        CurvePanel(viewModel: viewModel)
-                        TradeListPanel(viewModel: viewModel)
-                        ComparePanel(viewModel: viewModel)
-                        RiskPanel(viewModel: viewModel)
-                        PromotionPanel(viewModel: viewModel)
-                        DataSourceFooter(viewModel: viewModel)
-                    }
-                    .padding(PulseSpacing.lg)
-                }
-            }
+        HStack(spacing: 0) {
+            RunRailView()
+                .frame(width: 240)
+                .background(colors.surface.opacity(0.3))
+
+            centerColumn
+                .frame(maxWidth: .infinity)
+
+            ContextRailView()
+                .frame(width: 280)
+                .background(colors.surface.opacity(0.3))
         }
+        .background(colors.background.ignoresSafeArea())
         .sheet(isPresented: $showingNewRunSheet) {
             NewRunSheet(viewModel: viewModel)
         }
         .task {
             viewModel.networkClient = networkClient
-            await viewModel.loadAvailableStrategies()
+            await viewModel.loadInitial()
         }
         .onDisappear { viewModel.onDisappear() }
     }
 
-    private var header: some View {
-        HStack {
-            Text(L10n.BacktestLab.title)
-                .font(PulseFonts.displaySubheading)
-            Spacer(minLength: 12)
-            strategyPicker
-            if networkClient is MockNetworkClient {
-                Text(L10n.BacktestLab.mockBadge)
-                    .font(PulseFonts.caption.weight(.bold))
-                    .padding(.horizontal, 6).padding(.vertical, 2)
-                    .background(Color.red).foregroundStyle(.white)
-                    .clipShape(Capsule())
-            }
-            Button { showingNewRunSheet = true } label: { Image(systemName: "plus") }
-                .disabled(viewModel.phase == .running)
-        }
-        .padding(.horizontal, PulseSpacing.lg)
-        .padding(.vertical, PulseSpacing.sm)
-    }
+    // MARK: - Center column
 
-    private var runRail: some View {
-        VStack(alignment: .leading, spacing: PulseSpacing.xs) {
-            Text(L10n.BacktestLab.runRail).font(PulseFonts.headline).padding(PulseSpacing.sm)
+    private var centerColumn: some View {
+        VStack(spacing: 0) {
+            tabBar
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: PulseSpacing.xs) {
-                    ForEach(viewModel.recentBacktests) { run in
-                        RunRailRow(run: run, isSelected: viewModel.selectedRun?.id == run.id,
-                                   isCompared: viewModel.comparedRunIds.contains(run.id)) {
-                            Task { await viewModel.selectRun(run) }
-                        } onCompare: {
-                            Task { await viewModel.toggleCompare(runId: run.id) }
+                VStack(spacing: PulseSpacing.lg) {
+                    SectionCard(title: L10n.BacktestLab.sectionConfig, locked: false) {
+                        Text("Config Panel — Task 9")
+                            .foregroundStyle(colors.textSecondary)
+                    }
+                    if vm.phase == .completed || vm.phase == .failed {
+                        SectionCard(title: L10n.BacktestLab.sectionStatus, locked: false) {
+                            Text("Status Summary — Task 9")
+                                .foregroundStyle(colors.textSecondary)
                         }
                     }
-                    if viewModel.recentBacktests.isEmpty {
-                        Text(L10n.BacktestLab.runEmpty).foregroundStyle(.secondary).padding()
+                    if vm.phase == .completed {
+                        SectionCard(title: L10n.BacktestLab.sectionCurve, locked: false) {
+                            Text("Equity Curve — Task 9")
+                                .foregroundStyle(colors.textSecondary)
+                        }
+                        SectionCard(title: L10n.BacktestLab.sectionTradeList, locked: false) {
+                            Text("Trade List — Task 9")
+                                .foregroundStyle(colors.textSecondary)
+                        }
+                        if vm.comparedRunIds.count >= 2 {
+                            SectionCard(title: L10n.BacktestLab.sectionCompare, locked: false) {
+                                Text("Compare — Task 9")
+                                    .foregroundStyle(colors.textSecondary)
+                            }
+                        }
                     }
                 }
+                .padding(PulseSpacing.lg)
             }
         }
     }
 
-    private var strategyPicker: some View {
-        Picker(L10n.BacktestLab.strategyPicker, selection: Binding(
-            get: { viewModel.selectedStrategy },
-            set: { s in if let s { Task { await viewModel.selectStrategy(s) } } }
-        )) {
-            Text(L10n.BacktestLab.noStrategy).tag(nil as StrategyV2?)
-            ForEach(viewModel.availableStrategies) { Text($0.name).tag(Optional($0)) }
-        }
-    }
-}
-
-struct RunRailRow: View {
-    let run: BacktestRunV2
-    let isSelected: Bool
-    let isCompared: Bool
-    let onTap: () -> Void
-    let onCompare: () -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            HStack {
-                Button(action: onTap) {
-                    Text("#\(run.id)").font(PulseFonts.body.weight(isSelected ? .bold : .regular))
-                }.buttonStyle(.plain)
-                Spacer()
-                Button(action: onCompare) {
-                    Image(systemName: isCompared ? "checkmark.square.fill" : "square")
-                }.buttonStyle(.plain)
+    private var tabBar: some View {
+        HStack(spacing: PulseSpacing.sm) {
+            ForEach(RunTab.allCases) { tab in
+                let isActive = vm.activeTab == tab
+                Button {
+                    vm.switchTab(tab)
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: tab == .backtest ? "clock.arrow.circlepath" : "play.circle")
+                        Text(tab == .backtest ? L10n.BacktestLab.backtestTab : L10n.BacktestLab.dryrunTab)
+                    }
+                    .font(PulseFonts.body.weight(isActive ? .semibold : .regular))
+                    .foregroundStyle(isActive ? PulseColors.accent : colors.textSecondary)
+                    .padding(.horizontal, 14).padding(.vertical, 8)
+                    .glassEffect(.regular)
+                }
+                .buttonStyle(.plain)
             }
-            Text(String(format: "%.2f%%", run.totalReturn * 100))
-                .font(PulseFonts.caption.monospacedDigit())
-                .foregroundStyle(run.totalReturn >= 0 ? .green : .red)
-            Text(run.startDate + " → " + run.endDate).font(PulseFonts.caption).foregroundStyle(.secondary)
+            Spacer()
         }
-        .padding(PulseSpacing.xs)
-        .background(isSelected ? PulseColors.accent.opacity(0.15) : .clear)
-        .clipShape(RoundedRectangle(cornerRadius: PulseRadii.sm))
+        .padding(.horizontal, PulseSpacing.lg)
+        .padding(.vertical, PulseSpacing.md)
     }
+
+    private var vm: BacktestLabViewModel { viewModel }
 }
