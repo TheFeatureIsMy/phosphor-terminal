@@ -33,7 +33,7 @@ struct BacktestLabViewModelTests {
 
     @Test func testStartingBacktestTransitionsToRunning() async throws {
         let vm = BacktestLabViewModel()
-        vm.useMockClient = true
+        vm.networkClient = MockNetworkClient()
         let strategy = StrategyV2(
             id: UUID().uuidString,
             name: "Test",

@@ -1,11 +1,35 @@
-// BacktestLabViewModel.swift — 回测实验室聚合 ViewModel (Phase 状态机 + 轮询)
+// BacktestLabViewModel.swift — 回测实验室聚合 ViewModel (Phase 状态机 + 轮询 + 双 Tab)
 //
-// Task 11 rewrite: Phase state machine (idle/configuring/running/completed/failed),
-// polling logic (2s interval, 15-min hard timeout), workspace snapshot loading.
-// Legacy API surface removed in Task 17.
+// Task 7 rewrite: RunTab + RunConfig, real dryrun, compare-set logic, no useMockClient toggle.
+// Backward-compatible property names (recentBacktests, recentDryruns, selectedRun, etc.)
+// kept for existing Section views. New properties: activeTab, submittedConfig, currentDryrunRun.
 
 import Foundation
 import SwiftUI
+
+// MARK: - RunTab + RunConfig
+
+enum RunTab: String, CaseIterable, Identifiable {
+    case backtest, dryrun
+    var id: String { rawValue }
+}
+
+struct RunConfig: Hashable {
+    var strategyId: Int = 0
+    var strategyUuid: String
+    var symbols: [String]
+    var timeframe: String
+    var initialCapital: Double
+    var fee: Double
+    var slippageBps: Double
+    // backtest-only
+    var startDate: String?
+    var endDate: String?
+    // dryrun-only
+    var stakeAmount: Double?
+    var maxOpenTrades: Int?
+    var initialWallet: Double?
+}
 
 // MARK: - NetworkClientProtocol extension for workspace snapshot
 
@@ -28,7 +52,12 @@ final class BacktestLabViewModel {
 
     var phase: Phase = .idle
 
-    // MARK: - Core properties
+    // MARK: - Tab & config (new in Task 7)
+
+    var activeTab: RunTab = .backtest
+    var submittedConfig: RunConfig?
+
+    // MARK: - Core properties (backward-compat names)
 
     var selectedStrategy: StrategyV2?
     var selectedRun: BacktestRunV2?
@@ -40,14 +69,17 @@ final class BacktestLabViewModel {
     var readiness: PerStrategyReadiness?
     var errorMessage: String?
 
-    // Network client with mock toggle
-    var networkClient: NetworkClientProtocol = MockNetworkClient()
-    var useMockClient: Bool = true {
-        didSet { networkClient = useMockClient ? MockNetworkClient() : LiveNetworkClient() }
-    }
+    // New dryrun properties
+    var currentBacktestRun: BacktestRunV2?
+    var currentDryrunRun: DryRunRunV2?
+    var dryrunRuns: [DryRunRunV2] = []
 
     // Available strategies for the picker
     var availableStrategies: [StrategyV2] = []
+    var tradableSymbols: [String] = []
+
+    // Network client — set by BacktestLabView via .task { viewModel.networkClient = networkClient }
+    var networkClient: NetworkClientProtocol = MockNetworkClient()
 
     // Polling
     var pollingTask: Task<Void, Never>?
@@ -61,6 +93,13 @@ final class BacktestLabViewModel {
     // MARK: - Test helper
 
     func injectPhaseForTest(_ p: Phase) { self.phase = p }
+
+    // MARK: - Initial load (new in Task 7)
+
+    func loadInitial() async {
+        await loadAvailableStrategies()
+        await loadRunHistory()
+    }
 
     // MARK: - Strategy selection
 
@@ -137,6 +176,9 @@ final class BacktestLabViewModel {
 
             self.readiness = snap.readiness
 
+            // Populate tradable symbols from workspace data dependencies
+            self.tradableSymbols = snap.dataDependencies.symbols
+
             // Auto-select first backtest
             if comparedRunIds.isEmpty, let first = self.recentBacktests.first {
                 comparedRunIds.insert(first.id)
@@ -147,6 +189,46 @@ final class BacktestLabViewModel {
         }
     }
 
+    // MARK: - Run history (new in Task 7)
+
+    func loadRunHistory() async {
+        switch activeTab {
+        case .backtest:
+            do {
+                let uuid = selectedStrategy?.id
+                recentBacktests = try await networkClient.listBacktestsV2(strategyUuid: uuid, limit: 20)
+            } catch {
+                // silent: empty list
+            }
+        case .dryrun:
+            // Dryrun list returns [DryRunStatusV2]; populate dryrunRuns via detail fetch on selection.
+            // Leave dryrunRuns populated on row-click (views are in Task 8-10).
+            dryrunRuns = []
+        }
+    }
+
+    func switchTab(_ tab: RunTab) {
+        activeTab = tab
+        comparedRunIds = []
+        comparedRuns = []
+        Task { await loadRunHistory() }
+    }
+
+    // MARK: - Load tradable symbols
+
+    func loadTradableSymbols(for strategy: StrategyV2) async {
+        do {
+            let snap = try await networkClient.getWorkspaceSnapshot(strategyId: strategy.id)
+            tradableSymbols = snap.dataDependencies.symbols
+        } catch {
+            tradableSymbols = defaultSymbols
+        }
+    }
+
+    private var defaultSymbols: [String] {
+        ["BTC/USDT", "ETH/USDT", "SOL/USDT", "BNB/USDT", "XRP/USDT"]
+    }
+
     // MARK: - Start backtest
 
     func startBacktest(
@@ -155,7 +237,23 @@ final class BacktestLabViewModel {
         capital: Double,
         slippageBps: Double? = nil
     ) async throws {
-        guard selectedStrategy != nil else { return }
+        guard let strategy = selectedStrategy else { return }
+
+        let config = RunConfig(
+            strategyId: 0,
+            strategyUuid: strategy.id,
+            symbols: symbols,
+            timeframe: timerange,
+            initialCapital: capital,
+            fee: 0.0,
+            slippageBps: slippageBps ?? 0,
+            startDate: nil,
+            endDate: nil
+        )
+        submittedConfig = config
+        phase = .running
+        pollStartTime = Date()
+
         let resp = try await networkClient.startBacktestV2(
             dsl: [:],
             timerange: timerange,
@@ -165,20 +263,55 @@ final class BacktestLabViewModel {
             strategyId: 0,
             strategyVersionId: nil
         )
-        phase = .running
-        pollStartTime = Date()
         startPolling(commandId: resp.commandId)
     }
 
-    // MARK: - Start dryrun
+    // MARK: - Start dryrun (real implementation, not 501)
 
     func startDryrun(symbols: [String], stakeAmount: Double, maxOpenTrades: Int, capital: Double) async throws {
-        guard selectedStrategy != nil else { return }
-        throw NSError(
-            domain: "BacktestLab",
-            code: 501,
-            userInfo: [NSLocalizedDescriptionKey: "Dry-run requires strategy DSL — fetch via strategy version (not yet wired). Use the dedicated Dry-run Monitor page for now."]
+        guard let strategy = selectedStrategy else { return }
+
+        let config = RunConfig(
+            strategyId: 0,
+            strategyUuid: strategy.id,
+            symbols: symbols,
+            timeframe: "",
+            initialCapital: capital,
+            fee: 0.0,
+            slippageBps: 0,
+            stakeAmount: stakeAmount,
+            maxOpenTrades: maxOpenTrades,
+            initialWallet: capital
         )
+        submittedConfig = config
+        phase = .running
+        errorMessage = nil
+
+        do {
+            let api = APIDryrunV2(client: networkClient)
+            _ = try await api.startDryrun([
+                "strategy_id": 0,
+                "symbols": symbols,
+                "stake_amount": stakeAmount,
+                "max_open_trades": maxOpenTrades,
+                "initial_wallet": capital,
+            ])
+            // Dryrun is long-lived; brief confirm start, then leave completed.
+            phase = .completed
+            await loadRunHistory()
+        } catch {
+            phase = .failed
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func stopDryrun(id: Int) async {
+        do {
+            _ = try await APIDryrunV2(client: networkClient).stopDryrun(String(id))
+            await loadRunHistory()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
     }
 
     // MARK: - Polling
@@ -197,9 +330,11 @@ final class BacktestLabViewModel {
                     if status.commandStatus == "completed", let run = status.backtestRun {
                         await MainActor.run {
                             self.selectedRun = run
+                            self.currentBacktestRun = run
                             self.phase = .completed
                         }
-                        await self.loadFailureClusters()
+                        await self.loadReadinessAndClusters()
+                        await self.loadRunHistory()
                         return
                     }
                     if ["failed", "error", "cancelled"].contains(status.commandStatus) {
@@ -234,7 +369,7 @@ final class BacktestLabViewModel {
             errorMessage = error.localizedDescription
         }
         if phase != .running { phase = .completed }
-        await loadFailureClusters()
+        await loadReadinessAndClusters()
     }
 
     // MARK: - Toggle compare
@@ -244,7 +379,13 @@ final class BacktestLabViewModel {
             comparedRunIds.remove(runId)
             comparedRuns.removeAll { $0.id == runId }
         } else {
-            guard comparedRunIds.count < 3 else { return }
+            guard comparedRunIds.count < 3 else {
+                // Max 3; remove oldest to make room
+                let oldest = comparedRunIds.first!
+                comparedRunIds.remove(oldest)
+                comparedRuns.removeAll { $0.id == oldest }
+                return
+            }
             comparedRunIds.insert(runId)
             do {
                 let r = try await networkClient.getBacktestV2(id: runId)
@@ -255,16 +396,33 @@ final class BacktestLabViewModel {
         }
     }
 
-    // MARK: - Failure clusters
+    // MARK: - New run
 
-    private func loadFailureClusters() async {
-        guard let s = selectedStrategy else { return }
-        guard let uuid = UUID(uuidString: s.id) else {
-            // strategy id isn't a UUID — skip failure clusters silently
+    func newRun() {
+        phase = .idle
+        selectedRun = nil
+        currentBacktestRun = nil
+        currentDryrunRun = nil
+        submittedConfig = nil
+        errorMessage = nil
+    }
+
+    // MARK: - Failure clusters + readiness
+
+    private func loadReadinessAndClusters() async {
+        guard let strategy = selectedStrategy else { return }
+        do {
+            let snap = try await networkClient.getWorkspaceSnapshot(strategyId: strategy.id)
+            readiness = snap.readiness
+        } catch {
+            readiness = nil
+        }
+        guard let uuid = UUID(uuidString: strategy.id) else {
+            // strategy id isn't a valid UUID — skip silently
             return
         }
         do {
-            self.strategyFailureClusters = try await networkClient.getFailureClusters(strategyUuid: uuid)
+            strategyFailureClusters = try await networkClient.getFailureClusters(strategyUuid: uuid)
         } catch {
             // silent: clusters section shows empty state
         }
