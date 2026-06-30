@@ -8,7 +8,6 @@ import SwiftUI
 
 struct BacktestLabView: View {
     @State private var viewModel = BacktestLabViewModel()
-    @State private var showingNewRunSheet = false
     @Environment(\.networkClient) private var networkClient
     @Environment(AppState.self) private var appState
     @Environment(PulseColors.self) private var colors
@@ -27,9 +26,7 @@ struct BacktestLabView: View {
                 .background(colors.surface.opacity(0.3))
         }
         .background(colors.background.ignoresSafeArea())
-        .sheet(isPresented: $showingNewRunSheet) {
-            NewRunSheet(viewModel: viewModel)
-        }
+        .environment(viewModel)
         .task {
             viewModel.networkClient = networkClient
             await viewModel.loadInitial()
