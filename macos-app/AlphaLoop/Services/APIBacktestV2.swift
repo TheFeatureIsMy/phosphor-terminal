@@ -1,5 +1,5 @@
 // APIBacktestV2.swift — v2 strong-typed backtest API
-// Methods on NetworkClientProtocol + mock factories in MockDataV2
+// Methods on NetworkClientProtocol + mock factories in MockBacktest
 // Uses existing client.get/post mock-closure pattern.
 
 import Foundation
@@ -64,13 +64,13 @@ extension NetworkClientProtocol {
             strategy_id: strategyId, strategy_version_id: strategyVersionId
         )
         return try await post("/api/v2/backtest", body: req) {
-            MockDataV2.mockBacktestCommandResponseV2()
+            MockBacktest.commandResponse()
         }
     }
 
     func backtestStatusV2(commandId: String) async throws -> BacktestStatusV2 {
         try await get("/api/v2/backtest/status/\(commandId)") {
-            MockDataV2.mockBacktestStatusV2()
+            MockBacktest.status(commandId: commandId)
         }
     }
 
@@ -82,61 +82,8 @@ extension NetworkClientProtocol {
 
     func getBacktestV2(id: Int) async throws -> BacktestRunV2 {
         try await get("/api/v2/backtest/\(id)") {
-            MockDataV2.mockBacktestRunV2(id: id)
+            MockBacktest.run(id: id)
         }
     }
 }
 
-// MARK: - Mock factories
-
-extension MockDataV2 {
-    static func mockBacktestCommandResponseV2() -> BacktestCommandResponseV2 {
-        BacktestCommandResponseV2(
-            commandId: UUID().uuidString,
-            status: "queued",
-            message: "mock backtest command enqueued",
-            idempotencyKey: UUID().uuidString
-        )
-    }
-
-    static func mockBacktestStatusV2() -> BacktestStatusV2 {
-        BacktestStatusV2(
-            commandId: UUID().uuidString,
-            commandStatus: "completed",
-            backtestRun: MockDataV2.mockBacktestRunV2(id: 1),
-            errorMessage: nil
-        )
-    }
-
-    static func mockBacktestRunV2(id: Int) -> BacktestRunV2 {
-        // Returns a single run for "local echo after new run"; listBacktestsV2 does NOT call this.
-        BacktestRunV2(
-            id: id,
-            strategyId: 1,
-            strategyVersionId: nil,
-            commandId: UUID().uuidString,
-            dslHash: "mock",
-            status: "completed",
-            startDate: "20240101",
-            endDate: "20240601",
-            initialCapital: 10000,
-            symbols: ["BTC/USDT"],
-            config: [:],
-            result: [:],
-            sharpeRatio: 1.8,
-            maxDrawdown: -0.12,
-            winRate: 0.55,
-            totalReturn: 0.12,
-            profitFactor: 1.6,
-            totalTrades: 42,
-            errorMessage: nil,
-            createdAt: ISO8601DateFormatter().string(from: Date()),
-            completedAt: ISO8601DateFormatter().string(from: Date()),
-            equityCurve: [
-                BacktestEquityPoint(timestamp: "2024-01-01", equity: 10000, drawdown: 0),
-                BacktestEquityPoint(timestamp: "2024-06-01", equity: 11200, drawdown: -0.05),
-            ],
-            trades: []
-        )
-    }
-}

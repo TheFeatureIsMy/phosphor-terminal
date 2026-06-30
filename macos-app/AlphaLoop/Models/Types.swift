@@ -422,6 +422,27 @@ struct AnyCodable: Codable, Hashable {
 }
 
 
+// MARK: - AnyEncodable 包装器（用于 [String: Any] 等动态字典的 JSON 编码）
+struct AnyEncodable: Encodable {
+    private let encodeFunc: (Encoder) throws -> Void
+
+    init(_ value: Any) {
+        encodeFunc = { encoder in
+            var container = encoder.singleValueContainer()
+            if let v = value as? String { try container.encode(v) }
+            else if let v = value as? Int { try container.encode(v) }
+            else if let v = value as? Double { try container.encode(v) }
+            else if let v = value as? Bool { try container.encode(v) }
+            else if let v = value as? [String: Any] { try container.encode(v.mapValues { AnyCodable($0) }) }
+            else if let v = value as? [Any] { try container.encode(v.map { AnyCodable($0) }) }
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        try encodeFunc(encoder)
+    }
+}
+
 // MARK: - Strategy v2.5
 
 struct StrategyV2: Codable, Identifiable, Hashable {
