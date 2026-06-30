@@ -363,13 +363,17 @@ final class BacktestLabViewModel {
         do {
             let full = try await networkClient.getBacktestV2(id: run.id)
             selectedRun = full
+            currentBacktestRun = full
         } catch {
             // Fall back to summary if fetch fails
             selectedRun = run
+            currentBacktestRun = run
             errorMessage = error.localizedDescription
         }
-        if phase != .running { phase = .completed }
+        if phase == .running { cancelPolling() }
+        if phase != .completed { phase = .completed }
         await loadReadinessAndClusters()
+        await loadRunHistory()
     }
 
     // MARK: - Toggle compare
