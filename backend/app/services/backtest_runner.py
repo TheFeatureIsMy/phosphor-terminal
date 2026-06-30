@@ -262,12 +262,65 @@ class FreqtradeBacktestRunner:
             worst_trade_pct=s.get("worst_trade", 0) * 100,
         )
 
+        normalized_trades = [
+            self._normalize_trade(t) for t in trades_list
+        ]
+        equity_curve = self._build_equity_curve(normalized_trades, initial_capital=10000.0)
+
         return BacktestResult(
             success=True,
             metrics=metrics,
-            trades=trades_list,
+            trades=normalized_trades,
+            equity_curve=equity_curve,
             raw_result=raw,
         )
+
+    @staticmethod
+    def _normalize_trade(t: dict[str, Any]) -> dict[str, Any]:
+        """Map freqtrade trade dict keys to TradeRow schema keys."""
+        direction = t.get("trade_direction") or ("short" if t.get("is_short") else "long")
+        open_time = str(t.get("open_date", t.get("open_timestamp", "")))
+        close_time = str(t.get("close_date", t.get("close_timestamp", "")))
+        open_price = float(t.get("open_rate", t.get("entry_price", 0.0)) or 0.0)
+        close_price = float(t.get("close_rate", t.get("exit_price", 0.0)) or 0.0)
+        quantity = float(t.get("amount", t.get("stake_amount", 0.0)) or 0.0)
+        profit = float(t.get("profit_abs", t.get("profit_amount", 0.0)) or 0.0)
+        duration = str(t.get("trade_duration", t.get("holding_avg", "")))
+        return {
+            "open_time": open_time,
+            "close_time": close_time,
+            "pair": str(t.get("pair", "")),
+            "side": direction,
+            "open_price": open_price,
+            "close_price": close_price,
+            "quantity": quantity,
+            "profit": profit,
+            "duration": duration,
+            "mtf_state": t.get("mtf_state"),
+        }
+
+    @staticmethod
+    def _build_equity_curve(
+        trades: list[dict[str, Any]], initial_capital: float = 10000.0
+    ) -> list[dict[str, Any]]:
+        """Derive a per-trade equity curve from normalized trades.
+
+        Each point = cumulative capital after closing that trade.
+        Drawdown = current equity minus running peak (<= 0).
+        """
+        curve: list[dict[str, Any]] = []
+        equity = initial_capital
+        peak = initial_capital
+        for t in trades:
+            equity += float(t.get("profit", 0.0))
+            peak = max(peak, equity)
+            drawdown = equity - peak  # <= 0
+            curve.append({
+                "timestamp": t.get("close_time", ""),
+                "equity": round(equity, 6),
+                "drawdown": round(drawdown, 6),
+            })
+        return curve
 
     def _cleanup(self, config_path: Path) -> None:
         try:
