@@ -186,5 +186,7 @@ extension L10n {
         static var sheetInvalidDate: String { zh("请选择有效的日期区间", en: "Select a valid date range") }
         static var sheetInvalidCapital: String { zh("初始资金必须大于 0", en: "Capital must be > 0") }
         static var sheetNoSymbols: String { zh("至少选择一个交易对", en: "Select at least one symbol") }
+        static var sheetMaxOpen: String { zh("最大持仓", en: "Max Open") }
+        static var sheetWallet: String { zh("初始钱包", en: "Wallet") }
     }
 }

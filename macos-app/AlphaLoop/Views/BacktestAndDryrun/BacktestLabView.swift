@@ -44,30 +44,15 @@ struct BacktestLabView: View {
             tabBar
             ScrollView {
                 VStack(spacing: PulseSpacing.lg) {
-                    SectionCard(title: L10n.BacktestLab.sectionConfig, locked: false) {
-                        Text("Config Panel — Task 9")
-                            .foregroundStyle(colors.textSecondary)
-                    }
+                    ConfigPanel()
                     if vm.phase == .completed || vm.phase == .failed {
-                        SectionCard(title: L10n.BacktestLab.sectionStatus, locked: false) {
-                            Text("Status Summary — Task 9")
-                                .foregroundStyle(colors.textSecondary)
-                        }
+                        StatusSummaryBlock()
                     }
                     if vm.phase == .completed {
-                        SectionCard(title: L10n.BacktestLab.sectionCurve, locked: false) {
-                            Text("Equity Curve — Task 9")
-                                .foregroundStyle(colors.textSecondary)
-                        }
-                        SectionCard(title: L10n.BacktestLab.sectionTradeList, locked: false) {
-                            Text("Trade List — Task 9")
-                                .foregroundStyle(colors.textSecondary)
-                        }
+                        EquityCurveBlock()
+                        TradeListBlock()
                         if vm.comparedRunIds.count >= 2 {
-                            SectionCard(title: L10n.BacktestLab.sectionCompare, locked: false) {
-                                Text("Compare — Task 9")
-                                    .foregroundStyle(colors.textSecondary)
-                            }
+                            CompareBlock()
                         }
                     }
                 }
