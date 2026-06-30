@@ -21,6 +21,7 @@ struct DryRunRunV2: Codable, Identifiable, Hashable {
     let openTrades: Int
     let totalProfit: Double
     let errorMessage: String?
+    let lastSyncedAt: String?
     let createdAt: String?
     let startedAt: String?
     let stoppedAt: String?
@@ -40,6 +41,7 @@ struct DryRunRunV2: Codable, Identifiable, Hashable {
         case openTrades = "open_trades"
         case totalProfit = "total_profit"
         case errorMessage = "error_message"
+        case lastSyncedAt = "last_synced_at"
         case createdAt = "created_at"
         case startedAt = "started_at"
         case stoppedAt = "stopped_at"
@@ -47,13 +49,19 @@ struct DryRunRunV2: Codable, Identifiable, Hashable {
 }
 
 struct DryRunSyncResponseV2: Codable, Hashable {
+    let dryrunRunId: Int
+    let newEvents: Int
     let openTrades: Int
     let closedTrades: Int
-    let totalProfit: Double
+    let success: Bool
+    let errors: [String]
 
     enum CodingKeys: String, CodingKey {
+        case dryrunRunId = "dryrun_run_id"
+        case newEvents = "new_events"
         case openTrades = "open_trades"
         case closedTrades = "closed_trades"
-        case totalProfit = "total_profit"
+        case success
+        case errors
     }
 }

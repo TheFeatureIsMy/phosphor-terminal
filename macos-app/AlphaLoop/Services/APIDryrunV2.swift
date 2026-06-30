@@ -71,13 +71,14 @@ enum MockDryrunV2 {
             dslHash: "a1b2c3d4", status: "running", pid: 12345, apiPort: 8081, apiUrl: "http://127.0.0.1:8081",
             symbols: ["BTC/USDT"], stakeAmount: 100, maxOpenTrades: 5, initialWallet: 10000,
             exchange: "binance", totalTrades: 5, openTrades: 2, totalProfit: 12.5,
-            errorMessage: nil, createdAt: "2026-06-30T00:00:00Z", startedAt: "2026-06-30T00:00:05Z",
+            errorMessage: nil, lastSyncedAt: "2026-06-30T00:00:30Z",
+            createdAt: "2026-06-30T00:00:00Z", startedAt: "2026-06-30T00:00:05Z",
             stoppedAt: nil
         )
     }
 
     static func sync(id: Int) -> DryRunSyncResponseV2 {
-        DryRunSyncResponseV2(openTrades: 2, closedTrades: 3, totalProfit: 12.5)
+        DryRunSyncResponseV2(dryrunRunId: id, newEvents: 3, openTrades: 2, closedTrades: 3, success: true, errors: [])
     }
 
     static func list() -> [DryRunStatusV2] {
