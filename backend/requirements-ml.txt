@@ -1,0 +1,16 @@
+# Optional ML dependencies for local inference (TimesFM / Chronos / FinBERT / Qlib).
+# These are heavy and not cross-platform in containers:
+#   - torch / transformers: large binaries (~1GB+)
+#   - pyqlib: no linux/arm64 wheel (Apple Silicon Docker can't install)
+#   - timesfm / chronos-forecasting: time-series forecasting models
+#
+# Install locally for dev:  pip install -r requirements-ml.txt
+# Backend runs without these; affected features degrade gracefully via `available` checks:
+#   - app/services/forecast_adapters.py (TimesFM/Chronos forecast)
+#   - app/services/sentiment_finbert.py (FinBERT sentiment)
+#   - app/services/factor_qlib.py (Qlib factor research)
+timesfm==1.0.0
+chronos-forecasting
+transformers==4.50.3
+torch==2.6.0
+pyqlib

@@ -5,6 +5,10 @@ from app.config import settings
 from app.database.base import Base
 
 from app.domain.activity_log import StrategyActivityLog  # noqa: F401
+from app.domain.circuit_breaker import CircuitBreakerEvent  # noqa: F401
+from app.domain.volatility_lock import VolatilityLock  # noqa: F401
+from app.domain.stop_protection import StopProtectionSnapshot  # noqa: F401
+from app.domain.live_readiness import LiveReadinessCheck  # noqa: F401
 
 engine = create_engine(settings.database_url)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

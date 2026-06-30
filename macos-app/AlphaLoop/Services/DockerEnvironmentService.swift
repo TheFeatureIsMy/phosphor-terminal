@@ -214,19 +214,21 @@ final class DockerEnvironmentService: ObservableObject {
     // MARK: - Helpers
 
     private func shell(_ command: String) async throws -> String {
-        let task = Process()
-        task.executableURL = URL(fileURLWithPath: "/bin/sh")
-        task.arguments = ["-c", command]
-        let pipe = Pipe()
-        task.standardOutput = pipe
-        task.standardError = pipe
-        try task.run()
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        task.waitUntilExit()
-        let output = String(data: data, encoding: .utf8) ?? ""
-        if task.terminationStatus != 0 {
-            throw NSError(domain: "ShellError", code: Int(task.terminationStatus), userInfo: [NSLocalizedDescriptionKey: output])
-        }
-        return output
+        try await Task.detached(priority: .userInitiated) {
+            let task = Process()
+            task.executableURL = URL(fileURLWithPath: "/bin/sh")
+            task.arguments = ["-c", command]
+            let pipe = Pipe()
+            task.standardOutput = pipe
+            task.standardError = pipe
+            try task.run()
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            task.waitUntilExit()
+            let output = String(data: data, encoding: .utf8) ?? ""
+            if task.terminationStatus != 0 {
+                throw NSError(domain: "ShellError", code: Int(task.terminationStatus), userInfo: [NSLocalizedDescriptionKey: output])
+            }
+            return output
+        }.value
     }
 }

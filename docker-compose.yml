@@ -60,12 +60,15 @@ services:
     image: freqtradeorg/freqtrade:stable
     volumes:
       - ./freqtrade/user_data:/freqtrade/user_data
+      - ./backend:/backend:ro
     ports:
       - "8080:8080"
     environment:
       - PULSEDESK_REDIS_URL=redis://redis:6379/0
+      - PYTHONPATH=/backend
     command: >
       trade
+      --strategy PulseDeskUniversalStrategy
       --logfile /freqtrade/user_data/logs/freqtrade.log
       --config /freqtrade/user_data/config.json
       --dry-run
