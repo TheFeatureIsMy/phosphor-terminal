@@ -48,43 +48,50 @@ struct APIRiskLookup {
     let client: any NetworkClientProtocol
 
     func listRiskPolicyVersions(status: String = "active") async throws -> [RiskPolicyVersionSummary] {
-        try await client.get("/api/risk-policy-versions?status=\(status)", mock: {
-            [
-                RiskPolicyVersionSummary(
-                    id: "00000000-0000-0000-0000-000000000001",
-                    riskPolicyId: "00000000-0000-0000-0000-0000000000a1",
-                    policyName: "Default Conservative",
-                    versionNo: 3,
-                    status: "active"
-                ),
-                RiskPolicyVersionSummary(
-                    id: "00000000-0000-0000-0000-000000000002",
-                    riskPolicyId: "00000000-0000-0000-0000-0000000000a2",
-                    policyName: "Aggressive Live",
-                    versionNo: 1,
-                    status: "active"
-                ),
-            ]
-        })
+        try await client.get("/api/risk-policy-versions?status=\(status)",
+            mock: MockRiskLookup.policyVersions)
     }
 
     func listCapitalPools(poolType: String? = nil) async throws -> [CapitalPoolDetail] {
         var path = "/api/capital-pools"
         if let pt = poolType { path += "?pool_type=\(pt)" }
-        return try await client.get(path, mock: {
-            [
-                CapitalPoolDetail(
-                    id: "00000000-0000-0000-0000-0000000000b1",
-                    name: "Live Small — USDT",
-                    poolType: "live_small",
-                    currency: "USDT",
-                    totalBudget: 1000.0,
-                    maxPositionPctPerTrade: 0.10,
-                    maxTotalExposurePct: 0.30,
-                    maxDailyLossPct: 0.03,
-                    maxDrawdownPct: 0.08
-                )
-            ]
-        })
+        return try await client.get(path, mock: MockRiskLookup.capitalPools)
+    }
+}
+
+enum MockRiskLookup {
+    static func policyVersions() -> [RiskPolicyVersionSummary] {
+        [
+            RiskPolicyVersionSummary(
+                id: "00000000-0000-0000-0000-000000000001",
+                riskPolicyId: "00000000-0000-0000-0000-0000000000a1",
+                policyName: "Default Conservative",
+                versionNo: 3,
+                status: "active"
+            ),
+            RiskPolicyVersionSummary(
+                id: "00000000-0000-0000-0000-000000000002",
+                riskPolicyId: "00000000-0000-0000-0000-0000000000a2",
+                policyName: "Aggressive Live",
+                versionNo: 1,
+                status: "active"
+            ),
+        ]
+    }
+
+    static func capitalPools() -> [CapitalPoolDetail] {
+        [
+            CapitalPoolDetail(
+                id: "00000000-0000-0000-0000-0000000000b1",
+                name: "Live Small — USDT",
+                poolType: "live_small",
+                currency: "USDT",
+                totalBudget: 1000.0,
+                maxPositionPctPerTrade: 0.10,
+                maxTotalExposurePct: 0.30,
+                maxDailyLossPct: 0.03,
+                maxDrawdownPct: 0.08
+            )
+        ]
     }
 }

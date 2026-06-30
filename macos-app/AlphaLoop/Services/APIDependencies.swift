@@ -39,39 +39,43 @@ struct APIDependencies {
     let client: NetworkClientProtocol
 
     func fetchDependencies() async throws -> DependencyResponse {
-        try await client.get("/api/system/dependencies", mock: {
-            DependencyResponse(
-                required: [
-                    "database": DependencyItem(
-                        status: "ok", version: nil, detail: "SQLite",
-                        installCmd: nil, fallback: nil, url: nil, requires: nil
-                    ),
-                    "python": DependencyItem(
-                        status: "ok", version: "3.11.0", detail: nil,
-                        installCmd: nil, fallback: nil, url: nil, requires: nil
-                    ),
-                ],
-                coreOptional: [
-                    "redis": DependencyItem(
-                        status: "missing", version: nil, detail: "Used for caching",
-                        installCmd: "brew install redis", fallback: "in-memory cache", url: nil, requires: nil
-                    ),
-                ],
-                mlModels: [
-                    "finbert": DependencyItem(
-                        status: "loaded", version: "1.0", detail: "FinBERT sentiment model",
-                        installCmd: nil, fallback: "keyword-based", url: nil, requires: nil
-                    ),
-                ],
-                externalServices: [
-                    "freqtrade": DependencyItem(
-                        status: "connected", version: nil, detail: "http://localhost:8080",
-                        installCmd: nil, fallback: nil, url: "http://localhost:8080", requires: nil
-                    ),
-                ],
-                readinessScore: 0.75,
-                checkedAt: ISO8601DateFormatter().string(from: Date())
-            )
-        })
+        try await client.get("/api/system/dependencies", mock: MockDependencies.response)
+    }
+}
+
+enum MockDependencies {
+    static func response() -> DependencyResponse {
+        DependencyResponse(
+            required: [
+                "database": DependencyItem(
+                    status: "ok", version: nil, detail: "SQLite",
+                    installCmd: nil, fallback: nil, url: nil, requires: nil
+                ),
+                "python": DependencyItem(
+                    status: "ok", version: "3.11.0", detail: nil,
+                    installCmd: nil, fallback: nil, url: nil, requires: nil
+                ),
+            ],
+            coreOptional: [
+                "redis": DependencyItem(
+                    status: "missing", version: nil, detail: "Used for caching",
+                    installCmd: "brew install redis", fallback: "in-memory cache", url: nil, requires: nil
+                ),
+            ],
+            mlModels: [
+                "finbert": DependencyItem(
+                    status: "loaded", version: "1.0", detail: "FinBERT sentiment model",
+                    installCmd: nil, fallback: "keyword-based", url: nil, requires: nil
+                ),
+            ],
+            externalServices: [
+                "freqtrade": DependencyItem(
+                    status: "connected", version: nil, detail: "http://localhost:8080",
+                    installCmd: nil, fallback: nil, url: "http://localhost:8080", requires: nil
+                ),
+            ],
+            readinessScore: 0.75,
+            checkedAt: ISO8601DateFormatter().string(from: Date())
+        )
     }
 }

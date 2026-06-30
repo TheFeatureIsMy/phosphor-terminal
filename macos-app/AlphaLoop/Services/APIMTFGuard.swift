@@ -100,52 +100,46 @@ struct APIMTFGuard {
     func getGuardState(strategyId: String, symbol: String) async throws -> MTFGuardStateResponse {
         try await client.get(
             "/api/structure/mtf-guard/\(strategyId)/\(symbol)",
-            mock: Self.mockState
+            mock: MockMTFGuard.state
         )
     }
 
     func getGuardEvents(strategyId: String) async throws -> [MTFGuardEvent] {
         try await client.get(
             "/api/structure/mtf-guard-events/\(strategyId)",
-            mock: Self.mockEvents
+            mock: MockMTFGuard.events
         )
     }
+}
 
-    static func mockState() -> MTFGuardStateResponse {
+enum MockMTFGuard {
+    static func state() -> MTFGuardStateResponse {
         MTFGuardStateResponse(
             strategyId: "str_001",
             symbol: "BTC/USDT",
             guards: [
                 MTFGuardInfo(
                     guardId: "mtf_ob_guard_1",
-                    fastTimeframe: "5m",
-                    slowTimeframe: "1h",
-                    guardState: "watching",
-                    action: "observe",
-                    structureType: "order_block",
-                    reasonCodes: []
+                    fastTimeframe: "5m", slowTimeframe: "1h",
+                    guardState: "watching", action: "observe",
+                    structureType: "order_block", reasonCodes: []
                 ),
                 MTFGuardInfo(
                     guardId: "mtf_fvg_guard_1",
-                    fastTimeframe: "15m",
-                    slowTimeframe: "4h",
-                    guardState: "confirmed",
-                    action: "allow",
-                    structureType: "fvg",
-                    reasonCodes: ["htf_close_confirmed"]
+                    fastTimeframe: "15m", slowTimeframe: "4h",
+                    guardState: "confirmed", action: "allow",
+                    structureType: "fvg", reasonCodes: ["htf_close_confirmed"]
                 ),
             ]
         )
     }
 
-    static func mockEvents() -> [MTFGuardEvent] {
+    static func events() -> [MTFGuardEvent] {
         [
             MTFGuardEvent(
                 id: "evt_001",
-                guardState: "temporary_violation",
-                action: "block_entry",
-                fastTimeframe: "5m",
-                slowTimeframe: "1h",
+                guardState: "temporary_violation", action: "block_entry",
+                fastTimeframe: "5m", slowTimeframe: "1h",
                 structureType: "order_block",
                 reasonCodes: ["mtf_temporary_violation", "htf_not_closed"],
                 createdAt: "2026-06-08T10:30:00Z"

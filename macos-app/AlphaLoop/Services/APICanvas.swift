@@ -38,23 +38,31 @@ struct APICanvas {
         struct Body: Encodable {
             let graph_json: String
         }
-        return try await client.post("/api/strategies/\(strategyId)/canvas", body: Body(graph_json: graphJson), mock: {
-            CanvasSaveResponse(id: "mock-1", strategyId: strategyId, createdAt: nil, updatedAt: ISO8601DateFormatter().string(from: Date()))
-        })
+        return try await client.post("/api/strategies/\(strategyId)/canvas", body: Body(graph_json: graphJson),
+            mock: { MockCanvas.save(strategyId: strategyId) })
     }
 
     func load(strategyId: Int) async throws -> CanvasLoadResponse {
-        try await client.get("/api/strategies/\(strategyId)/canvas", mock: {
-            CanvasLoadResponse(id: "mock-1", strategyId: strategyId, graphJson: "{}", updatedAt: nil)
-        })
+        try await client.get("/api/strategies/\(strategyId)/canvas",
+            mock: { MockCanvas.load(strategyId: strategyId) })
     }
 
     func update(strategyId: Int, graphJson: String) async throws -> CanvasSaveResponse {
         struct Body: Encodable {
             let graph_json: String
         }
-        return try await client.put("/api/strategies/\(strategyId)/canvas", body: Body(graph_json: graphJson), mock: {
-            CanvasSaveResponse(id: "mock-1", strategyId: strategyId, createdAt: nil, updatedAt: ISO8601DateFormatter().string(from: Date()))
-        })
+        return try await client.put("/api/strategies/\(strategyId)/canvas", body: Body(graph_json: graphJson),
+            mock: { MockCanvas.save(strategyId: strategyId) })
+    }
+}
+
+enum MockCanvas {
+    static func save(strategyId: Int) -> CanvasSaveResponse {
+        CanvasSaveResponse(id: "mock-1", strategyId: strategyId, createdAt: nil,
+            updatedAt: ISO8601DateFormatter().string(from: Date()))
+    }
+
+    static func load(strategyId: Int) -> CanvasLoadResponse {
+        CanvasLoadResponse(id: "mock-1", strategyId: strategyId, graphJson: "{}", updatedAt: nil)
     }
 }

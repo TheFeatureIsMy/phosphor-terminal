@@ -34,10 +34,9 @@ extension NetworkClientProtocol {
 
     func getFailureClusters(strategyUuid: UUID) async throws -> [FailureClusterSummary] {
         let resp: FailureClustersResponse = try await get(
-            "/api/growth/failure-clusters?strategy_uuid=\(strategyUuid)"
-        ) {
-            FailureClustersResponse(state: "empty", clusters: [])
-        }
+            "/api/growth/failure-clusters?strategy_uuid=\(strategyUuid)",
+            mock: MockFailureClusters.response
+        )
         return resp.clusters.map {
             FailureClusterSummary(
                 id: $0.clusterName,
@@ -48,5 +47,11 @@ extension NetworkClientProtocol {
                 commonFeatures: $0.suggestedFix.split(separator: ";").map(String.init)
             )
         }
+    }
+}
+
+enum MockFailureClusters {
+    static func response() -> FailureClustersResponse {
+        FailureClustersResponse(state: "empty", clusters: [])
     }
 }

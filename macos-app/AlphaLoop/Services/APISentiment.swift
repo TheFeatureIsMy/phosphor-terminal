@@ -45,28 +45,37 @@ struct APISentiment {
     let client: any NetworkClientProtocol
 
     func getSummary() async throws -> SentimentSummaryResponse {
-        try await client.get("/sentiment/summary", mock: {
-            SentimentSummaryResponse(
-                fearGreedIndex: 65,
-                fearGreedLabel: "贪婪",
-                marketOverview: [
-                    SymbolSentiment(symbol: "BTC", score: 0.72, sentiment: "positive", change24h: 0.05),
-                    SymbolSentiment(symbol: "ETH", score: 0.68, sentiment: "positive", change24h: 0.03),
-                    SymbolSentiment(symbol: "SOL", score: 0.45, sentiment: "neutral", change24h: -0.02),
-                ],
-                updatedAt: "2026-05-31T12:00:00Z"
-            )
-        })
+        try await client.get("/sentiment/summary", mock: MockSentiment.summary)
     }
 
     func getMarketSentiment(symbol: String, days: Int = 7) async throws -> [SentimentTrendPoint] {
-        try await client.get("/sentiment/market/\(symbol)?days=\(days)", mock: { [] })
+        try await client.get("/sentiment/market/\(symbol)?days=\(days)", mock: MockSentiment.trend)
     }
 
     func analyzeText(_ text: String) async throws -> TextSentimentResponse {
         struct Body: Encodable { let text: String }
-        return try await client.post("/sentiment/analyze", body: Body(text: text), mock: {
-            TextSentimentResponse(positive: 0.6, negative: 0.1, neutral: 0.3)
-        })
+        return try await client.post("/sentiment/analyze", body: Body(text: text),
+            mock: MockSentiment.textAnalysis)
+    }
+}
+
+enum MockSentiment {
+    static func summary() -> SentimentSummaryResponse {
+        SentimentSummaryResponse(
+            fearGreedIndex: 65,
+            fearGreedLabel: "贪婪",
+            marketOverview: [
+                SymbolSentiment(symbol: "BTC", score: 0.72, sentiment: "positive", change24h: 0.05),
+                SymbolSentiment(symbol: "ETH", score: 0.68, sentiment: "positive", change24h: 0.03),
+                SymbolSentiment(symbol: "SOL", score: 0.45, sentiment: "neutral", change24h: -0.02),
+            ],
+            updatedAt: "2026-05-31T12:00:00Z"
+        )
+    }
+
+    static func trend() -> [SentimentTrendPoint] { [] }
+
+    static func textAnalysis() -> TextSentimentResponse {
+        TextSentimentResponse(positive: 0.6, negative: 0.1, neutral: 0.3)
     }
 }

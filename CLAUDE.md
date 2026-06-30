@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```bash
 cd backend
 python3 run.py                          # Start FastAPI on :8000
-python3 -m pytest tests/ -q             # Run all tests (~78 files, ~915 functions)
+python3 -m pytest tests/ -q             # Run all tests (~91 files, ~1262 functions)
 python3 -m pytest tests/ -q --cov=app   # Tests with coverage (CI gate: ≥30%)
 python3 -m pytest tests/test_risk_rules.py -q          # Single file
 python3 -m pytest tests/ -q -k "structure"             # Filter by name
@@ -51,7 +51,7 @@ The product is bilingual (zh-CN default, en-US toggle) and dark cyberpunk themed
 
 ### Backend (`backend/app/`)
 
-FastAPI app with **~44 routers** and **~86 service modules**.
+FastAPI app with **46 routers** and **~50 service modules** (plus 21 manipulation services and 8 provider categories).
 
 - **`config.py`** — Pydantic `Settings` driven by `.env` (FREQTRADE_URL, DATABASE_URL, REDIS_URL, FREQTRADE_DB_PATH, etc.).
 - **`routers/`** — Thin handlers. They unmarshal/validate, delegate, and serialize. Business logic lives in services.
@@ -60,7 +60,7 @@ FastAPI app with **~44 routers** and **~86 service modules**.
   2. **Standalone data-structure utilities** — `bloom_filter.py`, `trie.py`, `skip_list.py`, `segment_tree.py`, `lru_cache.py`, `graph.py`, etc. Not trading-specific; consumable from anywhere.
 - **`schemas/`** — Pydantic response models (shared between routers).
 - **`domain/`** — Enums and pure domain types. `domain/enums.py` is the source of truth for `MTFGuardState` (8 values) and `MTFGuardAction` (6 values).
-- **`tests/`** — ~78 pytest files, ~915 test functions. Naming mirrors service/router. Uses pytest-asyncio.
+- **`tests/`** — ~91 pytest files, ~1262 test functions. Naming mirrors service/router. Uses pytest-asyncio.
 
 Freqtrade integration is dual-channel: REST via `freqtrade_client.py` *and* direct SQLite reads via `freqtrade_db.py`. Trade history → SQLite; orders/control → REST. Don't conflate the two.
 
@@ -83,11 +83,11 @@ configuration schema. Dropped files: `services/data_source_manager.py`,
 SwiftUI app organized by feature domain:
 
 - **`Models/Types.swift`** — All domain models (Strategy, Order, Position, Backtest, AIResearchRun, AgentSignal, ShadowWindowSnapshot, etc.).
-- **`Models/Enums.swift`** — Business enums. `SidebarSection` (8 sections: overview, strategy, structure, execution, risk, aiResearch, growth, system) and `AppRoute` (~30 routes) drive all navigation.
+- **`Models/Enums.swift`** — Business enums. `SidebarSection` (8 sections: overview, strategy, structure, execution, risk, aiResearch, growth, system) and `AppRoute` (36 routes) drive all navigation.
 - **`Services/NetworkClient.swift`** — Protocol-based dual mode: `MockNetworkClient` (mock data + simulated delay) and `LiveNetworkClient` (`http://localhost:8000` + Bearer auth). Swapped via `@Environment(\.networkClient)`.
-- **`Services/API*.swift`** — One file per backend domain (~35 files). Each adds typed methods on `NetworkClientProtocol` and **must ship a mock generator** (`MockX.something()`) alongside. New endpoint → add `Response` Codable type + method + mock factory in the same file. Notable: `APIStrategiesV2.swift` is the v2.5 strategy API (CRUD + versions + DSL validation + backtest).
-- **`ViewModels/`** — `@Observable` `@MainActor` classes (~23 files). Prefer parallel fetches with `async let`.
-- **`Views/<Feature>/`** — Feature-scoped SwiftUI views (~24 feature folders).
+- **`Services/API*.swift`** — One file per backend domain (40 files). Each adds typed methods on `NetworkClientProtocol` and **must ship a mock generator** (`MockX.something()`) alongside. New endpoint → add `Response` Codable type + method + mock factory in the same file. Notable: `APIStrategiesV2.swift` is the v2.5 strategy API (CRUD + versions + DSL validation + backtest).
+- **`ViewModels/`** — `@Observable` `@MainActor` classes (20 files). Prefer parallel fetches with `async let`.
+- **`Views/<Feature>/`** — Feature-scoped SwiftUI views (28 feature folders).
 - **`Views/AppShell/StrategyLabRootView`** — Shared root that keeps Strategy + AI Research + Growth subviews alive across navigation. Prevents re-initialization when switching between these three sections.
 - **`Views/Strategies/Workbench/`** — Strategy Workspace "launch console" (3-column layout): `StrategyWorkspaceConsoleView` → `WorkspaceChrome` (outer frame + lifecycle rail) → `ConsoleCenterStack` → `SectionCards`. Driven by `StrategyWorkspaceViewModel`.
 - **`Views/BacktestAndDryrun/BacktestLabView`** — Backtest & simulation page as single-page nine-section narrative flow (ConfigPanel → StatusPanel → SummaryPanel → CurvePanel → TradeListPanel → ComparePanel → RiskPanel → PromotionPanel → DataSourceFooter). Two-column layout: left fixed Run Rail (240pt) + right scrollable sections. Driven by `BacktestLabViewModel` with `Phase` state machine (idle/configuring/running/completed/failed); sections 3-8 unlock only when `phase == .completed`. Real backend data only — no client-side PRNG equity curve. Mock mode shows `MOCK` badge and empty history list. Section views live under `Views/BacktestAndDryrun/Sections/`. Pure helpers: `RunFailureClustering.swift` (run-internal clustering) and `RiskWarningRules.swift` (warning rule table, decoupled from `@MainActor` L10n via `riskWarningMessage(id:)`). Promotion CTA jumps to `.liveReadiness` route; this page never starts live trading directly.
@@ -102,7 +102,7 @@ SwiftUI app organized by feature domain:
 **Routing**: `AppRoute` enum drives navigation. `LandingView` → login → `AppShellView` with sidebar (`SidebarSection`).
 
 #### L10n (bilingual UI)
-Every user-facing string routes through `L10n.<Domain>.something`. Each string is declared once as `static var foo: String { zh("中文", en: "English") }` in `Localization/L10n+<Domain>.swift` (~16 domain files). `L10n.zh(...)` reads `SettingsState.shared.language` on the main actor. For reactive re-rendering on language change, use `L10nText("中文", en: "English")`.
+Every user-facing string routes through `L10n.<Domain>.something`. Each string is declared once as `static var foo: String { zh("中文", en: "English") }` in `Localization/L10n+<Domain>.swift` (18 domain files). `L10n.zh(...)` reads `SettingsState.shared.language` on the main actor. For reactive re-rendering on language change, use `L10nText("中文", en: "English")`.
 
 **Never hardcode user-visible strings in views.** When adding a new section, add keys to the matching `L10n+<Domain>.swift` first, then reference them.
 
