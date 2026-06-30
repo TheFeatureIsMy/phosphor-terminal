@@ -37,7 +37,11 @@ class TestManipulationRadar:
     async def test_signals_200(self, client):
         r = await client.get("/api/v2/manipulation/signals?user_profile=aggressive")
         assert r.status_code == 200
-        assert isinstance(r.json(), list)
+        body = r.json()
+        assert isinstance(body, dict)
+        assert "signals" in body
+        assert "state" in body
+        assert "total" in body
 
     @pytest.mark.anyio
     async def test_historical_scan_200(self, client):

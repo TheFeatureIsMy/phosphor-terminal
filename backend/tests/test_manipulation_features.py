@@ -103,6 +103,7 @@ class TestComputeAll:
             "wick_ratio_up", "wick_ratio_down", "volume_zscore",
             "price_range_spike", "pump_then_dump", "dump_then_recover",
             "pinbar_score", "volume_price_divergence",
+            "breakout_velocity", "consolidation_score", "distribution_signature",
         }
         assert set(features.keys()) == expected_keys
 
