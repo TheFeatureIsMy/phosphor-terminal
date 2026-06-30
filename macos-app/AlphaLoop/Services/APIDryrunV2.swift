@@ -30,6 +30,16 @@ struct APIDryrunV2 {
         if let strategyVersionId { path += "&strategy_version_id=\(strategyVersionId)" }
         return try await client.get(path, mock: MockDryrunV2.list)
     }
+
+    func getDryrun(_ id: Int) async throws -> DryRunRunV2 {
+        try await client.get("/api/v2/dryrun/\(id)",
+            mock: { MockDryrunV2.detail(id: id) })
+    }
+
+    func syncDryrun(_ id: Int) async throws -> DryRunSyncResponseV2 {
+        try await client.post("/api/v2/dryrun/\(id)/sync", body: AnyEncodable([String: String]()),
+            mock: { MockDryrunV2.sync(id: id) })
+    }
 }
 
 enum MockDryrunV2 {
@@ -53,6 +63,21 @@ enum MockDryrunV2 {
             "total_pnl": 128.45,
             "current_balance": 10128.45,
         ] as [String: Any]))
+    }
+
+    static func detail(id: Int) -> DryRunRunV2 {
+        DryRunRunV2(
+            id: id, strategyId: 1, strategyVersionId: nil, commandId: UUID().uuidString,
+            dslHash: "a1b2c3d4", status: "running", pid: 12345, apiPort: 8081, apiUrl: "http://127.0.0.1:8081",
+            symbols: ["BTC/USDT"], stakeAmount: 100, maxOpenTrades: 5, initialWallet: 10000,
+            exchange: "binance", totalTrades: 5, openTrades: 2, totalProfit: 12.5,
+            errorMessage: nil, createdAt: "2026-06-30T00:00:00Z", startedAt: "2026-06-30T00:00:05Z",
+            stoppedAt: nil
+        )
+    }
+
+    static func sync(id: Int) -> DryRunSyncResponseV2 {
+        DryRunSyncResponseV2(openTrades: 2, closedTrades: 3, totalProfit: 12.5)
     }
 
     static func list() -> [DryRunStatusV2] {
