@@ -6,7 +6,7 @@ struct SocialAccelerationPanel: View {
     let detail: ManipulationCaseDetail
     @Environment(PulseColors.self) private var colors
 
-    private var social: EvidenceLayerPayload? { detail.evidenceLayers?["social_news"] }
+    private var social: EvidenceLayerPayload? { detail.evidenceLayers?["D_social"] }
     private var isUnavailable: Bool {
         guard let l = social else { return true }
         return !l.available || l.quality < 0.3

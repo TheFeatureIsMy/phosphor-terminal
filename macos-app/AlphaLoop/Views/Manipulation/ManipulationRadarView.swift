@@ -77,7 +77,16 @@ struct ManipulationRadarView: View {
                     }
                     .staggeredAppearance(index: 8)
                 } else if vm.focusedCaseId != nil {
-                    LoadingView(type: .detail)
+                    if let focusError = vm.focusError {
+                        EmptyStateView(
+                            icon: "exclamationmark.triangle",
+                            title: L10n.Manipulation.loadFailed,
+                            description: focusError,
+                            primaryAction: (title: L10n.Manipulation.retry, action: { Task { await vm.focusCase(vm.focusedCaseId!) } })
+                        )
+                    } else {
+                        LoadingView(type: .detail)
+                    }
                 }
                 ManipulationAlertFeed(alerts: vm.alerts)
                     .staggeredAppearance(index: 9)

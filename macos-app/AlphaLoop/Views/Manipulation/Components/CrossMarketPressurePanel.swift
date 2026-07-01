@@ -6,7 +6,7 @@ struct CrossMarketPressurePanel: View {
     let detail: ManipulationCaseDetail
     @Environment(PulseColors.self) private var colors
 
-    private var cross: EvidenceLayerPayload? { detail.evidenceLayers?["cross_market"] }
+    private var cross: EvidenceLayerPayload? { detail.evidenceLayers?["E_cross_market"] }
 
     var body: some View {
         KryptonCard(emphasis: .balanced) {

@@ -31,7 +31,7 @@ private struct SimilarCaseRow: View {
                     Text(item.symbol).font(PulseFonts.tabular)
                     Text(item.manipulationType).font(PulseFonts.micro).foregroundStyle(PulseColors.accent)
                 }
-                Text(item.createdAt.prefix(10)).font(PulseFonts.micro).foregroundStyle(colors.textMuted)
+                Text(item.completedAt.prefix(10)).font(PulseFonts.micro).foregroundStyle(colors.textMuted)
             }
             Spacer()
             VStack(alignment: .trailing, spacing: 2) {

@@ -7,11 +7,11 @@ struct EvidenceLayerMatrix: View {
     @Environment(PulseColors.self) private var colors
 
     private let layerOrder: [(key: String, label: String)] = [
-        ("price_volume", L10n.Manipulation.layerPrice),
-        ("orderbook", L10n.Manipulation.layerOrderbook),
-        ("onchain", L10n.Manipulation.layerOnchain),
-        ("social_news", L10n.Manipulation.layerSocial),
-        ("cross_market", L10n.Manipulation.layerCrossMarket),
+        ("A_price", L10n.Manipulation.layerPrice),
+        ("B_orderbook", L10n.Manipulation.layerOrderbook),
+        ("C_onchain", L10n.Manipulation.layerOnchain),
+        ("D_social", L10n.Manipulation.layerSocial),
+        ("E_cross_market", L10n.Manipulation.layerCrossMarket),
     ]
 
     var body: some View {

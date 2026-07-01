@@ -34,7 +34,7 @@ struct WhaleConcentrationPanel: View {
     let detail: ManipulationCaseDetail
     @Environment(PulseColors.self) private var colors
 
-    private var onchain: EvidenceLayerPayload? { detail.evidenceLayers?["onchain"] }
+    private var onchain: EvidenceLayerPayload? { detail.evidenceLayers?["C_onchain"] }
 
     var body: some View {
         KryptonCard(emphasis: .balanced) {

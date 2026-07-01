@@ -15,14 +15,14 @@ struct DualProfileSignalPanel: View {
 
                 HStack(alignment: .top, spacing: PulseSpacing.md) {
                     ProfileColumn(
-                        title: "CONSERVATIVE",
+                        title: L10n.Manipulation.conservative,
                         tint: PulseColors.info,
                         action: detail.tradingSignal.conservative.action,
                         rationale: detail.tradingSignal.conservative.rationale,
                         riskLevel: detail.riskLevel
                     )
                     ProfileColumn(
-                        title: "AGGRESSIVE",
+                        title: L10n.Manipulation.aggressive,
                         tint: PulseColors.amber,
                         action: detail.tradingSignal.aggressive.action,
                         rationale: detail.tradingSignal.aggressive.rationale,

@@ -167,32 +167,48 @@ struct ManipulationSource: Codable {
     }
 }
 
+struct ManipulationFilterStatus: Codable {
+    var enabled: Bool = false
+    var wouldBlock: Bool = false
+    var reasonCodes: [String] = []
+
+    enum CodingKeys: String, CodingKey {
+        case enabled
+        case wouldBlock = "would_block"
+        case reasonCodes = "reason_codes"
+    }
+}
+
 struct StrategyImpactItem: Codable, Identifiable {
     var id: String { strategyId }
     var strategyId: String = ""
-    var strategyName: String = ""
-    var wouldBlock: Bool = false
-    var reasonCodes: [String] = []
-    var currentValue: Double = 0
-    var threshold: Double = 0
+    var name: String = ""
+    var matchesSymbols: [String] = []
+    var manipulationFilter: ManipulationFilterStatus = ManipulationFilterStatus()
 
     enum CodingKeys: String, CodingKey {
         case strategyId = "strategy_id"
-        case strategyName = "strategy_name"
-        case wouldBlock = "would_block"
-        case reasonCodes = "reason_codes"
-        case currentValue = "current_value"
-        case threshold
+        case name
+        case matchesSymbols = "matches_symbols"
+        case manipulationFilter = "manipulation_filter"
     }
+
+    var wouldBlock: Bool { manipulationFilter.wouldBlock }
+    var reasonCodes: [String] { manipulationFilter.reasonCodes }
+    var strategyName: String { name }
 }
 
 struct StrategyImpactResponse: Codable {
     var caseId: String = ""
     var affectedStrategies: [StrategyImpactItem] = []
+    var totalAffected: Int? = nil
+    var totalProtected: Int? = nil
 
     enum CodingKeys: String, CodingKey {
         case caseId = "case_id"
         case affectedStrategies = "affected_strategies"
+        case totalAffected = "total_affected"
+        case totalProtected = "total_protected"
     }
 }
 
@@ -202,12 +218,12 @@ struct SimilarCaseItem: Codable, Identifiable {
     var manipulationType: String = ""
     var similarity: Double = 0
     var outcome: [String: Double] = [:]
-    var createdAt: String = ""
+    var completedAt: String = ""
 
     enum CodingKeys: String, CodingKey {
         case id, symbol, similarity, outcome
         case manipulationType = "manipulation_type"
-        case createdAt = "created_at"
+        case completedAt = "completed_at"
     }
 }
 
@@ -228,7 +244,7 @@ enum ManipulationEvent: Codable {
     case heartbeat(ts: String)
     case unknown
 
-    enum CodingKeys: String, CodingKey { case type, case_id, symbol, manipulation_type, old_stage, new_stage, ts, active_cases }
+    enum CodingKeys: String, CodingKey { case type, case_id, symbol, manipulation_type, old_stage, new_stage, timestamp, active_cases }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -239,18 +255,18 @@ enum ManipulationEvent: Codable {
                 caseId: try c.decodeIfPresent(String.self, forKey: .case_id) ?? "",
                 oldStage: try c.decodeIfPresent(String.self, forKey: .old_stage) ?? "",
                 newStage: try c.decodeIfPresent(String.self, forKey: .new_stage) ?? "",
-                ts: try c.decodeIfPresent(String.self, forKey: .ts) ?? "")
+                ts: try c.decodeIfPresent(String.self, forKey: .timestamp) ?? "")
         case "new_case":
             self = .newCase(
                 caseId: try c.decodeIfPresent(String.self, forKey: .case_id) ?? "",
                 symbol: try c.decodeIfPresent(String.self, forKey: .symbol) ?? "",
                 mType: try c.decodeIfPresent(String.self, forKey: .manipulation_type) ?? "",
-                ts: try c.decodeIfPresent(String.self, forKey: .ts) ?? "")
+                ts: try c.decodeIfPresent(String.self, forKey: .timestamp) ?? "")
         case "snapshot":
             let cases = try c.decodeIfPresent([ManipulationCaseSummary].self, forKey: .active_cases) ?? []
-            self = .snapshot(activeCases: cases, ts: try c.decodeIfPresent(String.self, forKey: .ts) ?? "")
+            self = .snapshot(activeCases: cases, ts: try c.decodeIfPresent(String.self, forKey: .timestamp) ?? "")
         case "heartbeat":
-            self = .heartbeat(ts: try c.decodeIfPresent(String.self, forKey: .ts) ?? "")
+            self = .heartbeat(ts: try c.decodeIfPresent(String.self, forKey: .timestamp) ?? "")
         default:
             self = .unknown
         }
@@ -293,7 +309,33 @@ enum MockManipulation {
                 conservative: ManipulationTradingSignal(action: "RIDE", direction: "long", sizing: "medium", stopLoss: "trailing", rationale: "Markup confirmed — ride with trailing stop", riskLevel: "medium"),
                 aggressive: ManipulationTradingSignal(action: "EXIT", direction: "short", sizing: "small", stopLoss: "tight", rationale: "Markup nearing exhaustion — prepare to exit", riskLevel: "high")
             ),
-            createdAt: "2026-06-14T08:00:00Z", updatedAt: "2026-06-15T10:00:00Z"
+            createdAt: "2026-06-14T08:00:00Z", updatedAt: "2026-06-15T10:00:00Z",
+            evidenceLayers: [
+                "A_price": EvidenceLayerPayload(available: true, score: 0.78, quality: 0.85, features: [
+                    "pump_dump": FeaturePayload(value: 65, percentile: 0.88, display: "65%"),
+                    "volume_zscore": FeaturePayload(value: 55, percentile: 0.82, display: "2.1σ"),
+                    "price_range_spike": FeaturePayload(value: 48, percentile: 0.76, display: "48%"),
+                ]),
+                "B_orderbook": EvidenceLayerPayload(available: true, score: 0.62, quality: 0.70, features: [
+                    "bid_ask_imbalance": FeaturePayload(value: 0.35, percentile: 0.72, display: "35%"),
+                    "spoof_ladder": FeaturePayload(value: 12, percentile: 0.65, display: "12"),
+                ]),
+                "C_onchain": EvidenceLayerPayload(available: true, score: 0.81, quality: 0.90, features: [
+                    "top10_concentration": FeaturePayload(value: 0.42, percentile: 0.91, display: "42%"),
+                    "exchange_inflow": FeaturePayload(value: 0.28, percentile: 0.78, display: "28%"),
+                    "whale_transfer_24h": FeaturePayload(value: 15, percentile: nil, display: "15"),
+                ]),
+                "D_social": EvidenceLayerPayload(available: false, score: 0, quality: 0.15, features: [:]),
+                "E_cross_market": EvidenceLayerPayload(available: true, score: 0.55, quality: 0.65, features: [
+                    "funding_rate_z": FeaturePayload(value: 2.4, percentile: 0.88, display: "2.4"),
+                    "open_interest_change": FeaturePayload(value: 0.15, percentile: nil, display: "+15%"),
+                    "long_short_ratio": FeaturePayload(value: 1.8, percentile: nil, display: "1.8"),
+                    "basis": FeaturePayload(value: 0.05, percentile: nil, display: "0.05"),
+                ]),
+            ],
+            completeness: 0.75,
+            maxConfidence: 0.85,
+            affectedSymbols: ["SOL/USDT", "SOL/BTC"]
         )
     }
 
@@ -309,17 +351,18 @@ enum MockManipulation {
         StrategyImpactResponse(
             caseId: caseId,
             affectedStrategies: [
-                StrategyImpactItem(strategyId: "strat-1", strategyName: "BTC Momentum v3", wouldBlock: true, reasonCodes: ["filter_matched"], currentValue: 0.78, threshold: 0.6),
-                StrategyImpactItem(strategyId: "strat-2", strategyName: "SOL Breakout v2", wouldBlock: false, reasonCodes: ["filter_disabled"], currentValue: 0.78, threshold: 0.6),
-            ])
+                StrategyImpactItem(strategyId: "strat-1", name: "BTC Momentum v3", matchesSymbols: ["SOL/USDT"], manipulationFilter: ManipulationFilterStatus(enabled: true, wouldBlock: true, reasonCodes: ["filter_matched"])),
+                StrategyImpactItem(strategyId: "strat-2", name: "SOL Breakout v2", matchesSymbols: ["SOL/USDT"], manipulationFilter: ManipulationFilterStatus(enabled: true, wouldBlock: false, reasonCodes: ["filter_disabled"])),
+            ],
+            totalAffected: 1, totalProtected: 1)
     }
 
     static func similarCases(caseId: String) -> SimilarCasesResponse {
         SimilarCasesResponse(
             caseId: caseId,
             similar: [
-                SimilarCaseItem(id: "hist-1", symbol: "DOGE/USDT", manipulationType: "M3", similarity: 0.91, outcome: ["realized_drawdown": -0.18, "recovery_hours": 36], createdAt: "2026-05-10T08:00:00Z"),
-                SimilarCaseItem(id: "hist-2", symbol: "WIF/USDT", manipulationType: "M3", similarity: 0.84, outcome: ["realized_drawdown": -0.22, "recovery_hours": 48], createdAt: "2026-04-22T12:00:00Z"),
+                SimilarCaseItem(id: "hist-1", symbol: "DOGE/USDT", manipulationType: "M3", similarity: 0.91, outcome: ["realized_drawdown": -0.18, "recovery_hours": 36], completedAt: "2026-05-10T08:00:00Z"),
+                SimilarCaseItem(id: "hist-2", symbol: "WIF/USDT", manipulationType: "M3", similarity: 0.84, outcome: ["realized_drawdown": -0.22, "recovery_hours": 48], completedAt: "2026-04-22T12:00:00Z"),
             ])
     }
 }
