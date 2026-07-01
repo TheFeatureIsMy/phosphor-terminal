@@ -24,7 +24,7 @@ struct APIDryrunV2 {
         strategyId: String? = nil,
         strategyVersionId: String? = nil,
         limit: Int = 20
-    ) async throws -> [DryRunStatusV2] {
+    ) async throws -> [DryRunRunV2] {
         var path = "/api/v2/dryrun?limit=\(limit)"
         if let strategyId { path += "&strategy_id=\(strategyId)" }
         if let strategyVersionId { path += "&strategy_version_id=\(strategyVersionId)" }
@@ -81,18 +81,22 @@ enum MockDryrunV2 {
         DryRunSyncResponseV2(dryrunRunId: id, newEvents: 3, openTrades: 2, closedTrades: 3, success: true, errors: [])
     }
 
-    static func list() -> [DryRunStatusV2] {
+    static func list() -> [DryRunRunV2] {
         [
-            status(commandId: UUID().uuidString),
-            DryRunStatusV2(commandId: UUID().uuidString, status: "completed", result: AnyCodable([
-                "strategy_name": "MACD Crossover", "symbol": "ETH/USDT", "exchange": "binance",
-                "total_trades": 18, "win_rate": 0.56, "total_pnl": 312.70,
-            ] as [String: Any])),
-            DryRunStatusV2(commandId: UUID().uuidString, status: "error", result: AnyCodable([
-                "strategy_name": "Bollinger Breakout", "symbol": "SOL/USDT",
-                "error_code": "INSUFFICIENT_BALANCE",
-                "error_message": "Insufficient balance for initial stake amount",
-            ] as [String: Any])),
+            detail(id: 1),
+            DryRunRunV2(id: 2, strategyId: 1, strategyVersionId: nil, commandId: UUID().uuidString,
+                       dslHash: "e5f6g7h8", status: "completed", pid: nil, apiPort: nil, apiUrl: nil,
+                       symbols: ["ETH/USDT"], stakeAmount: 100, maxOpenTrades: 5, initialWallet: 10000,
+                       exchange: "binance", totalTrades: 18, openTrades: 0, totalProfit: 312.70,
+                       errorMessage: nil, lastSyncedAt: nil, createdAt: "2026-06-30T00:00:00Z",
+                       startedAt: "2026-06-30T00:00:05Z", stoppedAt: "2026-06-30T12:00:00Z"),
+            DryRunRunV2(id: 3, strategyId: 1, strategyVersionId: nil, commandId: UUID().uuidString,
+                       dslHash: "i9j0k1l2", status: "error", pid: nil, apiPort: nil, apiUrl: nil,
+                       symbols: ["SOL/USDT"], stakeAmount: 100, maxOpenTrades: 3, initialWallet: 5000,
+                       exchange: "binance", totalTrades: 0, openTrades: 0, totalProfit: 0,
+                       errorMessage: "Insufficient balance", lastSyncedAt: nil,
+                       createdAt: "2026-06-29T00:00:00Z", startedAt: "2026-06-29T00:00:05Z",
+                       stoppedAt: "2026-06-29T00:01:00Z"),
         ]
     }
 }

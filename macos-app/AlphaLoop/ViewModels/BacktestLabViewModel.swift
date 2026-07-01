@@ -76,6 +76,8 @@ final class BacktestLabViewModel {
 
     // Available strategies for the picker
     var availableStrategies: [StrategyV2] = []
+    var availableVersions: [StrategyVersionV2] = []
+    var selectedVersion: StrategyVersionV2?
     var tradableSymbols: [String] = []
 
     // Network client — set by BacktestLabView via .task { viewModel.networkClient = networkClient }
@@ -113,6 +115,7 @@ final class BacktestLabViewModel {
         readiness = nil
         phase = .configuring
         await loadWorkspaceSnapshot()
+        await loadVersions()
     }
 
     func loadAvailableStrategies() async {
@@ -121,6 +124,24 @@ final class BacktestLabViewModel {
         } catch {
             // silent: picker will show empty
         }
+    }
+
+    // MARK: - Strategy version loading
+
+    func loadVersions() async {
+        guard let strategy = selectedStrategy else { return }
+        do {
+            availableVersions = try await APIStrategiesV2(client: networkClient).listVersions(strategyId: strategy.id)
+            // Auto-select latest published version; fall back to first
+            selectedVersion = availableVersions.first { $0.status == "published" } ?? availableVersions.first
+        } catch {
+            availableVersions = []
+            selectedVersion = nil
+        }
+    }
+
+    func selectVersion(_ v: StrategyVersionV2) {
+        selectedVersion = v
     }
 
     // MARK: - Load workspace snapshot
@@ -201,9 +222,13 @@ final class BacktestLabViewModel {
                 // silent: empty list
             }
         case .dryrun:
-            // Dryrun list returns [DryRunStatusV2]; populate dryrunRuns via detail fetch on selection.
-            // Leave dryrunRuns populated on row-click (views are in Task 8-10).
-            dryrunRuns = []
+            do {
+                let api = APIDryrunV2(client: networkClient)
+                let runs = try await api.listDryruns(strategyId: nil, limit: 20)
+                dryrunRuns = runs
+            } catch {
+                dryrunRuns = []
+            }
         }
     }
 
@@ -255,13 +280,13 @@ final class BacktestLabViewModel {
         pollStartTime = Date()
 
         let resp = try await networkClient.startBacktestV2(
-            dsl: [:],
+            dsl: (selectedVersion?.ruleDsl ?? [:]),
             timerange: timerange,
             symbols: symbols,
             initialCapital: capital,
             slippageBps: slippageBps,
             strategyId: 0,
-            strategyVersionId: nil
+            strategyVersionId: selectedVersion?.id
         )
         startPolling(commandId: resp.commandId)
     }
@@ -290,7 +315,8 @@ final class BacktestLabViewModel {
         do {
             let api = APIDryrunV2(client: networkClient)
             _ = try await api.startDryrun([
-                "strategy_id": 0,
+                "dsl": selectedVersion?.ruleDsl ?? [:],
+                "strategy_id": Int(selectedStrategy?.id ?? "0") ?? 0,
                 "symbols": symbols,
                 "stake_amount": stakeAmount,
                 "max_open_trades": maxOpenTrades,

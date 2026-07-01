@@ -60,7 +60,7 @@ final class APIStrategiesV2: @unchecked Sendable {
     // MARK: - Versions
 
     func listVersions(strategyId: String) async throws -> [StrategyVersionV2] {
-        try await client.get("/api/v2/strategies/\(strategyId)/versions", mock: { [] })
+        try await client.get("/api/v2/strategies/\(strategyId)/versions", mock: { MockDataV2.versions(strategyId: strategyId) })
     }
 
     func createVersion(strategyId: String, ruleDsl: [String: Any]) async throws -> StrategyVersionV2 {
@@ -184,6 +184,22 @@ enum MockDataV2 {
     static func strategies() -> [StrategyV2] {
         [
             StrategyV2(id: UUID().uuidString, name: "RSI 均值回归", description: "RSI < 30 入场", strategyType: "rule_dsl", sourceType: "manual", status: "draft", createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z"),
+        ]
+    }
+
+    static func versions(strategyId: String) -> [StrategyVersionV2] {
+        [
+            StrategyVersionV2(
+                id: UUID().uuidString,
+                strategyId: strategyId,
+                versionNo: 1,
+                status: "published",
+                dslVersion: "2.5",
+                ruleDsl: ["entry": AnyCodable(["type": "rsi", "condition": "lt", "value": 30])],
+                dslHash: "mock-hash",
+                createdBy: "user",
+                createdAt: "2026-06-01T00:00:00Z"
+            ),
         ]
     }
 }

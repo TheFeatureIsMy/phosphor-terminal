@@ -387,7 +387,7 @@ struct AgentSignal: Codable, Identifiable, Hashable {
 }
 
 // MARK: - AnyCodable 包装器（处理 JSON 中的任意值）
-struct AnyCodable: Codable, Hashable {
+struct AnyCodable: Codable, Hashable, @unchecked Sendable {
     let value: Any
 
     init(_ value: Any) { self.value = value }
@@ -423,7 +423,7 @@ struct AnyCodable: Codable, Hashable {
 
 
 // MARK: - AnyEncodable 包装器（用于 [String: Any] 等动态字典的 JSON 编码）
-struct AnyEncodable: Encodable {
+struct AnyEncodable: Encodable, @unchecked Sendable {
     private let encodeFunc: (Encoder) throws -> Void
 
     init(_ value: Any) {

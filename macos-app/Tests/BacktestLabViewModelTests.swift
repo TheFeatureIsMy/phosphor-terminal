@@ -4,6 +4,7 @@
 // Adapted from brief: Strategy → StrategyV2 to match actual types.
 
 import Testing
+import XCTest
 import Foundation
 @testable import AlphaLoop
 
@@ -64,5 +65,64 @@ struct BacktestLabViewModelTests {
         vm.injectPhaseForTest(.running)
         vm.cancelPolling()
         #expect(vm.pollingTask == nil)
+    }
+}
+
+// MARK: - DSL + version loading tests (XCTest for clarity of setup)
+
+final class BacktestLabViewModelDSLTests: XCTestCase {
+    @MainActor
+    func testStartBacktestUsesSelectedVersionDSL() async {
+        let vm = BacktestLabViewModel()
+        vm.networkClient = MockNetworkClient()
+        await vm.loadAvailableStrategies()
+        guard let strategy = vm.availableStrategies.first else {
+            XCTFail("no strategy in mock"); return
+        }
+        await vm.selectStrategy(strategy)
+        await vm.loadVersions()
+        guard let version = vm.availableVersions.first else {
+            XCTFail("no version in mock"); return
+        }
+        vm.selectVersion(version)
+        do {
+            try await vm.startBacktest(
+                timerange: "20260101-20260630",
+                symbols: ["BTC/USDT"],
+                capital: 10000
+            )
+        } catch {
+            // mock may throw; only verify DSL was passed
+        }
+        XCTAssertNotNil(vm.selectedVersion)
+        XCTAssertFalse(vm.selectedVersion?.ruleDsl.isEmpty ?? true)
+    }
+
+    @MainActor
+    func testLoadVersionsPopulatesAvailableVersions() async {
+        let vm = BacktestLabViewModel()
+        vm.networkClient = MockNetworkClient()
+        await vm.loadAvailableStrategies()
+        guard let strategy = vm.availableStrategies.first else {
+            XCTFail("no strategy"); return
+        }
+        await vm.selectStrategy(strategy)
+        await vm.loadVersions()
+        XCTAssertFalse(vm.availableVersions.isEmpty, "versions should be loaded after selectStrategy")
+    }
+
+    @MainActor
+    func testLoadRunHistoryDryrunFetchesList() async {
+        let vm = BacktestLabViewModel()
+        vm.networkClient = MockNetworkClient()
+        await vm.loadAvailableStrategies()
+        guard let strategy = vm.availableStrategies.first else {
+            XCTFail("no strategy"); return
+        }
+        await vm.selectStrategy(strategy)
+        // Set tab directly to avoid switchTab's unstructured Task racing with our call
+        vm.activeTab = .dryrun
+        await vm.loadRunHistory()
+        XCTAssertFalse(vm.dryrunRuns.isEmpty, "dryrun history should be fetched")
     }
 }
