@@ -74,13 +74,7 @@ struct BacktestLabView: View {
     private var vm: BacktestLabViewModel { viewModel }
 }
 
-// 临时占位 — Task 2-4 替换
-struct EquityCurveHero: View {
-    let run: BacktestRunV2
-    let comparedRuns: [BacktestRunV2]
-    let compareMode: Bool
-    var body: some View { EmptyView() }
-}
+// 临时占位 — Task 3-4 替换
 struct StrategyContextStrip: View {
     let run: BacktestRunV2
     @Binding var isExpanded: Bool
