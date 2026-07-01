@@ -1,93 +1,97 @@
-// BacktestLabView.swift — Three-column linked-flow backtest/dryrun lab.
-//
-// Left rail (240pt): RunRailView — run history + compare + new run.
-// Center (flexible): tab bar + scrollable section cards (filled in Tasks 9-11).
-// Right rail (280pt): ContextRailView — context inspector (filled in Task 10).
+// BacktestLabView.swift — Backtest lab, single-column data-terminal layout.
 
 import SwiftUI
 
 struct BacktestLabView: View {
     @State private var viewModel = BacktestLabViewModel()
     @Environment(\.networkClient) private var networkClient
-    @Environment(AppState.self) private var appState
     @Environment(PulseColors.self) private var colors
 
+    @State private var showNewRunDrawer = false
+    @State private var showHistoryDrawer = false
+    @State private var strategyContextExpanded = false
+    @State private var tradeListExpanded = true
+    @State private var compareMode = false
+
     var body: some View {
-        HStack(spacing: 0) {
-            RunRailView()
-                .frame(width: 240)
-                .background(colors.surfaceHover.opacity(0.35))
+        VStack(spacing: 0) {
+            BacktestTopBar(
+                onNewRun: { showNewRunDrawer = true },
+                onHistory: { showHistoryDrawer = true },
+                onCompare: { compareMode.toggle() }
+            )
 
-            centerColumn
-                .frame(maxWidth: .infinity)
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(alignment: .leading, spacing: PulseSpacing.lg) {
+                    if vm.phase == .running {
+                        LoadingView(type: .detail)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, PulseSpacing.xl)
+                    } else if let run = vm.currentBacktestRun {
+                        EquityCurveHero(run: run, comparedRuns: comparedRuns, compareMode: compareMode)
+                            .frame(height: 360)
 
-            ContextRailView()
-                .frame(width: 280)
-                .background(colors.surfaceHover.opacity(0.35))
+                        StrategyContextStrip(run: run, isExpanded: $strategyContextExpanded)
+
+                        MetricsGrid(run: run)
+
+                        TradeListTable(trades: run.trades, isExpanded: $tradeListExpanded)
+                    } else if let error = vm.errorMessage {
+                        EmptyStateView(
+                            icon: "exclamationmark.triangle",
+                            title: L10n.zh("加载失败", en: "Load Failed"),
+                            description: error,
+                            primaryAction: (title: L10n.zh("重试", en: "Retry"), action: { Task { await vm.loadInitial() } })
+                        )
+                        .padding(PulseSpacing.xl)
+                    } else {
+                        EmptyStateView(
+                            icon: "chart.line.uptrend.xyaxis",
+                            title: L10n.zh("选择一个运行查看结果", en: "Select a run to view results"),
+                            description: L10n.zh("从历史记录选择，或新建一次回测。", en: "Pick from history, or start a new backtest.")
+                        )
+                        .padding(PulseSpacing.xl)
+                    }
+                }
+                .padding(PulseSpacing.lg)
+                .frame(maxWidth: 1280, alignment: .leading)
+                .frame(maxWidth: .infinity, alignment: .center)
+            }
         }
         .background(colors.background.ignoresSafeArea())
         .environment(viewModel)
         .task {
             viewModel.networkClient = networkClient
-            await viewModel.loadInitial()
+            await vm.loadInitial()
         }
-        .onDisappear { viewModel.onDisappear() }
+        .onDisappear { vm.onDisappear() }
     }
 
-    // MARK: - Center column
-
-    private var centerColumn: some View {
-        VStack(spacing: 0) {
-            tabBar
-            ScrollView {
-                VStack(spacing: PulseSpacing.lg) {
-                    ConfigPanel()
-                    if vm.phase == .completed || vm.phase == .failed {
-                        StatusSummaryBlock()
-                    }
-                    if vm.phase == .completed {
-                        EquityCurveBlock()
-                        TradeListBlock()
-                        if vm.comparedRunIds.count >= 2 {
-                            CompareBlock()
-                        }
-                    }
-                }
-                .padding(PulseSpacing.lg)
-            }
-        }
-    }
-
-    private var tabBar: some View {
-        HStack(spacing: PulseSpacing.sm) {
-            ForEach(RunTab.allCases) { tab in
-                let isActive = vm.activeTab == tab
-                Button {
-                    vm.switchTab(tab)
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: tab == .backtest ? "clock.arrow.circlepath" : "play.circle")
-                        Text(tab == .backtest ? L10n.BacktestLab.backtestTab : L10n.BacktestLab.dryrunTab)
-                    }
-                    .font(PulseFonts.body.weight(isActive ? .semibold : .regular))
-                    .foregroundStyle(isActive ? PulseColors.accent : colors.textSecondary)
-                    .padding(.horizontal, 14).padding(.vertical, 8)
-                    .background(
-                        RoundedRectangle(cornerRadius: PulseRadii.sm)
-                            .fill(isActive ? PulseColors.accent.opacity(0.18) : colors.surfaceHover.opacity(0.4))
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: PulseRadii.sm)
-                            .stroke(colors.border, lineWidth: 1)
-                    )
-                }
-                .buttonStyle(.plain)
-            }
-            Spacer()
-        }
-        .padding(.horizontal, PulseSpacing.lg)
-        .padding(.vertical, PulseSpacing.md)
+    private var comparedRuns: [BacktestRunV2] {
+        vm.recentBacktests.filter { vm.comparedRunIds.contains($0.id) }
     }
 
     private var vm: BacktestLabViewModel { viewModel }
+}
+
+// 临时占位 — Task 2-4 替换
+struct EquityCurveHero: View {
+    let run: BacktestRunV2
+    let comparedRuns: [BacktestRunV2]
+    let compareMode: Bool
+    var body: some View { EmptyView() }
+}
+struct StrategyContextStrip: View {
+    let run: BacktestRunV2
+    @Binding var isExpanded: Bool
+    var body: some View { EmptyView() }
+}
+struct MetricsGrid: View {
+    let run: BacktestRunV2
+    var body: some View { EmptyView() }
+}
+struct TradeListTable: View {
+    let trades: [TradeRow]
+    @Binding var isExpanded: Bool
+    var body: some View { EmptyView() }
 }
