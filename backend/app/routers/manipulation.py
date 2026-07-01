@@ -39,6 +39,19 @@ def _risk_level_from_stage(stage: str) -> str:
     return "low"
 
 
+_STABLE_QUOTE_CURRENCIES = ("USDT", "USDC", "FDUSD")
+
+
+def _expand_affected_symbols(symbol: str) -> list[str]:
+    """Expand a futures symbol to same-base stablecoin pairs.
+    SOL/USDT -> [SOL/USDT, SOL/USDC, SOL/FDUSD]; BTC (no /) -> [BTC].
+    """
+    if "/" not in symbol:
+        return [symbol]
+    base, _quote = symbol.split("/", 1)
+    return [f"{base}/{q}" for q in _STABLE_QUOTE_CURRENCIES]
+
+
 def _completeness(layers: dict | None) -> float:
     if not layers:
         return 0.0
@@ -65,7 +78,7 @@ def _build_case_detail_v2(case: dict) -> dict:
         "max_confidence": max_confidence,
         "timeline": case.get("timeline", []),
         "trading_signal": dual,
-        "affected_symbols": [case["symbol"]],
+        "affected_symbols": _expand_affected_symbols(case["symbol"]),
         "sources": [{
             "type": case.get("source", "rule_engine"),
             "rule_id": case["manipulation_type"],
