@@ -114,5 +114,20 @@ extension L10n {
             static var goLive: String { zh("前往实盘准备", en: "Go to Live Readiness") }
             static var noReadiness: String { zh("无就绪数据", en: "No readiness data") }
         }
+
+        // MARK: - NewRunDrawer fields
+        static var fieldStrategy: String { zh("策略", en: "Strategy") }
+        static var fieldSymbol: String { zh("交易对", en: "Symbol") }
+        static var fieldDateRange: String { zh("日期范围", en: "Date Range") }
+        static var fieldStartDate: String { zh("开始", en: "Start") }
+        static var fieldEndDate: String { zh("结束", en: "End") }
+        static var fieldInitialCapital: String { zh("初始资金", en: "Initial Capital") }
+        static var fieldStakeAmount: String { zh("单笔仓位", en: "Stake Amount") }
+        static var fieldMaxOpenTrades: String { zh("最大持仓", en: "Max Open Trades") }
+        static var fieldSlippageBps: String { zh("滑点 (bps)", en: "Slippage (bps)") }
+        static var runBacktest: String { zh("运行回测", en: "Run Backtest") }
+        static var runDryrun: String { zh("启动模拟", en: "Start Dryrun") }
+        static var selectStrategyPrompt: String { zh("请选择策略", en: "Select a strategy") }
+        static var selectVersionPrompt: String { zh("请选择版本", en: "Select a version") }
     }
 }
