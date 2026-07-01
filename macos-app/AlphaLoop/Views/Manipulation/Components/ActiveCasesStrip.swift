@@ -12,7 +12,7 @@ struct ActiveCasesStrip: View {
     var body: some View {
         KryptonCard(emphasis: .balanced) {
             VStack(alignment: .leading, spacing: PulseSpacing.md) {
-                TerminalLabel(text: L10n.zh("活跃案例", en: "ACTIVE CASES"))
+                TerminalLabel(text: L10n.Manipulation.activeCases)
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: PulseSpacing.md) {
                         ForEach(overview.activeCases) { c in

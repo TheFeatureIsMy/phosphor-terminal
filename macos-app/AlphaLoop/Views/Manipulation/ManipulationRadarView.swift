@@ -83,7 +83,7 @@ struct ManipulationRadarView: View {
                     .staggeredAppearance(index: 9)
                 if let similar = vm.similar, !similar.similar.isEmpty {
                     SimilarCasesPanel(similar: similar)
-                        .staggeredAppearance(index: 10)
+                        .staggeredAppearance(index: 9)
                 }
             }
             .padding(.horizontal, PulseSpacing.xl)
@@ -92,6 +92,7 @@ struct ManipulationRadarView: View {
             .frame(maxWidth: .infinity, alignment: .center)
         }
         .background(colors.background)
+        .id(settingsState.language)
     }
 }
 
