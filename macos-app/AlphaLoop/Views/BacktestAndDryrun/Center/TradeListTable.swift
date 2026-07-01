@@ -14,7 +14,7 @@ struct TradeListTable: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
-                Text(L10n.zh("成交记录", en: "Trade List"))
+                Text(L10n.BacktestLab.sectionTradeList)
                     .font(PulseFonts.headline)
                     .foregroundStyle(colors.textPrimary)
                 Spacer()
@@ -32,7 +32,7 @@ struct TradeListTable: View {
 
             if isExpanded {
                 if trades.isEmpty {
-                    Text(L10n.zh("无成交记录", en: "No trades"))
+                    Text(L10n.BacktestLab.noTrades)
                         .font(PulseFonts.caption)
                         .foregroundStyle(colors.textMuted)
                         .padding(PulseSpacing.md)
@@ -43,7 +43,7 @@ struct TradeListTable: View {
                     }
                     if !showAll && trades.count > pageSize {
                         Button { showAll = true } label: {
-                            Text(L10n.zh("显示全部 \(trades.count) 笔", en: "Show all \(trades.count) trades"))
+                            Text(L10n.BacktestLab.showAllTrades(trades.count))
                                 .font(PulseFonts.captionMedium)
                                 .foregroundStyle(PulseColors.accent)
                                 .frame(maxWidth: .infinity)

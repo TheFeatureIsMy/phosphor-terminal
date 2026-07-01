@@ -15,7 +15,7 @@ struct StrategyContextStrip: View {
                     Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
                         .font(.system(size: 10, weight: .medium))
                         .foregroundStyle(colors.textMuted)
-                    Text(L10n.zh("策略 #\(run.strategyId) · 0 个警告 · 未就绪", en: "Strategy #\(run.strategyId) · 0 warnings · Not Ready"))
+                    Text(L10n.BacktestLab.strategyContextCollapsed("Strategy #\(run.strategyId)", 0, "Not Ready"))
                         .font(PulseFonts.captionMedium)
                         .foregroundStyle(colors.textSecondary)
                     Spacer()

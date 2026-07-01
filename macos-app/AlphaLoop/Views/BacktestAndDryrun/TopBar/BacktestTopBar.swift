@@ -35,7 +35,7 @@ struct BacktestTopBar: View {
                 Button(action: onCompare) {
                     HStack(spacing: 6) {
                         Image(systemName: "arrow.triangle.merge").font(.system(size: 11))
-                        Text(L10n.zh("对比", en: "Compare"))
+                        Text(L10n.BacktestLab.compare)
                         Text("\(vm.comparedRunIds.count)")
                             .font(PulseFonts.micro)
                             .padding(.horizontal, 4).padding(.vertical, 1)

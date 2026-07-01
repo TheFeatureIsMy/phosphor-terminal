@@ -71,6 +71,31 @@ extension L10n {
         static var warnLowWinrate: String { zh("胜率偏低", en: "Win rate low") }
         static var warnNegativeSharpe: String { zh("夏普为负，风险调整收益为负", en: "Negative Sharpe, risk-adjusted return negative") }
 
+        // MARK: - Top bar
+        static var runSwitcherTitle: String { zh("运行 #%d · %@ · %@", en: "Run #%d · %@ · %@") }
+        static var compare: String { zh("对比", en: "Compare") }
+
+        // MARK: - Metrics
+        static var metricTotalReturn: String { zh("总收益", en: "Total Return") }
+        static var metricMaxDrawdown: String { zh("最大回撤", en: "Max Drawdown") }
+        static var metricSharpe: String { zh("夏普", en: "Sharpe") }
+        static var metricWinRate: String { zh("胜率", en: "Win Rate") }
+        static var metricProfitLossRatio: String { zh("盈亏比", en: "Profit/Loss") }
+        static var metricTradeCount: String { zh("交易数", en: "Trades") }
+        static var metricProfitFactor: String { zh("利润因子", en: "Profit Factor") }
+        static var metricDuration: String { zh("运行时长", en: "Duration") }
+
+        // MARK: - Strategy context + trade list
+        static func strategyContextCollapsed(_ name: String, _ warningCount: Int, _ gate: String) -> String {
+            zh("\(name) · \(warningCount) 条风险警告 · 晋升门: \(gate)", en: "\(name) · \(warningCount) warnings · gate: \(gate)")
+        }
+        static func showAllTrades(_ count: Int) -> String { zh("显示全部 \(count) 笔", en: "Show all \(count) trades") }
+        static var noTrades: String { zh("无成交记录", en: "No trades") }
+
+        // MARK: - Drawers
+        static var newRunDrawerTitle: String { zh("新建运行", en: "New Run") }
+        static var historyDrawerTitle: String { zh("历史记录", en: "History") }
+
         // MARK: - Right Context Rail
         enum Context {
             static var strategyMeta: String { zh("策略信息", en: "Strategy") }

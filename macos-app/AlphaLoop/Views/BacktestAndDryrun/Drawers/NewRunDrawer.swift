@@ -13,7 +13,7 @@ struct NewRunDrawer: View {
     var body: some View {
         VStack(alignment: .leading, spacing: PulseSpacing.lg) {
             HStack {
-                Text(L10n.zh("新建运行", en: "New Run"))
+                Text(L10n.BacktestLab.newRunDrawerTitle)
                     .font(PulseFonts.headline)
                     .foregroundStyle(colors.textPrimary)
                 Spacer()

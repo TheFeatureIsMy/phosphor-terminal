@@ -8,14 +8,14 @@ struct MetricsGrid: View {
 
     var body: some View {
         let metrics: [(String, String, Bool)] = [
-            (L10n.zh("总收益率", en: "Total Return"), String(format: "%+.2f%%", run.totalReturn * 100), run.totalReturn >= 0),
-            (L10n.zh("最大回撤", en: "Max Drawdown"), String(format: "%.2f%%", run.maxDrawdown * 100), false),
-            (L10n.zh("夏普比率", en: "Sharpe Ratio"), String(format: "%.2f", run.sharpeRatio), run.sharpeRatio >= 1),
-            (L10n.zh("胜率", en: "Win Rate"), String(format: "%.1f%%", run.winRate * 100), run.winRate >= 0.5),
-            (L10n.zh("利润因子", en: "Profit Factor"), String(format: "%.2f", run.profitFactor), run.profitFactor >= 1),
-            (L10n.zh("交易次数", en: "Total Trades"), "\(run.totalTrades)", true),
+            (L10n.BacktestLab.metricTotalReturn, String(format: "%+.2f%%", run.totalReturn * 100), run.totalReturn >= 0),
+            (L10n.BacktestLab.metricMaxDrawdown, String(format: "%.2f%%", run.maxDrawdown * 100), false),
+            (L10n.BacktestLab.metricSharpe, String(format: "%.2f", run.sharpeRatio), run.sharpeRatio >= 1),
+            (L10n.BacktestLab.metricWinRate, String(format: "%.1f%%", run.winRate * 100), run.winRate >= 0.5),
+            (L10n.BacktestLab.metricProfitFactor, String(format: "%.2f", run.profitFactor), run.profitFactor >= 1),
+            (L10n.BacktestLab.metricTradeCount, "\(run.totalTrades)", true),
             (L10n.zh("实际成交", en: "Filled"), "\(run.trades.count)", true),
-            (L10n.zh("平均持仓", en: "Avg Duration"), run.trades.first?.duration ?? "\u{2014}", true),
+            (L10n.BacktestLab.metricDuration, run.trades.first?.duration ?? "\u{2014}", true),
         ]
 
         LazyVGrid(columns: [GridItem(.flexible(), spacing: PulseSpacing.md), GridItem(.flexible(), spacing: PulseSpacing.md), GridItem(.flexible(), spacing: PulseSpacing.md), GridItem(.flexible())], spacing: PulseSpacing.md) {

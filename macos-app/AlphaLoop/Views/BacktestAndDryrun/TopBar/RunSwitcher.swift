@@ -10,7 +10,7 @@ struct RunSwitcher: View {
     private var title: String {
         if vm.activeTab == .backtest, let run = vm.currentBacktestRun {
             let sym = run.symbols.first ?? "—"
-            return L10n.zh("运行 #\(run.id) · \(sym) · \(run.startDate)", en: "Run #\(run.id) · \(sym) · \(run.startDate)")
+            return String(format: L10n.BacktestLab.runSwitcherTitle, run.id, sym, run.startDate)
         }
         return L10n.zh("选择运行", en: "Select run")
     }

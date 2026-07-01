@@ -11,7 +11,7 @@ struct EquityCurveHero: View {
     var body: some View {
         VStack(alignment: .leading, spacing: PulseSpacing.sm) {
             HStack {
-                Text(L10n.zh("权益曲线", en: "Equity Curve"))
+                Text(L10n.BacktestLab.sectionCurve)
                     .font(PulseFonts.headline)
                     .foregroundStyle(colors.textPrimary)
                 Spacer()
@@ -45,8 +45,8 @@ struct EquityCurveHero: View {
             .frame(height: 300)
 
             HStack(spacing: PulseSpacing.lg) {
-                metricLabel(L10n.zh("总收益", en: "Total Return"), value: run.totalReturn, isPositive: run.totalReturn >= 0)
-                metricLabel(L10n.zh("最大回撤", en: "Max Drawdown"), value: run.maxDrawdown, isPositive: false)
+                metricLabel(L10n.BacktestLab.metricTotalReturn, value: run.totalReturn, isPositive: run.totalReturn >= 0)
+                metricLabel(L10n.BacktestLab.metricMaxDrawdown, value: run.maxDrawdown, isPositive: false)
                 if let peak = run.equityCurve.max(by: { $0.equity < $1.equity }) {
                     metricLabel(L10n.zh("峰值", en: "Peak"), value: peak.equity, isPositive: true)
                 }

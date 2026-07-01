@@ -4,7 +4,7 @@
 <blockquote class="lede">Validate your strategy against historical data before committing real capital, or observe its real-time behavior in a paper trading environment.</blockquote>
 
 <h2>TL;DR</h2>
-<p>The BacktestLab page uses a three-column layout: the left Run Rail (240pt) lists historical runs and supports compare checkboxes, the center column holds a Backtest/Dryrun tab switch + a scrollable content panel (config → status/summary → equity curve+drawdown → trade list+failure clustering → compare), and the right Context Rail (280pt) always displays strategy metadata, risk warnings, and the promotion readiness gate. The old NewRunSheet modal and 9-section narrative flow have been removed — all operations are now inline in the main layout.</p>
+<p>The BacktestLab page uses a single-column data-terminal layout (redesigned 2026-07-01). A 48pt top bar houses the RunSwitcher + Backtest/Dryrun segmented control + New Run button + Compare button (appears when 2+ runs are checked). Below sits the 360pt EquityCurveHero (gradient-filled equity curve + compare overlay), a collapsible StrategyContextStrip (strategy + risk + promotion gate), a 2x4 MetricsGrid (8 KPI cards), and a collapsible TradeListTable (20-row pagination). Right-side drawers: NewRunDrawer (config form) and HistoryDrawer (run list + compare checkboxes), managed by DrawerContainer. The old three-column layout has been replaced.</p>
 
 <h2>Who uses it & when</h2>
 <p>Every strategy author. Backtesting is mandatory before going live — run it after every DSL or canvas change. The BacktestLab page (from the sidebar) offers the full backtest engine. Paper trading (simulation) is the final step after satisfactory backtest results, used before going live.</p>
@@ -13,127 +13,79 @@
 <svg class="diagram" viewBox="0 0 900 520" xmlns="http://www.w3.org/2000/svg">
   <rect x="0" y="0" width="900" height="520" fill="rgba(255,255,255,0.02)" rx="8"/>
 
-  <!-- Left column: Run Rail -->
-  <rect x="12" y="10" width="170" height="500" fill="rgba(255,255,255,0.03)" rx="6" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
-  <text x="97" y="34" fill="#00ff9d" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">Run Rail</text>
+  <!-- Top bar -->
+  <rect x="12" y="10" width="876" height="48" fill="rgba(255,255,255,0.03)" rx="6" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+  <text x="450" y="34" fill="#00ff9d" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">Top Bar (48pt)</text>
 
-  <!-- Run 1 -->
-  <rect x="20" y="46" width="154" height="54" fill="rgba(255,255,255,0.04)" rx="4"/>
-  <rect x="24" y="54" width="10" height="10" fill="rgba(0,255,157,0.3)" rx="2"/>
-  <text x="38" y="62" fill="#e8eaee" font-family="monospace" font-size="8">#142 · 2026-06-01</text>
-  <text x="38" y="78" fill="#00ff9d" font-family="monospace" font-size="8">+42.5%</text>
-  <rect x="148" y="54" width="10" height="10" fill="rgba(0,255,157,0.2)" rx="2" stroke="rgba(0,255,157,0.4)" stroke-width="1"/>
+  <!-- RunSwitcher -->
+  <rect x="24" y="20" width="180" height="26" fill="rgba(0,255,157,0.1)" rx="4"/>
+  <text x="114" y="38" fill="#e8eaee" font-family="monospace" font-size="8" text-anchor="middle">Run #142 · BTC/USDT · 06-01</text>
 
-  <!-- Run 2 -->
-  <rect x="20" y="108" width="154" height="54" fill="rgba(255,255,255,0.04)" rx="4"/>
-  <rect x="24" y="116" width="10" height="10" fill="rgba(50,180,255,0.3)" rx="2"/>
-  <text x="38" y="124" fill="#e8eaee" font-family="monospace" font-size="8">#141 · 2026-05-28</text>
-  <text x="38" y="140" fill="#f5c542" font-family="monospace" font-size="8">+18.2%</text>
-  <rect x="148" y="116" width="10" height="10" fill="rgba(50,180,255,0.2)" rx="2" stroke="rgba(50,180,255,0.4)" stroke-width="1"/>
+  <!-- Segmented -->
+  <rect x="214" y="20" width="80" height="26" fill="rgba(0,255,157,0.08)" rx="4"/>
+  <rect x="296" y="20" width="80" height="26" fill="rgba(255,255,255,0.04)" rx="4"/>
+  <text x="254" y="38" fill="#00ff9d" font-family="monospace" font-size="8" text-anchor="middle">Backtest</text>
+  <text x="336" y="38" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">Dryrun</text>
 
-  <!-- Run 3 -->
-  <rect x="20" y="170" width="154" height="54" fill="rgba(255,255,255,0.04)" rx="4"/>
-  <rect x="24" y="178" width="10" height="10" fill="rgba(255,84,112,0.3)" rx="2"/>
-  <text x="38" y="186" fill="#e8eaee" font-family="monospace" font-size="8">#140 · 2026-05-25</text>
-  <text x="38" y="202" fill="#ff5470" font-family="monospace" font-size="8">-5.3%</text>
+  <!-- New Run -->
+  <rect x="690" y="20" width="80" height="26" fill="rgba(0,255,157,0.15)" rx="4"/>
+  <text x="730" y="38" fill="#00ff9d" font-family="monospace" font-size="8" font-weight="bold" text-anchor="middle">+ New Run</text>
 
-  <!-- Compare badge -->
-  <rect x="50" y="236" width="94" height="20" fill="rgba(0,255,157,0.08)" rx="10" stroke="rgba(0,255,157,0.3)" stroke-width="1"/>
-  <text x="97" y="250" fill="#00ff9d" font-family="monospace" font-size="8" text-anchor="middle">Compare (2/3)</text>
+  <!-- Compare (2 checked) -->
+  <rect x="780" y="20" width="96" height="26" fill="rgba(50,180,255,0.1)" rx="4" stroke="rgba(50,180,255,0.3)" stroke-width="1"/>
+  <text x="828" y="38" fill="#50b4ff" font-family="monospace" font-size="8" text-anchor="middle">Compare (2)</text>
 
-  <!-- New Run button -->
-  <rect x="30" y="270" width="134" height="24" fill="rgba(0,255,157,0.1)" rx="4" stroke="rgba(0,255,157,0.3)" stroke-width="1"/>
-  <text x="97" y="286" fill="#00ff9d" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">+ New Run</text>
+  <!-- EquityCurveHero -->
+  <rect x="12" y="66" width="876" height="360" fill="rgba(255,255,255,0.03)" rx="6" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+  <text x="450" y="86" fill="#c8a0ff" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">EquityCurveHero (360pt)</text>
 
-  <!-- Separator L-C -->
-  <line x1="190" y1="10" x2="190" y2="510" stroke="rgba(255,255,255,0.08)" stroke-width="1" stroke-dasharray="4,4"/>
+  <!-- Equity curve area -->
+  <path d="M 30 320 L 100 300 L 200 260 L 300 220 L 400 240 L 500 180 L 600 140 L 700 160 L 850 100 L 860 380 L 30 380 Z" fill="rgba(0,255,157,0.08)" stroke="rgba(0,255,157,0.4)" stroke-width="2"/>
+  <text x="450" y="220" fill="#9ca0a8" font-family="monospace" font-size="10" text-anchor="middle">Equity Curve (gradient fill + compare overlay)</text>
 
-  <!-- Center column -->
-  <text x="420" y="34" fill="#9ca0a8" font-family="monospace" font-size="9" text-anchor="middle">Center Column (scrollable)</text>
+  <!-- Metrics below hero: Total Return / Max Drawdown / Peak -->
+  <rect x="24" y="394" width="200" height="22" fill="rgba(255,255,255,0.04)" rx="3"/>
+  <text x="124" y="409" fill="#00ff9d" font-family="monospace" font-size="8" text-anchor="middle">Total Return +42.5%</text>
+  <rect x="350" y="394" width="200" height="22" fill="rgba(255,255,255,0.04)" rx="3"/>
+  <text x="450" y="409" fill="#ff5470" font-family="monospace" font-size="8" text-anchor="middle">Max Drawdown -12.3%</text>
+  <rect x="676" y="394" width="200" height="22" fill="rgba(255,255,255,0.04)" rx="3"/>
+  <text x="776" y="409" fill="#00ff9d" font-family="monospace" font-size="8" text-anchor="middle">Peak 142.5</text>
 
-  <!-- Tab bar -->
-  <rect x="200" y="46" width="80" height="22" fill="rgba(0,255,157,0.1)" rx="4"/>
-  <text x="240" y="61" fill="#00ff9d" font-family="monospace" font-size="8" font-weight="bold" text-anchor="middle">Backtest</text>
-  <rect x="284" y="46" width="80" height="22" fill="rgba(255,255,255,0.04)" rx="4"/>
-  <text x="324" y="61" fill="#9ca0a8" font-family="monospace" font-size="8" text-anchor="middle">Dryrun</text>
+  <!-- StrategyContextStrip -->
+  <rect x="12" y="434" width="876" height="36" fill="rgba(255,255,255,0.02)" rx="6" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+  <text x="24" y="456" fill="#9ca0a8" font-family="monospace" font-size="8">▸ Strategy #1 · 0 warnings · Not Ready</text>
 
-  <!-- ConfigPanel -->
-  <rect x="200" y="78" width="440" height="56" fill="rgba(0,255,157,0.06)" rx="4" stroke="rgba(0,255,157,0.2)" stroke-width="1"/>
-  <text x="214" y="96" fill="#e8eaee" font-family="monospace" font-size="9" font-weight="bold">ConfigPanel</text>
-  <text x="214" y="112" fill="#9ca0a8" font-family="monospace" font-size="7">Strategy · Pairs · Date Range · Capital · Fee/Slippage · Start</text>
-  <text x="214" y="126" fill="#5e636d" font-family="monospace" font-size="7">Always visible</text>
+  <!-- MetricsGrid (2x4) -->
+  <rect x="12" y="478" width="876" height="28" fill="rgba(255,255,255,0.02)" rx="6" stroke="rgba(255,255,255,0.06)" stroke-width="1" stroke-dasharray="2,2"/>
+  <text x="450" y="497" fill="#5e636d" font-family="monospace" font-size="8" text-anchor="middle">MetricsGrid 2x4 (8 metrics)</text>
 
-  <!-- StatusSummaryBlock -->
-  <rect x="200" y="144" width="440" height="44" fill="rgba(245,197,66,0.06)" rx="4" stroke="rgba(245,197,66,0.2)" stroke-width="1"/>
-  <text x="214" y="162" fill="#e8eaee" font-family="monospace" font-size="9" font-weight="bold">StatusSummaryBlock</text>
-  <text x="214" y="178" fill="#9ca0a8" font-family="monospace" font-size="7">Phase indicator · Progress · 8 KPI metric cards</text>
-  <text x="550" y="178" fill="#5e636d" font-family="monospace" font-size="7">completed/failed visible</text>
+  <!-- TradeListTable -->
+  <rect x="12" y="514" width="876" height="28" fill="rgba(255,255,255,0.02)" rx="6" stroke="rgba(255,255,255,0.06)" stroke-width="1" stroke-dasharray="2,2"/>
+  <text x="450" y="533" fill="#5e636d" font-family="monospace" font-size="8" text-anchor="middle">TradeListTable (collapsible · 20-row pagination)</text>
 
-  <!-- EquityCurveBlock -->
-  <rect x="200" y="198" width="440" height="36" fill="rgba(0,255,157,0.04)" rx="3"/>
-  <text x="214" y="214" fill="#e8eaee" font-family="monospace" font-size="8" font-weight="bold">EquityCurveBlock</text>
-  <text x="320" y="214" fill="#9ca0a8" font-family="monospace" font-size="7">Equity curve + drawdown chart</text>
-  <text x="550" y="214" fill="#5e636d" font-family="monospace" font-size="7">completed only</text>
-
-  <!-- TradeListBlock -->
-  <rect x="200" y="240" width="440" height="36" fill="rgba(0,255,157,0.04)" rx="3"/>
-  <text x="214" y="256" fill="#e8eaee" font-family="monospace" font-size="8" font-weight="bold">TradeListBlock</text>
-  <text x="320" y="256" fill="#9ca0a8" font-family="monospace" font-size="7">Trades + failure clustering</text>
-  <text x="550" y="256" fill="#5e636d" font-family="monospace" font-size="7">completed only</text>
-
-  <!-- CompareBlock -->
-  <rect x="200" y="284" width="440" height="36" fill="rgba(50,180,255,0.04)" rx="3"/>
-  <text x="214" y="300" fill="#e8eaee" font-family="monospace" font-size="8" font-weight="bold">CompareBlock</text>
-  <text x="320" y="300" fill="#9ca0a8" font-family="monospace" font-size="7">Comparison matrix · Equity overlay (≥2 checked)</text>
-  <text x="550" y="300" fill="#5e636d" font-family="monospace" font-size="7">completed + checked</text>
-
-  <!-- Separator C-R -->
-  <line x1="648" y1="10" x2="648" y2="510" stroke="rgba(255,255,255,0.08)" stroke-width="1" stroke-dasharray="4,4"/>
-
-  <!-- Right column: Context Rail -->
-  <rect x="656" y="10" width="235" height="500" fill="rgba(255,255,255,0.03)" rx="6" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
-  <text x="773" y="34" fill="#c8a0ff" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">Context Rail</text>
-
-  <!-- StrategyMeta -->
-  <rect x="664" y="46" width="218" height="70" fill="rgba(200,160,255,0.04)" rx="4" stroke="rgba(200,160,255,0.2)" stroke-width="1"/>
-  <text x="672" y="62" fill="#c8a0ff" font-family="monospace" font-size="8" font-weight="bold">Strategy Metadata</text>
-  <text x="672" y="78" fill="#9ca0a8" font-family="monospace" font-size="7">Strategy name · DSL version · Data source</text>
-  <text x="672" y="94" fill="#9ca0a8" font-family="monospace" font-size="7">Exchange · OHLCV source · Engine version</text>
-  <text x="672" y="108" fill="#5e636d" font-family="monospace" font-size="7">Always visible</text>
-
-  <!-- RiskWarnings -->
-  <rect x="664" y="126" width="218" height="80" fill="rgba(255,84,112,0.04)" rx="4" stroke="rgba(255,84,112,0.2)" stroke-width="1"/>
-  <text x="672" y="142" fill="#ff5470" font-family="monospace" font-size="8" font-weight="bold">Risk Warnings</text>
-  <text x="672" y="158" fill="#9ca0a8" font-family="monospace" font-size="7">Max Drawdown · Profit Factor · Trades</text>
-  <text x="672" y="174" fill="#9ca0a8" font-family="monospace" font-size="7">Win Rate · Sharpe Ratio</text>
-  <text x="672" y="194" fill="#5e636d" font-family="monospace" font-size="7">Visible after completion</text>
-
-  <!-- PromotionGate -->
-  <rect x="664" y="218" width="218" height="60" fill="rgba(200,160,255,0.04)" rx="4" stroke="rgba(200,160,255,0.2)" stroke-width="1"/>
-  <text x="672" y="234" fill="#c8a0ff" font-family="monospace" font-size="8" font-weight="bold">Promotion Gate</text>
-  <text x="672" y="250" fill="#9ca0a8" font-family="monospace" font-size="7">11 readiness checks · CTA navigation</text>
-  <rect x="740" y="260" width="80" height="14" fill="rgba(200,160,255,0.1)" rx="3"/>
-  <text x="780" y="271" fill="#c8a0ff" font-family="monospace" font-size="7" text-anchor="middle">View Readiness →</text>
-
+  <!-- Drawer callout -->
+  <rect x="12" y="550" width="876" height="20" fill="rgba(50,180,255,0.04)" rx="4"/>
+  <text x="450" y="564" fill="#50b4ff" font-family="monospace" font-size="8" text-anchor="middle">Right-side drawers: NewRunDrawer / HistoryDrawer (DrawerContainer)</text>
 </svg>
 
 <ol>
-  <li><strong>① Run Rail (left)</strong> — A 240pt-wide vertical list of historical runs. Each entry shows the run number, date, and return percentage (green for profit, red for loss), with a checkbox on the right. Select up to 3 to enter compare mode. The "New Run" button at the bottom starts a new backtest or dryrun — no modal form needed.</li>
-  <li><strong>② Center column</strong> — A Backtest / Dryrun tab bar at the top. Below is a scrollable content area: ConfigPanel is always visible; after completion, StatusSummaryBlock (8 KPIs), EquityCurveBlock (equity curve + drawdown), and TradeListBlock (trades + failure clustering) appear. When 2+ runs are checked, CompareBlock automatically expands with a comparison matrix and equity overlay.</li>
-  <li><strong>③ Context Rail (right)</strong> — A 280pt-wide context inspector, always visible. Contains StrategyMetaPanel (name, version, data source), RiskWarningsPanel (5 rule checks, visible after completion), and PromotionGatePanel (11 readiness checks, CTA navigates to Live Readiness).</li>
+  <li><strong>① Top Bar (48pt)</strong> — The RunSwitcher button on the left shows the currently selected run (number, symbol, date); click to open the HistoryDrawer. The Backtest/Dryrun segmented control sits in the center. The "New Run" button on the right opens the NewRunDrawer. When 2+ runs are checked in history, a "Compare" button appears to toggle equity curve overlay mode.</li>
+  <li><strong>② EquityCurveHero (360pt)</strong> — The hero equity curve visualization. In single-run mode, displays a gradient-filled curve with three inline labels (Total Return / Max Drawdown / Peak). In compare mode, overlays multiple curves with distinct colors and a legend. Shows an empty area when no data is available.</li>
+  <li><strong>③ StrategyContextStrip</strong> — A collapsible strategy context bar. Collapsed state shows a one-line summary: "Strategy #ID · N warnings · gate status". Expanded view shows strategy details, risk warnings, and promotion gate status.</li>
+  <li><strong>④ MetricsGrid (2x4)</strong> — A 2-row, 4-column grid of 8 KPI cards: Total Return, Max Drawdown, Sharpe Ratio, Win Rate, Profit Factor, Total Trades, Filled, and Avg Duration. Uses monospaced digits with green for positive and red for negative values.</li>
+  <li><strong>⑤ TradeListTable</strong> — A compact, collapsible trade detail table. Displays the first 20 rows by default; click "Show all" to expand. Columns: number, time, side, entry, exit, P&amp;L, duration. Shows "No trades" when empty.</li>
+  <li><strong>⑥ Drawer Panels</strong> — Slide-in panels managed by DrawerContainer. NewRunDrawer contains the new run config form (symbol, timeframe, strategy ID). HistoryDrawer lists historical runs with compare checkboxes and search support.</li>
 </ol>
 
 <h2>Section Reference</h2>
 <ol>
-  <li><strong>Run Rail</strong> — The left rail lists all historical backtest and dryrun runs for the current strategy. Each entry displays the run number, date, return percentage, and status badge. Checkboxes enable compare mode (max 3). Click "New Run" to configure a new run inline in the ConfigPanel.</li>
-  <li><strong>ConfigPanel</strong> — The configuration panel at the top of the center column. Select the strategy version, trading pairs (comma-separated), date range (YYYY-MM-DD), initial capital (USDT), fee, and slippage. Click "Start" to submit. Always visible.</li>
-  <li><strong>StatusSummaryBlock</strong> — Execution status and summary panel. During execution, shows a phase indicator (configuring → running) and elapsed time. On completion, switches to 8 core KPI metric cards: Total Return, Sharpe Ratio, Max Drawdown, Win Rate, Profit Factor, Total Trades, Initial Capital, and Trading Pairs. Each metric is color-coded. Visible in the completed or failed phase.</li>
-  <li><strong>EquityCurveBlock</strong> — Equity curve chart with drawdown overlay. Shows capital trends over the backtest period with drawdown regions highlighted. Visible only in the completed phase.</li>
-  <li><strong>TradeListBlock</strong> — Trade-by-trade breakdown table listing time, side, price, quantity, and P&amp;L for each trade. Also shows run-level and strategy-level failure clustering. Visible only in the completed phase.</li>
-  <li><strong>CompareBlock</strong> — Compare panel that expands when 2-3 runs are checked in the Run Rail. Displays a comparison matrix (side-by-side metrics) and an equity curve overlay chart. Visible only when completed and ≥2 runs are selected.</li>
-  <li><strong>StrategyMetaPanel (right rail)</strong> — Always-visible strategy metadata showing the current strategy name, DSL version, data source (Freqtrade engine, OHLCV source), execution time, and DSL hash.</li>
-  <li><strong>RiskWarningsPanel (right rail)</strong> — Risk rule panel checking 5 rules: Max Drawdown threshold, Profit Factor minimum, minimum trades, Win Rate minimum, and Sharpe Ratio minimum. Each rule shows pass / warn / fail. Visible after backtest completion.</li>
-  <li><strong>PromotionGatePanel (right rail)</strong> — Promotion readiness gate summarizing 11 readiness checks (strategy version, backtest passed, risk compliance, etc.) with pass/fail status. The CTA button navigates to the Live Readiness page — it does NOT start live trading from this page.</li>
+  <li><strong>RunSwitcher</strong> — Top bar button showing the current run's number, symbol, and date. Click to open the HistoryDrawer for switching runs. Shows "Select run" placeholder when no run is selected.</li>
+  <li><strong>EquityCurveHero</strong> — 360pt hero equity curve chart. Dark terminal style with <code>surfaceHover.opacity(0.35)</code> background and border. Gradient fill in single mode, multi-color overlay in compare mode. Three inline metrics (Total Return, Max Drawdown, Peak).</li>
+  <li><strong>StrategyContextStrip</strong> — Collapsible strategy context area. One-line summary when collapsed; strategy details, risk warnings, and promotion gate status when expanded.</li>
+  <li><strong>MetricsGrid</strong> — 2x4 grid of 8 core backtest KPIs. Monospaced digits, color-coded by sign.</li>
+  <li><strong>TradeListTable</strong> — Collapsible trade list with 20-row pagination and fixed headers.</li>
+  <li><strong>NewRunDrawer</strong> — Right-side drawer config form. Configure symbol, timeframe, and strategy ID, then start a backtest or dryrun.</li>
+  <li><strong>HistoryDrawer</strong> — Right-side drawer listing historical runs with search and compare checkboxes. Click a row to switch focus.</li>
 </ol>
 
 <h2>Reading the Key Metrics</h2>
@@ -147,24 +99,15 @@
 
 <h2>Common Actions, Step by Step</h2>
 <ol>
-  <li><strong>Run a backtest</strong> — Open the BacktestLab page from the sidebar. Make sure the strategy has a saved version. Fill in the configuration in ConfigPanel and click "Start". A new run entry appears in the Run Rail with a configuring status.</li>
-  <li><strong>Monitor progress</strong> — The backtest runs asynchronously. StatusSummaryBlock shows the current phase and elapsed time. The frontend polls every 3 seconds for status updates.</li>
-  <li><strong>Review results</strong> — After completion, the center column automatically expands with StatusSummaryBlock (metric cards), EquityCurveBlock (equity curve), and TradeListBlock (trade list). Check the Sharpe Ratio and Max Drawdown to decide if the strategy needs optimization.</li>
-  <li><strong>Compare multiple runs</strong> — Check 2-3 historical runs in the Run Rail. The CompareBlock expands automatically with a side-by-side metrics matrix and an equity curve overlay.</li>
-  <li><strong>Check risk compliance</strong> — The right rail RiskWarningsPanel evaluates 5 rules with pass/warn/fail indicators. Red-flagged rules require optimization before the next backtest.</li>
-  <li><strong>Check readiness</strong> — The right rail PromotionGatePanel summarizes 11 readiness gates. Click the CTA to navigate to the Live Readiness page for full details (live trading is not started from this page).</li>
-  <li><strong>Review data sources</strong> — The right rail StrategyMetaPanel displays the engine, data source, and execution info used for the backtest, useful for audit and reproducibility.</li>
-  <li><strong>Switch to paper trading</strong> — Click the "Dryrun" tab at the top of the center column to switch to paper trading mode. Configure a dryrun the same way as a backtest; the Run Rail shows its running status.</li>
+  <li><strong>Run a backtest</strong> — Open the BacktestLab page from the sidebar. Click "New Run" in the top bar to open the NewRunDrawer. Fill in the symbol, timeframe, and strategy ID, then click "Backtest". The new run appears in the HistoryDrawer.</li>
+  <li><strong>Review results</strong> — Select a completed run. EquityCurveHero shows the equity curve, MetricsGrid displays 8 KPIs, TradeListTable shows trade details. Collapse/expand StrategyContextStrip for strategy context.</li>
+  <li><strong>Compare multiple runs</strong> — Check 2-3 runs in the HistoryDrawer. The "Compare" button appears in the top bar. Click to enter compare mode, where EquityCurveHero overlays multiple curves.</li>
+  <li><strong>Switch to paper trading</strong> — Click the "Dryrun" tab in the top bar to switch to paper trading mode. Configure a dryrun the same way as a backtest.</li>
+  <li><strong>Search history</strong> — Use the search box in the HistoryDrawer to filter historical runs by symbol.</li>
 </ol>
 
-<h2>Failure Clustering</h2>
-<p>Backtest failures are diagnosed at two levels: <strong>Run-level failures</strong> — data source unavailable, engine crash, timeout; these can be retried by restarting. <strong>Strategy-level failures</strong> — DSL syntax error, strategy logic exception, indicator calculation error; these require strategy edits before resubmission. StatusSummaryBlock and TradeListBlock explicitly label the failure level to help quickly identify the root cause.</p>
-
-<h2>Paper Trading</h2>
-<p>Paper trading is integrated into the BacktestLab page. Click the "Dryrun" tab at the top of the center column to switch to paper trading mode. The strategy receives live market data and generates signals in a simulated environment without placing real orders. The Run Rail shows active dryrun entries with mode, status, start time, and the latest signal.</p>
-
 <h2>Behind the Scenes</h2>
-<p>Backtesting runs asynchronously via the Command Bus. When you click "Start", the frontend calls <code>api.startBacktest()</code> and receives a <code>commandId</code>. It then polls <code>api.backtestStatus(commandId:)</code> every 3 seconds. The page state machine transitions through idle → configuring → running → completed / failed. In compare mode, the frontend collects the selected <code>runId</code> list and calls <code>api.compareBacktests(runIds:)</code> to fetch comparison matrix data. Risk rules are computed locally on the frontend by comparing KPIs from backtest results against preset thresholds. Paper trading runs are fetched via <code>APIStrategyRuns.listRuns(mode: "dryrun")</code>.</p>
+<p>Backtesting runs asynchronously via the Command Bus. After submission, the frontend polls for status updates. The page state machine transitions through idle → configuring → running → completed / failed. In compare mode, the frontend collects selected runIds and fetches comparison data from the backend. All data panels use the dark terminal style: <code>surfaceHover.opacity(0.35)</code> background with border, monospaced PulseFonts.tabular digits, no glassmorphism or serif italics.</p>
 
 <h2>See Also</h2>
 <ul>

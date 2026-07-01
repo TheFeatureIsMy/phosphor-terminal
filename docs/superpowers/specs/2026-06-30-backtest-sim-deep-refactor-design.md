@@ -1,8 +1,10 @@
 ---
 title: Backtest/Sim Deep Refactor — Three-Column Linked-Flow Design
 date: 2026-06-30
-status: draft
+status: superseded
 supersedes: 2026-06-22-backtest-sim-refactor-design.md
+superseded-by:
+  - docs/superpowers/specs/2026-07-01-backtest-lab-terminal-redesign.md
 ---
 
 # Backtest/Sim Deep Refactor — Three-Column Linked-Flow Design

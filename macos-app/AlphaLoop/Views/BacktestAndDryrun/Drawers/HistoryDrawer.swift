@@ -17,7 +17,7 @@ struct HistoryDrawer: View {
     var body: some View {
         VStack(alignment: .leading, spacing: PulseSpacing.md) {
             HStack {
-                Text(L10n.zh("历史记录", en: "History"))
+                Text(L10n.BacktestLab.historyDrawerTitle)
                     .font(PulseFonts.headline)
                     .foregroundStyle(colors.textPrimary)
                 Spacer()
