@@ -1,5 +1,5 @@
 // ManipulationViewModel.swift — 操纵雷达视图模型
-// 管理雷达概览、案例详情、告警流、交易信号
+// 管理雷达概览、聚焦案例详情、策略联动、相似案例、告警流、WS 实时推送
 
 import SwiftUI
 
@@ -7,12 +7,18 @@ import SwiftUI
 @MainActor
 final class ManipulationViewModel {
     var radarOverview: ManipulationRadarOverview?
-    var selectedCase: ManipulationCaseDetail?
     var alerts: [ManipulationAlertItem] = []
-    var userProfile: String = "conservative" // "conservative" or "aggressive"
+    var userProfile: String = "conservative" // 仍传给 /signals，UI 不再暴露切换
     var scanSymbol: String = ""
 
-    // Legacy: keep scores for transition
+    // 聚焦 case 状态
+    var focusedCaseId: String?
+    var focusedDetail: ManipulationCaseDetail?
+    var strategyImpact: StrategyImpactResponse?
+    var similar: SimilarCasesResponse?
+    var focusError: String?
+
+    // legacy
     var scores: [ManipulationScoreV2] = []
 
     var isLoading = false
@@ -21,15 +27,20 @@ final class ManipulationViewModel {
 
     private let api: APIManipulation
     private var pollingTask: Task<Void, Never>?
+    private var wsTask: Task<Void, Never>?
+    private(set) var streamClient = ManipulationStreamClient()
+    private var isLive: Bool = false
 
     init(client: NetworkClientProtocol) {
         self.api = APIManipulation(client: client)
+        // Mock 模式判定：LiveNetworkClient 才连 WS
+        self.isLive = client is LiveNetworkClient
     }
 
     /// Alias used by ManipulationRadarView
     func load() async { await loadRadar() }
 
-    /// Scan a specific symbol
+    /// 扫描特定 symbol
     func scan() async {
         guard !scanSymbol.isEmpty else { return }
         isLoading = true
@@ -53,46 +64,96 @@ final class ManipulationViewModel {
             radarOverview = try await overviewTask
             alerts = try await alertsTask
             scores = (try? await scoresTask) ?? []
+            await ensureFocusInitialized()
         } catch {
             errorHandler?.handle(error, context: "加载操纵雷达")
             self.error = error.localizedDescription
         }
     }
 
-    /// 加载单个案例详情
-    func loadCaseDetail(_ caseId: String) async {
-        do {
-            selectedCase = try await api.getCaseDetail(caseId)
-        } catch {
-            errorHandler?.handle(error, context: "加载案例详情")
-            self.error = error.localizedDescription
+    /// 首次加载后自动选第一个 active case
+    func ensureFocusInitialized() async {
+        guard focusedCaseId == nil,
+              let firstId = radarOverview?.activeCases.first?.id else { return }
+        await focusCase(firstId)
+    }
+
+    /// 聚焦某个 case：三并发加载 detail / strategyImpact / similar
+    /// 任一失败不影响其他章节渲染（每个状态独立 nil / error）
+    func focusCase(_ caseId: String) async {
+        focusedCaseId = caseId
+        focusError = nil
+        // 立即清空旧数据，UI 显示 loading 态
+        focusedDetail = nil
+        strategyImpact = nil
+        similar = nil
+
+        async let detailTask = try? api.getCaseDetail(caseId)
+        async let impactTask = try? api.getStrategyImpact(caseId)
+        async let similarTask = try? api.getSimilar(caseId, limit: 5)
+
+        let (detail, impact, sim) = await (detailTask, impactTask, similarTask)
+        focusedDetail = detail
+        strategyImpact = impact
+        similar = sim
+        if detail == nil && impact == nil && sim == nil {
+            focusError = "全部加载失败"
         }
     }
 
-    /// 切换用户风险偏好
-    func toggleUserProfile() {
-        userProfile = userProfile == "conservative" ? "aggressive" : "conservative"
-    }
-
-    /// 启动 30s 轮询
-    func startPolling() {
+    /// 启动实时更新：30s polling（兜底）+ WS 监听
+    func startLiveUpdates() {
         pollingTask?.cancel()
         pollingTask = Task {
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(30))
                 guard !Task.isCancelled else { break }
-                await loadRadar() // silent refresh
+                await loadRadar()
+            }
+        }
+        guard isLive else { return } // mock 模式不连 WS
+        wsTask?.cancel()
+        wsTask = Task { [weak self] in
+            guard let self else { return }
+            let eventStream = await self.streamClient.events()
+            for await event in eventStream {
+                guard !Task.isCancelled else { break }
+                await self.handleStreamEvent(event)
             }
         }
     }
 
-    /// 停止轮询
-    func stopPolling() {
+    /// 停止实时更新：同步关闭 polling + WS
+    func stopLiveUpdates() {
         pollingTask?.cancel()
         pollingTask = nil
+        wsTask?.cancel()
+        wsTask = nil
+        Task { await streamClient.disconnect() }
     }
 
-    /// 按风险等级排序（critical > high > medium > low）— legacy helper
+    /// 由 view 在 onAppear 时注入 WS baseURL 并连接
+    func connectStream(baseURL: URL?) {
+        Task { await streamClient.connect(baseURL: baseURL) }
+    }
+
+    private func handleStreamEvent(_ event: ManipulationEvent) async {
+        switch event {
+        case .stageChange(let caseId, _, _, _):
+            if caseId == focusedCaseId {
+                await focusCase(caseId) // 重新拉详情
+            }
+            await loadRadar() // 刷新概览 + alerts
+        case .newCase:
+            await loadRadar()
+        case .snapshot:
+            await loadRadar()
+        case .heartbeat, .unknown:
+            break
+        }
+    }
+
+    /// legacy: 按风险等级排序
     var sortedScores: [ManipulationScoreV2] {
         scores.sorted { riskOrder($0.riskLevel) > riskOrder($1.riskLevel) }
     }

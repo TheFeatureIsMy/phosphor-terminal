@@ -452,3 +452,33 @@ struct ViewModelTests {
         #expect(!vm.status!.systemState.isEmpty)
     }
 }
+
+// MARK: - ManipulationViewModel Focus Tests
+
+@Suite("ManipulationViewModel Focus Tests")
+struct ManipulationViewModelFocusTests {
+    @MainActor @Test func focusCaseLoadsThreeEndpoints() async {
+        let client = MockNetworkClient()
+        let vm = ManipulationViewModel(client: client)
+        await vm.loadRadar()
+        guard let firstCaseId = vm.radarOverview?.activeCases.first?.id else {
+            Issue.record("no active case in mock radar"); return
+        }
+        await vm.focusCase(firstCaseId)
+        #expect(vm.focusedDetail != nil, "focusedDetail should be loaded")
+        #expect(vm.strategyImpact != nil, "strategyImpact should be loaded")
+        #expect(vm.similar != nil, "similar should be loaded")
+        #expect(vm.focusedCaseId == firstCaseId)
+    }
+
+    @MainActor @Test func focusCaseFallsBackToFirstActiveWhenNil() async {
+        let client = MockNetworkClient()
+        let vm = ManipulationViewModel(client: client)
+        // Create a VM with a radarOverview loaded manually (without calling ensureFocusInitialized)
+        // to simulate the "no focusedCaseId yet" scenario
+        await vm.loadRadar()
+        // loadRadar now calls ensureFocusInitialized internally, so focusedCaseId is set
+        #expect(vm.focusedCaseId != nil, "loadRadar should auto-pick first active case")
+        #expect(vm.focusedCaseId == vm.radarOverview?.activeCases.first?.id)
+    }
+}

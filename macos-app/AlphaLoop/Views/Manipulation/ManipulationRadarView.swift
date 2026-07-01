@@ -47,13 +47,14 @@ struct ManipulationRadarView: View {
                 let vm = ManipulationViewModel(client: networkClient)
                 viewModel = vm
                 await vm.loadRadar()
-                vm.startPolling()
+                vm.startLiveUpdates()
+                vm.connectStream(baseURL: networkClient.baseURL)
             }
         }
         .onDisappear {
-            viewModel?.stopPolling()
+            viewModel?.stopLiveUpdates()
         }
-        .sheet(item: caseDetailBinding) { detail in
+        .sheet(item: detailBinding) { detail in
             CaseDetailView(
                 caseDetail: detail,
                 userProfile: viewModel?.userProfile ?? "conservative"
@@ -62,11 +63,11 @@ struct ManipulationRadarView: View {
         }
     }
 
-    // Binding for sheet(item:) — ManipulationCaseDetail needs Identifiable (already conforms)
-    private var caseDetailBinding: Binding<ManipulationCaseDetail?> {
+    // Binding for sheet(item:) — focusedDetail drives sheet
+    private var detailBinding: Binding<ManipulationCaseDetail?> {
         Binding(
-            get: { viewModel?.selectedCase },
-            set: { viewModel?.selectedCase = $0 }
+            get: { viewModel?.focusedDetail },
+            set: { _ in } // dismiss only; focus managed by focusCase
         )
     }
 
@@ -100,29 +101,24 @@ struct ManipulationRadarView: View {
             Spacer()
 
             HStack(spacing: PulseSpacing.xs) {
-                // User profile toggle
-                Button {
-                    vm.toggleUserProfile()
-                } label: {
-                    HStack(spacing: PulseSpacing.xxs) {
-                        Image(systemName: vm.userProfile == "conservative" ? "shield.fill" : "bolt.fill")
-                            .font(PulseFonts.label)
-                        Text(vm.userProfile == "conservative" ? L10n.Manipulation.conservative : L10n.Manipulation.aggressive)
-                            .font(PulseFonts.captionMedium)
-                    }
-                    .foregroundStyle(vm.userProfile == "conservative" ? PulseColors.info : PulseColors.amber)
-                    .padding(.horizontal, PulseSpacing.xs)
-                    .padding(.vertical, PulseSpacing.xxs)
-                    .background(
-                        RoundedRectangle(cornerRadius: PulseRadii.button)
-                            .fill((vm.userProfile == "conservative" ? PulseColors.info : PulseColors.amber).opacity(0.08))
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: PulseRadii.button)
-                            .stroke((vm.userProfile == "conservative" ? PulseColors.info : PulseColors.amber).opacity(0.15), lineWidth: 1)
-                    )
+                // User profile indicator (toggle removed per Task 4; value still used for /signals)
+                HStack(spacing: PulseSpacing.xxs) {
+                    Image(systemName: vm.userProfile == "conservative" ? "shield.fill" : "bolt.fill")
+                        .font(PulseFonts.label)
+                    Text(vm.userProfile == "conservative" ? L10n.Manipulation.conservative : L10n.Manipulation.aggressive)
+                        .font(PulseFonts.captionMedium)
                 }
-                .buttonStyle(.plain)
+                .foregroundStyle(vm.userProfile == "conservative" ? PulseColors.info : PulseColors.amber)
+                .padding(.horizontal, PulseSpacing.xs)
+                .padding(.vertical, PulseSpacing.xxs)
+                .background(
+                    RoundedRectangle(cornerRadius: PulseRadii.button)
+                        .fill((vm.userProfile == "conservative" ? PulseColors.info : PulseColors.amber).opacity(0.08))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: PulseRadii.button)
+                        .stroke((vm.userProfile == "conservative" ? PulseColors.info : PulseColors.amber).opacity(0.15), lineWidth: 1)
+                )
 
                 // Scan / refresh button
                 KryptonButton(title: L10n.Manipulation.startScan, action: {
@@ -225,7 +221,7 @@ struct ManipulationRadarView: View {
                             CaseCardView(caseSummary: caseSummary)
                                 .staggeredAppearance(index: index)
                                 .onTapGesture {
-                                    Task { await vm.loadCaseDetail(caseSummary.id) }
+                                    Task { await vm.focusCase(caseSummary.id) }
                                 }
                         }
                     }
