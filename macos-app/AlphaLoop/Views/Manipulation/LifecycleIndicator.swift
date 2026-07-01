@@ -120,11 +120,11 @@ struct LifecycleIndicator: View {
 
     private func stageAbbreviation(_ stage: String) -> String {
         switch stage {
-        case "suspected":  return L10n.zh("疑似", en: "SUS")
-        case "accumulate": return L10n.zh("建仓", en: "ACC")
-        case "markup":     return L10n.zh("拉升", en: "MKP")
-        case "distribute": return L10n.zh("派发", en: "DST")
-        case "collapse":   return L10n.zh("崩盘", en: "COL")
+        case "suspected":  return L10n.Manipulation.abbrSuspected
+        case "accumulate": return L10n.Manipulation.abbrAccumulate
+        case "markup":     return L10n.Manipulation.abbrMarkup
+        case "distribute": return L10n.Manipulation.abbrDistribute
+        case "collapse":   return L10n.Manipulation.abbrCollapse
         default:           return String(stage.prefix(3)).uppercased()
         }
     }

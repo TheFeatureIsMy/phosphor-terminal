@@ -20,9 +20,9 @@ struct ManipulationRadarView: View {
                 } else if let error = vm.error {
                     EmptyStateView(
                         icon: "exclamationmark.triangle",
-                        title: L10n.zh("加载失败", en: "Load Failed"),
+                        title: L10n.Manipulation.loadFailed,
                         description: error,
-                        primaryAction: (title: L10n.zh("重试", en: "Retry"), action: { Task { await vm.loadRadar() } })
+                        primaryAction: (title: L10n.Manipulation.retry, action: { Task { await vm.loadRadar() } })
                     ).padding(PulseSpacing.lg)
                 } else {
                     EmptyStateView(icon: "shield.checkered", title: L10n.Manipulation.noCases, description: L10n.Manipulation.radarSubtitle)
@@ -103,9 +103,9 @@ private struct MastheadBlock: View {
             HStack(spacing: PulseSpacing.sm) {
                 Text("ALPHALOOP").font(PulseFonts.micro).foregroundStyle(colors.textMuted)
                 Text("·").foregroundStyle(colors.textMuted)
-                Text(L10n.zh("操纵雷达", en: "MANIPULATION RADAR")).font(PulseFonts.displaySubheading)
+                Text(L10n.Manipulation.mastheadTitle).font(PulseFonts.displaySubheading)
                 Text("·").foregroundStyle(colors.textMuted)
-                Text(L10n.zh("统计推断", en: "STATISTICAL INFERENCE")).font(PulseFonts.micro).foregroundStyle(colors.textMuted)
+                Text(L10n.Manipulation.mastheadSubtitle).font(PulseFonts.micro).foregroundStyle(colors.textMuted)
             }
             Text(L10n.Manipulation.disclaimer)
                 .font(PulseFonts.caption)

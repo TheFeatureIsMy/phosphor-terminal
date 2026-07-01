@@ -97,13 +97,13 @@ struct ManipulationAlertFeed: View {
     private func alertTypeInfo(_ alertType: String) -> (String, Color) {
         switch alertType.lowercased() {
         case "stage_change":
-            return (L10n.zh("阶段变更", en: "STAGE"), PulseColors.cyan)
+            return (L10n.Manipulation.alertStageChange, PulseColors.cyan)
         case "new_case":
-            return (L10n.zh("新案例", en: "NEW"), PulseColors.accent)
+            return (L10n.Manipulation.alertNewCase, PulseColors.accent)
         case "confidence_spike":
-            return (L10n.zh("置信飙升", en: "SPIKE"), PulseColors.danger)
+            return (L10n.Manipulation.alertConfidenceSpike, PulseColors.danger)
         case "signal_change":
-            return (L10n.zh("信号变更", en: "SIGNAL"), PulseColors.warning)
+            return (L10n.Manipulation.alertSignalChange, PulseColors.warning)
         default:
             return (alertType.uppercased(), colors.textMuted)
         }

@@ -66,6 +66,7 @@ extension L10n {
         // MARK: - Verdict Panel
         static var likely: String { zh("疑似", en: "Likely") }
         static var evidenceConsistentWith: String { zh("证据符合", en: "Evidence consistent with") }
+        static var dataQuality: String { zh("数据完整度", en: "Data quality") }
         static var dataCompleteness: String { zh("数据完整度", en: "Data completeness") }
         static var maxConfidence: String { zh("最大置信度", en: "Max confidence") }
         static var dataUnavailable: String { zh("数据不可用", en: "Data unavailable") }
@@ -91,5 +92,31 @@ extension L10n {
         static var openStrategyRisk: String { zh("打开策略风控", en: "Open Strategy Risk") }
         static var wouldBlock: String { zh("将被阻断", en: "Would block") }
         static var filterDisabled: String { zh("过滤器已关闭", en: "Filter disabled") }
+
+        // MARK: - Masthead
+        static var mastheadTitle: String { zh("操纵雷达", en: "MANIPULATION RADAR") }
+        static var mastheadSubtitle: String { zh("统计推断", en: "STATISTICAL INFERENCE") }
+        static var loadFailed: String { zh("加载失败", en: "Load Failed") }
+        static var retry: String { zh("重试", en: "Retry") }
+
+        // MARK: - Alert Type Badges
+        static var alertStageChange: String { zh("阶段变更", en: "STAGE") }
+        static var alertNewCase: String { zh("新案例", en: "NEW") }
+        static var alertConfidenceSpike: String { zh("置信飙升", en: "SPIKE") }
+        static var alertSignalChange: String { zh("信号变更", en: "SIGNAL") }
+
+        // MARK: - Lifecycle Abbreviations
+        static var abbrSuspected: String { zh("疑似", en: "SUS") }
+        static var abbrAccumulate: String { zh("建仓", en: "ACC") }
+        static var abbrMarkup: String { zh("拉升", en: "MKP") }
+        static var abbrDistribute: String { zh("派发", en: "DST") }
+        static var abbrCollapse: String { zh("崩盘", en: "COL") }
+
+        // MARK: - Social Features
+        static var featMentionVelocity: String { zh("提及增速", en: "Mention velocity") }
+        static var featSentimentExtremity: String { zh("情绪极端度", en: "Sentiment extremity") }
+
+        // MARK: - Action Labels
+        static var edit: String { zh("编辑", en: "Edit") }
     }
 }

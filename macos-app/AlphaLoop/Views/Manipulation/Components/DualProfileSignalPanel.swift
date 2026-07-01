@@ -109,7 +109,7 @@ private struct StrategyImpactRow: View {
                 }
             }
             Spacer()
-            Button(L10n.zh("编辑", en: "Edit"), action: onEdit)
+            Button(L10n.Manipulation.edit, action: onEdit)
                 .font(PulseFonts.micro)
                 .buttonStyle(.borderless)
         }

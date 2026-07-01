@@ -24,10 +24,10 @@ struct SocialAccelerationPanel: View {
                 } else if let layer = social {
                     VStack(spacing: PulseSpacing.md) {
                         if let mention = layer.features["mention_velocity"] {
-                            PercentileBar(percentile: mention.percentile ?? 0, label: L10n.zh("提及增速", en: "Mention velocity"))
+                            PercentileBar(percentile: mention.percentile ?? 0, label: L10n.Manipulation.featMentionVelocity)
                         }
                         if let sentiment = layer.features["sentiment_extremity"] {
-                            PercentileBar(percentile: sentiment.percentile ?? 0, label: L10n.zh("情绪极端度", en: "Sentiment extremity"))
+                            PercentileBar(percentile: sentiment.percentile ?? 0, label: L10n.Manipulation.featSentimentExtremity)
                         }
                     }
                 }
