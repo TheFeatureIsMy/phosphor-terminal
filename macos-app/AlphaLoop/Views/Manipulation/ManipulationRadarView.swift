@@ -1,5 +1,5 @@
-// ManipulationRadarView.swift — 操纵雷达主视图（重构版）
-// 概览仪表盘：头部 + 统计行 + 双栏（案例网格 + 告警流）
+// ManipulationRadarView.swift — 操纵雷达主视图（九段叙事流重构版）
+// 1280 居中，Masthead + §0–§8，对齐 MarketStructureView / StructureMatrixView 风格家族
 
 import SwiftUI
 
@@ -7,14 +7,14 @@ struct ManipulationRadarView: View {
     @Environment(\.networkClient) private var networkClient
     @Environment(PulseColors.self) private var colors
     @Environment(SettingsState.self) private var settingsState
+    @Environment(AppState.self) private var appState
     @State private var viewModel: ManipulationViewModel?
 
     var body: some View {
         Group {
             if let vm = viewModel {
                 if vm.isLoading && vm.radarOverview == nil {
-                    LoadingView(type: .dashboard)
-                        .padding(PulseSpacing.lg)
+                    LoadingView(type: .dashboard).padding(PulseSpacing.lg)
                 } else if let overview = vm.radarOverview {
                     radarContent(vm: vm, overview: overview)
                 } else if let error = vm.error {
@@ -22,222 +22,96 @@ struct ManipulationRadarView: View {
                         icon: "exclamationmark.triangle",
                         title: L10n.zh("加载失败", en: "Load Failed"),
                         description: error,
-                        primaryAction: (title: L10n.zh("重试", en: "Retry"), action: {
-                            Task { await vm.loadRadar() }
-                        })
-                    )
-                    .padding(PulseSpacing.lg)
+                        primaryAction: (title: L10n.zh("重试", en: "Retry"), action: { Task { await vm.loadRadar() } })
+                    ).padding(PulseSpacing.lg)
                 } else {
-                    EmptyStateView(
-                        icon: "shield.checkered",
-                        title: L10n.Manipulation.noCases,
-                        description: L10n.Manipulation.radarSubtitle
-                    )
-                    .padding(PulseSpacing.lg)
+                    EmptyStateView(icon: "shield.checkered", title: L10n.Manipulation.noCases, description: L10n.Manipulation.radarSubtitle)
+                        .padding(PulseSpacing.lg)
                 }
             } else {
-                LoadingView(type: .dashboard)
-                    .padding(PulseSpacing.lg)
+                LoadingView(type: .dashboard).padding(PulseSpacing.lg)
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .id(settingsState.language)
-        .task {
-            if viewModel == nil {
-                let vm = ManipulationViewModel(client: networkClient)
-                viewModel = vm
-                await vm.loadRadar()
-                vm.startLiveUpdates()
-                vm.connectStream(baseURL: networkClient.baseURL)
-            }
+        .task { await initialLoad() }
+        .onAppear {
+            if viewModel == nil { viewModel = ManipulationViewModel(client: networkClient) }
+            // CRITICAL: connectStream BEFORE startLiveUpdates to avoid WS event drop race
+            viewModel?.connectStream(baseURL: networkClient.baseURL.host != nil ? networkClient.baseURL : nil)
+            viewModel?.startLiveUpdates()
         }
-        .onDisappear {
-            viewModel?.stopLiveUpdates()
-        }
-        .sheet(item: detailBinding) { detail in
-            CaseDetailView(
-                caseDetail: detail,
-                userProfile: viewModel?.userProfile ?? "conservative"
-            )
-            .frame(minWidth: 520, minHeight: 600)
-        }
+        .onDisappear { viewModel?.stopLiveUpdates() }
     }
 
-    // Binding for sheet(item:) — focusedDetail drives sheet
-    private var detailBinding: Binding<ManipulationCaseDetail?> {
-        Binding(
-            get: { viewModel?.focusedDetail },
-            set: { _ in } // dismiss only; focus managed by focusCase
-        )
+    private func initialLoad() async {
+        if viewModel == nil { viewModel = ManipulationViewModel(client: networkClient) }
+        await viewModel?.loadRadar()
     }
 
-    // MARK: - Main Content
-
+    @ViewBuilder
     private func radarContent(vm: ManipulationViewModel, overview: ManipulationRadarOverview) -> some View {
         ScrollView(.vertical, showsIndicators: false) {
-            VStack(alignment: .leading, spacing: PulseSpacing.md) {
-                headerRow(vm: vm)
-                statsRow(overview: overview)
-                twoColumnBody(vm: vm, overview: overview)
-            }
-            .padding(PulseSpacing.lg)
-        }
-        .scrollEdgeEffectStyle(.soft, for: .vertical)
-    }
-
-    // MARK: - 1. Header Row
-
-    private func headerRow(vm: ManipulationViewModel) -> some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
-                Text(L10n.Manipulation.radarTitle)
-                    .font(PulseFonts.displaySubheading)
-                    .foregroundStyle(colors.textPrimary)
-                Text(L10n.Manipulation.radarSubtitle)
-                    .font(PulseFonts.caption)
-                    .foregroundStyle(colors.textMuted)
-            }
-
-            Spacer()
-
-            HStack(spacing: PulseSpacing.xs) {
-                // User profile indicator (toggle removed per Task 4; value still used for /signals)
-                HStack(spacing: PulseSpacing.xxs) {
-                    Image(systemName: vm.userProfile == "conservative" ? "shield.fill" : "bolt.fill")
-                        .font(PulseFonts.label)
-                    Text(vm.userProfile == "conservative" ? L10n.Manipulation.conservative : L10n.Manipulation.aggressive)
-                        .font(PulseFonts.captionMedium)
-                }
-                .foregroundStyle(vm.userProfile == "conservative" ? PulseColors.info : PulseColors.amber)
-                .padding(.horizontal, PulseSpacing.xs)
-                .padding(.vertical, PulseSpacing.xxs)
-                .background(
-                    RoundedRectangle(cornerRadius: PulseRadii.button)
-                        .fill((vm.userProfile == "conservative" ? PulseColors.info : PulseColors.amber).opacity(0.08))
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: PulseRadii.button)
-                        .stroke((vm.userProfile == "conservative" ? PulseColors.info : PulseColors.amber).opacity(0.15), lineWidth: 1)
-                )
-
-                // Scan / refresh button
-                KryptonButton(title: L10n.Manipulation.startScan, action: {
-                    Task { await vm.loadRadar() }
-                })
-            }
-        }
-    }
-
-    // MARK: - 2. Stats Row
-
-    private func statsRow(overview: ManipulationRadarOverview) -> some View {
-        HStack(spacing: PulseSpacing.md) {
-            // Total Active Cases
-            StatCard(
-                icon: "shield.lefthalf.filled.badge.checkmark",
-                label: L10n.Manipulation.activeCases,
-                value: "\(overview.totalActive)",
-                color: PulseColors.info
-            )
-
-            // High Risk Symbols
-            KryptonCard(emphasis: .subtle) {
-                VStack(spacing: PulseSpacing.xs) {
-                    Image(systemName: "exclamationmark.shield.fill")
-                        .font(.system(size: 18))
-                        .foregroundStyle(PulseColors.danger)
-                    if overview.highRiskSymbols.isEmpty {
-                        Text("—")
-                            .font(PulseFonts.displayHeading)
-                            .foregroundStyle(colors.textPrimary)
-                    } else {
-                        VStack(spacing: 1) {
-                            ForEach(overview.highRiskSymbols, id: \.self) { sym in
-                                Text(sym)
-                                    .font(PulseFonts.captionMedium)
-                                    .foregroundStyle(PulseColors.danger)
-                                    .lineLimit(1)
-                            }
-                        }
+            VStack(spacing: PulseSpacing.xl) {
+                MastheadBlock()
+                    .staggeredAppearance(index: 0)
+                if !overview.activeCases.isEmpty {
+                    ActiveCasesStrip(overview: overview, focusedCaseId: vm.focusedCaseId) { id in
+                        Task { await vm.focusCase(id) }
                     }
-                    Text(L10n.Manipulation.highRisk)
-                        .font(PulseFonts.caption)
-                        .foregroundStyle(colors.textMuted)
+                    .staggeredAppearance(index: 1)
                 }
-                .frame(maxWidth: .infinity)
-            }
-
-            // By Stage breakdown
-            KryptonCard(emphasis: .subtle) {
-                VStack(spacing: PulseSpacing.xs) {
-                    Image(systemName: "chart.bar.doc.horizontal")
-                        .font(.system(size: 18))
-                        .foregroundStyle(PulseColors.accent)
-                    VStack(spacing: 1) {
-                        ForEach(overview.byStage.sorted(by: { $0.key < $1.key }), id: \.key) { stage, count in
-                            HStack(spacing: PulseSpacing.xxs) {
-                                Text("\(count)")
-                                    .font(PulseFonts.tabular)
-                                    .foregroundStyle(colors.textPrimary)
-                                Text(stage)
-                                    .font(PulseFonts.micro)
-                                    .foregroundStyle(colors.textMuted)
-                                    .lineLimit(1)
-                            }
-                        }
+                if let detail = vm.focusedDetail {
+                    VerdictPanel(detail: detail)
+                        .staggeredAppearance(index: 2)
+                    LifecycleTimeline(detail: detail)
+                        .staggeredAppearance(index: 3)
+                    EvidenceLayerMatrix(detail: detail)
+                        .staggeredAppearance(index: 4)
+                    WhaleConcentrationPanel(detail: detail)
+                        .staggeredAppearance(index: 5)
+                    CrossMarketPressurePanel(detail: detail)
+                        .staggeredAppearance(index: 6)
+                    SocialAccelerationPanel(detail: detail)
+                        .staggeredAppearance(index: 7)
+                    DualProfileSignalPanel(detail: detail, impact: vm.strategyImpact) { route in
+                        appState.selectedRoute = route
                     }
-                    Text(L10n.Manipulation.byStage)
-                        .font(PulseFonts.caption)
-                        .foregroundStyle(colors.textMuted)
+                    .staggeredAppearance(index: 8)
+                } else if vm.focusedCaseId != nil {
+                    LoadingView(type: .detail)
                 }
-                .frame(maxWidth: .infinity)
-            }
-        }
-    }
-
-    // MARK: - 3. Two-Column Body
-
-    private func twoColumnBody(vm: ManipulationViewModel, overview: ManipulationRadarOverview) -> some View {
-        HStack(alignment: .top, spacing: PulseSpacing.md) {
-            // Left column (60%): Active Cases Grid
-            VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-                TerminalLabel(text: L10n.Manipulation.activeCases)
-
-                if overview.activeCases.isEmpty {
-                    EmptyStateView(
-                        icon: "shield.checkered",
-                        title: L10n.Manipulation.noCases,
-                        description: L10n.Manipulation.radarSubtitle
-                    )
-                } else {
-                    LazyVGrid(
-                        columns: [
-                            GridItem(.flexible(), spacing: PulseSpacing.sm),
-                            GridItem(.flexible(), spacing: PulseSpacing.sm)
-                        ],
-                        spacing: PulseSpacing.sm
-                    ) {
-                        ForEach(Array(overview.activeCases.enumerated()), id: \.element.id) { index, caseSummary in
-                            CaseCardView(caseSummary: caseSummary)
-                                .staggeredAppearance(index: index)
-                                .onTapGesture {
-                                    Task { await vm.focusCase(caseSummary.id) }
-                                }
-                        }
-                    }
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .layoutPriority(1.5) // ~60%
-
-            // Right column (40%): Alert Feed
-            VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-                TerminalLabel(text: L10n.Manipulation.alertFeed)
-
                 ManipulationAlertFeed(alerts: vm.alerts)
+                    .staggeredAppearance(index: 9)
+                if let similar = vm.similar, !similar.similar.isEmpty {
+                    SimilarCasesPanel(similar: similar)
+                        .staggeredAppearance(index: 10)
+                }
             }
-            .frame(maxWidth: .infinity)
-            .layoutPriority(1.0) // ~40%
+            .padding(.horizontal, PulseSpacing.xl)
+            .padding(.vertical, PulseSpacing.lg)
+            .frame(maxWidth: 1280, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .center)
         }
+        .background(colors.background)
+    }
+}
+
+private struct MastheadBlock: View {
+    @Environment(PulseColors.self) private var colors
+    var body: some View {
+        VStack(alignment: .leading, spacing: PulseSpacing.sm) {
+            HStack(spacing: PulseSpacing.sm) {
+                Text("ALPHALOOP").font(PulseFonts.micro).foregroundStyle(colors.textMuted)
+                Text("·").foregroundStyle(colors.textMuted)
+                Text(L10n.zh("操纵雷达", en: "MANIPULATION RADAR")).font(PulseFonts.displaySubheading)
+                Text("·").foregroundStyle(colors.textMuted)
+                Text(L10n.zh("统计推断", en: "STATISTICAL INFERENCE")).font(PulseFonts.micro).foregroundStyle(colors.textMuted)
+            }
+            Text(L10n.Manipulation.disclaimer)
+                .font(PulseFonts.caption)
+                .foregroundStyle(colors.textMuted)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(PulseSpacing.lg)
+        .glassEffect()
     }
 }

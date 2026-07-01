@@ -1,7 +1,36 @@
-// LifecycleIndicator.swift — 操纵案例生命周期进度指示器
+// LifecycleIndicator.swift — 操纵案例生命周期进度指示器 + 色板 helper
 // 5-stage horizontal dot-and-line progress: suspected → accumulate → markup → distribute → collapse
+// LifecycleStagePalette is shared with LifecycleTimeline component.
 
 import SwiftUI
+
+// MARK: - Lifecycle Stage Palette (色板与图标映射 helper)
+
+enum LifecycleStagePalette {
+    static let stages = ["suspected", "accumulate", "markup", "distribute", "collapse"]
+    static func color(_ stage: String, colors: PulseColors) -> Color {
+        switch stage {
+        case "suspected": return colors.textMuted
+        case "accumulate": return PulseColors.info
+        case "markup": return PulseColors.accent
+        case "distribute": return PulseColors.amber
+        case "collapse": return PulseColors.danger
+        default: return colors.textMuted
+        }
+    }
+    static func icon(_ stage: String) -> String {
+        switch stage {
+        case "suspected": return "questionmark.circle"
+        case "accumulate": return "arrow.down.right.circle"
+        case "markup": return "arrow.up.right.circle"
+        case "distribute": return "arrow.down.circle"
+        case "collapse": return "exclamationmark.triangle"
+        default: return "circle"
+        }
+    }
+}
+
+// MARK: - LifecycleIndicator (legacy, still used by CaseCardView)
 
 struct LifecycleIndicator: View {
     @Environment(PulseColors.self) private var colors

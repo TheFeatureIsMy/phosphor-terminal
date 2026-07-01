@@ -5,6 +5,7 @@ extension L10n {
         // MARK: - Page
         static var radarTitle: String { zh("操纵雷达", en: "Manipulation Radar") }
         static var radarSubtitle: String { zh("市场操纵行为智能识别", en: "AI-Powered Market Manipulation Detection") }
+        static var disclaimer: String { zh("本页面所有信号均为统计推断，不构成投资建议。", en: "All signals on this page are statistical inferences and do not constitute investment advice.") }
 
         // MARK: - M1–M8 Types
         static var typeM1: String { zh("资金协同控盘", en: "Coordinated Fund Control") }
@@ -51,5 +52,44 @@ extension L10n {
         static var highRisk: String { zh("高危品种", en: "HIGH RISK") }
         static var noCases: String { zh("暂无活跃案例", en: "No active cases") }
         static var byStage: String { zh("按阶段", en: "BY STAGE") }
+
+        // MARK: - Narrative Sections (§0–§8)
+        static var verdict: String { zh("判定结果", en: "VERDICT") }
+        static var lifecycleTimeline: String { zh("生命周期", en: "LIFECYCLE TIMELINE") }
+        static var evidenceMatrix: String { zh("证据层矩阵", en: "EVIDENCE LAYER MATRIX") }
+        static var whaleConcentration: String { zh("巨鲸与筹码集中", en: "WHALE CONCENTRATION") }
+        static var crossMarketPressure: String { zh("跨市场压力", en: "CROSS-MARKET PRESSURE") }
+        static var socialAcceleration: String { zh("社交加速", en: "SOCIAL ACCELERATION") }
+        static var defenseStrategyImpact: String { zh("防御策略影响", en: "DEFENSE & STRATEGY IMPACT") }
+        static var similarHistoricalCases: String { zh("相似历史案例", en: "SIMILAR HISTORICAL CASES") }
+
+        // MARK: - Verdict Panel
+        static var likely: String { zh("疑似", en: "Likely") }
+        static var evidenceConsistentWith: String { zh("证据符合", en: "Evidence consistent with") }
+        static var dataCompleteness: String { zh("数据完整度", en: "Data completeness") }
+        static var maxConfidence: String { zh("最大置信度", en: "Max confidence") }
+        static var dataUnavailable: String { zh("数据不可用", en: "Data unavailable") }
+
+        // MARK: - Evidence Layers
+        static var layerPrice: String { zh("量价", en: "Price Volume") }
+        static var layerOrderbook: String { zh("订单簿", en: "Orderbook") }
+        static var layerOnchain: String { zh("链上", en: "Onchain") }
+        static var layerSocial: String { zh("社交/新闻", en: "Social/News") }
+        static var layerCrossMarket: String { zh("跨市场", en: "Cross-Market") }
+
+        // MARK: - Whale / Cross-Market / Social Features
+        static var featTop10Concentration: String { zh("前10集中度", en: "Top 10 concentration") }
+        static var featExchangeInflow: String { zh("交易所净流入", en: "Exchange net inflow") }
+        static var featFundingRate: String { zh("资金费率 Z 值", en: "Funding rate Z-score") }
+        static var featOpenInterest: String { zh("持仓量变化", en: "Open interest change") }
+        static var featLongShortRatio: String { zh("多空比", en: "Long/Short ratio") }
+        static var featBasis: String { zh("基差", en: "Basis") }
+
+        // MARK: - Strategy Impact
+        static var affectedSymbols: String { zh("影响交易对", en: "AFFECTED SYMBOLS") }
+        static var strategyImpact: String { zh("策略联动", en: "STRATEGY IMPACT") }
+        static var openStrategyRisk: String { zh("打开策略风控", en: "Open Strategy Risk") }
+        static var wouldBlock: String { zh("将被阻断", en: "Would block") }
+        static var filterDisabled: String { zh("过滤器已关闭", en: "Filter disabled") }
     }
 }
