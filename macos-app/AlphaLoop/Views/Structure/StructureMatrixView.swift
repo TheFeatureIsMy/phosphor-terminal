@@ -176,11 +176,7 @@ private struct StructureMatrixContentView: View {
                 }
                 .padding(.horizontal, PulseSpacing.sm)
                 .padding(.vertical, 8)
-                .background(
-                    RoundedRectangle(cornerRadius: PulseRadii.button)
-                        .fill(colors.cardBackground)
-                        .overlay(RoundedRectangle(cornerRadius: PulseRadii.button).stroke(colors.border, lineWidth: 1))
-                )
+                .glassEffect(.regular.interactive(), in: .rect(cornerRadius: PulseRadii.button))
                 .foregroundStyle(colors.textPrimary)
             }
             .buttonStyle(.plain)
@@ -206,11 +202,7 @@ private struct StructureMatrixContentView: View {
                     .buttonStyle(.plain)
                 }
             }
-            .background(
-                RoundedRectangle(cornerRadius: PulseRadii.button)
-                    .fill(colors.cardBackground)
-                    .overlay(RoundedRectangle(cornerRadius: PulseRadii.button).stroke(colors.border, lineWidth: 1))
-            )
+            .glassEffect(.regular.interactive(), in: .rect(cornerRadius: PulseRadii.button))
 
             Spacer()
 
@@ -218,11 +210,7 @@ private struct StructureMatrixContentView: View {
                 Image(systemName: "arrow.clockwise")
                     .font(.system(size: 12, weight: .medium))
                     .padding(8)
-                    .background(
-                        RoundedRectangle(cornerRadius: PulseRadii.button)
-                            .fill(colors.cardBackground)
-                            .overlay(RoundedRectangle(cornerRadius: PulseRadii.button).stroke(colors.border, lineWidth: 1))
-                    )
+                    .glassEffect(.regular.interactive(), in: .rect(cornerRadius: PulseRadii.button))
                     .foregroundStyle(colors.textPrimary)
                     .rotationEffect(.degrees(vm.isLoading ? 360 : 0))
                     .animation(vm.isLoading ? .linear(duration: 1).repeatForever(autoreverses: false) : .default, value: vm.isLoading)
@@ -279,11 +267,7 @@ private struct FastTrackHealthMiniBar: View {
                 .foregroundStyle(h.verdictTrustworthy ? PulseColors.accent : PulseColors.StateColors.orange)
         }
         .padding(.horizontal, PulseSpacing.md).padding(.vertical, PulseSpacing.sm)
-        .background(
-            RoundedRectangle(cornerRadius: PulseRadii.md)
-                .fill(colors.cardBackground.opacity(0.5))
-                .overlay(RoundedRectangle(cornerRadius: PulseRadii.md).stroke(colors.border, lineWidth: 1))
-        )
+        .glassEffect(.regular, in: .rect(cornerRadius: PulseRadii.md))
     }
 
     @ViewBuilder
@@ -369,11 +353,7 @@ private struct TribunalCenterpiece: View {
                 .frame(width: 280)
         }
         .padding(PulseSpacing.lg)
-        .background(
-            RoundedRectangle(cornerRadius: PulseRadii.card)
-                .fill(colors.cardBackground.opacity(0.6))
-                .overlay(RoundedRectangle(cornerRadius: PulseRadii.card).stroke(colors.border, lineWidth: 1))
-        )
+        .glassEffect(.regular, in: .rect(cornerRadius: PulseRadii.card))
     }
 
     private var currentStateKey: String { guard_?.guardState ?? "inactive" }
@@ -494,21 +474,16 @@ private struct TribunalCenterpiece: View {
                 }
                 .padding(.horizontal, PulseSpacing.md).padding(.vertical, 9)
                 .frame(maxWidth: .infinity)
-                .background(
-                    RoundedRectangle(cornerRadius: PulseRadii.button)
-                        .fill(verdictColor.opacity(0.18))
-                        .overlay(RoundedRectangle(cornerRadius: PulseRadii.button).stroke(verdictColor.opacity(0.45), lineWidth: 1))
-                )
+                .glassEffect(.regular.interactive(), in: .rect(cornerRadius: PulseRadii.button))
+                .overlay(RoundedRectangle(cornerRadius: PulseRadii.button).stroke(verdictColor.opacity(0.45), lineWidth: 1))
                 .foregroundStyle(verdictColor)
             }
             .buttonStyle(.plain)
         }
         .padding(PulseSpacing.md)
-        .background(
-            RoundedRectangle(cornerRadius: PulseRadii.md)
-                .fill(verdictColor.opacity(0.06))
-                .overlay(RoundedRectangle(cornerRadius: PulseRadii.md).stroke(verdictColor.opacity(0.25), lineWidth: 1))
-        )
+        .glassEffect(.regular, in: .rect(cornerRadius: PulseRadii.md))
+        .overlay(RoundedRectangle(cornerRadius: PulseRadii.md).fill(verdictColor.opacity(0.06)).allowsHitTesting(false))
+        .overlay(RoundedRectangle(cornerRadius: PulseRadii.md).stroke(verdictColor.opacity(0.25), lineWidth: 1))
     }
 
     private var verdictWord: String {
@@ -782,7 +757,7 @@ private struct ShadowWindowsPanel: View {
                     .foregroundStyle(colors.textMuted)
                     .padding(PulseSpacing.md)
                     .frame(maxWidth: .infinity)
-                    .background(RoundedRectangle(cornerRadius: PulseRadii.md).fill(colors.cardBackground.opacity(0.4)))
+                    .glassEffect(.regular, in: .rect(cornerRadius: PulseRadii.md))
             } else {
                 LazyVGrid(columns: [
                     GridItem(.flexible(), spacing: PulseSpacing.md),
@@ -836,11 +811,7 @@ private struct ShadowWindowCard: View {
             }
         }
         .padding(PulseSpacing.md)
-        .background(
-            RoundedRectangle(cornerRadius: PulseRadii.md)
-                .fill(colors.cardBackground)
-                .overlay(RoundedRectangle(cornerRadius: PulseRadii.md).stroke(colors.border, lineWidth: 1))
-        )
+        .glassEffect(.regular, in: .rect(cornerRadius: PulseRadii.md))
     }
 
     @ViewBuilder
@@ -895,7 +866,7 @@ private struct ChargesPanel: View {
                     .foregroundStyle(colors.textMuted)
                     .padding(PulseSpacing.md)
                     .frame(maxWidth: .infinity)
-                    .background(RoundedRectangle(cornerRadius: PulseRadii.md).fill(colors.cardBackground.opacity(0.4)))
+                    .glassEffect(.regular, in: .rect(cornerRadius: PulseRadii.md))
             } else {
                 VStack(alignment: .leading, spacing: PulseSpacing.xs) {
                     ForEach(Array(charges.enumerated()), id: \.offset) { idx, c in
@@ -945,7 +916,7 @@ private struct ChargeRow: View {
                 .background(RoundedRectangle(cornerRadius: 3).fill(colors.border.opacity(0.3)))
         }
         .padding(PulseSpacing.sm)
-        .background(RoundedRectangle(cornerRadius: PulseRadii.sm).fill(colors.cardBackground.opacity(0.5)))
+        .glassEffect(.regular, in: .rect(cornerRadius: PulseRadii.sm))
     }
 
     private var numeral: String {
@@ -975,7 +946,7 @@ private struct HearingsTimeline: View {
                     .foregroundStyle(colors.textMuted)
                     .padding(PulseSpacing.md)
                     .frame(maxWidth: .infinity)
-                    .background(RoundedRectangle(cornerRadius: PulseRadii.md).fill(colors.cardBackground.opacity(0.4)))
+                    .glassEffect(.regular, in: .rect(cornerRadius: PulseRadii.md))
             } else {
                 VStack(alignment: .leading, spacing: 0) {
                     ForEach(Array(events.enumerated()), id: \.offset) { idx, e in
@@ -983,11 +954,7 @@ private struct HearingsTimeline: View {
                     }
                 }
                 .padding(PulseSpacing.md)
-                .background(
-                    RoundedRectangle(cornerRadius: PulseRadii.md)
-                        .fill(colors.cardBackground.opacity(0.5))
-                        .overlay(RoundedRectangle(cornerRadius: PulseRadii.md).stroke(colors.border, lineWidth: 1))
-                )
+                .glassEffect(.regular, in: .rect(cornerRadius: PulseRadii.md))
             }
         }
     }
@@ -1074,7 +1041,7 @@ private struct StructureDetailDrawer: View {
                     Button { onClose() } label: {
                         Image(systemName: "xmark").font(.system(size: 11, weight: .medium))
                             .padding(7)
-                            .background(Circle().fill(colors.cardBackground))
+                            .glassEffect(.regular.interactive(), in: .circle)
                             .foregroundStyle(colors.textSecondary)
                     }
                     .buttonStyle(.plain)
@@ -1164,7 +1131,7 @@ private struct SymbolPickerOverlay: View {
                         .foregroundStyle(colors.textMuted)
                 }
                 .padding(PulseSpacing.md)
-                .background(colors.cardBackground)
+                .glassEffect(.regular, in: .rect(cornerRadius: 0))
 
                 Divider().overlay(colors.border)
 
@@ -1187,12 +1154,7 @@ private struct SymbolPickerOverlay: View {
                 .background(colors.background)
             }
             .frame(width: 420)
-            .background(
-                RoundedRectangle(cornerRadius: PulseRadii.card)
-                    .fill(colors.background)
-                    .overlay(RoundedRectangle(cornerRadius: PulseRadii.card).stroke(colors.border, lineWidth: 1))
-            )
-            .clipShape(RoundedRectangle(cornerRadius: PulseRadii.card))
+            .glassEffect(.regular, in: .rect(cornerRadius: PulseRadii.card))
             .padding(.top, 80)
             .background(
                 Button("") { isOpen = false }
