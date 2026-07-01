@@ -9,6 +9,12 @@ struct CaseDetailView: View {
     let caseDetail: ManipulationCaseDetail
     let userProfile: String
 
+    private var signal: ManipulationTradingSignal {
+        userProfile == "conservative"
+            ? caseDetail.tradingSignal.conservative
+            : caseDetail.tradingSignal.aggressive
+    }
+
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: PulseSpacing.lg) {
@@ -72,16 +78,16 @@ struct CaseDetailView: View {
                 VStack(alignment: .leading, spacing: PulseSpacing.md) {
                     // Signal action (large, colored)
                     HStack {
-                        Text(caseDetail.tradingSignal.action)
+                        Text(signal.action)
                             .font(PulseFonts.displayHeading)
-                            .foregroundStyle(signalActionColor(caseDetail.tradingSignal.action))
+                            .foregroundStyle(signalActionColor(signal.action))
 
                         Spacer()
 
                         // Risk level badge
                         BadgeDot(
-                            color: riskColor(caseDetail.tradingSignal.riskLevel),
-                            label: caseDetail.tradingSignal.riskLevel.uppercased(),
+                            color: riskColor(signal.riskLevel),
+                            label: signal.riskLevel.uppercased(),
                             size: .small
                         )
                     }
@@ -90,20 +96,20 @@ struct CaseDetailView: View {
                     HStack(spacing: PulseSpacing.md) {
                         signalDetail(
                             label: L10n.zh("方向", en: "Direction"),
-                            value: caseDetail.tradingSignal.direction.uppercased()
+                            value: signal.direction.uppercased()
                         )
                         signalDetail(
                             label: L10n.zh("仓位", en: "Sizing"),
-                            value: caseDetail.tradingSignal.sizing.uppercased()
+                            value: signal.sizing.uppercased()
                         )
                         signalDetail(
                             label: L10n.zh("止损", en: "Stop Loss"),
-                            value: caseDetail.tradingSignal.stopLoss.uppercased()
+                            value: signal.stopLoss.uppercased()
                         )
                     }
 
                     // Rationale
-                    Text(caseDetail.tradingSignal.rationale)
+                    Text(signal.rationale)
                         .font(PulseFonts.body)
                         .foregroundStyle(colors.textSecondary)
 

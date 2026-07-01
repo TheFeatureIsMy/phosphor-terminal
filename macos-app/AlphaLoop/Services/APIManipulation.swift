@@ -93,9 +93,17 @@ struct ManipulationCaseDetail: Codable, Identifiable {
     var evidence: [String: Double] = [:]
     var timeline: [ManipulationStageEntry] = []
     var outcome: [String: Double] = [:]
-    var tradingSignal: ManipulationTradingSignal = ManipulationTradingSignal()
+    var tradingSignal: DualTradingSignal = DualTradingSignal()
     var createdAt: String = ""
     var updatedAt: String = ""
+
+    // v2 fields (optional for backward compat with mock/old responses)
+    var riskLevel: String = ""
+    var evidenceLayers: [String: EvidenceLayerPayload]? = nil
+    var completeness: Double = 0
+    var maxConfidence: Double = 0
+    var affectedSymbols: [String]? = nil
+    var sources: [ManipulationSource]? = nil
 
     enum CodingKeys: String, CodingKey {
         case id, symbol, market, evidence, timeline, outcome, confidence
@@ -104,6 +112,12 @@ struct ManipulationCaseDetail: Codable, Identifiable {
         case tradingSignal = "trading_signal"
         case createdAt = "created_at"
         case updatedAt = "updated_at"
+        case riskLevel = "risk_level"
+        case evidenceLayers = "evidence_layers"
+        case completeness
+        case maxConfidence = "max_confidence"
+        case affectedSymbols = "affected_symbols"
+        case sources
     }
 }
 
@@ -121,6 +135,128 @@ struct ManipulationSignalItem: Codable, Identifiable, Hashable {
         case caseId = "case_id"
         case riskLevel = "risk_level"
     }
+}
+
+struct EvidenceLayerPayload: Codable {
+    var available: Bool = false
+    var score: Double = 0
+    var quality: Double = 0
+    var features: [String: FeaturePayload] = [:]
+}
+
+struct FeaturePayload: Codable {
+    var value: Double = 0
+    var percentile: Double? = nil
+    var display: String? = nil
+}
+
+struct DualTradingSignal: Codable {
+    var conservative: ManipulationTradingSignal = ManipulationTradingSignal()
+    var aggressive: ManipulationTradingSignal = ManipulationTradingSignal()
+}
+
+struct ManipulationSource: Codable {
+    var type: String = ""
+    var ruleId: String = ""
+    var version: String = ""
+
+    enum CodingKeys: String, CodingKey {
+        case type
+        case ruleId = "rule_id"
+        case version
+    }
+}
+
+struct StrategyImpactItem: Codable, Identifiable {
+    var id: String { strategyId }
+    var strategyId: String = ""
+    var strategyName: String = ""
+    var wouldBlock: Bool = false
+    var reasonCodes: [String] = []
+    var currentValue: Double = 0
+    var threshold: Double = 0
+
+    enum CodingKeys: String, CodingKey {
+        case strategyId = "strategy_id"
+        case strategyName = "strategy_name"
+        case wouldBlock = "would_block"
+        case reasonCodes = "reason_codes"
+        case currentValue = "current_value"
+        case threshold
+    }
+}
+
+struct StrategyImpactResponse: Codable {
+    var caseId: String = ""
+    var affectedStrategies: [StrategyImpactItem] = []
+
+    enum CodingKeys: String, CodingKey {
+        case caseId = "case_id"
+        case affectedStrategies = "affected_strategies"
+    }
+}
+
+struct SimilarCaseItem: Codable, Identifiable {
+    var id: String = ""
+    var symbol: String = ""
+    var manipulationType: String = ""
+    var similarity: Double = 0
+    var outcome: [String: Double] = [:]
+    var createdAt: String = ""
+
+    enum CodingKeys: String, CodingKey {
+        case id, symbol, similarity, outcome
+        case manipulationType = "manipulation_type"
+        case createdAt = "created_at"
+    }
+}
+
+struct SimilarCasesResponse: Codable {
+    var caseId: String = ""
+    var similar: [SimilarCaseItem] = []
+
+    enum CodingKeys: String, CodingKey {
+        case caseId = "case_id"
+        case similar
+    }
+}
+
+enum ManipulationEvent: Codable {
+    case stageChange(caseId: String, oldStage: String, newStage: String, ts: String)
+    case newCase(caseId: String, symbol: String, mType: String, ts: String)
+    case snapshot(activeCases: [ManipulationCaseSummary], ts: String)
+    case heartbeat(ts: String)
+    case unknown
+
+    enum CodingKeys: String, CodingKey { case type, case_id, symbol, manipulation_type, old_stage, new_stage, ts, active_cases }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let type = try c.decodeIfPresent(String.self, forKey: .type) ?? ""
+        switch type {
+        case "stage_change":
+            self = .stageChange(
+                caseId: try c.decodeIfPresent(String.self, forKey: .case_id) ?? "",
+                oldStage: try c.decodeIfPresent(String.self, forKey: .old_stage) ?? "",
+                newStage: try c.decodeIfPresent(String.self, forKey: .new_stage) ?? "",
+                ts: try c.decodeIfPresent(String.self, forKey: .ts) ?? "")
+        case "new_case":
+            self = .newCase(
+                caseId: try c.decodeIfPresent(String.self, forKey: .case_id) ?? "",
+                symbol: try c.decodeIfPresent(String.self, forKey: .symbol) ?? "",
+                mType: try c.decodeIfPresent(String.self, forKey: .manipulation_type) ?? "",
+                ts: try c.decodeIfPresent(String.self, forKey: .ts) ?? "")
+        case "snapshot":
+            let cases = try c.decodeIfPresent([ManipulationCaseSummary].self, forKey: .active_cases) ?? []
+            self = .snapshot(activeCases: cases, ts: try c.decodeIfPresent(String.self, forKey: .ts) ?? "")
+        case "heartbeat":
+            self = .heartbeat(ts: try c.decodeIfPresent(String.self, forKey: .ts) ?? "")
+        default:
+            self = .unknown
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {} // not used
 }
 
 // MARK: - Mock Data
@@ -153,7 +289,10 @@ enum MockManipulation {
                 ManipulationStageEntry(stage: "accumulate", enteredAt: "2026-06-14T16:00:00Z", confidence: 0.62),
                 ManipulationStageEntry(stage: "markup", enteredAt: "2026-06-15T10:00:00Z", confidence: 0.78),
             ],
-            tradingSignal: ManipulationTradingSignal(action: "RIDE", direction: "long", sizing: "medium", stopLoss: "trailing", rationale: "Markup confirmed — ride with trailing stop", riskLevel: "medium"),
+            tradingSignal: DualTradingSignal(
+                conservative: ManipulationTradingSignal(action: "RIDE", direction: "long", sizing: "medium", stopLoss: "trailing", rationale: "Markup confirmed — ride with trailing stop", riskLevel: "medium"),
+                aggressive: ManipulationTradingSignal(action: "EXIT", direction: "short", sizing: "small", stopLoss: "tight", rationale: "Markup nearing exhaustion — prepare to exit", riskLevel: "high")
+            ),
             createdAt: "2026-06-14T08:00:00Z", updatedAt: "2026-06-15T10:00:00Z"
         )
     }
