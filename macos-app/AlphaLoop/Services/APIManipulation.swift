@@ -304,6 +304,24 @@ enum MockManipulation {
             ManipulationAlertItem(id: "a3", caseId: "mock-3", alertType: "new_case", severity: "info", title: "New case: DOGE/USDT (M8 Liquidity Hunt)", createdAt: "2026-06-15T14:00:00Z"),
         ]
     }
+
+    static func strategyImpact(caseId: String) -> StrategyImpactResponse {
+        StrategyImpactResponse(
+            caseId: caseId,
+            affectedStrategies: [
+                StrategyImpactItem(strategyId: "strat-1", strategyName: "BTC Momentum v3", wouldBlock: true, reasonCodes: ["filter_matched"], currentValue: 0.78, threshold: 0.6),
+                StrategyImpactItem(strategyId: "strat-2", strategyName: "SOL Breakout v2", wouldBlock: false, reasonCodes: ["filter_disabled"], currentValue: 0.78, threshold: 0.6),
+            ])
+    }
+
+    static func similarCases(caseId: String) -> SimilarCasesResponse {
+        SimilarCasesResponse(
+            caseId: caseId,
+            similar: [
+                SimilarCaseItem(id: "hist-1", symbol: "DOGE/USDT", manipulationType: "M3", similarity: 0.91, outcome: ["realized_drawdown": -0.18, "recovery_hours": 36], createdAt: "2026-05-10T08:00:00Z"),
+                SimilarCaseItem(id: "hist-2", symbol: "WIF/USDT", manipulationType: "M3", similarity: 0.84, outcome: ["realized_drawdown": -0.22, "recovery_hours": 48], createdAt: "2026-04-22T12:00:00Z"),
+            ])
+    }
 }
 
 // MARK: - API
@@ -431,6 +449,18 @@ struct APIManipulation {
     func getSignals(userProfile: String = "conservative") async throws -> [ManipulationSignalItem] {
         try await client.get("/api/v2/manipulation/signals?user_profile=\(userProfile)") {
             [ManipulationSignalItem]()
+        }
+    }
+
+    func getStrategyImpact(_ caseId: String) async throws -> StrategyImpactResponse {
+        try await client.get("/api/v2/manipulation/cases/\(caseId)/strategy-impact") {
+            MockManipulation.strategyImpact(caseId: caseId)
+        }
+    }
+
+    func getSimilar(_ caseId: String, limit: Int = 5) async throws -> SimilarCasesResponse {
+        try await client.get("/api/v2/manipulation/cases/\(caseId)/similar?limit=\(limit)") {
+            MockManipulation.similarCases(caseId: caseId)
         }
     }
 }
