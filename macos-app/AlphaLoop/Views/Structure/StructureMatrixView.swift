@@ -162,62 +162,71 @@ private struct StructureMatrixContentView: View {
 
     @ViewBuilder
     private var controlsBar: some View {
-        GlassEffectContainer {
-            HStack(spacing: PulseSpacing.sm) {
-                Button { symbolPickerOpen.toggle() } label: {
-                    HStack(spacing: PulseSpacing.xs) {
-                        Image(systemName: "magnifyingglass")
-                            .font(.system(size: 11, weight: .medium))
-                        Text(vm.selectedSymbol)
-                            .font(PulseFonts.tabular)
-                        Text("⌘K")
-                            .font(PulseFonts.micro)
-                            .padding(.horizontal, 6).padding(.vertical, 2)
-                            .background(RoundedRectangle(cornerRadius: 4).fill(colors.textMuted.opacity(0.15)))
-                    }
-                    .padding(.horizontal, PulseSpacing.sm)
-                    .padding(.vertical, 8)
-                    .glassEffect(.regular.interactive(), in: .rect(cornerRadius: PulseRadii.button))
-                    .foregroundStyle(colors.textPrimary)
-                }
-                .buttonStyle(.plain)
-
-                HStack(spacing: 0) {
-                    ForEach(timeframes, id: \.self) { tf in
-                        Button { vm.selectedTimeframe = tf } label: {
-                            Text(tf)
-                                .font(PulseFonts.captionMedium)
-                                .padding(.horizontal, PulseSpacing.sm)
-                                .padding(.vertical, 7)
-                                .background(
-                                    vm.selectedTimeframe == tf
-                                        ? PulseColors.accent.opacity(0.18)
-                                        : Color.clear
-                                )
-                                .foregroundStyle(
-                                    vm.selectedTimeframe == tf
-                                        ? PulseColors.accent
-                                        : colors.textMuted
-                                )
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .glassEffect(.regular.interactive(), in: .rect(cornerRadius: PulseRadii.button))
-
-                Spacer()
-
-                Button { Task { await vm.refresh() } } label: {
-                    Image(systemName: "arrow.clockwise")
-                        .font(.system(size: 12, weight: .medium))
-                        .padding(8)
-                        .glassEffect(.regular.interactive(), in: .rect(cornerRadius: PulseRadii.button))
+        HStack(spacing: PulseSpacing.md) {
+            Button { symbolPickerOpen.toggle() } label: {
+                HStack(spacing: PulseSpacing.xs) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(colors.textSecondary)
+                    Text(vm.selectedSymbol)
+                        .font(PulseFonts.tabular)
                         .foregroundStyle(colors.textPrimary)
-                        .rotationEffect(.degrees(vm.isLoading ? 360 : 0))
-                        .animation(vm.isLoading ? .linear(duration: 1).repeatForever(autoreverses: false) : .default, value: vm.isLoading)
+                    Text("⌘K")
+                        .font(PulseFonts.micro)
+                        .foregroundStyle(colors.textMuted)
+                        .padding(.horizontal, 4).padding(.vertical, 1)
+                        .background(colors.textMuted.opacity(0.12))
+                        .clipShape(RoundedRectangle(cornerRadius: 3))
                 }
-                .buttonStyle(.plain)
+                .padding(.horizontal, PulseSpacing.sm)
+                .padding(.vertical, 6)
+                .background(
+                    RoundedRectangle(cornerRadius: PulseRadii.button)
+                        .fill(colors.surfaceHover.opacity(0.5))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: PulseRadii.button)
+                        .stroke(colors.border, lineWidth: 1)
+                )
             }
+            .buttonStyle(.plain)
+
+            HStack(spacing: 2) {
+                ForEach(timeframes, id: \.self) { tf in
+                    Button { vm.selectedTimeframe = tf } label: {
+                        Text(tf)
+                            .font(PulseFonts.monoLabel)
+                            .foregroundStyle(vm.selectedTimeframe == tf ? colors.textPrimary : colors.textSecondary)
+                            .padding(.horizontal, PulseSpacing.sm)
+                            .padding(.vertical, 5)
+                            .background(
+                                RoundedRectangle(cornerRadius: 5)
+                                    .fill(vm.selectedTimeframe == tf ? PulseColors.accent.opacity(0.18) : Color.clear)
+                            )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(3)
+            .background(
+                RoundedRectangle(cornerRadius: PulseRadii.button)
+                    .fill(colors.surfaceHover.opacity(0.4))
+            )
+
+            Spacer()
+
+            Button { Task { await vm.refresh() } } label: {
+                Image(systemName: "arrow.clockwise")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(PulseColors.accent)
+                    .frame(width: 30, height: 30)
+                    .background(PulseColors.accent.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: PulseRadii.button))
+                    .rotationEffect(.degrees(vm.isLoading ? 360 : 0))
+                    .animation(vm.isLoading ? .linear(duration: 1).repeatForever(autoreverses: false) : .default, value: vm.isLoading)
+            }
+            .buttonStyle(.plain)
+            .disabled(vm.isLoading)
         }
     }
 
@@ -269,7 +278,11 @@ private struct FastTrackHealthMiniBar: View {
                 .foregroundStyle(h.verdictTrustworthy ? PulseColors.accent : PulseColors.StateColors.orange)
         }
         .padding(.horizontal, PulseSpacing.md).padding(.vertical, PulseSpacing.sm)
-        .glassEffect(.regular, in: .rect(cornerRadius: PulseRadii.md))
+        .background(
+            RoundedRectangle(cornerRadius: PulseRadii.md)
+                .fill(colors.surfaceHover.opacity(0.35))
+                .overlay(RoundedRectangle(cornerRadius: PulseRadii.md).stroke(colors.border, lineWidth: 1))
+        )
     }
 
     @ViewBuilder
@@ -344,18 +357,22 @@ private struct TribunalCenterpiece: View {
     ]
 
     var body: some View {
-        KryptonCard(emphasis: .bold, cardPadding: PulseSpacing.lg) {
-            HStack(alignment: .top, spacing: PulseSpacing.lg) {
-                stateRail
-                    .frame(width: 200)
+        HStack(alignment: .top, spacing: PulseSpacing.lg) {
+            stateRail
+                .frame(width: 200)
 
-                countdownRing
-                    .frame(maxWidth: .infinity)
+            countdownRing
+                .frame(maxWidth: .infinity)
 
-                verdictPanel
-                    .frame(width: 280)
-            }
+            verdictPanel
+                .frame(width: 280)
         }
+        .padding(PulseSpacing.lg)
+        .background(
+            RoundedRectangle(cornerRadius: PulseRadii.md)
+                .fill(colors.surfaceHover.opacity(0.35))
+                .overlay(RoundedRectangle(cornerRadius: PulseRadii.md).stroke(colors.border, lineWidth: 1))
+        )
     }
 
     private var currentStateKey: String { guard_?.guardState ?? "inactive" }
@@ -486,9 +503,11 @@ private struct TribunalCenterpiece: View {
             .buttonStyle(.plain)
         }
         .padding(PulseSpacing.md)
-        .glassEffect(.regular, in: .rect(cornerRadius: PulseRadii.md))
-        .overlay(RoundedRectangle(cornerRadius: PulseRadii.md).fill(verdictColor.opacity(0.06)).allowsHitTesting(false))
-        .overlay(RoundedRectangle(cornerRadius: PulseRadii.md).stroke(verdictColor.opacity(0.25), lineWidth: 1))
+        .background(
+            RoundedRectangle(cornerRadius: PulseRadii.md)
+                .fill(verdictColor.opacity(0.06))
+                .overlay(RoundedRectangle(cornerRadius: PulseRadii.md).stroke(verdictColor.opacity(0.25), lineWidth: 1))
+        )
     }
 
     private var verdictWord: String {
@@ -758,11 +777,10 @@ private struct ShadowWindowsPanel: View {
 
             if windows.isEmpty {
                 Text(L10n.Structure.noActiveShadowWindows)
-                    .font(PulseFonts.caption)
+                    .font(.system(size: 13, weight: .regular, design: .serif).italic())
                     .foregroundStyle(colors.textMuted)
                     .padding(PulseSpacing.md)
                     .frame(maxWidth: .infinity)
-                    .glassEffect(.regular, in: .rect(cornerRadius: PulseRadii.md))
             } else {
                 LazyVGrid(columns: [
                     GridItem(.flexible(), spacing: PulseSpacing.md),
@@ -782,41 +800,45 @@ private struct ShadowWindowCard: View {
     @Environment(PulseColors.self) private var colors
 
     var body: some View {
-        KryptonCard(emphasis: .balanced) {
-            VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-                HStack {
-                    Text("\(window.fastTimeframe ?? "?") → \(window.slowTimeframe ?? window.timeframe)")
-                        .font(PulseFonts.tabular)
-                        .foregroundStyle(colors.textPrimary)
-                    Spacer()
-                    Text(window.status.uppercased())
-                        .font(PulseFonts.micro)
-                        .padding(.horizontal, 6).padding(.vertical, 2)
-                        .background(RoundedRectangle(cornerRadius: 4).fill(stateColor.opacity(0.18)))
-                        .foregroundStyle(stateColor)
-                }
+        VStack(alignment: .leading, spacing: PulseSpacing.sm) {
+            HStack {
+                Text("\(window.fastTimeframe ?? "?") → \(window.slowTimeframe ?? window.timeframe)")
+                    .font(PulseFonts.tabular)
+                    .foregroundStyle(colors.textPrimary)
+                Spacer()
+                Text(window.status.uppercased())
+                    .font(PulseFonts.micro)
+                    .padding(.horizontal, 6).padding(.vertical, 2)
+                    .background(RoundedRectangle(cornerRadius: 4).fill(stateColor.opacity(0.18)))
+                    .foregroundStyle(stateColor)
+            }
 
-                Text("\(window.zoneType) · \(window.direction ?? "—")")
-                    .font(PulseFonts.caption)
-                    .foregroundStyle(colors.textMuted)
+            Text("\(window.zoneType) · \(window.direction ?? "—")")
+                .font(PulseFonts.caption)
+                .foregroundStyle(colors.textMuted)
 
-                HStack(spacing: PulseSpacing.md) {
-                    stat(L10n.Structure.statFast, "\(window.fastCandleCount)")
-                    stat(L10n.Structure.statViol, "\(window.violationCount)")
-                    stat(L10n.Structure.statReclaim, "\(window.reclaimCount)")
-                    stat(L10n.Structure.statFill, String(format: "%.2f", window.filledRatio))
-                }
+            HStack(spacing: PulseSpacing.md) {
+                stat(L10n.Structure.statFast, "\(window.fastCandleCount)")
+                stat(L10n.Structure.statViol, "\(window.violationCount)")
+                stat(L10n.Structure.statReclaim, "\(window.reclaimCount)")
+                stat(L10n.Structure.statFill, String(format: "%.2f", window.filledRatio))
+            }
 
-                // 12-segment candle progress
-                HStack(spacing: 2) {
-                    ForEach(0..<max(window.fastCandleMax, 1), id: \.self) { i in
-                        RoundedRectangle(cornerRadius: 1)
-                            .fill(i < window.fastCandleCount ? stateColor : colors.border.opacity(0.4))
-                            .frame(height: 6)
-                    }
+            // 12-segment candle progress
+            HStack(spacing: 2) {
+                ForEach(0..<max(window.fastCandleMax, 1), id: \.self) { i in
+                    RoundedRectangle(cornerRadius: 1)
+                        .fill(i < window.fastCandleCount ? stateColor : colors.border.opacity(0.4))
+                        .frame(height: 6)
                 }
             }
         }
+        .padding(PulseSpacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: PulseRadii.md)
+                .fill(colors.surfaceHover.opacity(0.35))
+                .overlay(RoundedRectangle(cornerRadius: PulseRadii.md).stroke(colors.border, lineWidth: 1))
+        )
     }
 
     @ViewBuilder
@@ -867,11 +889,10 @@ private struct ChargesPanel: View {
 
             if charges.isEmpty {
                 Text(L10n.Structure.noChargesFiled)
-                    .font(PulseFonts.caption)
+                    .font(.system(size: 13, weight: .regular, design: .serif).italic())
                     .foregroundStyle(colors.textMuted)
                     .padding(PulseSpacing.md)
                     .frame(maxWidth: .infinity)
-                    .glassEffect(.regular, in: .rect(cornerRadius: PulseRadii.md))
             } else {
                 VStack(alignment: .leading, spacing: PulseSpacing.xs) {
                     ForEach(Array(charges.enumerated()), id: \.offset) { idx, c in
@@ -921,7 +942,11 @@ private struct ChargeRow: View {
                 .background(RoundedRectangle(cornerRadius: 3).fill(colors.border.opacity(0.3)))
         }
         .padding(PulseSpacing.sm)
-        .glassEffect(.regular, in: .rect(cornerRadius: PulseRadii.sm))
+        .background(
+            RoundedRectangle(cornerRadius: PulseRadii.sm)
+                .fill(colors.surfaceHover.opacity(0.35))
+                .overlay(RoundedRectangle(cornerRadius: PulseRadii.sm).stroke(colors.border, lineWidth: 1))
+        )
     }
 
     private var numeral: String {
@@ -947,19 +972,22 @@ private struct HearingsTimeline: View {
 
             if events.isEmpty {
                 Text(L10n.Structure.noPastHearings)
-                    .font(PulseFonts.caption)
+                    .font(.system(size: 13, weight: .regular, design: .serif).italic())
                     .foregroundStyle(colors.textMuted)
                     .padding(PulseSpacing.md)
                     .frame(maxWidth: .infinity)
-                    .glassEffect(.regular, in: .rect(cornerRadius: PulseRadii.md))
             } else {
-                KryptonCard(emphasis: .balanced) {
-                    VStack(alignment: .leading, spacing: 0) {
-                        ForEach(Array(events.enumerated()), id: \.offset) { idx, e in
-                            HearingRow(event: e, isLast: idx == events.count - 1)
-                        }
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(Array(events.enumerated()), id: \.offset) { idx, e in
+                        HearingRow(event: e, isLast: idx == events.count - 1)
                     }
                 }
+                .padding(PulseSpacing.md)
+                .background(
+                    RoundedRectangle(cornerRadius: PulseRadii.md)
+                        .fill(colors.surfaceHover.opacity(0.35))
+                        .overlay(RoundedRectangle(cornerRadius: PulseRadii.md).stroke(colors.border, lineWidth: 1))
+                )
             }
         }
     }
@@ -1046,7 +1074,9 @@ private struct StructureDetailDrawer: View {
                     Button { onClose() } label: {
                         Image(systemName: "xmark").font(.system(size: 11, weight: .medium))
                             .padding(7)
-                            .glassEffect(.regular.interactive(), in: .circle)
+                            .background(colors.surfaceHover.opacity(0.5))
+                            .clipShape(Circle())
+                            .overlay(Circle().stroke(colors.border, lineWidth: 1))
                             .foregroundStyle(colors.textSecondary)
                     }
                     .buttonStyle(.plain)
@@ -1158,7 +1188,13 @@ private struct SymbolPickerOverlay: View {
                 .background(colors.background)
             }
             .frame(width: 420)
-            .glassEffect(.regular, in: .rect(cornerRadius: PulseRadii.card))
+            .background(
+                RoundedRectangle(cornerRadius: PulseRadii.card)
+                    .fill(colors.cardBackground)
+                    .overlay(RoundedRectangle(cornerRadius: PulseRadii.card).stroke(colors.border, lineWidth: 1))
+                    .shadow(color: .black.opacity(0.3), radius: 30, x: 0, y: 12)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: PulseRadii.card))
             .padding(.top, 80)
             .background(
                 Button("") { isOpen = false }
