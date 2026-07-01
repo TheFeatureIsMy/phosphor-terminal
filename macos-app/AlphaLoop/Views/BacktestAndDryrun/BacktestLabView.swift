@@ -65,6 +65,16 @@ struct BacktestLabView: View {
             await vm.loadInitial()
         }
         .onDisappear { vm.onDisappear() }
+        .overlay(alignment: .trailing) {
+            DrawerContainer(isPresented: $showNewRunDrawer, width: 420) {
+                NewRunDrawer(isPresented: $showNewRunDrawer)
+            }
+        }
+        .overlay(alignment: .trailing) {
+            DrawerContainer(isPresented: $showHistoryDrawer, width: 420) {
+                HistoryDrawer(isPresented: $showHistoryDrawer)
+            }
+        }
     }
 
     private var comparedRuns: [BacktestRunV2] {
@@ -72,11 +82,4 @@ struct BacktestLabView: View {
     }
 
     private var vm: BacktestLabViewModel { viewModel }
-}
-
-// 临时占位 — Task 4 替换
-struct StrategyContextStrip: View {
-    let run: BacktestRunV2
-    @Binding var isExpanded: Bool
-    var body: some View { EmptyView() }
 }
