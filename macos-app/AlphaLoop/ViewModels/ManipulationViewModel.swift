@@ -129,7 +129,8 @@ final class ManipulationViewModel {
         pollingTask = nil
         wsTask?.cancel()
         wsTask = nil
-        Task { await streamClient.disconnect() }
+        // streamClient.disconnect() is called by the AsyncStream's onTermination handler
+        // when wsTask is cancelled — no explicit disconnect needed here.
     }
 
     /// 由 view 在 onAppear 时注入 WS baseURL 并连接

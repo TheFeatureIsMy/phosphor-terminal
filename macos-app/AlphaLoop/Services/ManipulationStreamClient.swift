@@ -35,6 +35,7 @@ actor ManipulationStreamClient {
     /// Live event stream. Cancellation stops the receive loop.
     func events() -> AsyncStream<ManipulationEvent> {
         AsyncStream { continuation in
+            self.continuation?.finish()  // finish any existing continuation before reassigning
             self.continuation = continuation
             continuation.onTermination = { @Sendable [weak self] _ in
                 Task { await self?.disconnect() }
