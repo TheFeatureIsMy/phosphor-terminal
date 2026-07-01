@@ -74,7 +74,7 @@
   <li><strong>③ StrategyContextStrip</strong> — 可折叠的策略上下文栏。折叠态显示"策略 #ID · N 条警告 · 晋升门状态"一行摘要。展开后展示策略详细信息、风险警告列表和晋升就绪状态。</li>
   <li><strong>④ MetricsGrid（2×4）</strong> — 2 行 4 列共 8 项指标卡：总收益率、最大回撤、夏普比率、胜率、盈亏比、交易次数、实际成交、平均持仓。使用等宽数字字体，正值绿色、负值红色。</li>
   <li><strong>⑤ TradeListTable</strong> — 紧凑可折叠交易明细表。默认显示前 20 行，点击"显示全部"展开全部。表头列：编号、时间、方向、入场、出场、盈亏、时长。无成交时显示"无成交记录"。</li>
-  <li><strong>⑥ 抽屉面板</strong> — 从右侧滑入的面板，通过 DrawerContainer 管理。NewRunDrawer 包含新回测配置表单（交易对、时间周期、策略 ID）。HistoryDrawer 显示历史运行列表，每条带对比勾选框，支持搜索。</li>
+  <li><strong>⑥ 抽屉面板</strong> — 从右侧滑入的面板，通过 DrawerContainer 管理。NewRunDrawer 包含新回测配置表单：策略选择 → 版本选择 → 交易对 → 日期范围（回测）或单笔仓位/最大持仓（模拟）→ 初始资金 → 滑点（回测）。版本选择后自动加载该版本的 DSL 规则传给后端。HistoryDrawer 显示历史运行列表，按当前 tab 显示回测或模拟记录，回测行带对比勾选框，支持搜索。</li>
 </ol>
 
 <h2>区域参考</h2>
@@ -84,7 +84,7 @@
   <li><strong>StrategyContextStrip</strong> — 策略上下文可折叠区域，折叠态一条摘要，展开后显示策略详情、风险警告和推广就绪门状态。</li>
   <li><strong>MetricsGrid</strong> — 2×4 网格展示 8 项核心回测指标，使用等宽数字字体，颜色表示正负。</li>
   <li><strong>TradeListTable</strong> — 成交记录表格，可折叠、20 行分页、表头固定。</li>
-  <li><strong>NewRunDrawer</strong> — 右侧抽屉式配置表单，配置交易对、周期、策略 ID 后启动回测或模拟。</li>
+  <li><strong>NewRunDrawer</strong> — 右侧抽屉式配置表单，依次选择策略、版本（含 DSL）、交易对、日期范围（回测）或仓位参数（模拟）、初始资金、滑点后启动回测或模拟。版本选择决定传给后端的 DSL。</li>
   <li><strong>HistoryDrawer</strong> — 右侧抽屉式历史记录列表，支持搜索和对比勾选，点击行切换焦点。</li>
 </ol>
 
@@ -99,10 +99,10 @@
 
 <h2>常见操作 · 一步步</h2>
 <ol>
-  <li><strong>运行回测</strong> — 从侧边栏进入 BacktestLab 页面。点击顶 bar 的"新建回测"按钮打开 NewRunDrawer 抽屉，填写交易对、周期和策略 ID，点击"回测"启动。新运行加载到 HistoryDrawer 列表中。</li>
+  <li><strong>运行回测</strong> — 从侧边栏进入 BacktestLab 页面。点击顶 bar 的"新建回测"按钮打开 NewRunDrawer 抽屉，选择策略 → 选择版本 → 填写交易对和日期范围 → 设置初始资金和滑点，点击"运行回测"启动。后端接收完整 DSL + timerange(YYYYMMDD-YYYYMMDD)，新运行加载到 HistoryDrawer 列表中。</li>
   <li><strong>查看结果</strong> — 选中一个完成的回测，EquityCurveHero 显示权益曲线，MetricsGrid 显示 8 项指标，TradeListTable 显示交易明细。可折叠 StrategyContextStrip 了解策略上下文。</li>
   <li><strong>对比多个回测</strong> — 在 HistoryDrawer 中勾选 2-3 条记录，顶 bar 出现"对比"按钮。点击进入对比模式，EquityCurveHero 叠加显示多条曲线。</li>
-  <li><strong>切换模拟模式</strong> — 点击顶 bar 的"模拟"标签切换到纸交易模式。模拟运行的配置方式与回测相同。</li>
+  <li><strong>切换模拟模式</strong> — 点击顶 bar 的"模拟"标签切换到纸交易模式。配置表单改为交易对、单笔仓位、最大持仓、初始钱包。启动后主区域显示 DryrunStatusPanel（运行状态、API 地址、进程 PID、总交易、持仓中、累计盈亏），含"停止模拟"和"同步状态"按钮。</li>
   <li><strong>搜索历史记录</strong> — 在 HistoryDrawer 顶部的搜索框输入交易对名称过滤历史运行记录。</li>
 </ol>
 

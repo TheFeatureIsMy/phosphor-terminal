@@ -74,7 +74,7 @@
   <li><strong>③ StrategyContextStrip</strong> — A collapsible strategy context bar. Collapsed state shows a one-line summary: "Strategy #ID · N warnings · gate status". Expanded view shows strategy details, risk warnings, and promotion gate status.</li>
   <li><strong>④ MetricsGrid (2x4)</strong> — A 2-row, 4-column grid of 8 KPI cards: Total Return, Max Drawdown, Sharpe Ratio, Win Rate, Profit Factor, Total Trades, Filled, and Avg Duration. Uses monospaced digits with green for positive and red for negative values.</li>
   <li><strong>⑤ TradeListTable</strong> — A compact, collapsible trade detail table. Displays the first 20 rows by default; click "Show all" to expand. Columns: number, time, side, entry, exit, P&amp;L, duration. Shows "No trades" when empty.</li>
-  <li><strong>⑥ Drawer Panels</strong> — Slide-in panels managed by DrawerContainer. NewRunDrawer contains the new run config form (symbol, timeframe, strategy ID). HistoryDrawer lists historical runs with compare checkboxes and search support.</li>
+  <li><strong>⑥ Drawer Panels</strong> — Slide-in panels managed by DrawerContainer. NewRunDrawer contains the new run config form: strategy picker → version picker (loads DSL) → symbol → date range (backtest) or stake amount/max open trades (dryrun) → initial capital → slippage (backtest). HistoryDrawer lists historical runs filtered by current tab (backtest or dryrun); backtest rows have compare checkboxes, with search support.</li>
 </ol>
 
 <h2>Section Reference</h2>
@@ -84,7 +84,7 @@
   <li><strong>StrategyContextStrip</strong> — Collapsible strategy context area. One-line summary when collapsed; strategy details, risk warnings, and promotion gate status when expanded.</li>
   <li><strong>MetricsGrid</strong> — 2x4 grid of 8 core backtest KPIs. Monospaced digits, color-coded by sign.</li>
   <li><strong>TradeListTable</strong> — Collapsible trade list with 20-row pagination and fixed headers.</li>
-  <li><strong>NewRunDrawer</strong> — Right-side drawer config form. Configure symbol, timeframe, and strategy ID, then start a backtest or dryrun.</li>
+  <li><strong>NewRunDrawer</strong> — Right-side drawer config form. Pick strategy → version (carries DSL) → symbol → date range (backtest) or position params (dryrun) → initial capital → slippage, then start. The selected version determines the DSL sent to the backend.</li>
   <li><strong>HistoryDrawer</strong> — Right-side drawer listing historical runs with search and compare checkboxes. Click a row to switch focus.</li>
 </ol>
 
@@ -99,10 +99,10 @@
 
 <h2>Common Actions, Step by Step</h2>
 <ol>
-  <li><strong>Run a backtest</strong> — Open the BacktestLab page from the sidebar. Click "New Run" in the top bar to open the NewRunDrawer. Fill in the symbol, timeframe, and strategy ID, then click "Backtest". The new run appears in the HistoryDrawer.</li>
+  <li><strong>Run a backtest</strong> — Open the BacktestLab page from the sidebar. Click "New Run" in the top bar to open the NewRunDrawer. Pick strategy → version → fill symbol and date range → set initial capital and slippage, then click "Run Backtest". The backend receives the full DSL + timerange (YYYYMMDD-YYYYMMDD); the new run appears in the HistoryDrawer.</li>
   <li><strong>Review results</strong> — Select a completed run. EquityCurveHero shows the equity curve, MetricsGrid displays 8 KPIs, TradeListTable shows trade details. Collapse/expand StrategyContextStrip for strategy context.</li>
   <li><strong>Compare multiple runs</strong> — Check 2-3 runs in the HistoryDrawer. The "Compare" button appears in the top bar. Click to enter compare mode, where EquityCurveHero overlays multiple curves.</li>
-  <li><strong>Switch to paper trading</strong> — Click the "Dryrun" tab in the top bar to switch to paper trading mode. Configure a dryrun the same way as a backtest.</li>
+  <li><strong>Switch to paper trading</strong> — Click the "Dryrun" tab in the top bar to switch to paper trading mode. The config form changes to symbol, stake amount, max open trades, initial wallet. After starting, the main area shows DryrunStatusPanel (run status, API URL, PID, total trades, open trades, total profit) with "Stop Dryrun" and "Sync" buttons.</li>
   <li><strong>Search history</strong> — Use the search box in the HistoryDrawer to filter historical runs by symbol.</li>
 </ol>
 
