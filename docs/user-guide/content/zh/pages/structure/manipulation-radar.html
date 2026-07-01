@@ -51,7 +51,7 @@
 <h2>幕后</h2>
 <p>页面数据来自后端 <code>/api/v2/manipulation/*</code> 端点族：<code>/radar</code>（总览 + 活跃案例列表）、<code>/cases/{id}</code>（案例 v2 含分 Layer evidence + data_quality + 双画像信号）、<code>/cases/{id}/strategy-impact</code>（策略联动扫描）、<code>/cases/{id}/similar</code>（相似历史案例）、<code>/alerts</code>（告警轮询）以及 <code>WS /stream</code>（阶段切换 + 新案例实时推送，断线自动退化为 30s polling）。</p>
 <p>识别引擎运行三层架构：<em>Layer 1 异常检测器</em>（每层独立计算 z-score + data_quality）→ <em>Layer 2 模式分类器</em>（M1-M8 规则引擎，未来加 ML）→ <em>Layer 3 生命周期追踪器</em>（状态机，suspected→accumulate→markup→distribute→collapse→completed/false_alarm）。案例库在内存中维护（v1），重启会丢失活跃案例；历史案例由 <code>HistoricalManipulationScanner</code> 离线扫描重新发现。</p>
-<p>引擎层完整设计：<a href="https://github.com/your-org/repo/blob/main/docs/superpowers/specs/2026-06-15-manipulation-radar-engine-design.md"><code>2026-06-15-manipulation-radar-engine-design.md</code></a>。页面叙事流设计：<a href="https://github.com/your-org/repo/blob/main/docs/superpowers/specs/2026-06-23-manipulation-radar-narrative-refactor-design.md"><code>2026-06-23-manipulation-radar-narrative-refactor-design.md</code></a>。</p>
+<p>引擎层完整设计：<a href="https://github.com/your-org/repo/blob/main/docs/superpowers/specs/2026-06-15-manipulation-radar-engine-design.md"><code>2026-06-15-manipulation-radar-engine-design.md</code></a>。页面叙事流设计：<a href="https://github.com/your-org/repo/blob/main/docs/superpowers/specs/2026-07-01-manipulation-radar-refactor-design.md"><code>2026-07-01-manipulation-radar-refactor-design.md</code></a>。</p>
 
 <h2>相关</h2>
 <ul>

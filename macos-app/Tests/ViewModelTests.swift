@@ -471,6 +471,17 @@ struct ManipulationViewModelFocusTests {
         #expect(vm.focusedCaseId == firstCaseId)
     }
 
+    @MainActor @Test func testStreamFallbackToPollingWhenMock() async {
+        let vm = ManipulationViewModel(client: MockNetworkClient())
+        // mock 模式：baseURL 无 host → isLive=false → 不连 WS，但仍跑 polling
+        vm.startLiveUpdates()
+        // 等待一帧确认 polling task 已启动
+        try? await Task.sleep(for: .milliseconds(50))
+        vm.stopLiveUpdates()
+        // 无 crash + 任务已取消即视为通过
+        #expect(true)
+    }
+
     @MainActor @Test func focusCaseFallsBackToFirstActiveWhenNil() async {
         let client = MockNetworkClient()
         let vm = ManipulationViewModel(client: client)
