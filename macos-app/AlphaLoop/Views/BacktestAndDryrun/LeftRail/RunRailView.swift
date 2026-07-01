@@ -75,7 +75,7 @@ struct RunRailView: View {
             }
         }
         .padding(.vertical, 4).padding(.horizontal, 8)
-        .background(isSelected ? colors.surface.opacity(0.5) : .clear)
+        .background(isSelected ? PulseColors.accent.opacity(0.18) : .clear)
         .clipShape(RoundedRectangle(cornerRadius: PulseRadii.sm))
         .contentShape(Rectangle())
         .onTapGesture {

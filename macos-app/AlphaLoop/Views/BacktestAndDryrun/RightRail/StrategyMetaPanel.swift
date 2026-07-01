@@ -26,8 +26,8 @@ struct StrategyMetaPanel: View {
             }
         }
         .padding(PulseSpacing.md)
-        .background(colors.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: PulseRadii.card))
+        .background(colors.surfaceHover.opacity(0.35), in: RoundedRectangle(cornerRadius: PulseRadii.md))
+        .overlay(RoundedRectangle(cornerRadius: PulseRadii.md).stroke(colors.border, lineWidth: 1))
     }
 
     private func metaRow(_ label: String, value: String) -> some View {

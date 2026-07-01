@@ -16,14 +16,14 @@ struct BacktestLabView: View {
         HStack(spacing: 0) {
             RunRailView()
                 .frame(width: 240)
-                .background(colors.surface.opacity(0.3))
+                .background(colors.surfaceHover.opacity(0.35))
 
             centerColumn
                 .frame(maxWidth: .infinity)
 
             ContextRailView()
                 .frame(width: 280)
-                .background(colors.surface.opacity(0.3))
+                .background(colors.surfaceHover.opacity(0.35))
         }
         .background(colors.background.ignoresSafeArea())
         .environment(viewModel)
@@ -72,7 +72,14 @@ struct BacktestLabView: View {
                     .font(PulseFonts.body.weight(isActive ? .semibold : .regular))
                     .foregroundStyle(isActive ? PulseColors.accent : colors.textSecondary)
                     .padding(.horizontal, 14).padding(.vertical, 8)
-                    .glassEffect(.regular)
+                    .background(
+                        RoundedRectangle(cornerRadius: PulseRadii.sm)
+                            .fill(isActive ? PulseColors.accent.opacity(0.18) : colors.surfaceHover.opacity(0.4))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: PulseRadii.sm)
+                            .stroke(colors.border, lineWidth: 1)
+                    )
                 }
                 .buttonStyle(.plain)
             }

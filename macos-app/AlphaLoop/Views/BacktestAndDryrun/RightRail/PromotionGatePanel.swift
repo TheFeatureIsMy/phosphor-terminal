@@ -40,7 +40,7 @@ struct PromotionGatePanel: View {
                         .foregroundStyle(.black)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
-                        .background(isReady ? PulseColors.accent : colors.surface)
+                        .background(isReady ? PulseColors.accent : colors.surfaceHover.opacity(0.5))
                         .clipShape(RoundedRectangle(cornerRadius: PulseRadii.sm))
                 }
                 .buttonStyle(.plain)
@@ -51,7 +51,7 @@ struct PromotionGatePanel: View {
             }
         }
         .padding(PulseSpacing.md)
-        .background(colors.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: PulseRadii.card))
+        .background(colors.surfaceHover.opacity(0.35), in: RoundedRectangle(cornerRadius: PulseRadii.md))
+        .overlay(RoundedRectangle(cornerRadius: PulseRadii.md).stroke(colors.border, lineWidth: 1))
     }
 }

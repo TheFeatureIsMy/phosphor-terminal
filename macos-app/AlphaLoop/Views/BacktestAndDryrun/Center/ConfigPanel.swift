@@ -62,7 +62,7 @@ struct ConfigPanel: View {
                         Text(sym)
                             .font(PulseFonts.micro)
                             .padding(.horizontal, 8).padding(.vertical, 4)
-                            .background(selected ? PulseColors.accent.opacity(0.3) : colors.surface.opacity(0.3))
+                            .background(selected ? PulseColors.accent.opacity(0.18) : colors.surfaceHover.opacity(0.35))
                             .clipShape(Capsule())
                     }
                     .buttonStyle(.plain)

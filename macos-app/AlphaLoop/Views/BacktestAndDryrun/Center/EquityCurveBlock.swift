@@ -36,7 +36,8 @@ struct EquityCurveBlock: View {
                 }
             } else {
                 Text(L10n.BacktestLab.curveEmpty)
-                    .font(PulseFonts.caption).foregroundStyle(colors.textMuted)
+                    .font(.system(size: 13, weight: .regular, design: .serif).italic())
+                    .foregroundStyle(colors.textMuted)
                     .frame(maxWidth: .infinity, minHeight: 100)
             }
         }

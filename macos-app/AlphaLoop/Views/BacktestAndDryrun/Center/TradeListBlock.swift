@@ -14,7 +14,8 @@ struct TradeListBlock: View {
                     runLevelClusters(run.trades)
                 } else {
                     Text(L10n.BacktestLab.tradesEmpty)
-                        .font(PulseFonts.caption).foregroundStyle(colors.textMuted)
+                        .font(.system(size: 13, weight: .regular, design: .serif).italic())
+                        .foregroundStyle(colors.textMuted)
                 }
             }
         }
