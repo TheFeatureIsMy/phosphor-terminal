@@ -59,7 +59,6 @@ struct BacktestLabView: View {
             }
         }
         .background(colors.background.ignoresSafeArea())
-        .environment(viewModel)
         .task {
             viewModel.networkClient = networkClient
             await vm.loadInitial()
@@ -75,6 +74,7 @@ struct BacktestLabView: View {
                 HistoryDrawer(isPresented: $showHistoryDrawer)
             }
         }
+        .environment(viewModel)
     }
 
     private var comparedRuns: [BacktestRunV2] {
