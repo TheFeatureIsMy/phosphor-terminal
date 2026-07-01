@@ -80,7 +80,6 @@ extension L10n {
         static var metricMaxDrawdown: String { zh("最大回撤", en: "Max Drawdown") }
         static var metricSharpe: String { zh("夏普", en: "Sharpe") }
         static var metricWinRate: String { zh("胜率", en: "Win Rate") }
-        static var metricProfitLossRatio: String { zh("盈亏比", en: "Profit/Loss") }
         static var metricTradeCount: String { zh("交易数", en: "Trades") }
         static var metricProfitFactor: String { zh("利润因子", en: "Profit Factor") }
         static var metricDuration: String { zh("运行时长", en: "Duration") }
