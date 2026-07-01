@@ -344,18 +344,18 @@ private struct TribunalCenterpiece: View {
     ]
 
     var body: some View {
-        HStack(alignment: .top, spacing: PulseSpacing.lg) {
-            stateRail
-                .frame(width: 200)
+        KryptonCard(emphasis: .bold, cardPadding: PulseSpacing.lg) {
+            HStack(alignment: .top, spacing: PulseSpacing.lg) {
+                stateRail
+                    .frame(width: 200)
 
-            countdownRing
-                .frame(maxWidth: .infinity)
+                countdownRing
+                    .frame(maxWidth: .infinity)
 
-            verdictPanel
-                .frame(width: 280)
+                verdictPanel
+                    .frame(width: 280)
+            }
         }
-        .padding(PulseSpacing.lg)
-        .glassEffect(.regular, in: .rect(cornerRadius: PulseRadii.card))
     }
 
     private var currentStateKey: String { guard_?.guardState ?? "inactive" }
@@ -782,41 +782,41 @@ private struct ShadowWindowCard: View {
     @Environment(PulseColors.self) private var colors
 
     var body: some View {
-        VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-            HStack {
-                Text("\(window.fastTimeframe ?? "?") → \(window.slowTimeframe ?? window.timeframe)")
-                    .font(PulseFonts.tabular)
-                    .foregroundStyle(colors.textPrimary)
-                Spacer()
-                Text(window.status.uppercased())
-                    .font(PulseFonts.micro)
-                    .padding(.horizontal, 6).padding(.vertical, 2)
-                    .background(RoundedRectangle(cornerRadius: 4).fill(stateColor.opacity(0.18)))
-                    .foregroundStyle(stateColor)
-            }
+        KryptonCard(emphasis: .balanced) {
+            VStack(alignment: .leading, spacing: PulseSpacing.sm) {
+                HStack {
+                    Text("\(window.fastTimeframe ?? "?") → \(window.slowTimeframe ?? window.timeframe)")
+                        .font(PulseFonts.tabular)
+                        .foregroundStyle(colors.textPrimary)
+                    Spacer()
+                    Text(window.status.uppercased())
+                        .font(PulseFonts.micro)
+                        .padding(.horizontal, 6).padding(.vertical, 2)
+                        .background(RoundedRectangle(cornerRadius: 4).fill(stateColor.opacity(0.18)))
+                        .foregroundStyle(stateColor)
+                }
 
-            Text("\(window.zoneType) · \(window.direction ?? "—")")
-                .font(PulseFonts.caption)
-                .foregroundStyle(colors.textMuted)
+                Text("\(window.zoneType) · \(window.direction ?? "—")")
+                    .font(PulseFonts.caption)
+                    .foregroundStyle(colors.textMuted)
 
-            HStack(spacing: PulseSpacing.md) {
-                stat(L10n.Structure.statFast, "\(window.fastCandleCount)")
-                stat(L10n.Structure.statViol, "\(window.violationCount)")
-                stat(L10n.Structure.statReclaim, "\(window.reclaimCount)")
-                stat(L10n.Structure.statFill, String(format: "%.2f", window.filledRatio))
-            }
+                HStack(spacing: PulseSpacing.md) {
+                    stat(L10n.Structure.statFast, "\(window.fastCandleCount)")
+                    stat(L10n.Structure.statViol, "\(window.violationCount)")
+                    stat(L10n.Structure.statReclaim, "\(window.reclaimCount)")
+                    stat(L10n.Structure.statFill, String(format: "%.2f", window.filledRatio))
+                }
 
-            // 12-segment candle progress
-            HStack(spacing: 2) {
-                ForEach(0..<max(window.fastCandleMax, 1), id: \.self) { i in
-                    RoundedRectangle(cornerRadius: 1)
-                        .fill(i < window.fastCandleCount ? stateColor : colors.border.opacity(0.4))
-                        .frame(height: 6)
+                // 12-segment candle progress
+                HStack(spacing: 2) {
+                    ForEach(0..<max(window.fastCandleMax, 1), id: \.self) { i in
+                        RoundedRectangle(cornerRadius: 1)
+                            .fill(i < window.fastCandleCount ? stateColor : colors.border.opacity(0.4))
+                            .frame(height: 6)
+                    }
                 }
             }
         }
-        .padding(PulseSpacing.md)
-        .glassEffect(.regular, in: .rect(cornerRadius: PulseRadii.md))
     }
 
     @ViewBuilder
@@ -953,13 +953,13 @@ private struct HearingsTimeline: View {
                     .frame(maxWidth: .infinity)
                     .glassEffect(.regular, in: .rect(cornerRadius: PulseRadii.md))
             } else {
-                VStack(alignment: .leading, spacing: 0) {
-                    ForEach(Array(events.enumerated()), id: \.offset) { idx, e in
-                        HearingRow(event: e, isLast: idx == events.count - 1)
+                KryptonCard(emphasis: .balanced) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        ForEach(Array(events.enumerated()), id: \.offset) { idx, e in
+                            HearingRow(event: e, isLast: idx == events.count - 1)
+                        }
                     }
                 }
-                .padding(PulseSpacing.md)
-                .glassEffect(.regular, in: .rect(cornerRadius: PulseRadii.md))
             }
         }
     }
