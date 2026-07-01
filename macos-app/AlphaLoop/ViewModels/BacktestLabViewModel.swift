@@ -340,6 +340,20 @@ final class BacktestLabViewModel {
         }
     }
 
+    func syncDryrun(id: Int) async {
+        do {
+            _ = try await APIDryrunV2(client: networkClient).syncDryrun(id)
+            await loadRunHistory()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func selectDryrunRun(_ run: DryRunRunV2) async {
+        currentDryrunRun = run
+        if phase != .completed { phase = .completed }
+    }
+
     // MARK: - Polling
 
     private func startPolling(commandId: String) {

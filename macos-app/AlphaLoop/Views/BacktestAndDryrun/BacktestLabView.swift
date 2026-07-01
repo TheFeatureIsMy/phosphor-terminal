@@ -27,7 +27,7 @@ struct BacktestLabView: View {
                         LoadingView(type: .detail)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, PulseSpacing.xl)
-                    } else if let run = vm.currentBacktestRun {
+                    } else if vm.activeTab == .backtest, let run = vm.currentBacktestRun {
                         EquityCurveHero(run: run, comparedRuns: comparedRuns, compareMode: compareMode)
                             .frame(height: 360)
 
@@ -36,6 +36,8 @@ struct BacktestLabView: View {
                         MetricsGrid(run: run)
 
                         TradeListTable(trades: run.trades, isExpanded: $tradeListExpanded)
+                    } else if vm.activeTab == .dryrun, let dryrun = vm.currentDryrunRun {
+                        DryrunStatusPanel(run: dryrun)
                     } else if let error = vm.errorMessage {
                         EmptyStateView(
                             icon: "exclamationmark.triangle",
@@ -46,9 +48,11 @@ struct BacktestLabView: View {
                         .padding(PulseSpacing.xl)
                     } else {
                         EmptyStateView(
-                            icon: "chart.line.uptrend.xyaxis",
-                            title: L10n.zh("选择一个运行查看结果", en: "Select a run to view results"),
-                            description: L10n.zh("从历史记录选择，或新建一次回测。", en: "Pick from history, or start a new backtest.")
+                            icon: vm.activeTab == .backtest ? "chart.line.uptrend.xyaxis" : "bolt",
+                            title: vm.activeTab == .backtest
+                                ? L10n.zh("选择一个运行查看结果", en: "Select a run to view results")
+                                : L10n.BacktestLab.selectDryrunPrompt,
+                            description: L10n.zh("从历史记录选择，或新建一次回测。", en: "Pick from history, or start a new run.")
                         )
                         .padding(PulseSpacing.xl)
                     }

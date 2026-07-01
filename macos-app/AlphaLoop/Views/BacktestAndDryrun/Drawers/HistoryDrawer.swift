@@ -8,12 +8,6 @@ struct HistoryDrawer: View {
     @Environment(PulseColors.self) private var colors
     @State private var query = ""
 
-    private var filtered: [BacktestRunV2] {
-        let list = vm.activeTab == .backtest ? vm.recentBacktests : []
-        if query.isEmpty { return list }
-        return list.filter { $0.symbols.first?.localizedCaseInsensitiveContains(query) ?? false }
-    }
-
     var body: some View {
         VStack(alignment: .leading, spacing: PulseSpacing.md) {
             HStack {
@@ -41,28 +35,14 @@ struct HistoryDrawer: View {
 
             ScrollView {
                 VStack(spacing: PulseSpacing.xs) {
-                    ForEach(filtered) { run in
-                        HStack(spacing: PulseSpacing.sm) {
-                            Button {
-                                Task { await vm.toggleCompare(runId: run.id) }
-                            } label: {
-                                Image(systemName: vm.comparedRunIds.contains(run.id) ? "checkmark.square.fill" : "square")
-                                    .foregroundStyle(PulseColors.accent)
-                            }
-                            .buttonStyle(.plain)
-
-                            Button { Task { await vm.selectRun(run) }; isPresented = false } label: {
-                                Text("#\(run.id)").font(PulseFonts.tabular).foregroundStyle(colors.textPrimary)
-                                Text(run.symbols.first ?? "—").font(PulseFonts.caption).foregroundStyle(colors.textSecondary)
-                                Spacer()
-                                Text(String(format: "%+.1f%%", run.totalReturn * 100))
-                                    .font(PulseFonts.tabular)
-                                    .foregroundStyle(run.totalReturn >= 0 ? PulseColors.accent : PulseColors.danger)
-                            }
-                            .buttonStyle(.plain)
+                    if vm.activeTab == .backtest {
+                        ForEach(vm.recentBacktests.filter { query.isEmpty || ($0.symbols.first?.localizedCaseInsensitiveContains(query) ?? false) }) { run in
+                            backtestRow(run)
                         }
-                        .padding(PulseSpacing.sm)
-                        .background(RoundedRectangle(cornerRadius: PulseRadii.sm).fill(colors.surfaceHover.opacity(0.3)))
+                    } else {
+                        ForEach(vm.dryrunRuns.filter { query.isEmpty || ($0.symbols.first?.localizedCaseInsensitiveContains(query) ?? false) }) { run in
+                            dryrunRow(run)
+                        }
                     }
                 }
             }
@@ -74,5 +54,41 @@ struct HistoryDrawer: View {
             }
         }
         .padding(PulseSpacing.lg)
+    }
+
+    private func backtestRow(_ run: BacktestRunV2) -> some View {
+        Button { Task { await vm.selectRun(run) }; isPresented = false } label: {
+            HStack(spacing: PulseSpacing.sm) {
+                Image(systemName: vm.comparedRunIds.contains(run.id) ? "checkmark.square.fill" : "square")
+                    .foregroundStyle(PulseColors.accent)
+                Text("#\(run.id)").font(PulseFonts.tabular).foregroundStyle(colors.textPrimary)
+                Text(run.symbols.first ?? "—").font(PulseFonts.caption).foregroundStyle(colors.textSecondary)
+                Spacer()
+                Text(String(format: "%+.1f%%", run.totalReturn * 100))
+                    .font(PulseFonts.tabular)
+                    .foregroundStyle(run.totalReturn >= 0 ? PulseColors.accent : PulseColors.danger)
+            }
+            .padding(PulseSpacing.sm)
+            .background(RoundedRectangle(cornerRadius: PulseRadii.sm).fill(colors.surfaceHover.opacity(0.3)))
+        }
+        .buttonStyle(.plain)
+        .simultaneousGesture(TapGesture().onEnded { Task { await vm.toggleCompare(runId: run.id) } })
+    }
+
+    private func dryrunRow(_ run: DryRunRunV2) -> some View {
+        Button { Task { await vm.selectDryrunRun(run) }; isPresented = false } label: {
+            HStack(spacing: PulseSpacing.sm) {
+                Circle().fill(run.status == "running" ? PulseColors.accent : colors.textMuted).frame(width: 8, height: 8)
+                Text("#\(run.id)").font(PulseFonts.tabular).foregroundStyle(colors.textPrimary)
+                Text(run.symbols.first ?? "—").font(PulseFonts.caption).foregroundStyle(colors.textSecondary)
+                Spacer()
+                Text(run.status.uppercased())
+                    .font(PulseFonts.micro)
+                    .foregroundStyle(run.status == "running" ? PulseColors.accent : colors.textMuted)
+            }
+            .padding(PulseSpacing.sm)
+            .background(RoundedRectangle(cornerRadius: PulseRadii.sm).fill(colors.surfaceHover.opacity(0.3)))
+        }
+        .buttonStyle(.plain)
     }
 }

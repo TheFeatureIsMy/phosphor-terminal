@@ -129,5 +129,18 @@ extension L10n {
         static var runDryrun: String { zh("启动模拟", en: "Start Dryrun") }
         static var selectStrategyPrompt: String { zh("请选择策略", en: "Select a strategy") }
         static var selectVersionPrompt: String { zh("请选择版本", en: "Select a version") }
+
+        // MARK: - DryrunStatusPanel
+        static var dryrunStatus: String { zh("运行状态", en: "Run Status") }
+        static var dryrunApiUrl: String { zh("API 地址", en: "API URL") }
+        static var dryrunPid: String { zh("进程 PID", en: "PID") }
+        static var dryrunTotalTrades: String { zh("总交易", en: "Total Trades") }
+        static var dryrunOpenTrades: String { zh("持仓中", en: "Open Trades") }
+        static var dryrunTotalProfit: String { zh("累计盈亏", en: "Total Profit") }
+        static var dryrunStarted: String { zh("启动时间", en: "Started") }
+        static var dryrunStopped: String { zh("停止时间", en: "Stopped") }
+        static var stopDryrun: String { zh("停止模拟", en: "Stop Dryrun") }
+        static var syncDryrun: String { zh("同步状态", en: "Sync") }
+        static var selectDryrunPrompt: String { zh("选择一个模拟运行查看状态", en: "Select a dryrun to view status") }
     }
 }
