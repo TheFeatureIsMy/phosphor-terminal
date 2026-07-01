@@ -74,18 +74,9 @@ struct BacktestLabView: View {
     private var vm: BacktestLabViewModel { viewModel }
 }
 
-// 临时占位 — Task 3-4 替换
+// 临时占位 — Task 4 替换
 struct StrategyContextStrip: View {
     let run: BacktestRunV2
-    @Binding var isExpanded: Bool
-    var body: some View { EmptyView() }
-}
-struct MetricsGrid: View {
-    let run: BacktestRunV2
-    var body: some View { EmptyView() }
-}
-struct TradeListTable: View {
-    let trades: [TradeRow]
     @Binding var isExpanded: Bool
     var body: some View { EmptyView() }
 }
