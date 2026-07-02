@@ -137,8 +137,8 @@ async def retry_reconciliation_batch(db: Session = Depends(get_db)):
         from app.services.reconciliation_service import ReconciliationService
 
         svc = ReconciliationService(db)
-        svc.run_reconciliation()
-        return {"status": "retrying", "affected_count": -1, "reason_codes": []}
+        result = svc.run_reconciliation()
+        return {"status": "retrying", "affected_count": result.get("affected", 0), "reason_codes": []}
     except Exception as e:
         logger.exception("[recon-retry-batch] failed: %s", e)
         return {"status": "failed", "affected_count": 0, "reason_codes": [type(e).__name__]}

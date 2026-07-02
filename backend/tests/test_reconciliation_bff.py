@@ -13,6 +13,7 @@ class _FakeReconService:
 
     def run_reconciliation(self, run_id=None):
         self.run_id = run_id
+        return {"affected": 1}
 
 
 def test_retry_single_recon_run(monkeypatch):
@@ -39,6 +40,7 @@ def test_retry_all_recon(monkeypatch):
     assert resp.status_code == 200
     body = resp.json()
     assert body["status"] == "retrying"
+    assert isinstance(body["affected_count"], int) and body["affected_count"] >= 0
     assert fake.run_id is None
 
 
