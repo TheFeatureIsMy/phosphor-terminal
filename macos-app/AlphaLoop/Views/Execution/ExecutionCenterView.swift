@@ -6,52 +6,62 @@ struct ExecutionCenterView: View {
     @Environment(\.networkClient) private var networkClient
     @Environment(PulseColors.self) private var colors
     @Environment(SettingsState.self) private var settingsState
+    @Environment(AppState.self) private var appState
     @State private var viewModel: ExecutionCenterViewModel?
-    @State private var showEmergencyConfirm = false
-    @State private var emergencyInProgress = false
+
+    private var resolvedMode: ModePill.Mode {
+        ModePill.Mode.resolve(
+            liveReadinessState: viewModel?.centerData?.state,
+            isLiveMode: appState.isLiveMode,
+            isMockMode: !appState.isLiveMode && !appState.isDetectingBackend
+        )
+    }
 
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: PulseSpacing.lg) {
-                if let vm = viewModel {
-                    if vm.isLoading && vm.centerData == nil {
-                        LoadingView(type: .detail)
-                    } else if let data = vm.centerData {
-                        stateBanner(data)
-                        summaryCardsRow(data)
-                        sessionTableSection(data)
-                    } else if let error = vm.error {
-                        EmptyStateView(
-                            icon: "exclamationmark.triangle",
-                            title: L10n.Execution.loadFailed,
-                            description: error,
-                            primaryAction: (title: L10n.Common.retry, action: { Task { await vm.loadCenter() } })
-                        )
-                    } else {
-                        EmptyStateView(
-                            icon: "play.circle",
-                            title: L10n.Execution.noSessions,
-                            description: L10n.Execution.noSessionsDesc
-                        )
+        VStack(spacing: 0) {
+            LiveWireStrip(mode: resolvedMode)
+            EmergencyStopBar(
+                mode: resolvedMode,
+                affectedRuns: viewModel?.centerData?.totalRunning ?? 0,
+                emergencyLocked: viewModel?.centerData?.state == "emergency_locked",
+                onStop: { await viewModel?.emergencyStop() },
+                onResume: { await viewModel?.emergencyResume() }
+            )
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: PulseSpacing.lg) {
+                    if let vm = viewModel {
+                        if vm.isLoading && vm.centerData == nil {
+                            LoadingView(type: .detail)
+                        } else if let data = vm.centerData {
+                            stateBanner(data)
+                            summaryCardsRow(data)
+                            sessionTableSection(data)
+                        } else if let error = vm.error {
+                            EmptyStateView(
+                                icon: "exclamationmark.triangle",
+                                title: L10n.Execution.loadFailed,
+                                description: error,
+                                primaryAction: (title: L10n.Common.retry, action: { Task { await vm.loadCenter() } })
+                            )
+                        } else {
+                            EmptyStateView(
+                                icon: "play.circle",
+                                title: L10n.Execution.noSessions,
+                                description: L10n.Execution.noSessionsDesc
+                            )
+                        }
                     }
                 }
+                .padding(PulseSpacing.lg)
+                .id(settingsState.language)
             }
-            .padding(PulseSpacing.lg)
-            .id(settingsState.language)
+            .scrollEdgeEffectStyle(.soft, for: .vertical)
         }
-        .scrollEdgeEffectStyle(.soft, for: .vertical)
+        .riskAtmosphericBackground(tint: PulseColors.accent)
         .task {
             let vm = ExecutionCenterViewModel(client: networkClient)
             viewModel = vm
             await vm.loadCenter()
-        }
-        .alert(L10n.Execution.confirmEmergencyStop, isPresented: $showEmergencyConfirm) {
-            Button(L10n.Common.cancel, role: .cancel) {}
-            Button(L10n.Execution.confirmStop, role: .destructive) {
-                Task { await performEmergencyStop() }
-            }
-        } message: {
-            Text(L10n.Execution.emergencyStopWarning)
         }
     }
 
@@ -135,9 +145,6 @@ struct ExecutionCenterView: View {
             )
             .staggeredAppearance(index: 4)
 
-            Spacer()
-
-            emergencyStopButton
         }
     }
 
@@ -157,32 +164,6 @@ struct ExecutionCenterView: View {
                 }
             }
         }
-    }
-
-    private var emergencyStopButton: some View {
-        Button {
-            showEmergencyConfirm = true
-        } label: {
-            HStack(spacing: PulseSpacing.xxs) {
-                if emergencyInProgress {
-                    ProgressView()
-                        .controlSize(.mini)
-                        .scaleEffect(0.7)
-                } else {
-                    Image(systemName: "bolt.fill")
-                        .font(.system(size: 11))
-                }
-                Text(L10n.Execution.emergencyStop)
-                    .font(PulseFonts.captionMedium)
-            }
-            .foregroundStyle(.white)
-            .padding(.horizontal, PulseSpacing.md)
-            .padding(.vertical, PulseSpacing.xs)
-            .background(PulseColors.StateColors.red)
-            .clipShape(Capsule())
-        }
-        .buttonStyle(.plain)
-        .disabled(emergencyInProgress)
     }
 
     // MARK: - 会话列表
@@ -302,19 +283,4 @@ struct ExecutionCenterView: View {
         }
     }
 
-    private func performEmergencyStop() async {
-        emergencyInProgress = true
-        defer { emergencyInProgress = false }
-        do {
-            let _: [String: String] = try await networkClient.post(
-                "/api/execution/emergency-stop",
-                body: nil as String?,
-                mock: { ["status": "executed"] }
-            )
-            // Reload center data after emergency stop
-            await viewModel?.loadCenter()
-        } catch {
-            viewModel?.error = error.localizedDescription
-        }
-    }
 }
