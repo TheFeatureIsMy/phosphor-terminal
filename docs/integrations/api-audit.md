@@ -6,7 +6,7 @@ expected. Real implementations (this round) are detailed in full; stub-only
 providers list their official documentation URL for future implementation
 (later sub-projects).
 
-Last updated: 2026-06-17.
+Last updated: 2026-07-02.
 
 ## LLM Providers
 
@@ -330,6 +330,103 @@ All 4 market_data providers share CCXT Binance as the underlying source. Health 
 - **Symbols (default):** `BTC/USDT`
 - **Update destination:** `app.services.providers.realtime.ticker_cache.TickerCache` (in-memory, 60s TTL)
 - **Public access:** future sub-projects will expose `GET /api/providers/ticker/{symbol}` reading from the cache
+
+## Execution & Risk Internal Endpoints (2026-07-02)
+
+Internal API endpoints added during the Execution/Risk polish pass. These are not external provider integrations; they are backend-to-frontend contracts consumed by the macOS app.
+
+### Execution
+
+#### `POST /api/execution/orders/{order_id}/cancel`
+- **Purpose:** Cancel a single open order by ID
+- **Auth:** Bearer token
+- **Request body:** None
+- **Response:** `{"status": "ok", "order_id": "..."}`
+- **Called by:** `OrdersPositionsView` inline cancel button per order row
+
+#### `POST /api/execution/positions/{position_id}/close`
+- **Purpose:** Close a single open position by ID
+- **Auth:** Bearer token
+- **Request body:** None
+- **Response:** `{"status": "ok", "position_id": "..."}`
+- **Called by:** `OrdersPositionsView` inline close button per position row
+
+#### `POST /api/execution/orders/cancel-all`
+- **Purpose:** Cancel all open orders (batch)
+- **Auth:** Bearer token
+- **Request body:** None (or optional `symbols` filter)
+- **Response:** `{"status": "ok", "cancelled_count": N}`
+- **Called by:** `OrdersPositionsView` batch action bar → `KryptonConfirmDialog`
+
+#### `POST /api/execution/positions/force-close-all`
+- **Purpose:** Force-close all open positions (batch)
+- **Auth:** Bearer token
+- **Request body:** None (or optional `symbols` filter)
+- **Response:** `{"status": "ok", "closed_count": N}`
+- **Called by:** `OrdersPositionsView` batch action bar → `KryptonConfirmDialog`
+
+### Reconciliation
+
+#### `POST /api/reconciliation/runs/{run_id}/retry`
+- **Purpose:** Retry a single failed reconciliation run
+- **Auth:** Bearer token
+- **Request body:** None
+- **Response:** `{"status": "ok", "run_id": "..."}`
+- **Called by:** `ReconciliationBusView` per-run retry button
+
+#### `POST /api/reconciliation/retry`
+- **Purpose:** Retry all failed reconciliation runs (batch)
+- **Auth:** Bearer token
+- **Request body:** None
+- **Response:** `{"status": "ok", "retried_count": N}`
+- **Called by:** `ReconciliationBusView` batch retry button → `KryptonConfirmDialog`
+
+### Risk
+
+#### `GET /api/risk/rules`
+- **Purpose:** Fetch current risk rules (read-only display)
+- **Auth:** Bearer token
+- **Response:** `RiskRulesResponse` (stop-loss threshold, take-profit threshold, max drawdown, position sizing rules, etc.)
+- **Called by:** `StopProtectionView` `riskRulesSection`
+
+#### `POST /api/risk/circuit-breakers/{event_id}/resolve`
+- **Purpose:** Mark a circuit-breaker event as resolved (non-kill_switch events only)
+- **Auth:** Bearer token
+- **Request body:** None
+- **Response:** `{"status": "ok", "event_id": "..."}`
+- **Called by:** `CircuitBreakersView` per-event resolve button → `KryptonConfirmDialog`
+
+#### `POST /api/risk/block-new-entries`
+- **Purpose:** Block all new trade entries (real backend impl, no stub)
+- **Auth:** Bearer token
+- **Request body:** None
+- **Response:** `{"status": "ok"}`
+- **Called by:** `RiskCenterView` block/unblock row → `KryptonConfirmDialog`
+
+#### `POST /api/risk/unblock`
+- **Purpose:** Unblock new trade entries (real backend impl, no stub)
+- **Auth:** Bearer token
+- **Request body:** None
+- **Response:** `{"status": "ok"}`
+- **Called by:** `RiskCenterView` block/unblock row → `KryptonConfirmDialog`
+
+### Emergency (v2, converged)
+
+#### `POST /api/v2/emergency/stop`
+- **Purpose:** Emergency stop all trading activity (converged endpoint replacing old `/api/execution/emergency-stop` and `/api/risk/emergency-stop` which return 410)
+- **Backend:** `EmergencyStopService`
+- **Auth:** Bearer token
+- **Request body:** None
+- **Response:** `{"status": "ok", "mode": "emergency_stopped"}`
+- **Called by:** `EmergencyStopBar` stop button
+
+#### `POST /api/v2/emergency/resume`
+- **Purpose:** Resume from emergency stop
+- **Backend:** `EmergencyStopService`
+- **Auth:** Bearer token
+- **Request body:** None
+- **Response:** `{"status": "ok", "mode": "running"}`
+- **Called by:** `EmergencyStopBar` resume button
 
 ## Rate-Limit Header Coverage
 
