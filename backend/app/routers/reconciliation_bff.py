@@ -118,6 +118,32 @@ async def get_reconciliation_runs(db: Session = Depends(get_db)):
         return {"runs": [], "total": 0}
 
 
+@router.post("/runs/{run_id}/retry")
+async def retry_reconciliation_run(run_id: str, db: Session = Depends(get_db)):
+    try:
+        from app.services.reconciliation_service import ReconciliationService
+
+        svc = ReconciliationService(db)
+        svc.run_reconciliation(run_id=run_id)
+        return {"status": "retrying", "run_id": run_id, "reason_codes": []}
+    except Exception as e:
+        logger.exception("[recon-retry-single] failed: %s", e)
+        return {"status": "failed", "run_id": run_id, "reason_codes": [type(e).__name__]}
+
+
+@router.post("/retry")
+async def retry_reconciliation_batch(db: Session = Depends(get_db)):
+    try:
+        from app.services.reconciliation_service import ReconciliationService
+
+        svc = ReconciliationService(db)
+        svc.run_reconciliation()
+        return {"status": "retrying", "affected_count": -1, "reason_codes": []}
+    except Exception as e:
+        logger.exception("[recon-retry-batch] failed: %s", e)
+        return {"status": "failed", "affected_count": 0, "reason_codes": [type(e).__name__]}
+
+
 @router.post("/refresh-exchange-state")
 async def refresh_exchange_state():
     try:

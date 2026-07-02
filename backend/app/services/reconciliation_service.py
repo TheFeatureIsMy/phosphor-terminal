@@ -195,6 +195,50 @@ class ReconciliationService:
         self._s.flush()
         return event
 
+    def run_reconciliation(self, run_id: str | None = None) -> dict:
+        """Retry a reconciliation run.
+
+        If *run_id* is provided, re-run that specific reconciliation event
+        (single-run retry).  If *run_id* is None, the method scans for the
+        most recent *failed* reconciliation event and retries it (batch
+        retry).  Returns a dict with at least ``{"status": …}``.
+        """
+        if run_id is not None:
+            try:
+                recon_id = uuid.UUID(run_id)
+            except ValueError:
+                raise ValueError(f"Invalid run_id: {run_id!r}")
+
+            event = self._s.get(ReconciliationEvent, recon_id)
+            if event is None:
+                raise ValueError(f"ReconciliationEvent {run_id} not found")
+
+            # Reset the event so it can be re-executed
+            event.status = "started"
+            event.drift_summary = None
+            event.completed_at = None
+            self._s.flush()
+
+            return {"status": "retrying", "reconciliation_event_id": run_id}
+        else:
+            # Batch: retry the most recent failed run
+            from sqlalchemy import select as sa_select
+            stmt = (
+                sa_select(ReconciliationEvent)
+                .where(ReconciliationEvent.status == "failed")
+                .order_by(ReconciliationEvent.started_at.desc())
+                .limit(1)
+            )
+            event = self._s.scalars(stmt).first()
+            if event is None:
+                return {"status": "retrying", "affected": 0}
+
+            event.status = "started"
+            event.drift_summary = None
+            event.completed_at = None
+            self._s.flush()
+            return {"status": "retrying", "affected": 1}
+
     def is_reconciliating(self, freqtrade_run_id: uuid.UUID) -> bool:
         """Check if a run is currently in reconciliation state."""
         ft_run = self._s.get(FreqtradeRun, freqtrade_run_id)
