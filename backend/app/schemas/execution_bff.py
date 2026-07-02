@@ -79,6 +79,12 @@ class CloseResponse(BaseModel):
     reason_codes: list[str] = []
 
 
+class BatchActionResponse(BaseModel):
+    affected_count: int
+    status: str
+    reason_codes: list[str] = []
+
+
 class ReconciliationRun(BaseModel):
     id: str
     status: str = "pending"

@@ -8,8 +8,8 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.schemas.execution_bff import (
-    CancelResponse, CloseResponse, ExecutionCenterResponse, ExecutionSession,
-    OrdersPositionsResponse, OrderResponse, PositionResponse,
+    BatchActionResponse, CancelResponse, CloseResponse, ExecutionCenterResponse,
+    ExecutionSession, OrdersPositionsResponse, OrderResponse, PositionResponse,
     ReconciliationBusResponse, ReconciliationRun, CommandBusEvent,
 )
 from app.schemas.common import AvailableAction
@@ -312,6 +312,50 @@ async def close_single_position(position_id: str):
     except Exception as e:
         logger.exception("[close-position] failed: %s", e)
         return CloseResponse(closed_position_id=position_id, status="failed", reason_codes=[type(e).__name__])
+
+
+@router.post("/orders/cancel-all", response_model=BatchActionResponse)
+async def cancel_all_orders():
+    try:
+        from app.services.freqtrade_client import FreqtradeClient
+
+        client = FreqtradeClient()
+        status_data = await client.get_status()
+
+        trades = status_data if isinstance(status_data, list) else status_data.get("trades", [])
+        order_ids = []
+        for trade in trades:
+            for order in trade.get("orders", []):
+                if order.get("status") in ("open", "pending"):
+                    order_ids.append(order["order_id"])
+
+        for oid in order_ids:
+            await client.cancel_order(oid)
+
+        return BatchActionResponse(affected_count=len(order_ids), status="cancelled", reason_codes=[])
+    except Exception as e:
+        logger.exception("[cancel-all] failed: %s", e)
+        return BatchActionResponse(affected_count=0, status="failed", reason_codes=[type(e).__name__])
+
+
+@router.post("/positions/force-close-all", response_model=BatchActionResponse)
+async def force_close_all_positions():
+    try:
+        from app.services.freqtrade_client import FreqtradeClient
+
+        client = FreqtradeClient()
+        status_data = await client.get_status()
+
+        trades = status_data if isinstance(status_data, list) else status_data.get("trades", [])
+        open_trade_ids = [t["trade_id"] for t in trades if t.get("is_open", True)]
+
+        for tid in open_trade_ids:
+            await client.forceexit(tid)
+
+        return BatchActionResponse(affected_count=len(open_trade_ids), status="closed", reason_codes=[])
+    except Exception as e:
+        logger.exception("[force-close-all] failed: %s", e)
+        return BatchActionResponse(affected_count=0, status="failed", reason_codes=[type(e).__name__])
 
 
 # ---------------------------------------------------------------------------
