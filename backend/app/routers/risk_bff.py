@@ -211,6 +211,7 @@ async def get_circuit_breakers(db: Session = Depends(get_db)):
                 related_command_id=str(ev.related_command_id) if ev.related_command_id else None,
                 related_reconciliation_id=str(ev.related_reconciliation_id) if ev.related_reconciliation_id else None,
                 created_at=ev.created_at,
+                resolved=ev.resolved,
             )
             for ev in events
         ]

@@ -6,9 +6,12 @@ struct CircuitBreakersView: View {
     @Environment(\.networkClient) private var networkClient
     @Environment(PulseColors.self) private var colors
     @Environment(SettingsState.self) private var settingsState
+    @Environment(AppState.self) private var appState
     @State private var viewModel: RiskCenterViewModel?
     @State private var selectedType: String? = nil
+    @State private var selectedFilter: String = "unresolved"
     @State private var pulsePhase: CGFloat = 0
+    @State private var resolveEventId: String?
 
     private struct BreakerTypeInfo {
         let label: String
@@ -26,8 +29,29 @@ struct CircuitBreakersView: View {
         "system_safe_mode": BreakerTypeInfo(label: "系统安全模式", labelEn: "SAFE MODE", color: PulseColors.StateColors.purple, icon: "shield.fill"),
     ]
 
+    private var resolvedMode: ModePill.Mode {
+        ModePill.Mode.resolve(
+            liveReadinessState: viewModel?.circuitBreakers?.state,
+            isLiveMode: appState.isLiveMode,
+            isMockMode: !appState.isLiveMode && !appState.isDetectingBackend
+        )
+    }
+
+    private var affectedRunCount: Int {
+        viewModel?.circuitBreakers?.totalCount ?? 0
+    }
+
     var body: some View {
         VStack(spacing: 0) {
+            LiveWireStrip(mode: resolvedMode)
+            EmergencyStopBar(
+                mode: resolvedMode,
+                affectedRuns: affectedRunCount,
+                emergencyLocked: viewModel?.circuitBreakers?.state == "emergency_locked",
+                onStop: { await viewModel?.emergencyStop() },
+                onResume: { await viewModel?.emergencyResume() }
+            )
+
             if let vm = viewModel {
                 if vm.isLoading && vm.circuitBreakers == nil {
                     LoadingView(type: .detail)
@@ -81,6 +105,22 @@ struct CircuitBreakersView: View {
                 pulsePhase = 1
             }
         }
+        // Resolve confirm dialog
+        .confirmDialog(
+            isPresented: Binding(
+                get: { resolveEventId != nil },
+                set: { if !$0 { resolveEventId = nil } }
+            ),
+            title: L10n.Risk.confirmMarkResolved,
+            message: L10n.zh("确认将此熔断事件标记为已解决？", en: "Mark this circuit breaker event as resolved?"),
+            confirmLabel: L10n.Risk.markResolved,
+            confirmStyle: .warning,
+            onConfirm: {
+                guard let id = resolveEventId else { return }
+                Task { await viewModel?.resolveCircuitBreaker(eventId: id) }
+                resolveEventId = nil
+            }
+        )
     }
 
     private var overallStateColor: Color {
@@ -137,43 +177,73 @@ struct CircuitBreakersView: View {
                     filterChip(
                         label: L10n.zh("全部", en: "All"),
                         icon: "line.3.horizontal.decrease.circle",
-                        isSelected: selectedType == nil
-                    ) { selectedType = nil }
+                        isSelected: selectedFilter == "all" && selectedType == nil
+                    ) {
+                        selectedFilter = "all"
+                        selectedType = nil
+                    }
 
+                    // Resolve status chips
+                    filterChip(
+                        label: L10n.Risk.unresolved,
+                        icon: "circle.dotted",
+                        color: PulseColors.StateColors.orange,
+                        isSelected: selectedFilter == "unresolved" && selectedType == nil
+                    ) {
+                        selectedFilter = "unresolved"
+                        selectedType = nil
+                    }
+
+                    filterChip(
+                        label: L10n.Risk.resolved,
+                        icon: "checkmark.circle",
+                        color: PulseColors.StateColors.green,
+                        isSelected: selectedFilter == "resolved" && selectedType == nil
+                    ) {
+                        selectedFilter = "resolved"
+                        selectedType = nil
+                    }
+
+                    // Divider
+                    RoundedRectangle(cornerRadius: 0.5)
+                        .fill(colors.border)
+                        .frame(width: 1, height: 20)
+
+                    // Type chips
                     filterChip(
                         label: L10n.zh("紧急停止", en: "Emergency"),
                         icon: "bolt.fill",
                         color: PulseColors.StateColors.red,
                         isSelected: selectedType == "emergency_stop"
-                    ) { selectedType = selectedType == "emergency_stop" ? nil : "emergency_stop" }
+                    ) { selectedType = selectedType == "emergency_stop" ? nil : "emergency_stop"; selectedFilter = "all" }
 
                     filterChip(
                         label: L10n.zh("Kill Switch", en: "Kill Switch"),
                         icon: "xmark.octagon.fill",
                         color: PulseColors.StateColors.red,
                         isSelected: selectedType == "kill_switch"
-                    ) { selectedType = selectedType == "kill_switch" ? nil : "kill_switch" }
+                    ) { selectedType = selectedType == "kill_switch" ? nil : "kill_switch"; selectedFilter = "all" }
 
                     filterChip(
                         label: L10n.zh("亏损锁", en: "Loss Lock"),
                         icon: "chart.line.downtrend.xyaxis",
                         color: PulseColors.StateColors.orangeRed,
                         isSelected: selectedType == "daily_loss_lock"
-                    ) { selectedType = selectedType == "daily_loss_lock" ? nil : "daily_loss_lock" }
+                    ) { selectedType = selectedType == "daily_loss_lock" ? nil : "daily_loss_lock"; selectedFilter = "all" }
 
                     filterChip(
                         label: L10n.zh("手动平仓", en: "Manual"),
                         icon: "hand.raised.fill",
                         color: PulseColors.StateColors.yellow,
                         isSelected: selectedType == "manual_force_close"
-                    ) { selectedType = selectedType == "manual_force_close" ? nil : "manual_force_close" }
+                    ) { selectedType = selectedType == "manual_force_close" ? nil : "manual_force_close"; selectedFilter = "all" }
 
                     filterChip(
                         label: L10n.zh("安全模式", en: "Safe Mode"),
                         icon: "shield.fill",
                         color: PulseColors.StateColors.purple,
                         isSelected: selectedType == "system_safe_mode"
-                    ) { selectedType = selectedType == "system_safe_mode" ? nil : "system_safe_mode" }
+                    ) { selectedType = selectedType == "system_safe_mode" ? nil : "system_safe_mode"; selectedFilter = "all" }
                 }
             }
         }
@@ -238,8 +308,12 @@ struct CircuitBreakersView: View {
                     .tracking(3)
 
                 Text(L10n.zh(
-                    selectedType != nil ? L10n.zh("当前筛选条件下无熔断记录", en: "No circuit breaker records for this filter") : L10n.zh("系统未触发过熔断，运行正常", en: "No circuit breakers triggered — system running normally"),
-                    en: selectedType != nil ? "No breakers match current filter" : "No circuit breakers fired — system nominal"
+                    selectedType != nil || selectedFilter != "all"
+                        ? L10n.zh("当前筛选条件下无熔断记录", en: "No circuit breaker records for this filter")
+                        : L10n.zh("系统未触发过熔断，运行正常", en: "No circuit breakers triggered — system running normally"),
+                    en: selectedType != nil || selectedFilter != "all"
+                        ? "No breakers match current filter"
+                        : "No circuit breakers fired — system nominal"
                 ))
                 .font(PulseFonts.caption)
                 .foregroundStyle(colors.textMuted)
@@ -263,6 +337,7 @@ struct CircuitBreakersView: View {
 
     private func timelineRow(_ record: CircuitBreakerRecordResponse, isFirst: Bool, isLast: Bool) -> some View {
         let info = typeInfoMap[record.type] ?? BreakerTypeInfo(label: record.type, labelEn: record.type.uppercased(), color: PulseColors.StateColors.gray, icon: "questionmark.circle")
+        let canResolve = canMarkResolved(record)
 
         return HStack(alignment: .top, spacing: PulseSpacing.md) {
             // Left: Timeline connector + dot
@@ -282,9 +357,9 @@ struct CircuitBreakersView: View {
                         .fill(info.color.opacity(0.15))
                         .frame(width: 24, height: 24)
                     Circle()
-                        .fill(info.color)
+                        .fill(record.resolved ? PulseColors.StateColors.green : info.color)
                         .frame(width: 10, height: 10)
-                        .shadow(color: info.color.opacity(0.5), radius: 3)
+                        .shadow(color: (record.resolved ? PulseColors.StateColors.green : info.color).opacity(0.5), radius: 3)
                 }
 
                 // Bottom connector line
@@ -319,6 +394,17 @@ struct CircuitBreakersView: View {
                             .stroke(info.color.opacity(0.3), lineWidth: 1)
                     )
 
+                    // Resolved badge
+                    if record.resolved {
+                        Text(L10n.Risk.resolved)
+                            .font(.system(size: 9, weight: .bold, design: .monospaced))
+                            .foregroundStyle(PulseColors.StateColors.green)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .background(PulseColors.StateColors.green.opacity(0.1))
+                            .clipShape(Capsule())
+                    }
+
                     Spacer()
 
                     // Timestamp
@@ -348,7 +434,7 @@ struct CircuitBreakersView: View {
                     }
                 }
 
-                // Related IDs row
+                // Related IDs row + Mark Resolved button
                 HStack(spacing: PulseSpacing.md) {
                     if let cmdId = record.relatedCommandId {
                         HStack(spacing: 3) {
@@ -375,6 +461,23 @@ struct CircuitBreakersView: View {
 
                     Spacer()
 
+                    // Mark Resolved button (only for eligible records)
+                    if canResolve {
+                        Button {
+                            resolveEventId = record.id
+                        } label: {
+                            Label(L10n.Risk.markResolved, systemImage: "checkmark.circle")
+                                .labelStyle(.iconOnly)
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(PulseColors.warning)
+                        .help(L10n.Risk.markResolved)
+                    } else if record.type == "kill_switch" || record.type == "emergency_stop" {
+                        Text(L10n.Risk.cannotResolveKillSwitch)
+                            .font(.system(size: 9, design: .monospaced))
+                            .foregroundStyle(colors.textMuted.opacity(0.5))
+                    }
+
                     // Record ID
                     Text(record.id)
                         .font(.system(size: 9, design: .monospaced))
@@ -388,24 +491,45 @@ struct CircuitBreakersView: View {
                     .fill(colors.cardBackground)
                     .overlay(
                         RoundedRectangle(cornerRadius: PulseRadii.card)
-                            .stroke(info.color.opacity(0.12), lineWidth: 1)
+                            .stroke(info.color.opacity(record.resolved ? 0.06 : 0.12), lineWidth: 1)
                     )
             )
             .padding(.bottom, PulseSpacing.sm)
         }
     }
 
+    // MARK: - Helpers
+
+    private func canMarkResolved(_ record: CircuitBreakerRecordResponse) -> Bool {
+        let nonResolvableTypes = ["kill_switch", "emergency_stop"]
+        return !nonResolvableTypes.contains(record.type) && !record.resolved
+    }
+
     // MARK: - Filtering
 
     private func filteredRecords(_ records: [CircuitBreakerRecordResponse]) -> [CircuitBreakerRecordResponse] {
-        guard let type = selectedType else { return records }
-        if type == "daily_loss_lock" {
-            return records.filter { $0.type == "daily_loss_lock" || $0.type == "weekly_loss_lock" }
+        var filtered = records
+
+        // Apply resolve-status filter
+        if selectedFilter == "unresolved" {
+            filtered = filtered.filter { !$0.resolved }
+        } else if selectedFilter == "resolved" {
+            filtered = filtered.filter { $0.resolved }
         }
-        return records.filter { $0.type == type }
+
+        // Apply type filter
+        if let type = selectedType {
+            if type == "daily_loss_lock" {
+                filtered = filtered.filter { $0.type == "daily_loss_lock" || $0.type == "weekly_loss_lock" }
+            } else {
+                filtered = filtered.filter { $0.type == type }
+            }
+        }
+
+        return filtered
     }
 
-    // MARK: - Helpers
+    // MARK: - Timestamp
 
     private func formatTimestamp(_ isoString: String) -> String {
         let formatter = ISO8601DateFormatter()

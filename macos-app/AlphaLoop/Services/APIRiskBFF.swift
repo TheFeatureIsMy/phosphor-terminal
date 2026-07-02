@@ -151,6 +151,7 @@ struct CircuitBreakerRecordResponse: Codable, Identifiable {
     var relatedCommandId: String?
     var relatedReconciliationId: String?
     var createdAt: String?
+    var resolved: Bool = false
 
     enum CodingKeys: String, CodingKey {
         case id, type
@@ -160,6 +161,7 @@ struct CircuitBreakerRecordResponse: Codable, Identifiable {
         case relatedCommandId = "related_command_id"
         case relatedReconciliationId = "related_reconciliation_id"
         case createdAt = "created_at"
+        case resolved
     }
 }
 
@@ -272,11 +274,16 @@ enum MockRiskBFF {
 
     static func circuitBreakers() -> CircuitBreakersBFFResponse {
         CircuitBreakersBFFResponse(
+            state: "tripped",
             records: [
-                CircuitBreakerRecordResponse(id: "cb-001", type: "daily_loss_lock", reasonCodes: ["daily_loss_limit_reached"]),
-                CircuitBreakerRecordResponse(id: "cb-002", type: "emergency_stop", reasonCodes: ["manual_trigger"], relatedCommandId: "cmd-099"),
+                CircuitBreakerRecordResponse(id: "cb-001", type: "daily_loss_lock", reasonCodes: ["daily_loss_limit_reached"], createdAt: "2026-06-30T14:30:00Z"),
+                CircuitBreakerRecordResponse(id: "cb-002", type: "emergency_stop", reasonCodes: ["manual_trigger"], relatedCommandId: "cmd-099", createdAt: "2026-06-29T10:15:00Z", resolved: true),
+                CircuitBreakerRecordResponse(id: "cb-003", type: "kill_switch", reasonCodes: ["sharp_drop_detected"], createdAt: "2026-06-28T09:00:00Z"),
+                CircuitBreakerRecordResponse(id: "cb-004", type: "weekly_loss_lock", reasonCodes: ["weekly_loss_limit_reached"], createdAt: "2026-06-27T16:45:00Z", resolved: true),
+                CircuitBreakerRecordResponse(id: "cb-005", type: "manual_force_close", reasonCodes: ["manual_intervention"], createdAt: "2026-06-26T08:00:00Z"),
+                CircuitBreakerRecordResponse(id: "cb-006", type: "system_safe_mode", reasonCodes: ["consecutive_failures"], createdAt: "2026-06-25T12:00:00Z"),
             ],
-            totalCount: 2
+            totalCount: 6
         )
     }
 }

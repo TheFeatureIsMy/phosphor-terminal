@@ -61,6 +61,7 @@ class CircuitBreakerRecord(BaseModel):
     related_command_id: str | None = None
     related_reconciliation_id: str | None = None
     created_at: datetime | None = None
+    resolved: bool = False
 
 
 class CircuitBreakersResponse(BaseModel):
