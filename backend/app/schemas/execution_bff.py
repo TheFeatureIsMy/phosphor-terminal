@@ -67,6 +67,12 @@ class OrdersPositionsResponse(BaseModel):
     positions: list[PositionResponse] = Field(default_factory=list)
 
 
+class CancelResponse(BaseModel):
+    cancelled_order_id: str
+    status: str
+    reason_codes: list[str] = []
+
+
 class ReconciliationRun(BaseModel):
     id: str
     status: str = "pending"

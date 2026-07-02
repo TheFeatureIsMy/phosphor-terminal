@@ -58,6 +58,9 @@ class FreqtradeClient:
     async def stop_bot(self) -> dict:
         return await self._post("/api/v1/stop")
 
+    async def cancel_order(self, order_id: str) -> dict:
+        return await self._post("/api/v1/cancel_open_order", {"order_id": order_id})
+
     async def run_backtest(self, config: dict) -> dict:
         return await self._post("/api/v1/backtest", config)
 

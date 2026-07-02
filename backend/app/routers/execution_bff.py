@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.schemas.execution_bff import (
-    ExecutionCenterResponse, ExecutionSession,
+    CancelResponse, ExecutionCenterResponse, ExecutionSession,
     OrdersPositionsResponse, OrderResponse, PositionResponse,
     ReconciliationBusResponse, ReconciliationRun, CommandBusEvent,
 )
@@ -286,6 +286,19 @@ async def emergency_stop():
     except Exception as e:
         logger.exception("[emergency-stop] FreqtradeClient unavailable: %s", e)
         return {"status": "emergency_stop_failed", "reason_codes": ["data_source_unavailable", type(e).__name__]}
+
+
+@router.post("/orders/{order_id}/cancel", response_model=CancelResponse)
+async def cancel_single_order(order_id: str):
+    try:
+        from app.services.freqtrade_client import FreqtradeClient
+
+        client = FreqtradeClient()
+        await client.cancel_order(order_id)
+        return CancelResponse(cancelled_order_id=order_id, status="cancelled", reason_codes=[])
+    except Exception as e:
+        logger.exception("[cancel-order] failed: %s", e)
+        return CancelResponse(cancelled_order_id=order_id, status="failed", reason_codes=[type(e).__name__])
 
 
 # ---------------------------------------------------------------------------
