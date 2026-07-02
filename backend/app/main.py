@@ -16,7 +16,7 @@ from app.routers import (
     search, notifications, attribution, sentiment, rag, markets,
     ai_research, agent_signals, ai_providers, factor_research, websocket,
     signals_v2, strategy_runs, inference, mcp,
-    decision,
+    decision, emergency_v2,
 )
 from app.routers import shadow_strategy
 from app.routers import overview, execution_bff, reconciliation_bff, risk_bff, structure_bff
@@ -109,6 +109,7 @@ app.include_router(admin_providers_router)
 app.include_router(admin_system_settings_router)
 app.include_router(providers_ws_router)
 app.include_router(decision.router)
+app.include_router(emergency_v2.router)
 
 # BFF aggregation layer
 app.include_router(overview.router)

@@ -118,8 +118,8 @@ class TestExecutionCenter:
     @pytest.mark.anyio
     async def test_emergency_stop(self, client):
         r = await client.post("/api/execution/emergency-stop")
-        assert r.status_code == 200
-        assert "status" in r.json()
+        assert r.status_code == 410
+        assert "deprecated" in r.json()["detail"].lower()
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -205,8 +205,9 @@ class TestRisk:
     @pytest.mark.anyio
     async def test_emergency_stop_action(self, client):
         r = await client.post("/api/risk/emergency-stop", json={"account_id": "default", "reason": "test"})
-        # May return 200 (with DB) or 500 (no DB) — both acceptable in test env
-        assert r.status_code in (200, 500)
+        # Old endpoint now deprecated — returns 410
+        assert r.status_code == 410
+        assert "deprecated" in r.json()["detail"].lower()
 
     @pytest.mark.anyio
     async def test_enable_source(self, client):

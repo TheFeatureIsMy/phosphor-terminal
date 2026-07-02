@@ -108,33 +108,16 @@ def list_stress_tests(db: Session = Depends(get_db)):
     return db.query(PortfolioStressTest).order_by(PortfolioStressTest.created_at.desc()).limit(50).all()
 
 
-# --- Emergency Stop / Resume endpoints ---
+# --- Emergency Stop / Resume endpoints (deprecated) ---
 
 from fastapi import HTTPException
-from app.services.emergency_stop_service import EmergencyStopService
-from app.schemas.emergency import EmergencyStopRequest, EmergencyStopResponse, EmergencyResumeRequest
 
 
-@router.post("/risk/emergency-stop", response_model=EmergencyStopResponse)
-def emergency_stop(body: EmergencyStopRequest, db: Session = Depends(get_db)):
-    """Trigger emergency stop for one or all active strategy runs."""
-    svc = EmergencyStopService(db)
-    result = svc.stop(strategy_run_id=body.strategy_run_id, reason=body.reason)
-    db.commit()
-    return EmergencyStopResponse(
-        stopped_runs=result["stopped_runs"],
-        ledger_event_ids=result.get("ledger_event_ids", []),
-        message=f"Stopped {result['stopped_count']} run(s). Reason: {result['reason']}",
-    )
+@router.post("/risk/emergency-stop")
+async def emergency_stop_deprecated():
+    raise HTTPException(status_code=410, detail="deprecated, use POST /api/v2/emergency/stop")
 
 
 @router.post("/risk/emergency-resume")
-def emergency_resume(body: EmergencyResumeRequest, db: Session = Depends(get_db)):
-    """Resume from emergency stop."""
-    svc = EmergencyStopService(db)
-    try:
-        result = svc.resume(body.strategy_run_id, reason=body.reason)
-    except ValueError as e:
-        raise HTTPException(status_code=409, detail=str(e))
-    db.commit()
-    return result
+async def emergency_resume_deprecated():
+    raise HTTPException(status_code=410, detail="deprecated, use POST /api/v2/emergency/resume")

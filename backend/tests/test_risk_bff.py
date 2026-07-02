@@ -66,10 +66,20 @@ def test_resolve_circuit_breaker(monkeypatch):
 
 
 def test_old_risk_emergency_stop_deprecated():
-    """Old /api/risk/emergency-stop GET should return 410.
-    POST is handled by the real endpoint in routers/risk.py (requires body)."""
+    """Old /api/risk/emergency-stop GET and POST should return 410."""
     client = TestClient(fastapi_app, raise_server_exceptions=False)
     resp = client.get("/api/risk/emergency-stop")
+    assert resp.status_code == 410
+    assert "deprecated" in resp.json()["detail"].lower()
+    resp = client.post("/api/risk/emergency-stop", json={"reason": "test"})
+    assert resp.status_code == 410
+    assert "deprecated" in resp.json()["detail"].lower()
+
+
+def test_old_risk_emergency_resume_deprecated():
+    """Old /api/risk/emergency-resume POST should return 410."""
+    client = TestClient(fastapi_app, raise_server_exceptions=False)
+    resp = client.post("/api/risk/emergency-resume", json={"strategy_run_id": "00000000-0000-0000-0000-000000000000"})
     assert resp.status_code == 410
     assert "deprecated" in resp.json()["detail"].lower()
 
