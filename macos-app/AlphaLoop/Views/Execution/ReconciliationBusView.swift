@@ -6,10 +6,34 @@ struct ReconciliationBusView: View {
     @Environment(\.networkClient) private var networkClient
     @Environment(PulseColors.self) private var colors
     @Environment(SettingsState.self) private var settingsState
+    @Environment(AppState.self) private var appState
     @State private var viewModel: ExecutionCenterViewModel?
+    @State private var showRetryBatchConfirm = false
+    @State private var retryRunId: String?
+
+    private var resolvedMode: ModePill.Mode {
+        ModePill.Mode.resolve(
+            liveReadinessState: viewModel?.reconciliationBus?.state,
+            isLiveMode: appState.isLiveMode,
+            isMockMode: !appState.isLiveMode && !appState.isDetectingBackend
+        )
+    }
+
+    private var affectedRunCount: Int {
+        viewModel?.reconciliationBus?.recentCommands.count ?? 0
+    }
 
     var body: some View {
         VStack(spacing: 0) {
+            LiveWireStrip(mode: resolvedMode)
+            EmergencyStopBar(
+                mode: resolvedMode,
+                affectedRuns: affectedRunCount,
+                emergencyLocked: viewModel?.reconciliationBus?.state == "emergency_locked",
+                onStop: { await viewModel?.emergencyStop() },
+                onResume: { await viewModel?.emergencyResume() }
+            )
+
             if let vm = viewModel {
                 if vm.isLoading && vm.reconciliationBus == nil {
                     LoadingView(type: .detail)
@@ -44,11 +68,45 @@ struct ReconciliationBusView: View {
                 }
             }
         }
+        .riskAtmosphericBackground(tint: PulseColors.accent)
         .task {
             let vm = ExecutionCenterViewModel(client: networkClient)
             viewModel = vm
             await vm.loadReconciliationBus()
         }
+        // Batch retry confirm
+        .confirmDialog(
+            isPresented: $showRetryBatchConfirm,
+            title: L10n.Reconciliation.confirmRetry,
+            message: String(
+                format: L10n.Reconciliation.confirmRetryMessage,
+                L10n.Reconciliation.retryReconciliation,
+                resolvedMode.label
+            ),
+            confirmLabel: L10n.Reconciliation.retryReconciliation,
+            confirmStyle: .warning,
+            onConfirm: { Task { await viewModel?.retryReconciliationBatch() } }
+        )
+        // Single run retry confirm
+        .confirmDialog(
+            isPresented: .init(
+                get: { retryRunId != nil },
+                set: { if !$0 { retryRunId = nil } }
+            ),
+            title: L10n.Reconciliation.confirmRetry,
+            message: String(
+                format: L10n.Reconciliation.confirmRetryMessage,
+                retryRunId ?? "",
+                resolvedMode.label
+            ),
+            confirmLabel: L10n.Reconciliation.retry,
+            confirmStyle: .warning,
+            onConfirm: {
+                guard let id = retryRunId else { return }
+                Task { await viewModel?.retryReconciliationRun(id: id) }
+                retryRunId = nil
+            }
+        )
     }
 
     // MARK: - Header
@@ -66,18 +124,28 @@ struct ReconciliationBusView: View {
 
             Spacer()
 
-            Button {
-                Task { await vm.loadReconciliationBus() }
-            } label: {
-                HStack(spacing: PulseSpacing.xxs) {
-                    Image(systemName: "arrow.clockwise")
-                        .font(.system(size: 11))
-                    Text(L10n.Reconciliation.refreshExchangeState)
-                        .font(PulseFonts.monoLabel)
+            HStack(spacing: PulseSpacing.sm) {
+                Button {
+                    showRetryBatchConfirm = true
+                } label: {
+                    Label(L10n.Reconciliation.retryReconciliation, systemImage: "arrow.clockwise")
                 }
-                .foregroundStyle(PulseColors.accent)
+                .buttonStyle(.bordered)
+                .tint(PulseColors.warning)
+
+                Button {
+                    Task { await vm.loadReconciliationBus() }
+                } label: {
+                    HStack(spacing: PulseSpacing.xxs) {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 11))
+                        Text(L10n.Reconciliation.refreshExchangeState)
+                            .font(PulseFonts.monoLabel)
+                    }
+                    .foregroundStyle(PulseColors.accent)
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
         }
         .padding(.horizontal, PulseSpacing.lg)
         .padding(.vertical, PulseSpacing.md)
@@ -227,6 +295,18 @@ struct ReconciliationBusView: View {
                     .font(.system(size: 10))
                     .foregroundStyle(PulseColors.StateColors.yellow)
                     .help(run.reasonCodes.joined(separator: ", "))
+            }
+
+            // 内联重试按钮（失败/差异运行）
+            if ["failed", "discrepancy"].contains(run.status.lowercased()) {
+                Button {
+                    retryRunId = run.id
+                } label: {
+                    Label(L10n.Reconciliation.retry, systemImage: "arrow.clockwise")
+                        .labelStyle(.iconOnly)
+                }
+                .buttonStyle(.borderless)
+                .tint(PulseColors.warning)
             }
         }
         .padding(PulseSpacing.xs)
