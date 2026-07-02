@@ -90,6 +90,13 @@ def test_force_close_all_positions(monkeypatch):
     assert len(closed) == 3
 
 
+def test_old_execution_emergency_stop_deprecated():
+    """Old /api/execution/emergency-stop should return 410."""
+    resp = client.post("/api/execution/emergency-stop")
+    assert resp.status_code == 410
+    assert "deprecated" in resp.json()["detail"].lower()
+
+
 def test_close_single_position(monkeypatch):
     closed = {}
 

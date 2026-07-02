@@ -2,7 +2,7 @@
 import logging
 import uuid
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 
 from app.schemas.risk_bff import (
@@ -235,9 +235,10 @@ async def get_circuit_breakers(db: Session = Depends(get_db)):
         ).model_dump()
 
 
-@router.post("/emergency-stop")
-async def risk_emergency_stop():
-    return {"status": "emergency_stop_executed", "reason_codes": ["manual_trigger"]}
+@router.get("/emergency-stop", include_in_schema=False)
+@router.post("/emergency-stop", include_in_schema=False)
+async def emergency_stop_deprecated():
+    raise HTTPException(status_code=410, detail="deprecated, use POST /api/v2/emergency/stop")
 
 
 @router.post("/block-new-entries")

@@ -3,7 +3,7 @@ import logging
 import time
 import uuid
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -264,28 +264,8 @@ async def get_positions():
 
 
 @router.post("/emergency-stop")
-async def emergency_stop():
-    try:
-        from app.services.freqtrade_client import FreqtradeClient
-
-        ft = FreqtradeClient()
-        result = await ft.stop_bot()
-
-        if FreqtradeClient.is_success(result):
-            return {
-                "status": "emergency_stop_executed",
-                "reason_codes": ["manual_trigger"],
-                "freqtrade_response": result,
-            }
-        else:
-            return {
-                "status": "emergency_stop_attempted",
-                "reason_codes": ["manual_trigger", "freqtrade_error"],
-                "error": result.get("error", "unknown"),
-            }
-    except Exception as e:
-        logger.exception("[emergency-stop] FreqtradeClient unavailable: %s", e)
-        return {"status": "emergency_stop_failed", "reason_codes": ["data_source_unavailable", type(e).__name__]}
+async def emergency_stop_deprecated():
+    raise HTTPException(status_code=410, detail="deprecated, use POST /api/v2/emergency/stop")
 
 
 @router.post("/orders/{order_id}/cancel", response_model=CancelResponse)

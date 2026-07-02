@@ -65,6 +65,15 @@ def test_resolve_circuit_breaker(monkeypatch):
     assert resp.json()["resolved_event_id"] == "evt-1"
 
 
+def test_old_risk_emergency_stop_deprecated():
+    """Old /api/risk/emergency-stop GET should return 410.
+    POST is handled by the real endpoint in routers/risk.py (requires body)."""
+    client = TestClient(fastapi_app, raise_server_exceptions=False)
+    resp = client.get("/api/risk/emergency-stop")
+    assert resp.status_code == 410
+    assert "deprecated" in resp.json()["detail"].lower()
+
+
 def test_resolve_kill_switch_rejected(monkeypatch):
     client = TestClient(fastapi_app, raise_server_exceptions=False)
 
