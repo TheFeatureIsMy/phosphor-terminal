@@ -4,6 +4,54 @@ import Foundation
 
 // MARK: - Response Types
 
+struct BlockActionResponse: Codable {
+    let status: String
+    let activeLocks: [ActiveLockResponse]
+
+    enum CodingKeys: String, CodingKey {
+        case status
+        case activeLocks = "active_locks"
+    }
+}
+
+struct ActiveLockResponse: Codable {
+    let lock: String
+    let reason: String?
+}
+
+struct RiskRulesResponse: Codable {
+    let dailyLossLimit: Double
+    let weeklyLossLimit: Double
+    let consecutiveLossesLimit: Int
+    let maxDrawdown: Double
+    let correlationThreshold: Double
+    let killSwitch: KillSwitchResponse
+
+    enum CodingKeys: String, CodingKey {
+        case dailyLossLimit = "daily_loss_limit"
+        case weeklyLossLimit = "weekly_loss_limit"
+        case consecutiveLossesLimit = "consecutive_losses_limit"
+        case maxDrawdown = "max_drawdown"
+        case correlationThreshold = "correlation_threshold"
+        case killSwitch = "kill_switch"
+    }
+}
+
+struct KillSwitchResponse: Codable {
+    let threshold: Double
+    let active: Bool
+}
+
+struct ResolveCircuitBreakerResponse: Codable {
+    let status: String
+    let resolvedEventId: String?
+
+    enum CodingKeys: String, CodingKey {
+        case status
+        case resolvedEventId = "resolved_event_id"
+    }
+}
+
 struct RiskGuardResponse: Codable, Identifiable {
     var id: String { key }
     let key: String
@@ -147,8 +195,45 @@ struct APIRiskBFF {
         try await client.get("/api/risk/circuit-breakers", mock: MockRiskBFF.circuitBreakers)
     }
 
-    func emergencyStop() async throws -> [String: String] {
-        try await client.get("/api/risk/emergency-stop", mock: { ["status": "executed"] })
+    // MARK: - Block / Unblock New Entries
+
+    func blockNewEntries(reason: String = "manual") async throws -> BlockActionResponse {
+        try await client.post("/api/risk/block-new-entries", body: ["reason": reason], mock: {
+            BlockActionResponse(status: "blocked", activeLocks: [ActiveLockResponse(lock: "manual_block", reason: reason)])
+        })
+    }
+
+    func unblock() async throws -> BlockActionResponse {
+        try await client.post("/api/risk/unblock", body: [String: String](), mock: {
+            BlockActionResponse(status: "unblocked", activeLocks: [])
+        })
+    }
+
+    // MARK: - Risk Rules
+
+    func getRiskRules() async throws -> RiskRulesResponse {
+        try await client.get("/api/risk/rules", mock: {
+            RiskRulesResponse(
+                dailyLossLimit: 0.05, weeklyLossLimit: 0.10, consecutiveLossesLimit: 3,
+                maxDrawdown: 0.20, correlationThreshold: 0.9,
+                killSwitch: KillSwitchResponse(threshold: 0.15, active: false)
+            )
+        })
+    }
+
+    // MARK: - Circuit Breaker
+
+    func resolveCircuitBreaker(eventId: String) async throws -> ResolveCircuitBreakerResponse {
+        try await client.post("/api/risk/circuit-breakers/\(eventId)/resolve", body: [String: String](), mock: {
+            ResolveCircuitBreakerResponse(status: "resolved", resolvedEventId: eventId)
+        })
+    }
+
+    // MARK: - Emergency Stop (delegates to APIEmergency)
+
+    func emergencyStop() async throws -> EmergencyStopResult {
+        let api = APIEmergency(client: client)
+        return try await api.emergencyStop(reason: "manual")
     }
 }
 
