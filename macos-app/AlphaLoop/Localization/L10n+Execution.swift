@@ -52,5 +52,33 @@ extension L10n {
         // No data
         static var noData: String { zh("暂无数据", en: "No Data") }
         static var noDataDesc: String { zh("当前没有订单或持仓数据", en: "No order or position data available") }
+
+        // Cancel / Close actions
+        static var cancelAllOrders: String { zh("撤销全部挂单", en: "Cancel All Orders") }
+        static var forceCloseAll: String { zh("强制平仓全部", en: "Force Close All") }
+        static var cancelOrder: String { zh("撤销", en: "Cancel") }
+        static var closePosition: String { zh("平仓", en: "Close") }
+        static var confirmCancelAll: String { zh("确认撤销全部挂单", en: "Confirm Cancel All Orders") }
+        static var confirmCancelAllMessage: String {
+            zh("将撤销 %d 笔挂单。当前模式: %@。此操作不可逆。",
+               en: "Will cancel %d pending orders. Current mode: %@. This action is irreversible.")
+        }
+        static var confirmForceCloseAll: String { zh("确认强制平仓全部", en: "Confirm Force Close All") }
+        static var confirmForceCloseAllMessage: String {
+            zh("将强制平仓 %d 个持仓。当前模式: %@。此操作不可逆。",
+               en: "Will force-close %d positions. Current mode: %@. This action is irreversible.")
+        }
+        static var confirmCancelOrder: String { zh("确认撤销订单", en: "Confirm Cancel Order") }
+        static var confirmCancelOrderMessage: String {
+            zh("将撤销订单 %@。当前模式: %@。",
+               en: "Will cancel order %@. Current mode: %@.")
+        }
+        static var confirmClosePosition: String { zh("确认平仓", en: "Confirm Close Position") }
+        static var confirmClosePositionMessage: String {
+            zh("将平仓持仓 %@。当前模式: %@。",
+               en: "Will close position %@. Current mode: %@.")
+        }
+        static var affectedOrders: String { zh("受影响订单数", en: "Affected orders") }
+        static var affectedPositions: String { zh("受影响持仓数", en: "Affected positions") }
     }
 }
