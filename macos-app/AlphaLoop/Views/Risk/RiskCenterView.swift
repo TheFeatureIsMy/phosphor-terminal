@@ -10,46 +10,42 @@ struct RiskCenterView: View {
     @State private var pulsePhase: CGFloat = 0
 
     var body: some View {
-        ZStack {
-            // Atmospheric background glow based on risk state
-            atmosphericBackground
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(spacing: PulseSpacing.xl) {
+                if let vm = viewModel {
+                    if vm.isLoading && vm.overview == nil {
+                        LoadingView(type: .detail)
+                    } else if let overview = vm.overview {
+                        // Hero risk gauge
+                        heroRiskGauge(overview)
 
-            ScrollView(.vertical, showsIndicators: false) {
-                VStack(spacing: PulseSpacing.xl) {
-                    if let vm = viewModel {
-                        if vm.isLoading && vm.overview == nil {
-                            LoadingView(type: .detail)
-                        } else if let overview = vm.overview {
-                            // Hero risk gauge
-                            heroRiskGauge(overview)
+                        // Guards grid (arc gauges)
+                        guardsGrid(overview.guards)
 
-                            // Guards grid (arc gauges)
-                            guardsGrid(overview.guards)
+                        // Emergency action panel
+                        emergencyPanel(vm, overview: overview)
 
-                            // Emergency action panel
-                            emergencyPanel(vm, overview: overview)
-
-                        } else if let error = vm.error {
-                            EmptyStateView(
-                                icon: "exclamationmark.triangle",
-                                title: L10n.Common.error,
-                                description: error,
-                                primaryAction: (title: L10n.Common.retry, action: { Task { await vm.loadOverview() } })
-                            )
-                        } else {
-                            EmptyStateView(
-                                icon: "shield.checkered",
-                                title: L10n.Common.noData,
-                                description: L10n.zh("风控系统尚未返回数据", en: "Risk system has not returned data")
-                            )
-                        }
+                    } else if let error = vm.error {
+                        EmptyStateView(
+                            icon: "exclamationmark.triangle",
+                            title: L10n.Common.error,
+                            description: error,
+                            primaryAction: (title: L10n.Common.retry, action: { Task { await vm.loadOverview() } })
+                        )
+                    } else {
+                        EmptyStateView(
+                            icon: "shield.checkered",
+                            title: L10n.Common.noData,
+                            description: L10n.zh("风控系统尚未返回数据", en: "Risk system has not returned data")
+                        )
                     }
                 }
-                .padding(PulseSpacing.xl)
-                .id(settingsState.language)
             }
-            .scrollEdgeEffectStyle(.soft, for: .vertical)
+            .padding(PulseSpacing.xl)
+            .id(settingsState.language)
         }
+        .scrollEdgeEffectStyle(.soft, for: .vertical)
+        .riskAtmosphericBackground(tint: overallRiskColor)
         .task {
             let vm = RiskCenterViewModel(client: networkClient)
             viewModel = vm
@@ -60,36 +56,6 @@ struct RiskCenterView: View {
                 pulsePhase = 1
             }
         }
-    }
-
-    // MARK: - Atmospheric Background
-
-    private var atmosphericBackground: some View {
-        let riskColor = overallRiskColor
-        return ZStack {
-            colors.background
-
-            // Radial glow from center-top
-            RadialGradient(
-                colors: [
-                    riskColor.opacity(0.08 + pulsePhase * 0.04),
-                    riskColor.opacity(0.02),
-                    Color.clear,
-                ],
-                center: .top,
-                startRadius: 50,
-                endRadius: 500
-            )
-
-            // Scanline effect (very subtle)
-            Canvas { context, size in
-                for y in stride(from: 0, to: size.height, by: 3) {
-                    let rect = CGRect(x: 0, y: y, width: size.width, height: 1)
-                    context.fill(Path(rect), with: .color(Color.white.opacity(0.008)))
-                }
-            }
-        }
-        .ignoresSafeArea()
     }
 
     private var overallRiskColor: Color {

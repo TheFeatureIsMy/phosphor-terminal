@@ -27,54 +27,50 @@ struct CircuitBreakersView: View {
     ]
 
     var body: some View {
-        ZStack {
-            // Atmospheric background
-            atmosphericBackground
+        VStack(spacing: 0) {
+            if let vm = viewModel {
+                if vm.isLoading && vm.circuitBreakers == nil {
+                    LoadingView(type: .detail)
+                        .padding(PulseSpacing.lg)
+                } else if let data = vm.circuitBreakers {
+                    // Header + Filter
+                    headerSection(vm, data: data)
 
-            VStack(spacing: 0) {
-                if let vm = viewModel {
-                    if vm.isLoading && vm.circuitBreakers == nil {
-                        LoadingView(type: .detail)
-                            .padding(PulseSpacing.lg)
-                    } else if let data = vm.circuitBreakers {
-                        // Header + Filter
-                        headerSection(vm, data: data)
+                    Divider().foregroundStyle(colors.border)
 
-                        Divider().foregroundStyle(colors.border)
-
-                        ScrollView(.vertical, showsIndicators: false) {
-                            let filtered = filteredRecords(data.records)
-                            if filtered.isEmpty {
-                                allClearState
-                                    .padding(.top, PulseSpacing.xl)
-                            } else {
-                                // Timeline layout
-                                timelineLayout(filtered)
-                                    .padding(PulseSpacing.xl)
-                            }
-
+                    ScrollView(.vertical, showsIndicators: false) {
+                        let filtered = filteredRecords(data.records)
+                        if filtered.isEmpty {
+                            allClearState
+                                .padding(.top, PulseSpacing.xl)
+                        } else {
+                            // Timeline layout
+                            timelineLayout(filtered)
+                                .padding(PulseSpacing.xl)
                         }
-                        .id(settingsState.language)
-                        .scrollEdgeEffectStyle(.soft, for: .vertical)
-                    } else if let error = vm.error {
-                        EmptyStateView(
-                            icon: "exclamationmark.triangle",
-                            title: L10n.zh("加载失败", en: "Load Failed"),
-                            description: error,
-                            primaryAction: (title: L10n.zh("重试", en: "Retry"), action: { Task { await vm.loadCircuitBreakers() } })
-                        )
-                        .padding(PulseSpacing.lg)
-                    } else {
-                        EmptyStateView(
-                            icon: "bolt.slash",
-                            title: L10n.zh("暂无熔断数据", en: "No Breaker Data"),
-                            description: L10n.zh("熔断系统尚未返回数据", en: "Circuit breaker system has not returned data")
-                        )
-                        .padding(PulseSpacing.lg)
+
                     }
+                    .id(settingsState.language)
+                    .scrollEdgeEffectStyle(.soft, for: .vertical)
+                } else if let error = vm.error {
+                    EmptyStateView(
+                        icon: "exclamationmark.triangle",
+                        title: L10n.zh("加载失败", en: "Load Failed"),
+                        description: error,
+                        primaryAction: (title: L10n.zh("重试", en: "Retry"), action: { Task { await vm.loadCircuitBreakers() } })
+                    )
+                    .padding(PulseSpacing.lg)
+                } else {
+                    EmptyStateView(
+                        icon: "bolt.slash",
+                        title: L10n.zh("暂无熔断数据", en: "No Breaker Data"),
+                        description: L10n.zh("熔断系统尚未返回数据", en: "Circuit breaker system has not returned data")
+                    )
+                    .padding(PulseSpacing.lg)
                 }
             }
         }
+        .riskAtmosphericBackground(tint: overallStateColor)
         .task {
             let vm = RiskCenterViewModel(client: networkClient)
             viewModel = vm
@@ -85,34 +81,6 @@ struct CircuitBreakersView: View {
                 pulsePhase = 1
             }
         }
-    }
-
-    // MARK: - Atmospheric Background
-
-    private var atmosphericBackground: some View {
-        let stateColor = overallStateColor
-        return ZStack {
-            colors.background
-
-            RadialGradient(
-                colors: [
-                    stateColor.opacity(0.05 + pulsePhase * 0.03),
-                    stateColor.opacity(0.01),
-                    Color.clear,
-                ],
-                center: .topLeading,
-                startRadius: 30,
-                endRadius: 400
-            )
-
-            Canvas { context, size in
-                for y in stride(from: 0, to: size.height, by: 3) {
-                    let rect = CGRect(x: 0, y: y, width: size.width, height: 1)
-                    context.fill(Path(rect), with: .color(Color.white.opacity(0.006)))
-                }
-            }
-        }
-        .ignoresSafeArea()
     }
 
     private var overallStateColor: Color {

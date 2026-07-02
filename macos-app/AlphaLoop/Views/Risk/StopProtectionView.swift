@@ -10,63 +10,59 @@ struct StopProtectionView: View {
     @State private var pulsePhase: CGFloat = 0
 
     var body: some View {
-        ZStack {
-            // Atmospheric background
-            atmosphericBackground
+        VStack(spacing: 0) {
+            if let vm = viewModel {
+                if vm.isLoading && vm.stopProtection == nil {
+                    LoadingView(type: .detail)
+                        .padding(PulseSpacing.lg)
+                } else if let data = vm.stopProtection {
+                    // Header
+                    headerSection(vm, data: data)
 
-            VStack(spacing: 0) {
-                if let vm = viewModel {
-                    if vm.isLoading && vm.stopProtection == nil {
-                        LoadingView(type: .detail)
-                            .padding(PulseSpacing.lg)
-                    } else if let data = vm.stopProtection {
-                        // Header
-                        headerSection(vm, data: data)
+                    Divider().foregroundStyle(colors.border)
 
-                        Divider().foregroundStyle(colors.border)
+                    ScrollView(.vertical, showsIndicators: false) {
+                        VStack(spacing: PulseSpacing.lg) {
+                            // State banner
+                            stateBanner(data)
 
-                        ScrollView(.vertical, showsIndicators: false) {
-                            VStack(spacing: PulseSpacing.lg) {
-                                // State banner
-                                stateBanner(data)
-
-                                // Position cards
-                                ForEach(Array(data.positions.enumerated()), id: \.element.id) { index, position in
-                                    positionCard(position)
-                                        .staggeredAppearance(index: index)
-                                }
-
-                                if data.positions.isEmpty {
-                                    EmptyStateView(
-                                        icon: "shield.lefthalf.filled",
-                                        title: L10n.zh("暂无持仓", en: "No Positions"),
-                                        description: L10n.zh("当前没有需要止损保护的持仓", en: "No positions currently require stop protection")
-                                    )
-                                }
+                            // Position cards
+                            ForEach(Array(data.positions.enumerated()), id: \.element.id) { index, position in
+                                positionCard(position)
+                                    .staggeredAppearance(index: index)
                             }
-                            .padding(PulseSpacing.xl)
-                            .id(settingsState.language)
+
+                            if data.positions.isEmpty {
+                                EmptyStateView(
+                                    icon: "shield.lefthalf.filled",
+                                    title: L10n.zh("暂无持仓", en: "No Positions"),
+                                    description: L10n.zh("当前没有需要止损保护的持仓", en: "No positions currently require stop protection")
+                                )
+                            }
                         }
-                        .scrollEdgeEffectStyle(.soft, for: .vertical)
-                    } else if let error = vm.error {
-                        EmptyStateView(
-                            icon: "exclamationmark.triangle",
-                            title: L10n.zh("加载失败", en: "Load Failed"),
-                            description: error,
-                            primaryAction: (title: L10n.zh("重试", en: "Retry"), action: { Task { await vm.loadStopProtection() } })
-                        )
-                        .padding(PulseSpacing.lg)
-                    } else {
-                        EmptyStateView(
-                            icon: "shield.lefthalf.filled",
-                            title: L10n.zh("暂无止损数据", en: "No Stop Data"),
-                            description: L10n.zh("止损保护系统尚未返回数据", en: "Stop protection system has not returned data")
-                        )
-                        .padding(PulseSpacing.lg)
+                        .padding(PulseSpacing.xl)
+                        .id(settingsState.language)
                     }
+                    .scrollEdgeEffectStyle(.soft, for: .vertical)
+                } else if let error = vm.error {
+                    EmptyStateView(
+                        icon: "exclamationmark.triangle",
+                        title: L10n.zh("加载失败", en: "Load Failed"),
+                        description: error,
+                        primaryAction: (title: L10n.zh("重试", en: "Retry"), action: { Task { await vm.loadStopProtection() } })
+                    )
+                    .padding(PulseSpacing.lg)
+                } else {
+                    EmptyStateView(
+                        icon: "shield.lefthalf.filled",
+                        title: L10n.zh("暂无止损数据", en: "No Stop Data"),
+                        description: L10n.zh("止损保护系统尚未返回数据", en: "Stop protection system has not returned data")
+                    )
+                    .padding(PulseSpacing.lg)
                 }
             }
         }
+        .riskAtmosphericBackground(tint: overallStateColor)
         .task {
             let vm = RiskCenterViewModel(client: networkClient)
             viewModel = vm
@@ -77,35 +73,6 @@ struct StopProtectionView: View {
                 pulsePhase = 1
             }
         }
-    }
-
-    // MARK: - Atmospheric Background
-
-    private var atmosphericBackground: some View {
-        let stateColor = overallStateColor
-        return ZStack {
-            colors.background
-
-            RadialGradient(
-                colors: [
-                    stateColor.opacity(0.06 + pulsePhase * 0.03),
-                    stateColor.opacity(0.01),
-                    Color.clear,
-                ],
-                center: .top,
-                startRadius: 40,
-                endRadius: 450
-            )
-
-            // Subtle scanlines
-            Canvas { context, size in
-                for y in stride(from: 0, to: size.height, by: 3) {
-                    let rect = CGRect(x: 0, y: y, width: size.width, height: 1)
-                    context.fill(Path(rect), with: .color(Color.white.opacity(0.006)))
-                }
-            }
-        }
-        .ignoresSafeArea()
     }
 
     private var overallStateColor: Color {
