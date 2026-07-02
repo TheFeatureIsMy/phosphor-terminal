@@ -144,6 +144,50 @@ struct ReconciliationRunResponse: Codable, Identifiable {
     }
 }
 
+// MARK: - Action Response Types
+
+struct CancelActionResponse: Codable {
+    let cancelledOrderId: String
+    let status: String
+
+    enum CodingKeys: String, CodingKey {
+        case cancelledOrderId = "cancelled_order_id"
+        case status
+    }
+}
+
+struct CloseActionResponse: Codable {
+    let closedPositionId: String
+    let status: String
+
+    enum CodingKeys: String, CodingKey {
+        case closedPositionId = "closed_position_id"
+        case status
+    }
+}
+
+struct BatchActionResponse: Codable {
+    let affectedCount: Int
+    let status: String
+
+    enum CodingKeys: String, CodingKey {
+        case affectedCount = "affected_count"
+        case status
+    }
+}
+
+struct RetryActionResponse: Codable {
+    let status: String
+    let runId: String?
+    let affectedCount: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case status
+        case runId = "run_id"
+        case affectedCount = "affected_count"
+    }
+}
+
 // MARK: - API Service
 
 struct APIExecutionBFF {
@@ -159,6 +203,30 @@ struct APIExecutionBFF {
 
     func getReconciliationBus() async throws -> ReconciliationBusBFFResponse {
         try await client.get("/api/reconciliation/bus", mock: MockExecutionBFF.reconciliationBus)
+    }
+
+    func cancelOrder(id: String) async throws -> CancelActionResponse {
+        try await client.post("/api/execution/orders/\(id)/cancel", body: nil, mock: { CancelActionResponse(cancelledOrderId: id, status: "cancelled") })
+    }
+
+    func closePosition(id: String) async throws -> CloseActionResponse {
+        try await client.post("/api/execution/positions/\(id)/close", body: nil, mock: { CloseActionResponse(closedPositionId: id, status: "closed") })
+    }
+
+    func cancelAllOrders() async throws -> BatchActionResponse {
+        try await client.post("/api/execution/orders/cancel-all", body: nil, mock: { BatchActionResponse(affectedCount: 1, status: "cancelled") })
+    }
+
+    func forceCloseAllPositions() async throws -> BatchActionResponse {
+        try await client.post("/api/execution/positions/force-close-all", body: nil, mock: { BatchActionResponse(affectedCount: 1, status: "closed") })
+    }
+
+    func retryReconciliationRun(id: String) async throws -> RetryActionResponse {
+        try await client.post("/api/reconciliation/runs/\(id)/retry", body: nil, mock: { RetryActionResponse(status: "retrying", runId: id, affectedCount: nil) })
+    }
+
+    func retryReconciliationBatch() async throws -> RetryActionResponse {
+        try await client.post("/api/reconciliation/retry", body: nil, mock: { RetryActionResponse(status: "retrying", runId: nil, affectedCount: -1) })
     }
 }
 
