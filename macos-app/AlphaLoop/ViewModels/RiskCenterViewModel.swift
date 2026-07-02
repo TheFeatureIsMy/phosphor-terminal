@@ -112,6 +112,6 @@ final class RiskCenterViewModel {
     /// Resume requires per-run IDs. The risk overview does not carry stopped-run information,
     /// so this redirects the user to Execution Center where per-run resume is available.
     func emergencyResume() async {
-        self.error = "请前往执行中心恢复指定策略运行"
+        self.error = L10n.Risk.goToExecutionForResume
     }
 }

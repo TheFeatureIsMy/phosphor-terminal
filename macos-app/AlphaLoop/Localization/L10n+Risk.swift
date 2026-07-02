@@ -19,5 +19,26 @@ extension L10n {
         static var unresolved: String { zh("未解决", en: "Unresolved") }
         static var resolved: String { zh("已解决", en: "Resolved") }
         static var cannotResolveKillSwitch: String { zh("Kill Switch 类型不可手动解决", en: "Kill switch type cannot be manually resolved") }
+        static var newEntriesControl: String { zh("新开仓控制", en: "NEW ENTRIES CONTROL") }
+        static var confirmBlockMessage: String { zh("将阻止所有新订单开仓。当前已有 %d 个活动锁定。确认继续？", en: "This will prevent all new orders from being opened. %d active lock(s) present. Confirm?") }
+        static var confirmUnblockMessage: String { zh("将解除禁止新开仓状态，恢复正常交易操作。确认继续？", en: "This will unblock new entries and resume normal trading operations. Confirm?") }
+        static var stopProtection: String { zh("止损保护", en: "STOP PROTECTION") }
+        static var killSwitchActive: String { zh("已激活", en: "Active") }
+        static var killSwitchInactive: String { zh("未激活", en: "Inactive") }
+        static var refreshAll: String { zh("刷新全部", en: "Refresh All") }
+        static var goToExecutionForResume: String { zh("请前往执行中心恢复指定策略运行", en: "Go to Execution Center to resume the specified strategy") }
+        static var cbFilterAll: String { zh("全部", en: "All") }
+        static var cbFilterEmergency: String { zh("紧急停止", en: "Emergency") }
+        static var cbFilterKillSwitch: String { zh("Kill Switch", en: "Kill Switch") }
+        static var cbFilterLossLock: String { zh("亏损锁", en: "Loss Lock") }
+        static var cbFilterManualClose: String { zh("手动平仓", en: "Manual") }
+        static var cbFilterSafeMode: String { zh("安全模式", en: "Safe Mode") }
+        static var cbFilterAllClear: String { zh("全部清除", en: "ALL CLEAR") }
+        static var cbLoadFailed: String { zh("加载失败", en: "Load Failed") }
+        static var cbNoData: String { zh("暂无熔断数据", en: "No Breaker Data") }
+        static var cbNoRecordsYet: String { zh("系统未触发过熔断，运行正常", en: "No circuit breakers triggered — system running normally") }
+        static var cbNoRecordsForFilter: String { zh("当前筛选条件下无熔断记录", en: "No circuit breaker records for this filter") }
+        static var cbConfirmResolveMessage: String { zh("确认将此熔断事件标记为已解决？", en: "Mark this circuit breaker event as resolved?") }
+        static var cbRefresh: String { zh("刷新", en: "Refresh") }
     }
 }

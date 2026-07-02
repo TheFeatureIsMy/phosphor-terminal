@@ -18,5 +18,7 @@ extension L10n {
         static var thisActionIrreversible: String { zh("此操作不可逆", en: "This action is irreversible") }
         static var liveModeWarning: String { zh("实盘模式 — 操作将影响真实资金", en: "LIVE mode — real funds at risk") }
         static var paperModeNote: String { zh("模拟模式", en: "Paper mode") }
+        static var emergencyLocked: String { zh("紧急锁定中", en: "EMERGENCY LOCKED") }
+        static var strategiesRunning: String { zh("个策略运行中", en: "strategies running") }
     }
 }

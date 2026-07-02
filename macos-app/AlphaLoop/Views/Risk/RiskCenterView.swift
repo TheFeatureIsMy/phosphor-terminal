@@ -81,7 +81,7 @@ struct RiskCenterView: View {
         .confirmDialog(
             isPresented: $showBlockConfirm,
             title: L10n.Risk.confirmBlock,
-            message: L10n.zh("将阻止所有新订单开仓。当前已有 \(viewModel?.overview?.activeLocks.count ?? 0) 个活动锁定。确认继续？", en: "This will prevent all new orders from being opened. \(viewModel?.overview?.activeLocks.count ?? 0) active lock(s) present. Confirm?"),
+            message: String(format: L10n.Risk.confirmBlockMessage, viewModel?.overview?.activeLocks.count ?? 0),
             confirmLabel: L10n.Risk.blockNewEntries,
             confirmStyle: .warning,
             onConfirm: { Task { await viewModel?.blockNewEntries() } }
@@ -90,7 +90,7 @@ struct RiskCenterView: View {
         .confirmDialog(
             isPresented: $showUnblockConfirm,
             title: L10n.Risk.confirmUnblock,
-            message: L10n.zh("将解除禁止新开仓状态，恢复正常交易操作。确认继续？", en: "This will unblock new entries and resume normal trading operations. Confirm?"),
+            message: L10n.Risk.confirmUnblockMessage,
             confirmLabel: L10n.Risk.unblock,
             confirmStyle: .warning,
             onConfirm: { Task { await viewModel?.unblock() } }
@@ -368,7 +368,7 @@ struct RiskCenterView: View {
 
     private func blockUnblockRow(_ overview: RiskOverviewBFFResponse) -> some View {
         VStack(spacing: PulseSpacing.md) {
-            TerminalLabel(text: L10n.zh("新开仓控制", en: "NEW ENTRIES CONTROL"))
+            TerminalLabel(text: L10n.Risk.newEntriesControl)
 
             HStack(spacing: PulseSpacing.md) {
                 Button {
@@ -377,7 +377,7 @@ struct RiskCenterView: View {
                     Label(L10n.Risk.blockNewEntries, systemImage: "hand.raised")
                 }
                 .buttonStyle(.bordered)
-                .tint(PulseColors.StateColors.orange)
+                .tint(PulseColors.warning)
                 .disabled(overview.activeLocks.contains { $0["lock"] == "manual_block" })
 
                 Button {
@@ -386,7 +386,7 @@ struct RiskCenterView: View {
                     Label(L10n.Risk.unblock, systemImage: "hand.thumbsup")
                 }
                 .buttonStyle(.bordered)
-                .tint(PulseColors.StateColors.green)
+                .tint(PulseColors.accent)
                 .disabled(!overview.activeLocks.contains { $0["lock"] == "manual_block" })
 
                 Spacer()

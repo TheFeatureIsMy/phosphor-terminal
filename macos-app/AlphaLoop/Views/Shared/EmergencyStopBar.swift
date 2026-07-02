@@ -22,11 +22,11 @@ struct EmergencyStopBar: View {
             Divider().frame(height: 24)
 
             if emergencyLocked {
-                Text(L10n.zh("紧急锁定中", en: "EMERGENCY LOCKED"))
+                Text(L10n.EmergencyStop.emergencyLocked)
                     .font(PulseFonts.caption)
                     .foregroundStyle(PulseColors.danger)
             } else {
-                Text("\(affectedRuns) \(L10n.zh("个策略运行中", en: "strategies running"))")
+                Text("\(affectedRuns) \(L10n.EmergencyStop.strategiesRunning)")
                     .font(PulseFonts.caption)
                     .foregroundStyle(colors.textSecondary)
             }

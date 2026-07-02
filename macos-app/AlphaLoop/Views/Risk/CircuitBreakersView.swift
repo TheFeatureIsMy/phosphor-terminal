@@ -79,15 +79,15 @@ struct CircuitBreakersView: View {
                 } else if let error = vm.error {
                     EmptyStateView(
                         icon: "exclamationmark.triangle",
-                        title: L10n.zh("加载失败", en: "Load Failed"),
+                        title: L10n.Risk.cbLoadFailed,
                         description: error,
-                        primaryAction: (title: L10n.zh("重试", en: "Retry"), action: { Task { await vm.loadCircuitBreakers() } })
+                        primaryAction: (title: L10n.Common.retry, action: { Task { await vm.loadCircuitBreakers() } })
                     )
                     .padding(PulseSpacing.lg)
                 } else {
                     EmptyStateView(
                         icon: "bolt.slash",
-                        title: L10n.zh("暂无熔断数据", en: "No Breaker Data"),
+                        title: L10n.Risk.cbNoData,
                         description: L10n.zh("熔断系统尚未返回数据", en: "Circuit breaker system has not returned data")
                     )
                     .padding(PulseSpacing.lg)
@@ -112,7 +112,7 @@ struct CircuitBreakersView: View {
                 set: { if !$0 { resolveEventId = nil } }
             ),
             title: L10n.Risk.confirmMarkResolved,
-            message: L10n.zh("确认将此熔断事件标记为已解决？", en: "Mark this circuit breaker event as resolved?"),
+            message: L10n.Risk.cbConfirmResolveMessage,
             confirmLabel: L10n.Risk.markResolved,
             confirmStyle: .warning,
             onConfirm: {
@@ -162,7 +162,7 @@ struct CircuitBreakersView: View {
                     HStack(spacing: PulseSpacing.xxs) {
                         Image(systemName: "arrow.clockwise")
                             .font(.system(size: 11))
-                        Text(L10n.zh("刷新", en: "Refresh"))
+                        Text(L10n.Risk.cbRefresh)
                             .font(PulseFonts.monoLabel)
                     }
                     .foregroundStyle(PulseColors.accent)
@@ -175,7 +175,7 @@ struct CircuitBreakersView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: PulseSpacing.xs) {
                     filterChip(
-                        label: L10n.zh("全部", en: "All"),
+                        label: L10n.Risk.cbFilterAll,
                         icon: "line.3.horizontal.decrease.circle",
                         isSelected: selectedFilter == "all" && selectedType == nil
                     ) {
@@ -211,35 +211,35 @@ struct CircuitBreakersView: View {
 
                     // Type chips
                     filterChip(
-                        label: L10n.zh("紧急停止", en: "Emergency"),
+                        label: L10n.Risk.cbFilterEmergency,
                         icon: "bolt.fill",
                         color: PulseColors.StateColors.red,
                         isSelected: selectedType == "emergency_stop"
                     ) { selectedType = selectedType == "emergency_stop" ? nil : "emergency_stop"; selectedFilter = "all" }
 
                     filterChip(
-                        label: L10n.zh("Kill Switch", en: "Kill Switch"),
+                        label: L10n.Risk.cbFilterKillSwitch,
                         icon: "xmark.octagon.fill",
                         color: PulseColors.StateColors.red,
                         isSelected: selectedType == "kill_switch"
                     ) { selectedType = selectedType == "kill_switch" ? nil : "kill_switch"; selectedFilter = "all" }
 
                     filterChip(
-                        label: L10n.zh("亏损锁", en: "Loss Lock"),
+                        label: L10n.Risk.cbFilterLossLock,
                         icon: "chart.line.downtrend.xyaxis",
                         color: PulseColors.StateColors.orangeRed,
                         isSelected: selectedType == "daily_loss_lock"
                     ) { selectedType = selectedType == "daily_loss_lock" ? nil : "daily_loss_lock"; selectedFilter = "all" }
 
                     filterChip(
-                        label: L10n.zh("手动平仓", en: "Manual"),
+                        label: L10n.Risk.cbFilterManualClose,
                         icon: "hand.raised.fill",
                         color: PulseColors.StateColors.yellow,
                         isSelected: selectedType == "manual_force_close"
                     ) { selectedType = selectedType == "manual_force_close" ? nil : "manual_force_close"; selectedFilter = "all" }
 
                     filterChip(
-                        label: L10n.zh("安全模式", en: "Safe Mode"),
+                        label: L10n.Risk.cbFilterSafeMode,
                         icon: "shield.fill",
                         color: PulseColors.StateColors.purple,
                         isSelected: selectedType == "system_safe_mode"
@@ -302,19 +302,14 @@ struct CircuitBreakersView: View {
             }
 
             VStack(spacing: PulseSpacing.xs) {
-                Text(L10n.zh("全部清除", en: "ALL CLEAR"))
+                Text(L10n.Risk.cbFilterAllClear)
                     .font(.system(size: 20, weight: .bold, design: .monospaced))
                     .foregroundStyle(PulseColors.StateColors.green)
                     .tracking(3)
 
-                Text(L10n.zh(
-                    selectedType != nil || selectedFilter != "all"
-                        ? L10n.zh("当前筛选条件下无熔断记录", en: "No circuit breaker records for this filter")
-                        : L10n.zh("系统未触发过熔断，运行正常", en: "No circuit breakers triggered — system running normally"),
-                    en: selectedType != nil || selectedFilter != "all"
-                        ? "No breakers match current filter"
-                        : "No circuit breakers fired — system nominal"
-                ))
+                Text(selectedType != nil || selectedFilter != "all"
+                    ? L10n.Risk.cbNoRecordsForFilter
+                    : L10n.Risk.cbNoRecordsYet)
                 .font(PulseFonts.caption)
                 .foregroundStyle(colors.textMuted)
                 .multilineTextAlignment(.center)

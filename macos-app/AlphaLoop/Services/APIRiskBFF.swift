@@ -216,9 +216,9 @@ struct APIRiskBFF {
     func getRiskRules() async throws -> RiskRulesResponse {
         try await client.get("/api/risk/rules", mock: {
             RiskRulesResponse(
-                dailyLossLimit: 0.05, weeklyLossLimit: 0.10, consecutiveLossesLimit: 3,
-                maxDrawdown: 0.20, correlationThreshold: 0.9,
-                killSwitch: KillSwitchResponse(threshold: 0.15, active: false)
+                dailyLossLimit: 5.0, weeklyLossLimit: 10.0, consecutiveLossesLimit: 3,
+                maxDrawdown: 15.0, correlationThreshold: 0.9,
+                killSwitch: KillSwitchResponse(threshold: 20.0, active: false)
             )
         })
     }

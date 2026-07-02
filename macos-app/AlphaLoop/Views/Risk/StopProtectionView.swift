@@ -139,7 +139,7 @@ struct StopProtectionView: View {
 
     private func headerSection(_ vm: RiskCenterViewModel, data: StopProtectionBFFResponse) -> some View {
         HStack {
-            TerminalLabel(text: L10n.zh("止损保护", en: "STOP PROTECTION"))
+            TerminalLabel(text: L10n.Risk.stopProtection)
 
             // Position count badge
             Text("\(data.positions.count)")
@@ -158,7 +158,7 @@ struct StopProtectionView: View {
                 HStack(spacing: PulseSpacing.xxs) {
                     Image(systemName: "arrow.clockwise")
                         .font(.system(size: 11))
-                    Text(L10n.zh("刷新全部", en: "Refresh All"))
+                    Text(L10n.Risk.refreshAll)
                         .font(PulseFonts.monoLabel)
                 }
                 .foregroundStyle(PulseColors.accent)
@@ -252,10 +252,10 @@ struct StopProtectionView: View {
 
             if showRules {
                 VStack(alignment: .leading, spacing: PulseSpacing.xs) {
-                    ruleRow(L10n.Risk.dailyLossLimit, value: String(format: "%.1f%%", rules.dailyLossLimit * 100))
-                    ruleRow(L10n.Risk.weeklyLossLimit, value: String(format: "%.1f%%", rules.weeklyLossLimit * 100))
+                    ruleRow(L10n.Risk.dailyLossLimit, value: String(format: "%.1f%%", rules.dailyLossLimit))
+                    ruleRow(L10n.Risk.weeklyLossLimit, value: String(format: "%.1f%%", rules.weeklyLossLimit))
                     ruleRow(L10n.Risk.consecutiveLosses, value: "\(rules.consecutiveLossesLimit)")
-                    ruleRow(L10n.Risk.maxDrawdown, value: String(format: "%.1f%%", rules.maxDrawdown * 100))
+                    ruleRow(L10n.Risk.maxDrawdown, value: String(format: "%.1f%%", rules.maxDrawdown))
                     ruleRow(L10n.Risk.correlationThreshold, value: String(format: "%.2f", rules.correlationThreshold))
                     HStack {
                         Text(L10n.Risk.killSwitch)
@@ -263,8 +263,8 @@ struct StopProtectionView: View {
                             .foregroundStyle(colors.textPrimary)
                         Spacer()
                         Text(rules.killSwitch.active
-                             ? L10n.zh("已激活", en: "Active")
-                             : L10n.zh("未激活", en: "Inactive"))
+                             ? L10n.Risk.killSwitchActive
+                             : L10n.Risk.killSwitchInactive)
                             .font(PulseFonts.captionMedium)
                             .foregroundStyle(rules.killSwitch.active ? PulseColors.danger : colors.textSecondary)
                     }
