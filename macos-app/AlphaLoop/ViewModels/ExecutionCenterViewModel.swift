@@ -42,4 +42,38 @@ final class ExecutionCenterViewModel {
             self.error = error.localizedDescription
         }
     }
+
+    // MARK: - Action Methods
+
+    @MainActor func cancelOrder(id: String) async {
+        do { _ = try await api.cancelOrder(id: id); await loadOrdersPositions() } catch { self.error = error.localizedDescription }
+    }
+
+    @MainActor func closePosition(id: String) async {
+        do { _ = try await api.closePosition(id: id); await loadOrdersPositions() } catch { self.error = error.localizedDescription }
+    }
+
+    @MainActor func cancelAllOrders() async {
+        do { _ = try await api.cancelAllOrders(); await loadOrdersPositions() } catch { self.error = error.localizedDescription }
+    }
+
+    @MainActor func forceCloseAllPositions() async {
+        do { _ = try await api.forceCloseAllPositions(); await loadOrdersPositions() } catch { self.error = error.localizedDescription }
+    }
+
+    @MainActor func retryReconciliationRun(id: String) async {
+        do { _ = try await api.retryReconciliationRun(id: id); await loadReconciliationBus() } catch { self.error = error.localizedDescription }
+    }
+
+    @MainActor func retryReconciliationBatch() async {
+        do { _ = try await api.retryReconciliationBatch(); await loadReconciliationBus() } catch { self.error = error.localizedDescription }
+    }
+
+    @MainActor func emergencyStop() async {
+        do { _ = try await APIEmergency(client: api.client).emergencyStop(reason: "manual_emergency_stop") as EmergencyStopResult; await loadCenter() } catch { self.error = error.localizedDescription }
+    }
+
+    @MainActor func emergencyResume(strategyRunId: String) async {
+        do { _ = try await APIEmergency(client: api.client).emergencyResume(strategyRunId: strategyRunId) as EmergencyStopResult; await loadCenter() } catch { self.error = error.localizedDescription }
+    }
 }
