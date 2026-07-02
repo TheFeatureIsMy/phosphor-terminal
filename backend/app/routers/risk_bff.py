@@ -262,9 +262,9 @@ async def unblock():
 
 
 @router.get("/rules", response_model=RiskRulesResponse)
-async def get_risk_rules():
+async def get_risk_rules(db: Session = Depends(get_db)):
     svc = RiskRulesService()
-    r = svc.get_effective()
+    r = svc.get_effective(db)
     return RiskRulesResponse(
         daily_loss_limit=r.daily_loss_limit,
         weekly_loss_limit=r.weekly_loss_limit,
