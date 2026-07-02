@@ -96,7 +96,8 @@ struct APIServiceTests {
     @Test func riskBFFEmergencyStop() async throws {
         let api = APIRiskBFF(client: client)
         let result = try await api.emergencyStop()
-        #expect(result["status"] == "executed")
+        #expect(!result.stoppedRuns.isEmpty)
+        #expect(!result.message.isEmpty)
     }
 
     // MARK: - APIStructureBFF
