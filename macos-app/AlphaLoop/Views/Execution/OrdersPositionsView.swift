@@ -6,11 +6,40 @@ struct OrdersPositionsView: View {
     @Environment(\.networkClient) private var networkClient
     @Environment(PulseColors.self) private var colors
     @Environment(SettingsState.self) private var settingsState
+    @Environment(AppState.self) private var appState
     @State private var viewModel: ExecutionCenterViewModel?
     @State private var selectedTab = 0
 
+    // Confirm dialog states
+    @State private var showCancelAllConfirm = false
+    @State private var showForceCloseAllConfirm = false
+    @State private var cancelOrderId: String?
+    @State private var closePositionId: String?
+
+    private var resolvedMode: ModePill.Mode {
+        ModePill.Mode.resolve(
+            liveReadinessState: viewModel?.ordersPositions?.state,
+            isLiveMode: appState.isLiveMode,
+            isMockMode: !appState.isLiveMode && !appState.isDetectingBackend
+        )
+    }
+
+    private var affectedRunCount: Int {
+        guard let data = viewModel?.ordersPositions else { return 0 }
+        return data.orders.filter { $0.status.lowercased() == "pending" }.count + data.positions.count
+    }
+
     var body: some View {
         VStack(spacing: 0) {
+            LiveWireStrip(mode: resolvedMode)
+            EmergencyStopBar(
+                mode: resolvedMode,
+                affectedRuns: affectedRunCount,
+                emergencyLocked: viewModel?.ordersPositions?.state == "emergency_locked",
+                onStop: { await viewModel?.emergencyStop() },
+                onResume: { await viewModel?.emergencyResume() }
+            )
+
             if let vm = viewModel {
                 if vm.isLoading && vm.ordersPositions == nil {
                     LoadingView(type: .detail)
@@ -22,6 +51,9 @@ struct OrdersPositionsView: View {
                     tabHeader(data)
 
                     Divider().foregroundStyle(colors.border)
+
+                    // 批量操作行
+                    batchActionRow(data)
 
                     // 内容区
                     ScrollView {
@@ -48,11 +80,78 @@ struct OrdersPositionsView: View {
             }
         }
         .id(settingsState.language)
+        .riskAtmosphericBackground(tint: PulseColors.accent)
         .task {
             let vm = ExecutionCenterViewModel(client: networkClient)
             viewModel = vm
             await vm.loadOrdersPositions()
         }
+        // 批量撤销全部确认
+        .confirmDialog(
+            isPresented: $showCancelAllConfirm,
+            title: L10n.Execution.confirmCancelAll,
+            message: String(
+                format: L10n.Execution.confirmCancelAllMessage,
+                viewModel?.ordersPositions?.orders.filter { $0.status.lowercased() == "pending" }.count ?? 0,
+                resolvedMode.label
+            ),
+            confirmLabel: L10n.Execution.cancelAllOrders,
+            confirmStyle: .danger,
+            onConfirm: { Task { await viewModel?.cancelAllOrders() } }
+        )
+        // 批量强制平仓确认
+        .confirmDialog(
+            isPresented: $showForceCloseAllConfirm,
+            title: L10n.Execution.confirmForceCloseAll,
+            message: String(
+                format: L10n.Execution.confirmForceCloseAllMessage,
+                viewModel?.ordersPositions?.positions.count ?? 0,
+                resolvedMode.label
+            ),
+            confirmLabel: L10n.Execution.forceCloseAll,
+            confirmStyle: .danger,
+            onConfirm: { Task { await viewModel?.forceCloseAllPositions() } }
+        )
+        // 单笔撤销订单确认
+        .confirmDialog(
+            isPresented: .init(
+                get: { cancelOrderId != nil },
+                set: { if !$0 { cancelOrderId = nil } }
+            ),
+            title: L10n.Execution.confirmCancelOrder,
+            message: String(
+                format: L10n.Execution.confirmCancelOrderMessage,
+                cancelOrderId ?? "",
+                resolvedMode.label
+            ),
+            confirmLabel: L10n.Execution.cancelOrder,
+            confirmStyle: .danger,
+            onConfirm: {
+                guard let id = cancelOrderId else { return }
+                Task { await viewModel?.cancelOrder(id: id) }
+                cancelOrderId = nil
+            }
+        )
+        // 单笔平仓确认
+        .confirmDialog(
+            isPresented: .init(
+                get: { closePositionId != nil },
+                set: { if !$0 { closePositionId = nil } }
+            ),
+            title: L10n.Execution.confirmClosePosition,
+            message: String(
+                format: L10n.Execution.confirmClosePositionMessage,
+                closePositionId ?? "",
+                resolvedMode.label
+            ),
+            confirmLabel: L10n.Execution.closePosition,
+            confirmStyle: .danger,
+            onConfirm: {
+                guard let id = closePositionId else { return }
+                Task { await viewModel?.closePosition(id: id) }
+                closePositionId = nil
+            }
+        )
     }
 
     // MARK: - 状态横幅
@@ -140,6 +239,34 @@ struct OrdersPositionsView: View {
         }
     }
 
+    // MARK: - 批量操作行
+
+    private func batchActionRow(_ data: OrdersPositionsBFFResponse) -> some View {
+        HStack(spacing: PulseSpacing.md) {
+            Button {
+                showCancelAllConfirm = true
+            } label: {
+                Label(L10n.Execution.cancelAllOrders, systemImage: "xmark.octagon")
+            }
+            .buttonStyle(.bordered)
+            .tint(PulseColors.danger)
+            .disabled(data.orders.filter { $0.status.lowercased() == "pending" }.isEmpty)
+
+            Button {
+                showForceCloseAllConfirm = true
+            } label: {
+                Label(L10n.Execution.forceCloseAll, systemImage: "arrow.down.right.square")
+            }
+            .buttonStyle(.bordered)
+            .tint(PulseColors.danger)
+            .disabled(data.positions.isEmpty)
+
+            Spacer()
+        }
+        .padding(.horizontal, PulseSpacing.lg)
+        .padding(.vertical, PulseSpacing.sm)
+    }
+
     // MARK: - 订单列表
 
     private func ordersSection(_ orders: [OrderBFFResponse]) -> some View {
@@ -202,6 +329,18 @@ struct OrdersPositionsView: View {
                     .foregroundStyle(colors.textMuted)
                     .lineLimit(1)
                     .help("Exchange Order ID: \(exchangeId)")
+            }
+
+            // 内联撤销按钮（仅挂单）
+            if order.status.lowercased() == "pending" {
+                Button {
+                    cancelOrderId = order.id
+                } label: {
+                    Label(L10n.Execution.cancelOrder, systemImage: "xmark")
+                        .labelStyle(.iconOnly)
+                }
+                .buttonStyle(.borderless)
+                .tint(PulseColors.danger)
             }
         }
         .padding(PulseSpacing.sm)
@@ -274,6 +413,16 @@ struct OrdersPositionsView: View {
                     .foregroundStyle(PulseColors.StateColors.yellow)
                     .help(position.reasonCodes.joined(separator: ", "))
             }
+
+            // 内联平仓按钮
+            Button {
+                closePositionId = position.id
+            } label: {
+                Label(L10n.Execution.closePosition, systemImage: "arrow.down.right")
+                    .labelStyle(.iconOnly)
+            }
+            .buttonStyle(.borderless)
+            .tint(PulseColors.danger)
         }
         .padding(PulseSpacing.sm)
         .background(colors.cardBackground)
