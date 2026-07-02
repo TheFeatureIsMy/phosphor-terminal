@@ -6,11 +6,35 @@ struct StopProtectionView: View {
     @Environment(\.networkClient) private var networkClient
     @Environment(PulseColors.self) private var colors
     @Environment(SettingsState.self) private var settingsState
+    @Environment(AppState.self) private var appState
     @State private var viewModel: RiskCenterViewModel?
     @State private var pulsePhase: CGFloat = 0
+    @State private var showRules = false
+    @State private var closePositionId: String?
+
+    private var resolvedMode: ModePill.Mode {
+        ModePill.Mode.resolve(
+            liveReadinessState: viewModel?.stopProtection?.state,
+            isLiveMode: appState.isLiveMode,
+            isMockMode: !appState.isLiveMode && !appState.isDetectingBackend
+        )
+    }
+
+    private var affectedRunCount: Int {
+        viewModel?.stopProtection?.positions.count ?? 0
+    }
 
     var body: some View {
         VStack(spacing: 0) {
+            LiveWireStrip(mode: resolvedMode)
+            EmergencyStopBar(
+                mode: resolvedMode,
+                affectedRuns: affectedRunCount,
+                emergencyLocked: viewModel?.stopProtection?.state == "emergency_locked",
+                onStop: { await viewModel?.emergencyStop() },
+                onResume: { await viewModel?.emergencyResume() }
+            )
+
             if let vm = viewModel {
                 if vm.isLoading && vm.stopProtection == nil {
                     LoadingView(type: .detail)
@@ -25,6 +49,11 @@ struct StopProtectionView: View {
                         VStack(spacing: PulseSpacing.lg) {
                             // State banner
                             stateBanner(data)
+
+                            // Risk rules section (collapsible)
+                            if let rules = vm.riskRules {
+                                riskRulesSection(rules)
+                            }
 
                             // Position cards
                             ForEach(Array(data.positions.enumerated()), id: \.element.id) { index, position in
@@ -66,13 +95,34 @@ struct StopProtectionView: View {
         .task {
             let vm = RiskCenterViewModel(client: networkClient)
             viewModel = vm
-            await vm.loadStopProtection()
+            async let _ = vm.loadStopProtection()
+            async let _ = vm.loadRiskRules()
         }
         .onAppear {
             withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
                 pulsePhase = 1
             }
         }
+        // Force-close confirm dialog
+        .confirmDialog(
+            isPresented: .init(
+                get: { closePositionId != nil },
+                set: { if !$0 { closePositionId = nil } }
+            ),
+            title: L10n.Execution.confirmClosePosition,
+            message: String(
+                format: L10n.Execution.confirmClosePositionMessage,
+                closePositionId ?? "",
+                resolvedMode.label
+            ),
+            confirmLabel: L10n.Execution.closePosition,
+            confirmStyle: .danger,
+            onConfirm: {
+                guard let id = closePositionId else { return }
+                Task { await viewModel?.closePosition(id: id) }
+                closePositionId = nil
+            }
+        )
     }
 
     private var overallStateColor: Color {
@@ -177,6 +227,68 @@ struct StopProtectionView: View {
         }
     }
 
+    // MARK: - Risk Rules Section
+
+    private func riskRulesSection(_ rules: RiskRulesResponse) -> some View {
+        VStack(alignment: .leading, spacing: PulseSpacing.sm) {
+            Button {
+                withAnimation { showRules.toggle() }
+            } label: {
+                HStack {
+                    Label(L10n.Risk.riskRules, systemImage: "shield.lefthalf.filled")
+                        .font(PulseFonts.captionMedium)
+                        .foregroundStyle(colors.textPrimary)
+                    Spacer()
+                    Image(systemName: showRules ? "chevron.down" : "chevron.right")
+                        .font(.system(size: 10))
+                        .foregroundStyle(colors.textMuted)
+                }
+            }
+            .buttonStyle(.plain)
+
+            Text(L10n.Risk.riskRulesSummary)
+                .font(PulseFonts.caption)
+                .foregroundStyle(colors.textSecondary)
+
+            if showRules {
+                VStack(alignment: .leading, spacing: PulseSpacing.xs) {
+                    ruleRow(L10n.Risk.dailyLossLimit, value: String(format: "%.1f%%", rules.dailyLossLimit * 100))
+                    ruleRow(L10n.Risk.weeklyLossLimit, value: String(format: "%.1f%%", rules.weeklyLossLimit * 100))
+                    ruleRow(L10n.Risk.consecutiveLosses, value: "\(rules.consecutiveLossesLimit)")
+                    ruleRow(L10n.Risk.maxDrawdown, value: String(format: "%.1f%%", rules.maxDrawdown * 100))
+                    ruleRow(L10n.Risk.correlationThreshold, value: String(format: "%.2f", rules.correlationThreshold))
+                    HStack {
+                        Text(L10n.Risk.killSwitch)
+                            .font(PulseFonts.caption)
+                            .foregroundStyle(colors.textPrimary)
+                        Spacer()
+                        Text(rules.killSwitch.active
+                             ? L10n.zh("已激活", en: "Active")
+                             : L10n.zh("未激活", en: "Inactive"))
+                            .font(PulseFonts.captionMedium)
+                            .foregroundStyle(rules.killSwitch.active ? PulseColors.danger : colors.textSecondary)
+                    }
+                }
+                .padding(.top, PulseSpacing.xs)
+            }
+        }
+        .padding(PulseSpacing.md)
+        .background(colors.surfaceHover.opacity(0.35))
+        .overlay(RoundedRectangle(cornerRadius: PulseRadii.md).stroke(colors.border, lineWidth: 0.5))
+    }
+
+    private func ruleRow(_ label: String, value: String) -> some View {
+        HStack {
+            Text(label)
+                .font(PulseFonts.caption)
+                .foregroundStyle(colors.textPrimary)
+            Spacer()
+            Text(value)
+                .font(PulseFonts.captionMedium)
+                .foregroundStyle(colors.textSecondary)
+        }
+    }
+
     // MARK: - Position Card
 
     private func positionCard(_ position: PositionStopResponse) -> some View {
@@ -233,13 +345,13 @@ struct StopProtectionView: View {
                         .buttonStyle(.plain)
 
                         Button {
-                            // Force lock placeholder
+                            closePositionId = position.positionId
                         } label: {
-                            Image(systemName: "lock.shield")
+                            Label(L10n.Execution.closePosition, systemImage: "arrow.down.right")
                                 .font(.system(size: 10))
-                                .foregroundStyle(PulseColors.StateColors.orange)
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.bordered)
+                        .tint(PulseColors.danger)
                     }
                 }
 

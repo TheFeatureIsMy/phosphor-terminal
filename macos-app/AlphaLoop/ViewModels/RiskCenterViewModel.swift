@@ -13,9 +13,11 @@ final class RiskCenterViewModel {
     var error: String?
 
     private let api: APIRiskBFF
+    private let executionAPI: APIExecutionBFF
 
     init(client: NetworkClientProtocol) {
         self.api = APIRiskBFF(client: client)
+        self.executionAPI = APIExecutionBFF(client: client)
     }
 
     func loadOverview() async {
@@ -80,6 +82,17 @@ final class RiskCenterViewModel {
         do {
             _ = try await api.resolveCircuitBreaker(eventId: eventId)
             await loadCircuitBreakers()
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
+    // MARK: - Close Position (delegates to execution API)
+
+    @MainActor func closePosition(id: String) async {
+        do {
+            _ = try await executionAPI.closePosition(id: id)
+            await loadStopProtection()
         } catch {
             self.error = error.localizedDescription
         }
