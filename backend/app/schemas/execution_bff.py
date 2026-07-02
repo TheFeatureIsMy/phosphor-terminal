@@ -73,6 +73,12 @@ class CancelResponse(BaseModel):
     reason_codes: list[str] = []
 
 
+class CloseResponse(BaseModel):
+    closed_position_id: str
+    status: str
+    reason_codes: list[str] = []
+
+
 class ReconciliationRun(BaseModel):
     id: str
     status: str = "pending"

@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.schemas.execution_bff import (
-    CancelResponse, ExecutionCenterResponse, ExecutionSession,
+    CancelResponse, CloseResponse, ExecutionCenterResponse, ExecutionSession,
     OrdersPositionsResponse, OrderResponse, PositionResponse,
     ReconciliationBusResponse, ReconciliationRun, CommandBusEvent,
 )
@@ -299,6 +299,19 @@ async def cancel_single_order(order_id: str):
     except Exception as e:
         logger.exception("[cancel-order] failed: %s", e)
         return CancelResponse(cancelled_order_id=order_id, status="failed", reason_codes=[type(e).__name__])
+
+
+@router.post("/positions/{position_id}/close", response_model=CloseResponse)
+async def close_single_position(position_id: str):
+    try:
+        from app.services.freqtrade_client import FreqtradeClient
+
+        client = FreqtradeClient()
+        await client.forceexit(position_id)
+        return CloseResponse(closed_position_id=position_id, status="closed", reason_codes=[])
+    except Exception as e:
+        logger.exception("[close-position] failed: %s", e)
+        return CloseResponse(closed_position_id=position_id, status="failed", reason_codes=[type(e).__name__])
 
 
 # ---------------------------------------------------------------------------
