@@ -31,15 +31,15 @@ struct ReconciliationBusView: View {
                 } else if let error = vm.error {
                     EmptyStateView(
                         icon: "exclamationmark.triangle",
-                        title: L10n.zh("加载失败", en: "Load Failed"),
+                        title: L10n.Reconciliation.loadFailed,
                         description: error,
-                        primaryAction: (title: L10n.zh("重试", en: "Retry"), action: { Task { await vm.loadReconciliationBus() } })
+                        primaryAction: (title: L10n.Reconciliation.retry, action: { Task { await vm.loadReconciliationBus() } })
                     )
                 } else {
                     EmptyStateView(
                         icon: "arrow.triangle.2.circlepath",
-                        title: L10n.zh("暂无对账数据", en: "No Reconciliation Data"),
-                        description: L10n.zh("尚未产生对账记录", en: "No reconciliation records have been generated yet")
+                        title: L10n.Reconciliation.noData,
+                        description: L10n.Reconciliation.noRecordsYet
                     )
                 }
             }
@@ -56,7 +56,7 @@ struct ReconciliationBusView: View {
     private func headerSection(_ vm: ExecutionCenterViewModel) -> some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
-                Text(L10n.zh("对账总线", en: "Reconciliation Bus"))
+                Text(L10n.Reconciliation.title)
                     .font(PulseFonts.displaySubheading)
                     .foregroundStyle(colors.textPrimary)
                 Text("Command Bus · State Lease · Exchange Finality")
@@ -72,7 +72,7 @@ struct ReconciliationBusView: View {
                 HStack(spacing: PulseSpacing.xxs) {
                     Image(systemName: "arrow.clockwise")
                         .font(.system(size: 11))
-                    Text(L10n.zh("刷新交易所状态", en: "Refresh Exchange State"))
+                    Text(L10n.Reconciliation.refreshExchangeState)
                         .font(PulseFonts.monoLabel)
                 }
                 .foregroundStyle(PulseColors.accent)
@@ -94,7 +94,7 @@ struct ReconciliationBusView: View {
                     .foregroundStyle(data.state == "error" ? PulseColors.StateColors.red : PulseColors.StateColors.orange)
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(data.state == "error" ? L10n.zh("对账异常", en: "Reconciliation Error") : L10n.zh("对账状态警告", en: "Reconciliation Warning"))
+                    Text(data.state == "error" ? L10n.Reconciliation.reconciliationError : L10n.Reconciliation.reconciliationWarning)
                         .font(PulseFonts.captionMedium)
                         .foregroundStyle(colors.textPrimary)
 
@@ -128,7 +128,7 @@ struct ReconciliationBusView: View {
             if commands.isEmpty {
                 HStack {
                     Spacer()
-                    Text(L10n.zh("暂无命令记录", en: "No command records"))
+                    Text(L10n.Reconciliation.noCommandRecords)
                         .font(PulseFonts.caption)
                         .foregroundStyle(colors.textMuted)
                     Spacer()
@@ -182,7 +182,7 @@ struct ReconciliationBusView: View {
             if runs.isEmpty {
                 HStack {
                     Spacer()
-                    Text(L10n.zh("暂无对账记录", en: "No reconciliation records"))
+                    Text(L10n.Reconciliation.noRuns)
                         .font(PulseFonts.caption)
                         .foregroundStyle(colors.textMuted)
                     Spacer()
