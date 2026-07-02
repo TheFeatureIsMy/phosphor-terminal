@@ -73,7 +73,15 @@ final class ExecutionCenterViewModel {
         do { _ = try await APIEmergency(client: api.client).emergencyStop(reason: "manual_emergency_stop") as EmergencyStopResult; await loadCenter() } catch { self.error = error.localizedDescription }
     }
 
-    @MainActor func emergencyResume(strategyRunId: String) async {
-        do { _ = try await APIEmergency(client: api.client).emergencyResume(strategyRunId: strategyRunId) as EmergencyStopResult; await loadCenter() } catch { self.error = error.localizedDescription }
+    @MainActor func emergencyResume() async {
+        guard let sessions = centerData?.sessions else { return }
+        let stoppedRuns = sessions.filter { $0.status == "stopped" }.map { $0.runId }
+        guard !stoppedRuns.isEmpty else { return }
+        let emergency = APIEmergency(client: api.client)
+        for runId in stoppedRuns {
+            do { _ = try await emergency.emergencyResume(strategyRunId: runId) as EmergencyStopResult }
+            catch { self.error = error.localizedDescription; return }
+        }
+        await loadCenter()
     }
 }
