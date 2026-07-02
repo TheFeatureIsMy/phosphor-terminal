@@ -2,11 +2,16 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
+from typing import Optional
 
 from app.domain.dsl import AccountRiskPolicy
 from app.services.runtime_redis_store import RuntimeRedisStore
 
 logger = logging.getLogger(__name__)
+
+# Module-level manual block state (persists across request-scoped instances)
+_manual_block_active: bool = False
+_manual_block_reason: str | None = None
 
 
 @dataclass
@@ -20,10 +25,33 @@ class AccountRiskState:
 
 
 class AccountRiskFirewall:
-    def __init__(self, policy: AccountRiskPolicy, redis_store: RuntimeRedisStore | None = None):
+    def __init__(self, policy: Optional[AccountRiskPolicy] = None, redis_store: Optional[RuntimeRedisStore] = None):
         self._policy = policy
         self._store = redis_store
         self._states: dict[str, dict] = {}
+
+    @classmethod
+    def activate_manual_block(cls, reason: str = "manual") -> list[dict]:
+        """Activate a manual block lock. Returns current active_locks list."""
+        global _manual_block_active, _manual_block_reason
+        _manual_block_active = True
+        _manual_block_reason = reason
+        return cls._current_locks()
+
+    @classmethod
+    def deactivate_manual_block(cls) -> list[dict]:
+        """Deactivate the manual block lock. Returns current active_locks list."""
+        global _manual_block_active, _manual_block_reason
+        _manual_block_active = False
+        _manual_block_reason = None
+        return cls._current_locks()
+
+    @classmethod
+    def _current_locks(cls) -> list[dict]:
+        locks: list[dict] = []
+        if _manual_block_active:
+            locks.append({"lock": "manual_block", "reason": _manual_block_reason or "manual"})
+        return locks
 
     async def _load_state(self, account_id: str) -> dict:
         if self._store:

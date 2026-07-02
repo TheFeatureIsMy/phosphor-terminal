@@ -3,16 +3,21 @@ import logging
 import uuid
 
 from fastapi import APIRouter, Depends, Query
+from fastapi.responses import JSONResponse
 
 from app.schemas.risk_bff import (
     RiskOverviewResponse, RiskGuard,
     StopProtectionResponse, PositionStop, StopLevel,
     CircuitBreakersResponse, CircuitBreakerRecord,
+    RiskRulesResponse, ResolveResponse,
 )
 from app.schemas.common import AvailableAction
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from app.database import get_db
+
+from app.services.account_risk_firewall import AccountRiskFirewall
+from app.services.risk_rules_service import RiskRulesService
 
 router = APIRouter(prefix="/api/risk", tags=["risk-bff"])
 logger = logging.getLogger(__name__)
@@ -236,10 +241,57 @@ async def risk_emergency_stop():
 
 
 @router.post("/block-new-entries")
-async def block_new_entries():
-    return {"status": "blocked", "reason_codes": ["manual_block"]}
+async def block_new_entries(payload: dict | None = None):
+    try:
+        reason = (payload or {}).get("reason", "manual")
+        locks = AccountRiskFirewall.activate_manual_block(reason=reason)
+        return {"status": "blocked", "active_locks": locks, "reason_codes": []}
+    except Exception as e:
+        logger.exception("[block-new-entries] failed: %s", e)
+        return {"status": "failed", "active_locks": [], "reason_codes": [type(e).__name__]}
 
 
 @router.post("/unblock")
 async def unblock():
-    return {"status": "unblocked", "reason_codes": ["manual_unblock"]}
+    try:
+        locks = AccountRiskFirewall.deactivate_manual_block()
+        return {"status": "unblocked", "active_locks": locks, "reason_codes": []}
+    except Exception as e:
+        logger.exception("[unblock] failed: %s", e)
+        return {"status": "failed", "active_locks": [], "reason_codes": [type(e).__name__]}
+
+
+@router.get("/rules", response_model=RiskRulesResponse)
+async def get_risk_rules():
+    svc = RiskRulesService()
+    r = svc.get_effective()
+    return RiskRulesResponse(
+        daily_loss_limit=r.daily_loss_limit,
+        weekly_loss_limit=r.weekly_loss_limit,
+        consecutive_losses_limit=r.consecutive_losses_limit,
+        max_drawdown=r.max_drawdown,
+        correlation_threshold=r.correlation_threshold,
+        kill_switch={"threshold": r.kill_switch_threshold, "active": r.kill_switch_active},
+    )
+
+
+@router.post("/circuit-breakers/{event_id}/resolve", response_model=ResolveResponse)
+async def resolve_circuit_breaker(event_id: str, db: Session = Depends(get_db)):
+    from app.services.circuit_breaker_repository import CircuitBreakerRepository
+
+    repo = CircuitBreakerRepository(db)
+    evt = repo.get(event_id)
+    if evt is None:
+        return ResolveResponse(status="not_found", resolved_event_id=event_id, reason_codes=["event_not_found"])
+    if evt.event_type in ("kill_switch", "emergency_stop"):
+        return JSONResponse(
+            content=ResolveResponse(
+                status="rejected", resolved_event_id=event_id,
+                reason_codes=["cannot_resolve_kill_switch"],
+            ).model_dump(),
+            status_code=409,
+        )
+    if evt.resolved:
+        return ResolveResponse(status="already_resolved", resolved_event_id=event_id, reason_codes=[])
+    repo.mark_resolved(event_id)
+    return ResolveResponse(status="resolved", resolved_event_id=event_id, reason_codes=[])

@@ -68,3 +68,18 @@ class CircuitBreakersResponse(BaseModel):
     reason_codes: list[str] = Field(default_factory=list)
     records: list[CircuitBreakerRecord] = Field(default_factory=list)
     total_count: int = 0
+
+
+class RiskRulesResponse(BaseModel):
+    daily_loss_limit: float
+    weekly_loss_limit: float
+    consecutive_losses_limit: int
+    max_drawdown: float
+    correlation_threshold: float
+    kill_switch: dict  # {threshold, active}
+
+
+class ResolveResponse(BaseModel):
+    status: str
+    resolved_event_id: str | None = None
+    reason_codes: list[str] = Field(default_factory=list)
