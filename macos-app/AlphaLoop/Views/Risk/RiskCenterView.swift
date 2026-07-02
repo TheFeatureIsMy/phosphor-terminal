@@ -6,45 +6,66 @@ struct RiskCenterView: View {
     @Environment(\.networkClient) private var networkClient
     @Environment(PulseColors.self) private var colors
     @Environment(SettingsState.self) private var settingsState
+    @Environment(AppState.self) private var appState
     @State private var viewModel: RiskCenterViewModel?
     @State private var pulsePhase: CGFloat = 0
+    @State private var showBlockConfirm = false
+    @State private var showUnblockConfirm = false
+
+    private var resolvedMode: ModePill.Mode {
+        ModePill.Mode.resolve(
+            liveReadinessState: viewModel?.overview?.state,
+            isLiveMode: appState.isLiveMode,
+            isMockMode: !appState.isLiveMode && !appState.isDetectingBackend
+        )
+    }
 
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: PulseSpacing.xl) {
-                if let vm = viewModel {
-                    if vm.isLoading && vm.overview == nil {
-                        LoadingView(type: .detail)
-                    } else if let overview = vm.overview {
-                        // Hero risk gauge
-                        heroRiskGauge(overview)
+        VStack(spacing: 0) {
+            LiveWireStrip(mode: resolvedMode)
+            EmergencyStopBar(
+                mode: resolvedMode,
+                affectedRuns: viewModel?.overview?.guards.count ?? 0,
+                emergencyLocked: viewModel?.overview?.emergencyLocked ?? false,
+                onStop: { await viewModel?.emergencyStop() },
+                onResume: { await viewModel?.emergencyResume() }
+            )
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: PulseSpacing.xl) {
+                    if let vm = viewModel {
+                        if vm.isLoading && vm.overview == nil {
+                            LoadingView(type: .detail)
+                        } else if let overview = vm.overview {
+                            // Hero risk gauge
+                            heroRiskGauge(overview)
 
-                        // Guards grid (arc gauges)
-                        guardsGrid(overview.guards)
+                            // Guards grid (arc gauges)
+                            guardsGrid(overview.guards)
 
-                        // Emergency action panel
-                        emergencyPanel(vm, overview: overview)
+                            // Block / unblock buttons
+                            blockUnblockRow(overview)
 
-                    } else if let error = vm.error {
-                        EmptyStateView(
-                            icon: "exclamationmark.triangle",
-                            title: L10n.Common.error,
-                            description: error,
-                            primaryAction: (title: L10n.Common.retry, action: { Task { await vm.loadOverview() } })
-                        )
-                    } else {
-                        EmptyStateView(
-                            icon: "shield.checkered",
-                            title: L10n.Common.noData,
-                            description: L10n.zh("风控系统尚未返回数据", en: "Risk system has not returned data")
-                        )
+                        } else if let error = vm.error {
+                            EmptyStateView(
+                                icon: "exclamationmark.triangle",
+                                title: L10n.Common.error,
+                                description: error,
+                                primaryAction: (title: L10n.Common.retry, action: { Task { await vm.loadOverview() } })
+                            )
+                        } else {
+                            EmptyStateView(
+                                icon: "shield.checkered",
+                                title: L10n.Common.noData,
+                                description: L10n.zh("风控系统尚未返回数据", en: "Risk system has not returned data")
+                            )
+                        }
                     }
                 }
+                .padding(PulseSpacing.xl)
+                .id(settingsState.language)
             }
-            .padding(PulseSpacing.xl)
-            .id(settingsState.language)
+            .scrollEdgeEffectStyle(.soft, for: .vertical)
         }
-        .scrollEdgeEffectStyle(.soft, for: .vertical)
         .riskAtmosphericBackground(tint: overallRiskColor)
         .task {
             let vm = RiskCenterViewModel(client: networkClient)
@@ -56,6 +77,24 @@ struct RiskCenterView: View {
                 pulsePhase = 1
             }
         }
+        // Block confirm dialog
+        .confirmDialog(
+            isPresented: $showBlockConfirm,
+            title: L10n.Risk.confirmBlock,
+            message: L10n.zh("将阻止所有新订单开仓。当前已有 \(viewModel?.overview?.activeLocks.count ?? 0) 个活动锁定。确认继续？", en: "This will prevent all new orders from being opened. \(viewModel?.overview?.activeLocks.count ?? 0) active lock(s) present. Confirm?"),
+            confirmLabel: L10n.Risk.blockNewEntries,
+            confirmStyle: .warning,
+            onConfirm: { Task { await viewModel?.blockNewEntries() } }
+        )
+        // Unblock confirm dialog
+        .confirmDialog(
+            isPresented: $showUnblockConfirm,
+            title: L10n.Risk.confirmUnblock,
+            message: L10n.zh("将解除禁止新开仓状态，恢复正常交易操作。确认继续？", en: "This will unblock new entries and resume normal trading operations. Confirm?"),
+            confirmLabel: L10n.Risk.unblock,
+            confirmStyle: .warning,
+            onConfirm: { Task { await viewModel?.unblock() } }
+        )
     }
 
     private var overallRiskColor: Color {
@@ -325,108 +364,34 @@ struct RiskCenterView: View {
         }
     }
 
-    // MARK: - Emergency Panel
+    // MARK: - Block / Unblock Row
 
-    private func emergencyPanel(_ vm: RiskCenterViewModel, overview: RiskOverviewBFFResponse) -> some View {
+    private func blockUnblockRow(_ overview: RiskOverviewBFFResponse) -> some View {
         VStack(spacing: PulseSpacing.md) {
-            TerminalLabel(text: L10n.zh("紧急操作", en: "EMERGENCY ACTIONS"))
+            TerminalLabel(text: L10n.zh("新开仓控制", en: "NEW ENTRIES CONTROL"))
 
             HStack(spacing: PulseSpacing.md) {
-                // Block new entries button
-                actionButton(
-                    icon: "hand.raised.fill",
-                    title: L10n.zh("禁止新开仓", en: "Block Entries"),
-                    subtitle: L10n.zh("阻止新订单", en: "Prevent new orders"),
-                    color: PulseColors.StateColors.orange,
-                    action: {}
-                )
-
-                // Unblock button
-                actionButton(
-                    icon: "checkmark.shield",
-                    title: L10n.zh("解除禁止", en: "Unblock"),
-                    subtitle: L10n.zh("恢复正常操作", en: "Resume normal ops"),
-                    color: PulseColors.StateColors.green,
-                    action: {}
-                )
-
-                // Emergency stop
-                emergencyStopButton(vm)
-            }
-        }
-    }
-
-    private func actionButton(icon: String, title: String, subtitle: String, color: Color, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            VStack(spacing: PulseSpacing.xs) {
-                Image(systemName: icon)
-                    .font(.system(size: 20))
-                    .foregroundStyle(color)
-
-                Text(title)
-                    .font(PulseFonts.captionMedium)
-                    .foregroundStyle(colors.textPrimary)
-
-                Text(subtitle)
-                    .font(PulseFonts.micro)
-                    .foregroundStyle(colors.textMuted)
-                    .lineLimit(1)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(PulseSpacing.md)
-            .background(
-                RoundedRectangle(cornerRadius: PulseRadii.card)
-                    .fill(colors.cardBackground)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: PulseRadii.card)
-                            .stroke(color.opacity(0.2), lineWidth: 1)
-                    )
-            )
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func emergencyStopButton(_ vm: RiskCenterViewModel) -> some View {
-        Button {
-            Task { await vm.emergencyStop() }
-        } label: {
-            VStack(spacing: PulseSpacing.xs) {
-                ZStack {
-                    // Pulsing danger ring
-                    Circle()
-                        .stroke(PulseColors.StateColors.red.opacity(0.3 * pulsePhase), lineWidth: 2)
-                        .frame(width: 44, height: 44)
-
-                    Circle()
-                        .fill(PulseColors.StateColors.red.opacity(0.15))
-                        .frame(width: 36, height: 36)
-
-                    Image(systemName: "bolt.fill")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(PulseColors.StateColors.red)
+                Button {
+                    showBlockConfirm = true
+                } label: {
+                    Label(L10n.Risk.blockNewEntries, systemImage: "hand.raised")
                 }
+                .buttonStyle(.bordered)
+                .tint(PulseColors.StateColors.orange)
+                .disabled(overview.activeLocks.contains { $0["lock"] == "manual_block" })
 
-                Text(L10n.zh("紧急停止", en: "EMERGENCY"))
-                    .font(PulseFonts.captionMedium)
-                    .foregroundStyle(PulseColors.StateColors.red)
+                Button {
+                    showUnblockConfirm = true
+                } label: {
+                    Label(L10n.Risk.unblock, systemImage: "hand.thumbsup")
+                }
+                .buttonStyle(.bordered)
+                .tint(PulseColors.StateColors.green)
+                .disabled(!overview.activeLocks.contains { $0["lock"] == "manual_block" })
 
-                Text(L10n.zh("停止一切交易", en: "Halt all trading"))
-                    .font(PulseFonts.micro)
-                    .foregroundStyle(colors.textMuted)
-                    .lineLimit(1)
+                Spacer()
             }
-            .frame(maxWidth: .infinity)
-            .padding(PulseSpacing.md)
-            .background(
-                RoundedRectangle(cornerRadius: PulseRadii.card)
-                    .fill(colors.cardBackground)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: PulseRadii.card)
-                            .stroke(PulseColors.StateColors.red.opacity(0.3), lineWidth: 1)
-                    )
-            )
         }
-        .buttonStyle(.plain)
     }
 }
 
