@@ -98,7 +98,7 @@ struct EquityCurveHero: View {
         HStack(spacing: 4) {
             Text(label).foregroundStyle(colors.textMuted)
             Text(String(format: "%+.2f%%", value * 100))
-                .foregroundStyle(isPositive ? PulseColors.accent : PulseColors.danger)
+                .foregroundStyle(isPositive ? PulseColors.bullish : PulseColors.bearish)
         }
     }
 }

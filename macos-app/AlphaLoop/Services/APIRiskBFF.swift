@@ -186,49 +186,37 @@ struct APIRiskBFF {
     func getOverview(strategyId: String? = nil) async throws -> RiskOverviewBFFResponse {
         var path = "/api/risk/overview"
         if let strategyId { path += "?strategy_id=\(strategyId)" }
-        return try await client.get(path, mock: MockRiskBFF.overview)
+        return try await client.get(path)
     }
 
     func getStopProtection() async throws -> StopProtectionBFFResponse {
-        try await client.get("/api/risk/stop-protection", mock: MockRiskBFF.stopProtection)
+        try await client.get("/api/risk/stop-protection")
     }
 
     func getCircuitBreakers() async throws -> CircuitBreakersBFFResponse {
-        try await client.get("/api/risk/circuit-breakers", mock: MockRiskBFF.circuitBreakers)
+        try await client.get("/api/risk/circuit-breakers")
     }
 
     // MARK: - Block / Unblock New Entries
 
     func blockNewEntries(reason: String = "manual") async throws -> BlockActionResponse {
-        try await client.post("/api/risk/block-new-entries", body: ["reason": reason], mock: {
-            BlockActionResponse(status: "blocked", activeLocks: [ActiveLockResponse(lock: "manual_block", reason: reason)])
-        })
+        try await client.post("/api/risk/block-new-entries", body: ["reason": reason])
     }
 
     func unblock() async throws -> BlockActionResponse {
-        try await client.post("/api/risk/unblock", body: [String: String](), mock: {
-            BlockActionResponse(status: "unblocked", activeLocks: [])
-        })
+        try await client.post("/api/risk/unblock", body: [String: String]())
     }
 
     // MARK: - Risk Rules
 
     func getRiskRules() async throws -> RiskRulesResponse {
-        try await client.get("/api/risk/rules", mock: {
-            RiskRulesResponse(
-                dailyLossLimit: 5.0, weeklyLossLimit: 10.0, consecutiveLossesLimit: 3,
-                maxDrawdown: 15.0, correlationThreshold: 0.9,
-                killSwitch: KillSwitchResponse(threshold: 20.0, active: false)
-            )
-        })
+        try await client.get("/api/risk/rules")
     }
 
     // MARK: - Circuit Breaker
 
     func resolveCircuitBreaker(eventId: String) async throws -> ResolveCircuitBreakerResponse {
-        try await client.post("/api/risk/circuit-breakers/\(eventId)/resolve", body: [String: String](), mock: {
-            ResolveCircuitBreakerResponse(status: "resolved", resolvedEventId: eventId)
-        })
+        try await client.post("/api/risk/circuit-breakers/\(eventId)/resolve", body: [String: String]())
     }
 
     // MARK: - Emergency Stop (delegates to APIEmergency)
@@ -239,51 +227,3 @@ struct APIRiskBFF {
     }
 }
 
-// MARK: - Mock Data
-
-enum MockRiskBFF {
-    static func overview() -> RiskOverviewBFFResponse {
-        RiskOverviewBFFResponse(
-            state: "normal",
-            availableActions: [
-                AvailableActionResponse(type: "emergency_stop", enabled: true, label: "紧急停止", confirmRequired: true),
-                AvailableActionResponse(type: "block_new_entries", enabled: true, label: "禁止新开仓"),
-            ],
-            guards: [
-                RiskGuardResponse(key: "daily_loss", label: "日亏损限制", currentValue: 120, limitValue: 500, remainingPct: 0.76, status: "healthy"),
-                RiskGuardResponse(key: "weekly_loss", label: "周亏损限制", currentValue: 280, limitValue: 1500, remainingPct: 0.81, status: "healthy"),
-                RiskGuardResponse(key: "consecutive_loss", label: "连续亏损", currentValue: 1, limitValue: 5, remainingPct: 0.8, status: "healthy"),
-            ]
-        )
-    }
-
-    static func stopProtection() -> StopProtectionBFFResponse {
-        StopProtectionBFFResponse(
-            state: "healthy",
-            availableActions: [AvailableActionResponse(type: "refresh_all", enabled: true, label: "刷新全部止损")],
-            positions: [
-                PositionStopResponse(positionId: "pos-001", symbol: "BTC/USDT", side: "long", entryPrice: 62100, currentPrice: 62450,
-                    stops: StopLevelResponse(rawStructureStop: 61200, lastKnownGoodStop: 61350, secureRuntimeStop: 61350, exchangeProtectiveStop: 61000),
-                    reasonCodes: ["structure_stop_valid"]),
-                PositionStopResponse(positionId: "pos-002", symbol: "ETH/USDT", side: "long", entryPrice: 3380, currentPrice: 3410,
-                    stops: StopLevelResponse(rawStructureStop: 3300, lastKnownGoodStop: 3320, secureRuntimeStop: 3320, exchangeProtectiveStop: 3280),
-                    reasonCodes: ["structure_stop_valid"]),
-            ]
-        )
-    }
-
-    static func circuitBreakers() -> CircuitBreakersBFFResponse {
-        CircuitBreakersBFFResponse(
-            state: "tripped",
-            records: [
-                CircuitBreakerRecordResponse(id: "cb-001", type: "daily_loss_lock", reasonCodes: ["daily_loss_limit_reached"], createdAt: "2026-06-30T14:30:00Z"),
-                CircuitBreakerRecordResponse(id: "cb-002", type: "emergency_stop", reasonCodes: ["manual_trigger"], relatedCommandId: "cmd-099", createdAt: "2026-06-29T10:15:00Z", resolved: true),
-                CircuitBreakerRecordResponse(id: "cb-003", type: "kill_switch", reasonCodes: ["sharp_drop_detected"], createdAt: "2026-06-28T09:00:00Z"),
-                CircuitBreakerRecordResponse(id: "cb-004", type: "weekly_loss_lock", reasonCodes: ["weekly_loss_limit_reached"], createdAt: "2026-06-27T16:45:00Z", resolved: true),
-                CircuitBreakerRecordResponse(id: "cb-005", type: "manual_force_close", reasonCodes: ["manual_intervention"], createdAt: "2026-06-26T08:00:00Z"),
-                CircuitBreakerRecordResponse(id: "cb-006", type: "system_safe_mode", reasonCodes: ["consecutive_failures"], createdAt: "2026-06-25T12:00:00Z"),
-            ],
-            totalCount: 6
-        )
-    }
-}

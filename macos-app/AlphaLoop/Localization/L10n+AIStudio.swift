@@ -57,5 +57,41 @@ extension L10n {
         static func requestFailed(_ detail: String) -> String { zh("研究请求失败: \(detail)", en: "Research request failed: \(detail)") }
         static func publishFailed(_ detail: String) -> String { zh("发布信号失败: \(detail)", en: "Failed to publish signal: \(detail)") }
         static func draftFailed(_ detail: String) -> String { zh("生成策略草稿失败: \(detail)", en: "Failed to generate strategy draft: \(detail)") }
+
+        // MARK: - Protocol research-03 稿布局
+        static var protoEyebrow: String { zh("Multi-Agent Research · 多 Agent 投研辩论", en: "Multi-Agent Research") }
+        static var protoTitle: String { zh("让多位分析师为你辩一场", en: "Let the analysts debate for you") }
+        static func protoSubtitle(_ symbol: String) -> String { zh("对 \(symbol) 展开多 Agent 研究、多空辩论、风控裁定，产出可读的投研结论与可发布信号。", en: "Multi-agent research, debate and risk ruling on \(symbol), producing readable conclusions and publishable signals.") }
+        static var agentsTitle: String { zh("多 Agent 观点", en: "Agent Perspectives") }
+        static var agentsCount: String { zh("位分析师并陈", en: "analysts") }
+        static var stanceBull: String { zh("看多", en: "Long") }
+        static var stanceBear: String { zh("看空", en: "Short") }
+        static var stanceNeutral: String { zh("中性", en: "Neutral") }
+        static var stanceRisk: String { zh("放行(约束)", en: "Pass (constrained)") }
+        static var verdictTitle: String { zh("综合裁定 · 结论", en: "Verdict · Conclusion") }
+        static var verdictConsensus: String { zh("综合共识", en: "Consensus") }
+        static var currentPrice: String { zh("现价", en: "Price") }
+        static var change24h: String { zh("24h", en: "24h") }
+        static var perpSuffix: String { zh("· 永续", en: " · Perp") }
+        static var triggerReason: String { zh("本次研究触发原因", en: "Trigger") }
+        static var evidence: String { zh("证据", en: "Evidence") }
+        static var estimatedNote: String { zh("置信度为估算", en: "confidence estimated") }
+        static var noFakeInsight: String { zh("AI 结论仅供参考，不构成交易指令", en: "AI conclusions are advisory only, not trading commands") }
     }
+
+        // Evidence & traceability (R9)
+        static var modelProvider: String { zh("模型供应商", en: "Model Provider") }
+        static var modelName: String { zh("模型名称", en: "Model Name") }
+        static var promptVersion: String { zh("Prompt 版本", en: "Prompt Version") }
+        static var inputDataSource: String { zh("输入数据源", en: "Input Data Source") }
+        static var evidenceSource: String { zh("证据来源", en: "Evidence Source") }
+        static var modelLatency: String { zh("模型延迟", en: "Model Latency") }
+        static var uncertainty: String { zh("不确定性", en: "Uncertainty") }
+        static var facts: String { zh("事实", en: "Facts") }
+        static var modelInterpretation: String { zh("模型解读", en: "Model Interpretation") }
+        static var tradingImplication: String { zh("交易含义", en: "Trading Implication") }
+        static var riskWarning: String { zh("风险提示", en: "Risk Warning") }
+        static var strategyImpact: String { zh("策略影响", en: "Strategy Impact") }
+        static var noFakeInsight: String { zh("AI 结论仅供参考，不构成交易指令", en: "AI conclusions are advisory only, not trading commands") }
+        static var separationNotice: String { zh("事实 = 可观测数据 | 解读 = 模型推断 | 建议 = 仅供参考", en: "Facts = observable | Interpretation = inferred | Recommendation = advisory") }
 }

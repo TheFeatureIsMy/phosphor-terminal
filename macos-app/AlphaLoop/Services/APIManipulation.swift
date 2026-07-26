@@ -275,97 +275,6 @@ enum ManipulationEvent: Codable {
     func encode(to encoder: Encoder) throws {} // not used
 }
 
-// MARK: - Mock Data
-
-enum MockManipulation {
-    static var radarOverview: ManipulationRadarOverview {
-        ManipulationRadarOverview(
-            activeCases: [
-                ManipulationCaseSummary(id: "mock-1", symbol: "SOL/USDT", manipulationType: "M5", lifecycleStage: "markup", confidence: 0.78, tradingSignalAction: "RIDE", createdAt: "2026-06-15T10:00:00Z"),
-                ManipulationCaseSummary(id: "mock-2", symbol: "PEPE/USDT", manipulationType: "M3", lifecycleStage: "distribute", confidence: 0.85, tradingSignalAction: "EXIT", createdAt: "2026-06-14T08:00:00Z"),
-                ManipulationCaseSummary(id: "mock-3", symbol: "DOGE/USDT", manipulationType: "M8", lifecycleStage: "suspected", confidence: 0.45, tradingSignalAction: "WATCH", createdAt: "2026-06-15T14:00:00Z"),
-            ],
-            totalActive: 3,
-            byStage: ["suspected": 1, "markup": 1, "distribute": 1],
-            highRiskSymbols: ["PEPE/USDT"],
-            recentAlerts: [
-                ManipulationAlertItem(id: "a1", caseId: "mock-2", alertType: "stage_change", severity: "critical", title: "PEPE/USDT: markup → distribute", createdAt: "2026-06-15T12:00:00Z"),
-                ManipulationAlertItem(id: "a2", caseId: "mock-1", alertType: "stage_change", severity: "warning", title: "SOL/USDT: accumulate → markup", createdAt: "2026-06-15T10:30:00Z"),
-            ]
-        )
-    }
-
-    static var caseDetail: ManipulationCaseDetail {
-        ManipulationCaseDetail(
-            id: "mock-1", symbol: "SOL/USDT", market: "crypto",
-            manipulationType: "M5", lifecycleStage: "markup", confidence: 0.78,
-            evidence: ["pump_dump": 65, "volume_zscore": 55, "price_range_spike": 48],
-            timeline: [
-                ManipulationStageEntry(stage: "suspected", enteredAt: "2026-06-14T08:00:00Z", confidence: 0.45),
-                ManipulationStageEntry(stage: "accumulate", enteredAt: "2026-06-14T16:00:00Z", confidence: 0.62),
-                ManipulationStageEntry(stage: "markup", enteredAt: "2026-06-15T10:00:00Z", confidence: 0.78),
-            ],
-            tradingSignal: DualTradingSignal(
-                conservative: ManipulationTradingSignal(action: "RIDE", direction: "long", sizing: "medium", stopLoss: "trailing", rationale: "Markup confirmed — ride with trailing stop", riskLevel: "medium"),
-                aggressive: ManipulationTradingSignal(action: "EXIT", direction: "short", sizing: "small", stopLoss: "tight", rationale: "Markup nearing exhaustion — prepare to exit", riskLevel: "high")
-            ),
-            createdAt: "2026-06-14T08:00:00Z", updatedAt: "2026-06-15T10:00:00Z",
-            evidenceLayers: [
-                "A_price": EvidenceLayerPayload(available: true, score: 0.78, quality: 0.85, features: [
-                    "pump_dump": FeaturePayload(value: 65, percentile: 0.88, display: "65%"),
-                    "volume_zscore": FeaturePayload(value: 55, percentile: 0.82, display: "2.1σ"),
-                    "price_range_spike": FeaturePayload(value: 48, percentile: 0.76, display: "48%"),
-                ]),
-                "B_orderbook": EvidenceLayerPayload(available: true, score: 0.62, quality: 0.70, features: [
-                    "bid_ask_imbalance": FeaturePayload(value: 0.35, percentile: 0.72, display: "35%"),
-                    "spoof_ladder": FeaturePayload(value: 12, percentile: 0.65, display: "12"),
-                ]),
-                "C_onchain": EvidenceLayerPayload(available: true, score: 0.81, quality: 0.90, features: [
-                    "top10_concentration": FeaturePayload(value: 0.42, percentile: 0.91, display: "42%"),
-                    "exchange_inflow": FeaturePayload(value: 0.28, percentile: 0.78, display: "28%"),
-                    "whale_transfer_24h": FeaturePayload(value: 15, percentile: nil, display: "15"),
-                ]),
-                "D_social": EvidenceLayerPayload(available: false, score: 0, quality: 0.15, features: [:]),
-                "E_cross_market": EvidenceLayerPayload(available: true, score: 0.55, quality: 0.65, features: [
-                    "funding_rate_z": FeaturePayload(value: 2.4, percentile: 0.88, display: "2.4"),
-                    "open_interest_change": FeaturePayload(value: 0.15, percentile: nil, display: "+15%"),
-                    "long_short_ratio": FeaturePayload(value: 1.8, percentile: nil, display: "1.8"),
-                    "basis": FeaturePayload(value: 0.05, percentile: nil, display: "0.05"),
-                ]),
-            ],
-            completeness: 0.75,
-            maxConfidence: 0.85,
-            affectedSymbols: ["SOL/USDT", "SOL/BTC"]
-        )
-    }
-
-    static var alerts: [ManipulationAlertItem] {
-        [
-            ManipulationAlertItem(id: "a1", caseId: "mock-2", alertType: "stage_change", severity: "critical", title: "PEPE/USDT: markup → distribute", createdAt: "2026-06-15T12:00:00Z"),
-            ManipulationAlertItem(id: "a2", caseId: "mock-1", alertType: "stage_change", severity: "warning", title: "SOL/USDT: accumulate → markup", createdAt: "2026-06-15T10:30:00Z"),
-            ManipulationAlertItem(id: "a3", caseId: "mock-3", alertType: "new_case", severity: "info", title: "New case: DOGE/USDT (M8 Liquidity Hunt)", createdAt: "2026-06-15T14:00:00Z"),
-        ]
-    }
-
-    static func strategyImpact(caseId: String) -> StrategyImpactResponse {
-        StrategyImpactResponse(
-            caseId: caseId,
-            affectedStrategies: [
-                StrategyImpactItem(strategyId: "strat-1", name: "BTC Momentum v3", matchesSymbols: ["SOL/USDT"], manipulationFilter: ManipulationFilterStatus(enabled: true, wouldBlock: true, reasonCodes: ["filter_matched"])),
-                StrategyImpactItem(strategyId: "strat-2", name: "SOL Breakout v2", matchesSymbols: ["SOL/USDT"], manipulationFilter: ManipulationFilterStatus(enabled: true, wouldBlock: false, reasonCodes: ["filter_disabled"])),
-            ],
-            totalAffected: 1, totalProtected: 1)
-    }
-
-    static func similarCases(caseId: String) -> SimilarCasesResponse {
-        SimilarCasesResponse(
-            caseId: caseId,
-            similar: [
-                SimilarCaseItem(id: "hist-1", symbol: "DOGE/USDT", manipulationType: "M3", similarity: 0.91, outcome: ["realized_drawdown": -0.18, "recovery_hours": 36], completedAt: "2026-05-10T08:00:00Z"),
-                SimilarCaseItem(id: "hist-2", symbol: "WIF/USDT", manipulationType: "M3", similarity: 0.84, outcome: ["realized_drawdown": -0.22, "recovery_hours": 48], completedAt: "2026-04-22T12:00:00Z"),
-            ])
-    }
-}
 
 // MARK: - API
 
@@ -472,21 +381,15 @@ struct APIManipulation {
     // MARK: - Radar (lifecycle-based)
 
     func getRadarOverview() async throws -> ManipulationRadarOverview {
-        try await client.get("/api/v2/manipulation/radar") {
-            MockManipulation.radarOverview
-        }
+        try await client.get("/api/v2/manipulation/radar")
     }
 
     func getCaseDetail(_ caseId: String) async throws -> ManipulationCaseDetail {
-        try await client.get("/api/v2/manipulation/cases/\(caseId)") {
-            MockManipulation.caseDetail
-        }
+        try await client.get("/api/v2/manipulation/cases/\(caseId)")
     }
 
     func getAlerts(limit: Int = 20) async throws -> [ManipulationAlertItem] {
-        try await client.get("/api/v2/manipulation/alerts?limit=\(limit)") {
-            MockManipulation.alerts
-        }
+        try await client.get("/api/v2/manipulation/alerts?limit=\(limit)")
     }
 
     func getSignals(userProfile: String = "conservative") async throws -> [ManipulationSignalItem] {
@@ -496,14 +399,10 @@ struct APIManipulation {
     }
 
     func getStrategyImpact(_ caseId: String) async throws -> StrategyImpactResponse {
-        try await client.get("/api/v2/manipulation/cases/\(caseId)/strategy-impact") {
-            MockManipulation.strategyImpact(caseId: caseId)
-        }
+        try await client.get("/api/v2/manipulation/cases/\(caseId)/strategy-impact")
     }
 
     func getSimilar(_ caseId: String, limit: Int = 5) async throws -> SimilarCasesResponse {
-        try await client.get("/api/v2/manipulation/cases/\(caseId)/similar?limit=\(limit)") {
-            MockManipulation.similarCases(caseId: caseId)
-        }
+        try await client.get("/api/v2/manipulation/cases/\(caseId)/similar?limit=\(limit)")
     }
 }

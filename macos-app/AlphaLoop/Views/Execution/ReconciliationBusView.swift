@@ -26,13 +26,6 @@ struct ReconciliationBusView: View {
     var body: some View {
         VStack(spacing: 0) {
             LiveWireStrip(mode: resolvedMode)
-            EmergencyStopBar(
-                mode: resolvedMode,
-                affectedRuns: affectedRunCount,
-                emergencyLocked: viewModel?.reconciliationBus?.state == "emergency_locked",
-                onStop: { await viewModel?.emergencyStop() },
-                onResume: { await viewModel?.emergencyResume() }
-            )
 
             if let vm = viewModel {
                 if vm.isLoading && vm.reconciliationBus == nil {
@@ -112,18 +105,11 @@ struct ReconciliationBusView: View {
     // MARK: - Header
 
     private func headerSection(_ vm: ExecutionCenterViewModel) -> some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(L10n.Reconciliation.title)
-                    .font(PulseFonts.displaySubheading)
-                    .foregroundStyle(colors.textPrimary)
-                Text("Command Bus · State Lease · Exchange Finality")
-                    .font(PulseFonts.caption)
-                    .foregroundStyle(colors.textMuted)
-            }
-
-            Spacer()
-
+        QuantPageHeader(
+            eyebrow: "EXECUTION",
+            title: L10n.Reconciliation.title,
+            subtitle: "Command Bus · State Lease · Exchange Finality"
+        ) {
             HStack(spacing: PulseSpacing.sm) {
                 Button {
                     showRetryBatchConfirm = true

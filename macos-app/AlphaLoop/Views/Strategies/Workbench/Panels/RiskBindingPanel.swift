@@ -56,7 +56,7 @@ struct RiskBindingPanel: View {
                     Image(systemName: "plus.circle.fill").font(.system(size: 11))
                     Text(L10n.Workbench.bindingBindLiveSmall).font(PulseFonts.captionMedium)
                 }
-                .foregroundStyle(.black)
+                .foregroundStyle(PulseColors.onAccent)
                 .padding(.horizontal, 10).padding(.vertical, 6)
                 .background(PulseColors.accent)
                 .clipShape(Capsule())

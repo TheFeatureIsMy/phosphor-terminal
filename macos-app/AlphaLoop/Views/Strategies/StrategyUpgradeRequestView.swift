@@ -86,7 +86,7 @@ struct StrategyUpgradeRequestView: View {
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
             .background(
-                RoundedRectangle(cornerRadius: PulseRadii.xs)
+                RoundedRectangle(cornerRadius: PulseRadii.badge)
                     .fill(color.opacity(0.12))
             )
     }

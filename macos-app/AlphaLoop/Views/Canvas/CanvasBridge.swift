@@ -55,4 +55,16 @@ final class CanvasBridge: NSObject, WKScriptMessageHandler, WKNavigationDelegate
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         // WebView finished loading HTML
     }
+
+    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        #if DEBUG
+        print("[CanvasBridge] navigation failed: \(error.localizedDescription)")
+        #endif
+    }
+
+    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        #if DEBUG
+        print("[CanvasBridge] provisional navigation failed: \(error.localizedDescription)")
+        #endif
+    }
 }

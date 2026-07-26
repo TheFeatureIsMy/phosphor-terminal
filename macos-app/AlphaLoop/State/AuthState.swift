@@ -6,17 +6,22 @@ import SwiftUI
 @Observable
 final class AuthState {
     var user: User?
-    var isAuthenticated: Bool = false
+    // 登录流程已移除：应用启动后直接进入主界面，默认视为已认证。
+    var isAuthenticated: Bool = true
     var isLoading: Bool = false
     var errorMessage: String?
 
-    /// Mock 用户（开发模式）
+    /// 默认用户（登录已移除，直接使用此身份）
     static let mockUser = User(
         id: 1, name: "Trader", email: "trader@pulsedesk.io",
         telegramId: nil, role: "trader",
-        createdAt: ISO8601DateFormatter().string(from: Date()),
-        updatedAt: ISO8601DateFormatter().string(from: Date())
+        createdAt: ISO8601DateFormatter().string(from: Date())
     )
+
+    init() {
+        // 登录已移除：默认注入身份，跳过登录页。
+        self.user = Self.mockUser
+    }
 
     /// 使用 mock 数据登录
     func mockLogin() {

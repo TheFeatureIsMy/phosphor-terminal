@@ -4,7 +4,7 @@ import SwiftUI
 
 struct RiskCenterView: View {
     @Environment(\.networkClient) private var networkClient
-    @Environment(PulseColors.self) private var colors
+    @Environment(PulseColors.self) var colors
     @Environment(SettingsState.self) private var settingsState
     @Environment(AppState.self) private var appState
     @State private var viewModel: RiskCenterViewModel?
@@ -23,27 +23,38 @@ struct RiskCenterView: View {
     var body: some View {
         VStack(spacing: 0) {
             LiveWireStrip(mode: resolvedMode)
-            EmergencyStopBar(
-                mode: resolvedMode,
-                affectedRuns: viewModel?.overview?.guards.count ?? 0,
-                emergencyLocked: viewModel?.overview?.emergencyLocked ?? false,
-                onStop: { await viewModel?.emergencyStop() },
-                onResume: { await viewModel?.emergencyResume() }
-            )
             ScrollView(.vertical, showsIndicators: false) {
-                VStack(spacing: PulseSpacing.xl) {
+                VStack(spacing: 18) {
                     if let vm = viewModel {
                         if vm.isLoading && vm.overview == nil {
                             LoadingView(type: .detail)
                         } else if let overview = vm.overview {
-                            // Hero risk gauge
-                            heroRiskGauge(overview)
+                            heroSection(overview)
+                                .staggeredAppearance(index: 0)
 
-                            // Guards grid (arc gauges)
-                            guardsGrid(overview.guards)
+                            // Row 1: water hero(5) + 子指标(7)
+                            HStack(alignment: .top, spacing: 18) {
+                                waterHeroCard(overview)
+                                    .frame(width: 380)
+                                waterStatsCard(overview)
+                            }
+                            .staggeredAppearance(index: 1)
 
-                            // Block / unblock buttons
+                            // 守卫网格
+                            guardsGridCard(overview.guards)
+                                .staggeredAppearance(index: 2)
+
+                            // Row: 拦截事件流(7) + 门禁规则(5)
+                            HStack(alignment: .top, spacing: 18) {
+                                blockedIntentsCard(overview)
+                                gateRulesCard(vm.riskRules, overview: overview)
+                                    .frame(width: 400)
+                            }
+                            .staggeredAppearance(index: 3)
+
+                            // 新开仓控制
                             blockUnblockRow(overview)
+                                .staggeredAppearance(index: 4)
 
                         } else if let error = vm.error {
                             EmptyStateView(
@@ -61,10 +72,15 @@ struct RiskCenterView: View {
                         }
                     }
                 }
-                .padding(PulseSpacing.xl)
+                .padding(.horizontal, 28)
+                .padding(.top, 28)
+                .padding(.bottom, 40)
+                .frame(maxWidth: PulseSpacing.contentMaxWidth)
+                .frame(maxWidth: .infinity)
                 .id(settingsState.language)
             }
             .scrollEdgeEffectStyle(.soft, for: .vertical)
+            .task { await viewModel?.loadRiskRules() }
         }
         .riskAtmosphericBackground(tint: overallRiskColor)
         .task {
@@ -97,165 +113,21 @@ struct RiskCenterView: View {
         )
     }
 
-    private var overallRiskColor: Color {
+    var overallRiskColor: Color {
         guard let overview = viewModel?.overview else { return PulseColors.accent }
-        switch overview.state {
-        case "normal": return PulseColors.StateColors.green
-        case "warning", "degraded": return PulseColors.StateColors.yellow
-        case "emergency", "locked": return PulseColors.StateColors.red
-        default: return PulseColors.StateColors.orange
-        }
+        return Self.riskColor(for: overview.state)
     }
 
-    // MARK: - Hero Risk Gauge
-
-    private func heroRiskGauge(_ overview: RiskOverviewBFFResponse) -> some View {
-        VStack(spacing: PulseSpacing.lg) {
-            // Title
-            HStack {
-                TerminalLabel(text: L10n.zh("风控中心", en: "RISK CENTER"))
-                Spacer()
-                if !overview.reasonCodes.isEmpty {
-                    HStack(spacing: 4) {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                            .font(.system(size: 9))
-                        Text(overview.reasonCodes.first ?? "")
-                            .font(PulseFonts.micro)
-                    }
-                    .foregroundStyle(overallRiskColor)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(overallRiskColor.opacity(0.1))
-                    .clipShape(Capsule())
-                }
-            }
-
-            // Main gauge
-            HStack(spacing: PulseSpacing.xl) {
-                // Left: Arc gauge
-                ZStack {
-                    // Outer ring (background)
-                    Circle()
-                        .stroke(colors.surface, lineWidth: 6)
-                        .frame(width: 180, height: 180)
-
-                    // Gauge arc (270 degrees)
-                    ArcGauge(value: riskGaugeValue(overview), lineWidth: 8, size: 180, color: overallRiskColor)
-
-                    // Inner content
-                    VStack(spacing: 4) {
-                        Text(accountStateLabel(overview.accountState))
-                            .font(.system(size: 22, weight: .bold, design: .monospaced))
-                            .foregroundStyle(overallRiskColor)
-
-                        Text(overview.accountState.uppercased())
-                            .font(PulseFonts.micro)
-                            .foregroundStyle(colors.textMuted)
-                            .tracking(2)
-
-                        if overview.emergencyLocked {
-                            HStack(spacing: 3) {
-                                Image(systemName: "lock.fill")
-                                    .font(.system(size: 9))
-                                Text("LOCKED")
-                                    .font(PulseFonts.micro)
-                            }
-                            .foregroundStyle(PulseColors.StateColors.red)
-                            .padding(.top, 4)
-                        }
-                    }
-
-                    // Pulsing outer ring for non-normal states
-                    if overview.state != "normal" {
-                        Circle()
-                            .stroke(overallRiskColor.opacity(0.3 * pulsePhase), lineWidth: 2)
-                            .frame(width: 196, height: 196)
-                    }
-                }
-                .frame(width: 200, height: 200)
-
-                // Right: Quick stats
-                VStack(alignment: .leading, spacing: PulseSpacing.md) {
-                    quickStat(
-                        icon: "shield.checkered",
-                        label: L10n.zh("系统状态", en: "System State"),
-                        value: stateDisplayName(overview.state),
-                        color: overallRiskColor
-                    )
-                    quickStat(
-                        icon: "exclamationmark.triangle",
-                        label: L10n.zh("守卫告警", en: "Guard Alerts"),
-                        value: "\(overview.guards.filter { $0.status != "healthy" }.count) / \(overview.guards.count)",
-                        color: overview.guards.contains(where: { $0.status == "breached" }) ? PulseColors.StateColors.red : PulseColors.StateColors.green
-                    )
-                    quickStat(
-                        icon: "bolt.shield",
-                        label: L10n.zh("紧急锁定", en: "Emergency Lock"),
-                        value: overview.emergencyLocked ? "ACTIVE" : "OFF",
-                        color: overview.emergencyLocked ? PulseColors.StateColors.red : PulseColors.StateColors.green
-                    )
-                    quickStat(
-                        icon: "clock.badge.exclamationmark",
-                        label: L10n.zh("风险原因", en: "Reason Codes"),
-                        value: overview.reasonCodes.isEmpty ? "—" : "\(overview.reasonCodes.count)",
-                        color: colors.textSecondary
-                    )
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .padding(PulseSpacing.lg)
-            .background(
-                RoundedRectangle(cornerRadius: PulseRadii.card)
-                    .fill(colors.cardBackground)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: PulseRadii.card)
-                            .stroke(overallRiskColor.opacity(0.15), lineWidth: 1)
-                    )
-            )
-        }
-    }
-
-    private func quickStat(icon: String, label: String, value: String, color: Color) -> some View {
-        HStack(spacing: PulseSpacing.sm) {
-            Image(systemName: icon)
-                .font(.system(size: 14))
-                .foregroundStyle(color.opacity(0.7))
-                .frame(width: 24)
-
-            VStack(alignment: .leading, spacing: 1) {
-                Text(label)
-                    .font(PulseFonts.micro)
-                    .foregroundStyle(colors.textMuted)
-                Text(value)
-                    .font(PulseFonts.captionMedium)
-                    .foregroundStyle(color)
-            }
-        }
-    }
-
-    private func riskGaugeValue(_ overview: RiskOverviewBFFResponse) -> Double {
-        switch overview.accountState {
-        case "normal": return 0.15
-        case "warning": return 0.5
-        case "restricted": return 0.7
-        case "locked": return 0.9
-        case "emergency": return 1.0
-        default: return 0.3
-        }
-    }
-
-    private func accountStateLabel(_ state: String) -> String {
+    static func riskColor(for state: String) -> Color {
         switch state {
-        case "normal": return "SAFE"
-        case "warning": return "WARN"
-        case "restricted": return "RISK"
-        case "locked": return "LOCK"
-        case "emergency": return "HALT"
-        default: return "—"
+        case "normal": return PulseColors.bullish
+        case "warning", "degraded": return PulseColors.warning
+        case "emergency", "locked": return PulseColors.bearish
+        default: return PulseColors.coral
         }
     }
 
-    private func stateDisplayName(_ state: String) -> String {
+    static func stateDisplayName(_ state: String) -> String {
         switch state {
         case "normal": return L10n.zh("正常", en: "Normal")
         case "warning": return L10n.zh("警告", en: "Warning")
@@ -266,101 +138,14 @@ struct RiskCenterView: View {
         }
     }
 
-    // MARK: - Guards Grid
-
-    private func guardsGrid(_ guards: [RiskGuardResponse]) -> some View {
-        VStack(alignment: .leading, spacing: PulseSpacing.md) {
-            TerminalLabel(text: L10n.zh("风控守卫", en: "RISK GUARDS"))
-
-            LazyVGrid(columns: [
-                GridItem(.flexible(), spacing: PulseSpacing.md),
-                GridItem(.flexible(), spacing: PulseSpacing.md),
-                GridItem(.flexible(), spacing: PulseSpacing.md),
-            ], spacing: PulseSpacing.md) {
-                ForEach(Array(guards.enumerated()), id: \.element.id) { index, guard_ in
-                    guardArcCard(guard_)
-                        .staggeredAppearance(index: index)
-                }
-            }
-        }
-    }
-
-    private func guardArcCard(_ guard_: RiskGuardResponse) -> some View {
-        let usedPct = 1.0 - guard_.remainingPct
-        let color = guardColor(guard_.status, remainingPct: guard_.remainingPct)
-
-        return VStack(spacing: PulseSpacing.sm) {
-            // Mini arc gauge
-            ZStack {
-                // Background arc
-                ArcShape(startAngle: -135, endAngle: 135)
-                    .stroke(colors.surface, style: StrokeStyle(lineWidth: 5, lineCap: .round))
-                    .frame(width: 70, height: 70)
-
-                // Value arc
-                ArcShape(startAngle: -135, endAngle: -135 + 270 * usedPct)
-                    .stroke(color, style: StrokeStyle(lineWidth: 5, lineCap: .round))
-                    .frame(width: 70, height: 70)
-
-                // Center value
-                Text(String(format: "%.0f%%", usedPct * 100))
-                    .font(.system(size: 14, weight: .bold, design: .monospaced))
-                    .foregroundStyle(color)
-                    .offset(y: 4)
-            }
-            .frame(height: 60)
-
-            // Label
-            Text(guard_.label)
-                .font(PulseFonts.caption)
-                .foregroundStyle(colors.textPrimary)
-                .lineLimit(1)
-
-            // Current / Limit
-            Text("\(guard_.currentValue, specifier: "%.1f") / \(guard_.limitValue, specifier: "%.1f")")
-                .font(PulseFonts.micro)
-                .foregroundStyle(colors.textMuted)
-
-            // Status badge
-            HStack(spacing: 3) {
-                Circle().fill(color).frame(width: 5, height: 5)
-                Text(guardStatusLabel(guard_.status))
-                    .font(PulseFonts.micro)
-            }
-            .foregroundStyle(color)
-        }
-        .padding(PulseSpacing.sm)
-        .frame(maxWidth: .infinity)
-        .background(
-            RoundedRectangle(cornerRadius: PulseRadii.card)
-                .fill(colors.cardBackground)
-                .overlay(
-                    RoundedRectangle(cornerRadius: PulseRadii.card)
-                        .stroke(guard_.status == "breached" ? color.opacity(0.4) : colors.border.opacity(0.3), lineWidth: 1)
-                )
-        )
-    }
-
-    private func guardColor(_ status: String, remainingPct: Double) -> Color {
-        switch status {
-        case "healthy": return PulseColors.StateColors.green
-        case "warning": return PulseColors.StateColors.yellow
-        case "critical": return PulseColors.StateColors.orangeRed
-        case "breached": return PulseColors.StateColors.red
-        default:
-            if remainingPct > 0.5 { return PulseColors.StateColors.green }
-            if remainingPct > 0.2 { return PulseColors.StateColors.yellow }
-            return PulseColors.StateColors.red
-        }
-    }
-
-    private func guardStatusLabel(_ status: String) -> String {
-        switch status {
-        case "healthy": return L10n.Common.healthy
-        case "warning": return L10n.Common.warning
-        case "critical": return L10n.zh("临界", en: "Critical")
-        case "breached": return L10n.zh("突破", en: "Breached")
-        default: return status
+    static func accountStateLabel(_ state: String) -> String {
+        switch state {
+        case "normal": return "SAFE"
+        case "warning": return "WARN"
+        case "restricted": return "RISK"
+        case "locked": return "LOCK"
+        case "emergency": return "HALT"
+        default: return "—"
         }
     }
 

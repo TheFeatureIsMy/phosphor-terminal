@@ -38,14 +38,7 @@ struct AlphaLoopApp: App {
 
         let forceMode = Self.resolveForceMode()
         let client: any NetworkClientProtocol
-        if forceMode == "live" {
-            client = LiveNetworkClient()
-            self._isLiveMode = State(initialValue: true)
-        } else if forceMode == "mock" {
-            client = MockNetworkClient()
-        } else {
-            client = LiveNetworkClient()
-        }
+        client = LiveNetworkClient()
         self._networkClient = State(initialValue: client)
         self.dependencyState = DependencyState(client: client)
     }
@@ -123,10 +116,26 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
 
+        // 注册打包的 Protocol 字体(Space Grotesk / Inter)。
+        Self.registerBundledFonts()
+
         // Set app icon from bundled .icns (SPM uses Bundle.module)
         if let iconURL = Bundle.module.url(forResource: "AppIcon", withExtension: "icns"),
            let iconImage = NSImage(contentsOf: iconURL) {
             NSApp.applicationIconImage = iconImage
+        }
+    }
+
+    /// SPM 可执行文件不会自动注册 bundle 内字体，需运行时手动注册。
+    static func registerBundledFonts() {
+        guard let fontsDir = Bundle.module.url(forResource: "Fonts", withExtension: nil) else { return }
+        let fm = FileManager.default
+        guard let files = try? fm.contentsOfDirectory(at: fontsDir, includingPropertiesForKeys: nil) else { return }
+        for url in files where ["ttf", "otf"].contains(url.pathExtension.lowercased()) {
+            var error: Unmanaged<CFError>?
+            if !CTFontManagerRegisterFontsForURL(url as CFURL, .process, &error) {
+                NSLog("[AlphaLoop] Font register failed: \(url.lastPathComponent)")
+            }
         }
     }
 }
@@ -137,7 +146,7 @@ struct ContentView: View {
     @Environment(AuthState.self) private var authState
     @Environment(\.dependencyState) private var depState
 
-    @StateObject private var dockerService = DockerEnvironmentService()
+    @StateObject private var envService = LocalEnvironmentService()
     @State private var showEnvironmentSetup = false
 
     private var showSetupSheet: Bool {
@@ -148,7 +157,9 @@ struct ContentView: View {
     var body: some View {
         Group {
             if showEnvironmentSetup {
-                EnvironmentSetupView(dockerService: dockerService)
+                EnvironmentSetupView(envService: envService)
+            } else if appState.isDetectingBackend {
+                LandingView()
             } else if appState.backendUnavailable {
                 BackendUnavailableView {
                     appState.backendUnavailable = false
@@ -159,10 +170,9 @@ struct ContentView: View {
                 LandingView()
             } else if !appState.hasLaunched {
                 LandingView()
-            } else if authState.isAuthenticated {
-                AppShellView()
             } else {
-                LoginPlaceholderView()
+                // 登录已移除：后端就绪后直接进入主界面。
+                AppShellView()
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("EnvironmentReady"))) { _ in
@@ -170,11 +180,14 @@ struct ContentView: View {
             appState.isDetectingBackend = false
         }
         .task {
-            showEnvironmentSetup = true // 先显示启动中遮罩
-            await dockerService.checkAllAndAutoStart()
-            if dockerService.overallStatus() == .allHealthy {
+            showEnvironmentSetup = true
+            appState.isDetectingBackend = true
+            appState.backendUnavailable = false
+            await envService.checkAllAndAutoStart()
+            if envService.overallStatus() == .allHealthy {
                 showEnvironmentSetup = false
                 appState.isDetectingBackend = false
+                appState.retryBackendTrigger += 1
             }
         }
         .sheet(isPresented: Binding(
@@ -247,16 +260,6 @@ struct LoginPlaceholderView: View {
                 }
                 .frame(maxWidth: 320)
 
-                Divider()
-                    .background(colors.border)
-                    .frame(maxWidth: 200)
-
-                Button("Mock Login (Dev Mode)") {
-                    authState.mockLogin()
-                }
-                .buttonStyle(.plain)
-                .font(PulseFonts.caption)
-                .foregroundStyle(colors.textMuted)
             }
         }
     }

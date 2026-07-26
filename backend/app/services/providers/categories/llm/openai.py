@@ -67,3 +67,44 @@ class OpenAIProvider:
 
     def mask_config(self, config: dict) -> dict:
         return dict(config)
+
+    async def chat(
+        self,
+        messages: list[dict[str, str]],
+        credentials: dict,
+        config: dict,
+        temperature: float = 0.3,
+        max_tokens: int = 4096,
+    ) -> dict:
+        """Call OpenAI chat completions API. Returns dict with content, model, latency_ms, tokens_used."""
+        import json as _json
+        api_key = credentials.get("api_key", "")
+        cfg = self.config_schema.model_validate(config)
+        url = f"{cfg.base_url.rstrip('/')}/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "model": cfg.model,
+            "messages": messages,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+        }
+        timeout = aiohttp.ClientTimeout(total=cfg.timeout_s)
+        start = time.monotonic()
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.post(url, headers=headers, json=payload) as resp:
+                latency_ms = int((time.monotonic() - start) * 1000)
+                body = await resp.text()
+                if resp.status != 200:
+                    raise RuntimeError(f"OpenAI API error {resp.status}: {body[:200]}")
+                data = _json.loads(body)
+                content = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+                tokens_used = data.get("usage", {}).get("total_tokens", 0)
+                return {
+                    "content": content,
+                    "model": data.get("model", cfg.model),
+                    "latency_ms": latency_ms,
+                    "tokens_used": tokens_used,
+                }

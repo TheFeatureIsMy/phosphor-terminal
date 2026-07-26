@@ -103,7 +103,7 @@ struct ReadinessPanel: View {
                     Spacer()
                     Image(systemName: panel.icon).font(.system(size: 10))
                 }
-                .foregroundStyle(.black)
+                .foregroundStyle(PulseColors.onAccent)
                 .padding(.horizontal, 10).padding(.vertical, 8)
                 .background(PulseColors.accent)
                 .clipShape(RoundedRectangle(cornerRadius: PulseRadii.sm))

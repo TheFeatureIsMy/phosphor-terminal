@@ -39,17 +39,10 @@ struct AppShellView: View {
             }
         }
         // 整个窗口是一块统一的玻璃面板
-        // AlphaLoop: bg-[rgba(24,24,27,0.55)] + backdrop-blur + 背景层
+        // Protocol §③: 冷白纯色窗口底,无玻璃材质叠层。
         .background {
-            ZStack {
-                colors.background
-                BackgroundLayersView()
-                // 全局玻璃材质 — 覆盖整个窗口
-                Rectangle().fill(.ultraThinMaterial)
-                // AlphaLoop 表面色 — 统一的深色玻璃底
-                Rectangle().fill(colors.cardBackground)
-            }
-            .ignoresSafeArea()
+            colors.background
+                .ignoresSafeArea()
         }
         .overlay {
             if appState.showCommandPalette {

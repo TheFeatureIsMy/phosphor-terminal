@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>αLOOP · 风控中心 Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0D0F0E;
+    --row:#111413;
+    --hair:#1E2422;
+    --txt:#C8D0CC;
+    --dim:#6B7671;
+    --num:#E8EEEB;
+    --em:#2FBF71;
+    --loss:#D9544D;
+    --amber:#C9A227;
+    --gutter:90px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--bg);
+    color:var(--txt);
+    font-family:'IBM Plex Mono',ui-monospace,'SF Mono',monospace;
+    font-size:13px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+    letter-spacing:.01em;
+    padding-bottom:70px;
+  }
+  .num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1;color:var(--num)}
+  .em{color:var(--em)}
+  .loss{color:var(--loss)}
+  .amber{color:var(--amber)}
+  .dim{color:var(--dim)}
+  a{color:var(--em);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  /* back link */
+  .backbar{max-width:1160px;margin:0 auto;padding:10px 20px 0;font-size:11px}
+  .backbar a{color:var(--dim)}
+  .backbar a:hover{color:var(--em)}
+
+  /* ---------- Header bar ---------- */
+  header{
+    position:sticky;top:0;z-index:30;
+    min-height:44px;
+    display:flex;align-items:center;
+    background:var(--bg);
+    border-bottom:1px solid var(--hair);
+    padding:0 20px;
+    gap:16px;flex-wrap:wrap;
+  }
+  .brand{font-weight:600;font-size:14px;color:var(--num);letter-spacing:.02em;padding:11px 0}
+  .brand .a{color:var(--em)}
+  .brand .pg{color:var(--dim);font-weight:400;margin-left:8px}
+  .riskbadge{
+    display:flex;align-items:center;gap:8px;font-size:12px;
+    border:1px solid rgba(201,162,39,.4);padding:4px 10px;color:var(--amber);
+  }
+  .riskbadge .lvl{font-weight:600}
+  .header-actions{margin-left:auto;display:flex;gap:0}
+  .hbtn{
+    background:none;border:1px solid var(--hair);border-right:none;
+    color:var(--txt);font-family:inherit;font-size:12px;
+    padding:6px 13px;cursor:pointer;
+    transition:background .15s,color .15s;
+  }
+  .hbtn:last-child{border-right:1px solid var(--hair)}
+  .hbtn:hover{background:var(--row);color:var(--num)}
+  .hbtn.danger{color:var(--loss)}
+  .hbtn.danger:hover{background:rgba(217,84,77,.12)}
+  .hbtn:focus-visible{outline:2px solid var(--em);outline-offset:-1px;z-index:1;position:relative}
+
+  /* ---------- Layout ---------- */
+  .wrap{max-width:1160px;margin:0 auto}
+  .ledger{position:relative}
+  .entry{
+    display:grid;
+    grid-template-columns:var(--gutter) 1fr;
+    border-bottom:1px solid var(--hair);
+  }
+  .gutter{
+    border-right:1px solid var(--hair);
+    padding:14px 12px 14px 0;
+    text-align:right;
+    display:flex;flex-direction:column;gap:2px;
+    align-items:flex-end;
+  }
+  .gh{color:var(--num);font-size:12px;font-weight:500}
+  .gt{color:var(--dim);font-size:11px}
+  .gtag{color:var(--dim);font-size:10px;letter-spacing:.06em;margin-top:4px}
+  .gtag.blk{color:var(--loss)}
+  .body{padding:14px 20px}
+
+  /* section label rows */
+  .section-label .body{
+    padding:10px 20px;
+    font-size:11px;letter-spacing:.14em;color:var(--dim);
+    text-transform:uppercase;
+    display:flex;align-items:center;gap:10px;
+  }
+  .section-label .body .ln{flex:1;height:1px;background:var(--hair)}
+
+  /* ---------- Genesis / risk gauge block ---------- */
+  .genesis .body{padding:22px 20px}
+  .risk-label{font-size:11px;letter-spacing:.12em;color:var(--dim);text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+  .risk-val{font-size:34px;font-weight:600;color:var(--amber);letter-spacing:.01em;line-height:1.1}
+  .risk-val .unit{font-size:16px;color:var(--dim);font-weight:400;margin-left:6px}
+  .risk-note{font-size:13px;margin-top:6px;color:var(--dim)}
+  .risk-note b{color:var(--amber);font-weight:500}
+  /* water ladder */
+  .ladder{margin-top:16px;display:flex;gap:3px;align-items:flex-end;height:44px}
+  .ladder i{flex:1;background:var(--hair);align-self:stretch}
+  .ladder i.on{background:var(--em)}
+  .ladder i.warn{background:var(--amber)}
+  .ladder i.hot{background:var(--loss)}
+  .stat-grid{
+    display:grid;grid-template-columns:repeat(4,1fr);
+    margin-top:20px;border-top:1px solid var(--hair);
+  }
+  .stat{padding:12px 14px 12px 0;border-right:1px solid var(--hair)}
+  .stat:last-child{border-right:none}
+  .stat .k{font-size:10px;letter-spacing:.08em;color:var(--dim);text-transform:uppercase;margin-bottom:5px}
+  .stat .v{font-size:15px;font-weight:500}
+  .stat .sub{font-size:11px;color:var(--dim);margin-top:2px}
+
+  /* ---------- state machine chain ---------- */
+  .fsm{display:flex;flex-wrap:wrap;gap:0;align-items:stretch;border:1px solid var(--hair)}
+  .fsm .st{
+    flex:1;min-width:132px;padding:12px 14px;border-right:1px solid var(--hair);position:relative;
+  }
+  .fsm .st:last-child{border-right:none}
+  .fsm .st .idx{font-size:10px;color:var(--dim);letter-spacing:.06em}
+  .fsm .st .nm{font-size:12px;color:var(--dim);margin-top:4px;font-weight:500}
+  .fsm .st .arrow{position:absolute;right:-8px;top:50%;transform:translateY(-50%);color:var(--hair);font-size:12px;z-index:2}
+  .fsm .st.done .nm{color:var(--txt)}
+  .fsm .st.done .dot{color:var(--em)}
+  .fsm .st.cur{background:rgba(201,162,39,.09);border-top:2px solid var(--amber)}
+  .fsm .st.cur .nm{color:var(--amber);font-weight:600}
+  .fsm .st.cur .idx{color:var(--amber)}
+  .fsm .st.cur .pulse{animation:pulse 2s ease-in-out infinite}
+  .fsm .st.future .nm{color:var(--dim);opacity:.55}
+  .fsm .st .dot{font-size:11px}
+  .pulse{animation:pulse 2s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  .fsm-note{margin-top:12px;font-size:12px;color:var(--txt);border-left:2px solid var(--amber);padding-left:12px;line-height:1.55}
+  .fsm-note b{color:var(--amber);font-weight:600}
+
+  /* ---------- dimension grid ---------- */
+  .dims{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--hair);border-bottom:none}
+  .dim-cell{
+    padding:13px 14px;border-right:1px solid var(--hair);border-bottom:1px solid var(--hair);
+    transition:background .15s;cursor:default;
+  }
+  .dim-cell:nth-child(3n){border-right:none}
+  .dim-cell:hover{background:var(--row)}
+  .dim-cell .dk{font-size:11px;color:var(--dim);display:flex;align-items:center;gap:7px}
+  .dim-cell .sig{font-size:12px;width:14px;text-align:center}
+  .dim-cell .dv{font-size:13px;color:var(--num);margin-top:6px;font-weight:500}
+  .dim-cell .ds{font-size:11px;color:var(--dim);margin-top:3px;line-height:1.4}
+  .dim-cell.ok .sig{color:var(--em)}
+  .dim-cell.warn .sig{color:var(--amber)}
+  .dim-cell.warn .dv{color:var(--amber)}
+  .dim-cell.trig{background:rgba(217,84,77,.06)}
+  .dim-cell.trig .sig{color:var(--loss)}
+  .dim-cell.trig .dv{color:var(--loss)}
+  .dim-cell.trig:hover{background:rgba(217,84,77,.11)}
+
+  /* ---------- blocked intents (signed blocks) ---------- */
+  .block-body{padding:15px 20px}
+  .blk-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:9px}
+  .blk-intent{font-size:14px;font-weight:600;color:var(--num)}
+  .blk-src{font-size:11px;color:var(--dim)}
+  .blk-status{margin-left:auto;font-size:11px;letter-spacing:.06em;color:var(--loss);border:1px solid rgba(217,84,77,.4);padding:2px 8px}
+  .codes{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:9px}
+  .code{font-size:10.5px;letter-spacing:.04em;color:var(--loss);border:1px solid rgba(217,84,77,.4);padding:2px 8px;background:rgba(217,84,77,.06)}
+  .code.amb{color:var(--amber);border-color:rgba(201,162,39,.4);background:rgba(201,162,39,.06)}
+  .reasoning{font-size:12.5px;color:var(--txt);line-height:1.5}
+  .reasoning .hash{color:var(--loss)}
+  .confirm{display:flex;align-items:center;gap:10px;font-size:11px;color:var(--dim);margin-top:9px}
+  .confbar{letter-spacing:1px;font-size:11px;color:var(--loss)}
+  .confbar .empty{color:var(--hair)}
+
+  /* ---------- gate rules ---------- */
+  .rule{
+    display:flex;align-items:center;gap:14px;padding:12px 20px;border-bottom:1px solid var(--hair);
+  }
+  .rule .rname{font-size:13px;color:var(--txt);flex:1}
+  .rule .rname b{color:var(--num);font-weight:600}
+  .rule .rmeta{font-size:11px;color:var(--dim)}
+  .rule .rmeta.near{color:var(--amber)}
+  .toggle{
+    width:34px;height:18px;border:1px solid var(--em);position:relative;flex-shrink:0;
+    background:rgba(47,191,113,.12);
+  }
+  .toggle::after{content:"";position:absolute;top:2px;right:2px;width:11px;height:11px;background:var(--em)}
+  .toggle-lbl{font-size:10px;letter-spacing:.08em;color:var(--em);width:44px;text-align:right}
+
+  /* ---------- Emergency footer ---------- */
+  .estop{
+    position:fixed;bottom:0;left:0;right:0;z-index:20;
+    background:var(--bg);
+    border-top:1px solid var(--loss);
+    padding:12px 20px;
+  }
+  .estop-inner{display:flex;align-items:center;gap:16px;max-width:1160px;margin:0 auto;flex-wrap:wrap}
+  .estop-label{font-size:11px;letter-spacing:.08em;color:var(--dim);text-transform:uppercase}
+  .estop-label b{color:var(--loss);font-weight:600}
+  .estop-sub{font-size:11px;color:var(--dim);margin-top:2px}
+  .estop-btn{
+    margin-left:auto;
+    background:none;border:1px solid var(--loss);color:var(--loss);
+    font-family:inherit;font-size:13px;font-weight:600;
+    padding:9px 20px;cursor:pointer;letter-spacing:.05em;
+    transition:background .15s;
+  }
+  .estop-btn:hover{background:rgba(217,84,77,.14)}
+  .estop-btn:focus-visible{outline:2px solid var(--loss);outline-offset:2px}
+
+  /* ---------- confirm modal ---------- */
+  .modal-mask{
+    position:fixed;inset:0;background:rgba(5,7,6,.82);z-index:60;
+    display:none;align-items:center;justify-content:center;padding:20px;
+  }
+  .modal-mask.on{display:flex}
+  .modal{
+    background:var(--bg);border:1px solid var(--loss);max-width:460px;width:100%;
+    padding:24px;box-shadow:0 0 0 1px rgba(217,84,77,.2);
+  }
+  .modal h3{font-size:15px;color:var(--loss);font-weight:600;margin-bottom:12px;letter-spacing:.02em}
+  .modal p{font-size:12.5px;color:var(--txt);line-height:1.6;margin-bottom:8px}
+  .modal .checklist{font-size:12px;color:var(--dim);border-top:1px solid var(--hair);border-bottom:1px solid var(--hair);padding:12px 0;margin:14px 0;display:flex;flex-direction:column;gap:6px}
+  .modal .checklist span{color:var(--num)}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:8px}
+  .modal-actions button{font-family:inherit;font-size:12.5px;padding:8px 16px;cursor:pointer;border:1px solid var(--hair);background:none;color:var(--txt)}
+  .modal-actions .cancel:hover{background:var(--row)}
+  .modal-actions .go{border-color:var(--loss);color:var(--loss);font-weight:600}
+  .modal-actions .go:hover{background:rgba(217,84,77,.16)}
+  .modal-actions button:focus-visible{outline:2px solid var(--em);outline-offset:2px}
+  .done-banner{display:none;font-size:12px;color:var(--loss);margin-top:8px}
+  .done-banner.on{display:block}
+
+  /* entry enter animation */
+  .anim{opacity:0;transform:translateY(-8px)}
+  .anim.in{opacity:1;transform:none;transition:opacity .5s ease,transform .5s cubic-bezier(.22,1,.36,1)}
+
+  @media (max-width:767px){
+    :root{--gutter:0px}
+    .entry,.section-label,.genesis{grid-template-columns:1fr}
+    .gutter{border-right:none;text-align:left;flex-direction:row;align-items:baseline;gap:10px;padding:10px 20px 0}
+    .gtag{margin-top:0}
+    .stat-grid{grid-template-columns:1fr 1fr}
+    .dims{grid-template-columns:1fr}
+    .dim-cell{border-right:none}
+    .header-actions{display:none}
+    .fsm .st{min-width:44%}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .anim{opacity:1 !important;transform:none !important;transition:none !important}
+    .pulse,.fsm .st.cur .pulse{animation:none}
+    html{scroll-behavior:auto}
+  }
+</style>
+</head>
+<body>
+
+<div class="backbar"><a href="index.html">← 返回矩阵</a></div>
+
+<header>
+  <div class="brand"><span class="a">α</span>LOOP<span class="pg">风控中心 / Risk Control</span></div>
+  <div class="riskbadge">
+    <span class="pulse">▲</span>
+    <span class="lvl">CAUTION 警戒</span>
+    <span class="dim">水位 <span class="num" style="color:var(--amber)">62%</span></span>
+  </div>
+  <div class="header-actions">
+    <button class="hbtn">▸ 门禁规则</button>
+    <button class="hbtn">⬢ 检查连接</button>
+    <button class="hbtn danger" onclick="openStop()">■ 紧急停止</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="ledger" id="ledger">
+
+    <!-- GENESIS / risk water block -->
+    <div class="entry genesis anim">
+      <div class="gutter">
+        <div class="gh">#7.9</div>
+        <div class="gt">now</div>
+        <div class="gtag">GENESIS</div>
+      </div>
+      <div class="body">
+        <div class="risk-label"><span class="amber pulse">▲</span> 全局风险水位 · GLOBAL RISK LEVEL</div>
+        <div class="risk-val"><span class="num" style="color:var(--amber)" data-count="62" data-dec="0">0</span><span class="unit">% 敞口</span></div>
+        <div class="risk-note">当前 <b>CAUTION 警戒</b> · 水位偏高但未触发熔断，回撤逼近熔断线，多维风险处于监控中</div>
+        <div class="ladder" aria-hidden="true">
+          <i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i>
+          <i class="warn"></i><i class="warn"></i><i></i><i></i><i></i>
+        </div>
+        <div class="stat-grid">
+          <div class="stat"><div class="k">风险敞口</div><div class="v amber"><span class="num" data-count="62" data-dec="0">0</span>%</div><div class="sub">占总权益</div></div>
+          <div class="stat"><div class="k">组合回撤</div><div class="v loss">-<span class="num" data-count="4.82" data-dec="2">0</span>%</div><div class="sub loss">距 -5% 熔断 0.18%</div></div>
+          <div class="stat"><div class="k">保证金率</div><div class="v"><span class="num" data-count="18.4" data-dec="1">0</span>%</div><div class="sub">健康区间</div></div>
+          <div class="stat"><div class="k">今日拦截</div><div class="v loss"><span class="num" data-count="6" data-dec="0">0</span> 笔</div><div class="sub">TradeIntent 被拒</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATE MACHINE -->
+    <div class="entry section-label anim">
+      <div class="gutter"><div class="gtag">LAYER</div></div>
+      <div class="body">⬢ FREQTRADE 连接状态机 · CONNECTION FSM <span class="ln"></span> v2.2 §5</div>
+    </div>
+    <div class="entry anim">
+      <div class="gutter"><div class="gh">FSM</div><div class="gt">§5</div><div class="gtag amber">CUR</div></div>
+      <div class="body">
+        <div class="fsm">
+          <div class="st done"><div class="idx">1 <span class="dot">✓</span></div><div class="nm">healthy</div><span class="arrow">▸</span></div>
+          <div class="st done"><div class="idx">2 <span class="dot">✓</span></div><div class="nm">connection_lost</div><span class="arrow">▸</span></div>
+          <div class="st cur"><div class="idx"><span class="pulse">▲ CURRENT</span></div><div class="nm">pulse_degraded</div><span class="arrow">▸</span></div>
+          <div class="st future"><div class="idx">4</div><div class="nm">native_guard_only</div><span class="arrow">▸</span></div>
+          <div class="st future"><div class="idx">5</div><div class="nm">reconciliating</div><span class="arrow">▸</span></div>
+          <div class="st future"><div class="idx">6</div><div class="nm">failed</div></div>
+        </div>
+        <div class="fsm-note">
+          <b>pulse_degraded</b> — PulseDesk 已降级，Freqtrade 原生止损与仓位限制仍在生效。禁止策略升级、提高仓位、启动新 live_small。请人工检查连接。
+        </div>
+      </div>
+    </div>
+
+    <!-- DIMENSIONS -->
+    <div class="entry section-label anim">
+      <div class="gutter"><div class="gtag">LAYER</div></div>
+      <div class="body">│ 风险维度网格 · RISK DIMENSIONS <span class="ln"></span> 9 维 · PRD 7.9</div>
+    </div>
+    <div class="entry anim">
+      <div class="gutter"><div class="gh">DIM</div><div class="gt">7.9</div><div class="gtag">9×</div></div>
+      <div class="body" style="padding:0">
+        <div class="dims">
+          <div class="dim-cell ok"><div class="dk"><span class="sig">✓</span>全局风险</div><div class="dv">正常</div><div class="ds">水位 62%，警戒但未触发</div></div>
+          <div class="dim-cell ok"><div class="dk"><span class="sig">✓</span>组合风险</div><div class="dv">正常</div><div class="ds">分散度健康</div></div>
+          <div class="dim-cell warn"><div class="dk"><span class="sig">⚠</span>相关性风险</div><div class="dv">警戒</div><div class="ds">ETH/SOL 空头相关性 0.82</div></div>
+          <div class="dim-cell ok"><div class="dk"><span class="sig">✓</span>AI/Agent 风险</div><div class="dv">正常</div><div class="ds">权限门禁生效</div></div>
+          <div class="dim-cell warn"><div class="dk"><span class="sig">⚠</span>Signal 冲突</div><div class="dv">警戒</div><div class="ds">3 组待裁决</div></div>
+          <div class="dim-cell trig"><div class="dk"><span class="sig">■</span>操控风险</div><div class="dv">触发</div><div class="ds">PEPE extreme · M3 评分 0.88</div></div>
+          <div class="dim-cell warn"><div class="dk"><span class="sig">⚠</span>Freqtrade/API</div><div class="dv">警戒</div><div class="ds">pulse_degraded 降级</div></div>
+          <div class="dim-cell ok"><div class="dk"><span class="sig">✓</span>模拟盘异常</div><div class="dv">正常</div><div class="ds">dryrun 无偏差</div></div>
+          <div class="dim-cell ok"><div class="dk"><span class="sig">✓</span>紧急停止</div><div class="dv">就绪</div><div class="ds">未触发 · KILL SWITCH 待命</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BLOCKED INTENTS -->
+    <div class="entry section-label anim">
+      <div class="gutter"><div class="gtag">LAYER</div></div>
+      <div class="body">■ 风控拦截事件流 · BLOCKED INTENTS <span class="ln"></span> 6 signed blocks</div>
+    </div>
+
+    <div class="entry anim">
+      <div class="gutter"><div class="gh">#B06</div><div class="gt">2m</div><div class="gtag blk">BLK</div></div>
+      <div class="block-body">
+        <div class="blk-head"><span class="blk-intent">SOL/USDT 加空 180→260</span><span class="blk-src">sol_short(#3)</span><span class="blk-status">■ REJECTED</span></div>
+        <div class="codes"><span class="code">POSITION_LIMIT</span><span class="code amb">CORRELATION_HIGH</span></div>
+        <div class="reasoning">已拒绝：单标的敞口超限。当前 SOL 敞口已达上限，且与 ETH 空头相关性 <span class="hash">0.82</span> 超阈。解除请先减仓或调整门禁规则。</div>
+        <div class="confirm"><span class="confbar">██████████</span> block hash 0xb0..6e · signed by RiskEngine</div>
+      </div>
+    </div>
+
+    <div class="entry anim">
+      <div class="gutter"><div class="gh">#B05</div><div class="gt">8m</div><div class="gtag blk">BLK</div></div>
+      <div class="block-body">
+        <div class="blk-head"><span class="blk-intent">PEPE/USDT 开多</span><span class="blk-src">某 Agent</span><span class="blk-status">■ REJECTED</span></div>
+        <div class="codes"><span class="code">MANIPULATION_EXTREME</span></div>
+        <div class="reasoning">已拒绝：操控雷达 M3 拉盘出货预警，评分 <span class="hash">0.88</span> ≥ 0.8 阈值，禁止入场。AI/Agent 不得绕过 RiskEngine 下单。</div>
+        <div class="confirm"><span class="confbar">██████████</span> block hash 0xb0..5c · signed by RiskEngine</div>
+      </div>
+    </div>
+
+    <div class="entry anim">
+      <div class="gutter"><div class="gh">#B04</div><div class="gt">14m</div><div class="gtag blk">BLK</div></div>
+      <div class="block-body">
+        <div class="blk-head"><span class="blk-intent">BTC/USDT 升级 live_small</span><span class="blk-src">breakout_v3</span><span class="blk-status">■ REJECTED</span></div>
+        <div class="codes"><span class="code amb">FREQTRADE_DEGRADED</span></div>
+        <div class="reasoning">已拒绝：连接处于 pulse_degraded 降级态，禁止升级 live_small。请先恢复连接并通过对账。</div>
+        <div class="confirm"><span class="confbar">██████████</span> block hash 0xb0..4a · signed by RiskEngine</div>
+      </div>
+    </div>
+
+    <div class="entry anim">
+      <div class="gutter"><div class="gh">#B03</div><div class="gt">22m</div><div class="gtag blk">BLK</div></div>
+      <div class="block-body">
+        <div class="blk-head"><span class="blk-intent">ARB/USDT 开多</span><span class="blk-src">因子研究(#10)</span><span class="blk-status">■ REJECTED</span></div>
+        <div class="codes"><span class="code">SIGNAL_REJECTED</span></div>
+        <div class="reasoning">已拒绝：来源 Signal 已被人工驳回，不予执行。如需放行请重新提交因子研究流程。</div>
+        <div class="confirm"><span class="confbar">██████████</span> block hash 0xb0..3f · signed by RiskEngine</div>
+      </div>
+    </div>
+
+    <div class="entry anim">
+      <div class="gutter"><div class="gh">#B02</div><div class="gt">35m</div><div class="gtag blk">BLK</div></div>
+      <div class="block-body">
+        <div class="blk-head"><span class="blk-intent">ETH/USDT 提高仓位 12→20</span><span class="blk-src">grid_eth</span><span class="blk-status">■ REJECTED</span></div>
+        <div class="codes"><span class="code">DRAWDOWN_GUARD</span></div>
+        <div class="reasoning">已拒绝：组合回撤 <span class="hash">-4.82%</span> 接近 -5% 熔断线，禁止提高仓位。回撤回落后自动解除。</div>
+        <div class="confirm"><span class="confbar">██████████</span> block hash 0xb0..2d · signed by RiskEngine</div>
+      </div>
+    </div>
+
+    <div class="entry anim">
+      <div class="gutter"><div class="gh">#B01</div><div class="gt">51m</div><div class="gtag blk">BLK</div></div>
+      <div class="block-body">
+        <div class="blk-head"><span class="blk-intent">DOGE/USDT 无止损开多</span><span class="blk-src">range_bottom(#7)</span><span class="blk-status">■ REJECTED</span></div>
+        <div class="codes"><span class="code">MISSING_STOPLOSS</span></div>
+        <div class="reasoning">已拒绝：强制止损缺失，拒绝执行。所有 TradeIntent 必须携带有效止损方可入场。</div>
+        <div class="confirm"><span class="confbar">██████████</span> block hash 0xb0..1a · signed by RiskEngine</div>
+      </div>
+    </div>
+
+    <!-- GATE RULES -->
+    <div class="entry section-label anim">
+      <div class="gutter"><div class="gtag">LAYER</div></div>
+      <div class="body">▸ 门禁规则 · GATE RULES <span class="ln"></span> 5 enforced · 只读</div>
+    </div>
+    <div class="entry anim">
+      <div class="gutter"><div class="gh">GATE</div><div class="gt">7.9</div><div class="gtag">RO</div></div>
+      <div class="body" style="padding:0">
+        <div class="rule"><div class="rname">单笔最大仓位 <b>≤ 10%</b> 总权益</div><div class="rmeta">强制门禁</div><span class="toggle-lbl">生效</span><span class="toggle" role="switch" aria-checked="true" aria-label="单笔最大仓位规则 生效"></span></div>
+        <div class="rule"><div class="rname">最大回撤熔断线 <b>-5%</b></div><div class="rmeta near">当前 -4.82% 接近</div><span class="toggle-lbl">生效</span><span class="toggle" role="switch" aria-checked="true" aria-label="回撤熔断规则 生效"></span></div>
+        <div class="rule"><div class="rname">单标的相关性上限 <b>0.85</b></div><div class="rmeta">强制门禁</div><span class="toggle-lbl">生效</span><span class="toggle" role="switch" aria-checked="true" aria-label="相关性上限规则 生效"></span></div>
+        <div class="rule"><div class="rname">操控评分阈值 <b>≥0.8</b> 自动 block</div><div class="rmeta">强制门禁</div><span class="toggle-lbl">生效</span><span class="toggle" role="switch" aria-checked="true" aria-label="操控评分阈值规则 生效"></span></div>
+        <div class="rule" style="border-bottom:none"><div class="rname">缺失止损 <b>拒绝执行</b></div><div class="rmeta">强制门禁</div><span class="toggle-lbl">生效</span><span class="toggle" role="switch" aria-checked="true" aria-label="缺失止损规则 生效"></span></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="estop">
+  <div class="estop-inner">
+    <div>
+      <div class="estop-label"><b>■ 紧急停止总控</b> · KILL SWITCH</div>
+      <div class="estop-sub">一键撤单 · 平仓 · 冻结新开仓 · 就绪未触发</div>
+      <div class="done-banner" id="doneBanner">■ 已停止：全部挂单已撤销、持仓平仓指令已下发、新开仓已冻结。</div>
+    </div>
+    <button class="estop-btn" onclick="openStop()">■ 紧急停止全部</button>
+  </div>
+</div>
+
+<!-- confirm modal -->
+<div class="modal-mask" id="modalMask" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal">
+    <h3 id="modalTitle">■ 确认触发紧急停止？</h3>
+    <p>此操作将立即执行以下动作，且不可撤销。请确认你已了解影响。</p>
+    <div class="checklist">
+      <span>▸ 撤销全部未成交挂单</span>
+      <span>▸ 平仓所有 5 个开放持仓（市价）</span>
+      <span>▸ 冻结新开仓，暂停 7 套策略</span>
+    </div>
+    <p class="dim">当前处于 pulse_degraded 降级态，平仓指令将经 Freqtrade 原生守卫执行。</p>
+    <div class="modal-actions">
+      <button class="cancel" onclick="closeStop()">取消</button>
+      <button class="go" onclick="confirmStop()">■ 确认全部停止</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var reduce = window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+  function fmt(v,d){return v.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});}
+  function easeOutCubic(t){return 1-Math.pow(1-t,3);}
+  function countUp(el){
+    var target=parseFloat(el.getAttribute('data-count'));
+    var dec=parseInt(el.getAttribute('data-dec')||'0',10);
+    if(reduce){el.textContent=fmt(target,dec);return;}
+    var dur=1100, start=null;
+    function step(ts){
+      if(start===null)start=ts;
+      var p=Math.min((ts-start)/dur,1);
+      el.textContent=fmt(target*easeOutCubic(p),dec);
+      if(p<1)requestAnimationFrame(step); else el.textContent=fmt(target,dec);
+    }
+    requestAnimationFrame(step);
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('[data-count]'),countUp);
+
+  var entries=Array.prototype.slice.call(document.querySelectorAll('.anim'));
+  if(reduce){entries.forEach(function(e){e.classList.add('in');});}
+  else if('IntersectionObserver' in window){
+    var io=new IntersectionObserver(function(list){
+      list.forEach(function(en){if(en.isIntersecting){en.target.classList.add('in');io.unobserve(en.target);}});
+    },{threshold:0.08});
+    entries.forEach(function(e){io.observe(e);});
+    entries.slice(0,6).forEach(function(e,i){setTimeout(function(){e.classList.add('in');},i*70);});
+  }else{entries.forEach(function(e){e.classList.add('in');});}
+})();
+
+var mask=document.getElementById('modalMask');
+function openStop(){mask.classList.add('on');document.querySelector('#modalMask .go').focus();}
+function closeStop(){mask.classList.remove('on');}
+function confirmStop(){
+  mask.classList.remove('on');
+  document.getElementById('doneBanner').classList.add('on');
+  document.querySelector('.riskbadge .lvl').textContent='HALTED 已停止';
+}
+mask.addEventListener('click',function(e){if(e.target===mask)closeStop();});
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeStop();});
+</script>
+</body>
+</html>

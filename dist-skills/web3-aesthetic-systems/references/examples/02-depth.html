@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlphaLoop · DEPTH 深度驾驶舱</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#080807;
+    --panel:#0E0D0B;
+    --panel2:#0B0A09;
+    --line:#211F1A;
+    --line2:#2C2920;
+    --txt:#D6CBB0;
+    --txt2:#7A7159;
+    --txt3:#565044;
+    --amber:#F5A623;
+    --green:#3FB950;
+    --red:#E5484D;
+    --green-fill:rgba(63,185,80,0.14);
+    --red-fill:rgba(229,72,77,0.14);
+    --amber-fill:rgba(245,166,35,0.10);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--txt);
+    font-family:'JetBrains Mono',ui-monospace,'SF Mono',monospace;
+    font-size:12px;line-height:1.35;-webkit-font-smoothing:antialiased;
+    font-variant-numeric:tabular-nums;}
+  body{padding:0;}
+  .up{color:var(--green)}
+  .dn{color:var(--red)}
+  .am{color:var(--amber)}
+  .mut{color:var(--txt2)}
+  .lbl{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--txt2)}
+  .num{font-variant-numeric:tabular-nums}
+
+  /* ===== TAPE ===== */
+  .tape{height:24px;border-bottom:1px solid var(--line);background:#0A0908;
+    display:flex;align-items:center;overflow:hidden;position:relative;white-space:nowrap}
+  .tape .track{display:inline-flex;align-items:center;gap:0;
+    animation:scroll 42s linear infinite;will-change:transform}
+  .tape:hover .track{animation-play-state:paused}
+  .tape .tk{display:inline-flex;align-items:center;gap:5px;padding:0 14px;
+    border-right:1px solid var(--line);font-size:11px}
+  .tape .sym{color:var(--txt2);letter-spacing:.06em}
+  @keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+  /* ===== TOP BAR ===== */
+  .topbar{display:flex;align-items:center;justify-content:space-between;
+    height:34px;padding:0 10px;border-bottom:1px solid var(--line);background:var(--panel2)}
+  .brand{display:flex;align-items:center;gap:8px}
+  .brand .mark{color:var(--amber);font-weight:700;letter-spacing:.10em;font-size:13px}
+  .brand .tag{font-size:9px;letter-spacing:.22em;color:var(--txt2);text-transform:uppercase}
+  .brand .dot{color:var(--green);font-size:8px}
+  .toolbar{display:flex;gap:4px}
+  .btn{background:var(--panel);color:var(--txt);border:1px solid var(--line2);
+    font-family:inherit;font-size:10px;letter-spacing:.10em;text-transform:uppercase;
+    padding:4px 9px;cursor:pointer;line-height:1}
+  .btn:hover{border-color:var(--amber);color:var(--amber)}
+  .btn:focus-visible{outline:2px solid var(--amber);outline-offset:1px}
+  .btn.danger:hover{border-color:var(--red);color:var(--red)}
+  .btn.pri{border-color:var(--amber);color:var(--amber)}
+
+  /* ===== GRID ===== */
+  .grid{display:grid;grid-template-columns:340px 1fr 300px;gap:1px;
+    background:var(--line);padding:1px 0}
+  .panel{background:var(--panel);border-top:1px solid var(--line);
+    border-bottom:1px solid var(--line)}
+  .ph{display:flex;align-items:center;justify-content:space-between;
+    height:22px;padding:0 8px;border-bottom:1px solid var(--line);background:var(--panel2)}
+  .ph .t{font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber)}
+  .ph .r{font-size:9.5px;color:var(--txt2);letter-spacing:.08em}
+
+  /* ===== ORDER BOOK LADDER ===== */
+  .book{padding:0}
+  .bookhead{display:grid;grid-template-columns:1fr 1fr 1fr;padding:3px 8px;
+    border-bottom:1px solid var(--line)}
+  .bookhead span{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--txt3)}
+  .bookhead span:nth-child(2){text-align:right}
+  .bookhead span:nth-child(3){text-align:right}
+  .row{position:relative;display:grid;grid-template-columns:1fr 1fr 1fr;
+    padding:2.5px 8px;font-size:11.5px;line-height:1.15;overflow:hidden}
+  .row .bar{position:absolute;top:0;bottom:0;right:0;z-index:0}
+  .row.ask .bar{background:var(--red-fill)}
+  .row.bid .bar{background:var(--green-fill)}
+  .row>span{position:relative;z-index:1}
+  .row .px{font-weight:500}
+  .row.ask .px{color:var(--red)}
+  .row.bid .px{color:var(--green)}
+  .row .sz{text-align:right;color:var(--txt)}
+  .row .cum{text-align:right;color:var(--txt2)}
+  .mid{display:flex;align-items:center;justify-content:space-between;
+    padding:5px 8px;background:#100E0A;border-top:1px solid var(--line2);
+    border-bottom:1px solid var(--line2)}
+  .mid .mp{font-size:18px;font-weight:700;color:var(--amber);letter-spacing:.02em}
+  .mid .sp{font-size:9.5px;color:var(--txt2);text-align:right;line-height:1.3}
+  .mid .sp b{color:var(--txt);font-weight:500}
+  .mid .arrow{color:var(--green);font-size:11px}
+
+  /* ===== EQUITY MID COL ===== */
+  .eqwrap{padding:10px 12px}
+  .eqlabel{display:flex;align-items:baseline;justify-content:space-between}
+  .eqbig{font-size:30px;font-weight:700;color:var(--txt);letter-spacing:.01em;margin-top:2px}
+  .eqbig .u{font-size:13px;color:var(--txt2);font-weight:400;margin-left:5px}
+  .eqpnl{margin-top:3px;font-size:13px;font-weight:500}
+  .spark{margin-top:8px;height:64px;width:100%;display:block}
+  .runtime{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;
+    background:var(--line);margin-top:1px;border-top:1px solid var(--line)}
+  .rt{background:var(--panel);padding:6px 8px}
+  .rt .v{font-size:14px;font-weight:500;color:var(--txt)}
+  .rt .v .am{color:var(--amber)}
+  .rt .k{font-size:9px;letter-spacing:.10em;text-transform:uppercase;color:var(--txt2);margin-top:1px}
+  .readiness{padding:8px 12px;border-top:1px solid var(--line);display:flex;
+    align-items:center;gap:10px}
+  .rdbar{flex:1;height:6px;background:#161410;border:1px solid var(--line2);position:relative;overflow:hidden}
+  .rdbar i{position:absolute;left:0;top:0;bottom:0;background:var(--amber);width:92%}
+  .rdmeta{display:flex;gap:14px;font-size:10px}
+  .rdmeta b{color:var(--txt)}
+
+  /* ===== RISK HEAT GRID ===== */
+  .heat{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);
+    border-top:1px solid var(--line)}
+  .cell{background:var(--panel);padding:8px 9px;position:relative}
+  .cell .k{font-size:9px;letter-spacing:.10em;text-transform:uppercase;color:var(--txt2)}
+  .cell .v{font-size:20px;font-weight:700;margin-top:3px;letter-spacing:.01em}
+  .cell .b{position:absolute;left:0;bottom:0;height:2px}
+  .cell.warn .v{color:var(--amber)}
+  .cell.bad .v{color:var(--red)}
+  .cell.ok .v{color:var(--green)}
+  .cell.warn .b{background:var(--amber)}
+  .cell.bad .b{background:var(--red)}
+  .cell.ok .b{background:var(--green)}
+  .guardline{padding:7px 9px;border-top:1px solid var(--line);display:flex;
+    align-items:center;gap:7px;font-size:10.5px}
+  .pill{border:1px solid var(--amber);color:var(--amber);padding:1px 6px;
+    font-size:9px;letter-spacing:.10em;text-transform:uppercase}
+
+  /* ===== POSITIONS TABLE ===== */
+  .section{margin-top:1px}
+  .postbl{width:100%;border-collapse:collapse;font-size:11px}
+  .postbl th{font-size:9px;letter-spacing:.10em;text-transform:uppercase;
+    color:var(--txt3);text-align:right;padding:3px 8px;border-bottom:1px solid var(--line);
+    font-weight:400;background:var(--panel2)}
+  .postbl th:first-child,.postbl th:nth-child(2){text-align:left}
+  .postbl td{padding:3px 8px;text-align:right;border-bottom:1px solid #16140F;
+    line-height:1.25}
+  .postbl td:first-child,.postbl td:nth-child(2){text-align:left}
+  .postbl tr:hover td{background:#100E0A}
+  .side{font-size:9px;letter-spacing:.06em;padding:0 4px}
+  .side.long{color:var(--green)}
+  .side.short{color:var(--red)}
+  .sympair{color:var(--txt)}
+
+  /* ===== FEEDS ===== */
+  .feeds{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);margin-top:1px}
+  .feed{background:var(--panel)}
+  .fitem{display:flex;gap:8px;padding:5px 9px;border-bottom:1px solid #16140F;
+    font-size:10.5px;line-height:1.3;align-items:flex-start}
+  .fitem .tk{color:var(--amber);font-weight:500;flex-shrink:0}
+  .fitem .tk.al{color:var(--red)}
+  .fitem .tx{flex:1;color:var(--txt)}
+  .fitem .tx .m{color:var(--txt2)}
+  .fitem .ts{color:var(--txt3);flex-shrink:0;font-size:9.5px}
+  .fitem .sc{color:var(--green)}
+
+  /* ===== EMERGENCY BAR ===== */
+  .estop{position:sticky;bottom:0;display:flex;align-items:center;justify-content:space-between;
+    height:30px;padding:0 10px;background:#120A08;border-top:1px solid #3A1512;z-index:5}
+  .estop .l{display:flex;align-items:center;gap:10px;font-size:10px;color:var(--txt2)}
+  .estop .l b{color:var(--txt)}
+  .estop .blink{color:var(--red);font-size:8px;animation:blink 1.2s steps(2) infinite}
+  @keyframes blink{50%{opacity:.2}}
+  .estop .btn.kill{border-color:var(--red);color:var(--red);font-weight:700}
+  .estop .btn.kill:hover{background:var(--red);color:#0A0908}
+
+  .footnote{padding:6px 10px;font-size:9px;color:var(--txt3);letter-spacing:.08em;
+    border-top:1px solid var(--line);text-align:center}
+
+  @media (max-width:768px){
+    .grid{grid-template-columns:1fr}
+    .runtime{grid-template-columns:1fr 1fr}
+    .feeds{grid-template-columns:1fr}
+    .eqbig{font-size:24px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .tape .track{animation:none}
+    .estop .blink{animation:none}
+    .barpulse{animation:none !important}
+  }
+</style>
+</head>
+<body>
+
+<!-- TAPE -->
+<div class="tape" aria-label="实时报价走马灯">
+  <div class="track" id="track"></div>
+</div>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="brand">
+    <span class="mark">ALPHALOOP</span>
+    <span class="tag">DEPTH COCKPIT</span>
+    <span class="dot">●</span><span class="mut" style="font-size:10px">LIVE</span>
+  </div>
+  <div class="toolbar">
+    <button class="btn pri">启动策略</button>
+    <button class="btn">回测</button>
+    <button class="btn">同步</button>
+    <button class="btn danger">紧急停止</button>
+  </div>
+</div>
+
+<!-- MAIN GRID -->
+<div class="grid">
+
+  <!-- LEFT: ORDER BOOK DEPTH LADDER (HERO) -->
+  <div class="panel book">
+    <div class="ph"><span class="t">■ 深度阶梯 BTC/USDT</span><span class="r">PERP · 1x</span></div>
+    <div class="bookhead"><span>价格 PRICE</span><span>数量 SIZE</span><span>累积 CUM</span></div>
+    <div id="asks"></div>
+    <div class="mid">
+      <div class="mp num" id="midprice">64,180</div>
+      <div class="sp">
+        <div><span class="arrow">▲</span> MARK PRICE</div>
+        <div>SPREAD <b>13.0</b> · 0.020%</div>
+      </div>
+    </div>
+    <div id="bids"></div>
+    <div class="footnote" style="text-align:left;border-top:none">
+      <span class="lbl">流动性</span> 买盘累积 <span class="up">4,182</span> · 卖盘累积 <span class="dn">3,914</span> · 失衡 <span class="am">+3.4%</span>
+    </div>
+  </div>
+
+  <!-- MID: EQUITY + SPARKLINE + RUNTIME -->
+  <div class="panel">
+    <div class="ph"><span class="t">■ 账户权益</span><span class="r">USDT · 实盘</span></div>
+    <div class="eqwrap">
+      <div class="eqlabel"><span class="lbl">总权益 TOTAL EQUITY</span><span class="lbl">今日 PNL</span></div>
+      <div class="eqbig"><span class="num" id="equity">0</span><span class="u">USDT</span></div>
+      <div class="eqpnl up">▲ +18,432.10 &nbsp;(+1.46%)</div>
+      <svg class="spark" id="spark" viewBox="0 0 600 64" preserveAspectRatio="none"></svg>
+    </div>
+    <div class="runtime">
+      <div class="rt"><div class="v"><span class="am">7</span>/12</div><div class="k">活跃策略</div></div>
+      <div class="rt"><div class="v">14d 06:22</div><div class="k">运行时长</div></div>
+      <div class="rt"><div class="v"><span class="am">9</span></div><div class="k">开放持仓</div></div>
+      <div class="rt"><div class="v"><span class="am">142</span></div><div class="k">今日成交</div></div>
+    </div>
+    <div class="readiness">
+      <div><div class="lbl">实盘就绪度</div><div style="font-size:18px;font-weight:700;color:var(--amber)">92%</div></div>
+      <div class="rdbar"><i></i></div>
+      <div class="rdmeta">
+        <div><div class="lbl">检查</div><b>7/8</b> 通过</div>
+        <div><div class="lbl">API</div><b class="up">正常</b></div>
+        <div><div class="lbl">风控守卫</div><b class="am">1 待确认</b></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: RISK HEAT GRID -->
+  <div class="panel">
+    <div class="ph"><span class="t">■ 全局风险</span><span class="r">熔断 0 未决</span></div>
+    <div class="heat">
+      <div class="cell bad"><div class="k">当前回撤</div><div class="v num">-4.82%</div><div class="b" style="width:48%"></div></div>
+      <div class="cell warn"><div class="k">保证金率</div><div class="v num">18.4%</div><div class="b" style="width:18%"></div></div>
+      <div class="cell warn"><div class="k">敞口占比</div><div class="v num">62%</div><div class="b" style="width:62%"></div></div>
+      <div class="cell ok"><div class="k">熔断事件</div><div class="v num">0</div><div class="b" style="width:100%"></div></div>
+    </div>
+    <div class="guardline"><span class="pill">MTF CAUTION</span><span class="mut">风控守卫 1 待确认 · HTF 时序机 CAUTION 态</span></div>
+    <div class="guardline" style="border-top:1px solid var(--line)"><span class="am">░░░</span><span class="mut">操纵雷达 · 扫描 38 标的 · 无异常</span></div>
+    <div class="guardline" style="border-top:1px solid var(--line)"><span class="up">═══</span><span class="mut">对账通过 · 142 笔匹配 · 14m 前</span></div>
+  </div>
+</div>
+
+<!-- POSITIONS TABLE -->
+<div class="panel section">
+  <div class="ph"><span class="t">■ 开放持仓 (5)</span><span class="r">净敞口 62% · 未实现盈亏 <span class="up">+$4,700</span></span></div>
+  <table class="postbl">
+    <thead><tr>
+      <th>标的</th><th>方向</th><th>数量</th><th>开仓价</th><th>标记价</th><th>浮动盈亏</th><th>ROI</th>
+    </tr></thead>
+    <tbody>
+      <tr><td class="sympair">BTC/USDT</td><td><span class="side long">LONG</span></td><td class="num">0.842</td><td class="num">61,240</td><td class="num am">64,180</td><td class="up num">+$2,476</td><td class="up num">+4.80%</td></tr>
+      <tr><td class="sympair">ETH/USDT</td><td><span class="side long">LONG</span></td><td class="num">12.4</td><td class="num">3,180</td><td class="num am">3,342</td><td class="up num">+$2,008</td><td class="up num">+5.09%</td></tr>
+      <tr><td class="sympair">SOL/USDT</td><td><span class="side short">SHORT</span></td><td class="num">180</td><td class="num">168.2</td><td class="num am">172.4</td><td class="dn num">-$756</td><td class="dn num">-2.50%</td></tr>
+      <tr><td class="sympair">AVAX/USDT</td><td><span class="side long">LONG</span></td><td class="num">420</td><td class="num">28.4</td><td class="num am">29.8</td><td class="up num">+$588</td><td class="up num">+4.93%</td></tr>
+      <tr><td class="sympair">LINK/USDT</td><td><span class="side short">SHORT</span></td><td class="num">640</td><td class="num">14.2</td><td class="num am">13.6</td><td class="up num">+$384</td><td class="up num">+4.23%</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- FEEDS: DECISIONS + ALERTS -->
+<div class="feeds">
+  <div class="feed">
+    <div class="ph"><span class="t">■ AI 决策流</span><span class="r">4 条 · 实时</span></div>
+    <div class="fitem"><span class="tk">BTC</span><span class="tx">结构突破 · 建议加仓 <span class="m">breakout_v3 · 评分 <span class="sc">0.82</span></span></span><span class="ts">12s</span></div>
+    <div class="fitem"><span class="tk">ETH</span><span class="tx">网格再平衡 <span class="m">重置 8 档</span></span><span class="ts">1m</span></div>
+    <div class="fitem"><span class="tk">SOL</span><span class="tx">止盈 40% <span class="m">目标 172.4</span></span><span class="ts">3m</span></div>
+    <div class="fitem"><span class="tk">SENT</span><span class="tx">情绪更新 <span class="m">FinBERT 中性偏多 · 权重 -0.1</span></span><span class="ts">6m</span></div>
+  </div>
+  <div class="feed">
+    <div class="ph"><span class="t">■ 风险告警</span><span class="r">4 条 · 1 待处理</span></div>
+    <div class="fitem"><span class="tk al">SOL</span><span class="tx">空头浮亏接近阈值 <span class="m">-1.8% · 距止损 0.6%</span></span><span class="ts">2m</span></div>
+    <div class="fitem"><span class="tk al">GUARD</span><span class="tx">风控守卫待确认 <span class="m">MTF CAUTION</span></span><span class="ts">8m</span></div>
+    <div class="fitem"><span class="tk">RECON</span><span class="tx">对账通过 <span class="m">142 笔匹配</span></span><span class="ts">14m</span></div>
+    <div class="fitem"><span class="tk">RADAR</span><span class="tx">操纵雷达无异常 <span class="m">扫描 38 标的</span></span><span class="ts">20m</span></div>
+  </div>
+</div>
+
+<!-- EMERGENCY STOP BAR -->
+<div class="estop">
+  <div class="l"><span class="blink">●</span> 全局风控在线 · <b>7</b> 策略运行 · <b>9</b> 持仓监控 · 保证金 <b class="am">18.4%</b></div>
+  <button class="btn kill">■ 紧急停止 全部平仓</button>
+</div>
+
+<script>
+(function(){
+  var reduce = window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+
+  /* ---- TAPE ---- */
+  var quotes = [
+    ['BTC','64,180','▲','up'],['ETH','3,342','▲','up'],['SOL','172.4','▼','dn'],
+    ['AVAX','29.8','▲','up'],['LINK','13.6','▼','dn'],['BNB','598.2','▲','up'],
+    ['XRP','0.612','▲','up'],['DOGE','0.148','▼','dn'],['ADA','0.452','▲','up'],
+    ['MATIC','0.724','▼','dn'],['DOT','7.18','▲','up'],['ARB','1.24','▲','up'],
+    ['OP','2.38','▼','dn'],['APT','9.42','▲','up'],['NEAR','5.86','▲','up']
+  ];
+  var track = document.getElementById('track');
+  function buildTape(){
+    var html='';
+    for(var r=0;r<2;r++){
+      quotes.forEach(function(q){
+        html += '<span class="tk"><span class="sym">'+q[0]+'</span>'+
+                '<span class="num">'+q[1]+'</span>'+
+                '<span class="'+q[3]+'">'+q[2]+'</span></span>';
+      });
+    }
+    track.innerHTML = html;
+  }
+  buildTape();
+
+  /* ---- ORDER BOOK ---- */
+  var asks = [
+    ['64,240',18.4,362.1],['64,220',22.7,343.7],['64,205',31.2,321.0],
+    ['64,195',44.8,289.8],['64,188',62.5,245.0]
+  ]; // far->near ; cum shown
+  var bids = [
+    ['64,175',58.1,58.1],['64,165',49.6,107.7],['64,152',37.4,145.1],
+    ['64,140',28.9,174.0],['64,128',21.2,195.2]
+  ];
+  var maxCum = 362.1;
+  function renderRows(el, arr, cls){
+    var h='';
+    arr.forEach(function(r){
+      var w = Math.round((r[2]/maxCum)*100);
+      h += '<div class="row '+cls+'">'+
+           '<div class="bar" style="width:'+w+'%"></div>'+
+           '<span class="px num">'+r[0]+'</span>'+
+           '<span class="sz num">'+r[1].toFixed(1)+'</span>'+
+           '<span class="cum num">'+r[2].toFixed(1)+'</span>'+
+           '</div>';
+    });
+    el.innerHTML=h;
+  }
+  renderRows(document.getElementById('asks'), asks, 'ask');
+  renderRows(document.getElementById('bids'), bids, 'bid');
+
+  /* subtle depth bar pulse */
+  if(!reduce){
+    setInterval(function(){
+      document.querySelectorAll('.row .bar').forEach(function(b){
+        var base = parseFloat(b.style.width);
+        var jitter = base + (Math.random()*6-3);
+        jitter = Math.max(4, Math.min(100, jitter));
+        b.style.transition='width .6s ease';
+        b.style.width = jitter.toFixed(1)+'%';
+      });
+    }, 1400);
+  }
+
+  /* ---- COUNTUP EQUITY ---- */
+  var target = 1284736.52;
+  var eqEl = document.getElementById('equity');
+  if(reduce){
+    eqEl.textContent = target.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  } else {
+    var start=null, dur=1100;
+    function step(ts){
+      if(!start) start=ts;
+      var p = Math.min((ts-start)/dur,1);
+      var eased = 1-Math.pow(1-p,3);
+      var val = target*eased;
+      eqEl.textContent = val.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+      if(p<1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  /* ---- SPARKLINE ---- */
+  var pts = [12,18,15,22,28,24,31,29,38,34,42,46,41,52,49,58,64,60,71,68,76,82];
+  var W=600,H=64, min=Math.min.apply(null,pts), max=Math.max.apply(null,pts);
+  var span=max-min||1;
+  var coords = pts.map(function(v,i){
+    var x=(i/(pts.length-1))*W;
+    var y=H-4-((v-min)/span)*(H-10);
+    return [x,y];
+  });
+  var d = coords.map(function(c,i){return (i?'L':'M')+c[0].toFixed(1)+' '+c[1].toFixed(1)}).join(' ');
+  var area = d+' L'+W+' '+H+' L0 '+H+' Z';
+  var svg = document.getElementById('spark');
+  svg.innerHTML =
+    '<defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">'+
+    '<stop offset="0" stop-color="#F5A623" stop-opacity="0.28"/>'+
+    '<stop offset="1" stop-color="#F5A623" stop-opacity="0"/></linearGradient></defs>'+
+    '<path d="'+area+'" fill="url(#sg)"/>'+
+    '<path d="'+d+'" fill="none" stroke="#F5A623" stroke-width="1.5"/>'+
+    '<circle cx="'+coords[coords.length-1][0].toFixed(1)+'" cy="'+coords[coords.length-1][1].toFixed(1)+'" r="2.5" fill="#F5A623"/>';
+})();
+</script>
+</body>
+</html>

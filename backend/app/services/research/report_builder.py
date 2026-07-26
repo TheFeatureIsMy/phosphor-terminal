@@ -34,9 +34,15 @@ def _build_degraded_report(symbol: str, market: str, timeframe: str, error: str)
         rating="Hold",
         direction="hold",
         confidence=0.0,
+        uncertainty=1.0,
         risk_level="high",
         agent_opinions={},
         summary=f"Degraded report: {error}",
+        facts=[],
+        model_interpretation="",
+        trading_implication="",
+        risk_warning="Report generation failed; do not use for trading decisions.",
+        strategy_impact="No impact assessment available due to degraded mode.",
         evidence=[],
         created_at=datetime.now(timezone.utc),
     )
@@ -73,6 +79,27 @@ def _parse_report_json(raw: str, symbol: str, market: str, timeframe: str) -> Re
                     key_factors=opinion_data.get("key_factors", []),
                 )
 
+    # New fields for v2.5.1 prompt
+    uncertainty = float(data.get("uncertainty", 0.5))
+    uncertainty = max(0.0, min(1.0, uncertainty))
+
+    facts = data.get("facts", [])
+    model_interpretation = data.get("model_interpretation", "")
+    trading_implication = data.get("trading_implication", "")
+    risk_warning = data.get("risk_warning", "")
+    strategy_impact = data.get("strategy_impact", "")
+
+    # evidence can be list of strings or list of dicts
+    raw_evidence = data.get("evidence", [])
+    evidence_strings = []
+    for ev in raw_evidence:
+        if isinstance(ev, str):
+            evidence_strings.append(ev)
+        elif isinstance(ev, dict):
+            source = ev.get("source", "unknown")
+            observation = ev.get("observation", "")
+            evidence_strings.append(f"[{source}] {observation}")
+
     return ResearchReportData(
         symbol=symbol,
         market=market,
@@ -80,10 +107,16 @@ def _parse_report_json(raw: str, symbol: str, market: str, timeframe: str) -> Re
         rating=rating,
         direction=direction,
         confidence=confidence,
+        uncertainty=uncertainty,
         risk_level=risk_level,
         agent_opinions=opinions,
         summary=data.get("summary", ""),
-        evidence=data.get("evidence", []),
+        facts=facts,
+        model_interpretation=model_interpretation,
+        trading_implication=trading_implication,
+        risk_warning=risk_warning,
+        strategy_impact=strategy_impact,
+        evidence=evidence_strings,
         created_at=datetime.now(timezone.utc),
     )
 

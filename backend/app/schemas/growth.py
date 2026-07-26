@@ -61,6 +61,7 @@ class GrowthReportResponse(BaseModel):
     period_end: Optional[datetime] = None
     metrics: dict[str, Any] = {}
     findings: dict[str, Any] | list[Any] | None = None
+    suggestions: list[str] = []
     created_at: Optional[datetime] = None
 
     model_config = {"from_attributes": True}
@@ -91,6 +92,8 @@ class StrategyCandidateResponse(BaseModel):
     dsl_valid: bool = False
     dsl_errors: list[dict[str, Any]] = []
     auto_execute: bool = False
+    confirmed_strategy_id: Optional[uuid.UUID] = None
+    confirmed_version_no: Optional[int] = None
     created_at: Optional[datetime] = None
 
     model_config = {"from_attributes": True}

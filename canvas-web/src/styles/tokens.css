@@ -3,39 +3,44 @@
    No glow shadows, no uppercase letter-spacing, no decorative animations. */
 
 :root {
-  /* Background & surfaces */
-  --pa-bg: #0A0A0A;
-  --pa-card: #171B26;
-  --pa-card-translucent: rgba(24, 24, 27, 0.55);
+  /* Background & surfaces — OKX near-black */
+  --pa-bg: #0B0E11;
+  --pa-card: #161A1E;
+  --pa-card-translucent: rgba(22, 26, 30, 0.82);
   --pa-surface: rgba(255, 255, 255, 0.04);
   --pa-surface-elevated: rgba(255, 255, 255, 0.06);
 
-  /* Borders */
-  --pa-border: rgba(255, 255, 255, 0.08);
-  --pa-border-strong: rgba(255, 255, 255, 0.16);
-  --pa-border-accent: rgba(0, 255, 157, 0.25);
+  /* Borders — OKX divider */
+  --pa-border: #2A2E36;
+  --pa-border-strong: #3D4450;
+  --pa-border-accent: rgba(255, 255, 255, 0.40);
 
-  /* Brand & status colors */
-  --pa-accent: #00FF9D;
-  --pa-warning: #FFB800;
-  --pa-amber: #FFB800;
-  --pa-danger: #FF3B3B;
-  --pa-cyan: #00C2FF;
-  --pa-info: #00C2FF;
+  /* Brand & status colors — OKX black/white: white is the accent */
+  --pa-accent: #FFFFFF;
+  --pa-warning: #F0A020;
+  --pa-amber: #F0A020;
+  --pa-danger: #EF454A;
+  --pa-cyan: #A0A6AE;
+  --pa-info: #EAECEF;
   --pa-purple: #A855F7;
 
-  /* Text */
-  --pa-text-primary: #E0E0E0;
-  --pa-text-secondary: #888888;
-  --pa-text-muted: #555555;
+  /* Trading semantics — green up / red down (kept per trader muscle memory) */
+  --pa-bullish: #20B26C;
+  --pa-bearish: #EF454A;
 
-  /* Node category dots (header strip) */
-  --pa-node-signal: var(--pa-cyan);
-  --pa-node-condition: var(--pa-cyan);
+  /* Text — OKX white ramp */
+  --pa-text-primary: #EAECEF;
+  --pa-text-secondary: #929AA5;
+  --pa-text-muted: #5E6673;
+
+  /* Node category dots (header strip) — muted neutral in a black/white system,
+     kept distinguishable by lightness rather than loud hues */
+  --pa-node-signal: #EAECEF;
+  --pa-node-condition: #A0A6AE;
   --pa-node-filter: var(--pa-amber);
-  --pa-node-sizing: var(--pa-accent);
+  --pa-node-sizing: #EAECEF;
   --pa-node-risk: var(--pa-amber);
-  --pa-node-output: var(--pa-accent);
+  --pa-node-output: #EAECEF;
   --pa-node-structure: var(--pa-amber);
   --pa-node-account: var(--pa-amber);
   --pa-node-mtf: var(--pa-purple);

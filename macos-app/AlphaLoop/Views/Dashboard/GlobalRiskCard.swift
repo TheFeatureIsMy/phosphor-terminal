@@ -54,16 +54,16 @@ struct GlobalRiskCard: View {
                     .padding(.horizontal, PulseSpacing.xs)
                     .padding(.vertical, PulseSpacing.xxs)
                     .background(
-                        RoundedRectangle(cornerRadius: PulseRadii.xs)
+                        RoundedRectangle(cornerRadius: PulseRadii.badge)
                             .fill(PulseColors.danger.opacity(0.1))
                     )
                     .overlay(
-                        RoundedRectangle(cornerRadius: PulseRadii.xs)
+                        RoundedRectangle(cornerRadius: PulseRadii.badge)
                             .stroke(PulseColors.danger.opacity(0.25), lineWidth: 1)
                     )
                 }
             }
-            .frame(minHeight: 140)
+            .frame(minHeight: 160)
         }
     }
 
@@ -115,11 +115,11 @@ struct GlobalRiskCard: View {
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
             .background(
-                RoundedRectangle(cornerRadius: PulseRadii.xs)
+                RoundedRectangle(cornerRadius: PulseRadii.badge)
                     .fill(PulseColors.cyan.opacity(0.06))
             )
             .overlay(
-                RoundedRectangle(cornerRadius: PulseRadii.xs)
+                RoundedRectangle(cornerRadius: PulseRadii.badge)
                     .stroke(PulseColors.cyan.opacity(0.2), lineWidth: 1)
             )
     }

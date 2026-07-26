@@ -13,7 +13,7 @@ def _check_package(package_name: str) -> dict:
         mod = importlib.import_module(package_name)
         version = getattr(mod, "__version__", "unknown")
         return {"status": "installed", "version": version}
-    except ImportError:
+    except (ImportError, OSError):
         return {"status": "not_installed", "install_cmd": f"pip install {package_name}"}
 
 
@@ -24,7 +24,7 @@ def _check_ml_model(module_name: str, class_name: str | None = None) -> dict:
         if class_name:
             getattr(mod, class_name)
         return {"status": "loaded"}
-    except ImportError:
+    except (ImportError, OSError):
         return {"status": "not_loaded", "fallback": "unavailable"}
     except Exception:
         return {"status": "not_loaded", "fallback": "unavailable"}

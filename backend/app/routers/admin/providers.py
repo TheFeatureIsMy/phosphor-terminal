@@ -63,6 +63,32 @@ def list_providers(category: str | None = Query(default=None), db: Session = Dep
     return [svc.to_view(r) for r in rows]
 
 
+
+@router.get("/health-summary", response_model=ProviderSummaryView)
+def health_summary(db: Session = Depends(get_db)):
+    rows = db.query(ProviderConfig).all()
+    by_category = {}
+    total_active = total_error = total_disabled = total_configured = 0
+    for r in rows:
+        by_category[r.category] = by_category.get(r.category, 0) + 1
+        if r.status == "active": total_active += 1
+        if r.status == "error": total_error += 1
+        if not r.enabled: total_disabled += 1
+        if r.credential_status == "configured": total_configured += 1
+    return ProviderSummaryView(
+        by_category=by_category, total_active=total_active, total_error=total_error,
+        total_disabled=total_disabled, total_configured=total_configured,
+        total=len(rows), checked_at=datetime.now(timezone.utc),
+    )
+
+
+@router.post("/health-tick")
+async def health_tick():
+    sched = ProviderHealthScheduler()
+    tested = await sched.tick_once()
+    return {"tested": tested}
+
+
 @router.get("/{provider_id}", response_model=ProviderConfigView)
 def get_provider(provider_id: int, db: Session = Depends(get_db)):
     svc = ProviderConfigService()
@@ -214,26 +240,3 @@ def get_audit_log(provider_id: int, limit: int = Query(default=50, ge=1, le=500)
     } for r in rows]
 
 
-@router.get("/health-summary", response_model=ProviderSummaryView)
-def health_summary(db: Session = Depends(get_db)):
-    rows = db.query(ProviderConfig).all()
-    by_category = {}
-    total_active = total_error = total_disabled = total_configured = 0
-    for r in rows:
-        by_category[r.category] = by_category.get(r.category, 0) + 1
-        if r.status == "active": total_active += 1
-        if r.status == "error": total_error += 1
-        if not r.enabled: total_disabled += 1
-        if r.credential_status == "configured": total_configured += 1
-    return ProviderSummaryView(
-        by_category=by_category, total_active=total_active, total_error=total_error,
-        total_disabled=total_disabled, total_configured=total_configured,
-        total=len(rows), checked_at=datetime.now(timezone.utc),
-    )
-
-
-@router.post("/health-tick")
-async def health_tick():
-    sched = ProviderHealthScheduler()
-    tested = await sched.tick_once()
-    return {"tested": tested}

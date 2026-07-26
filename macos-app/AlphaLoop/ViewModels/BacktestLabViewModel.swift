@@ -81,7 +81,7 @@ final class BacktestLabViewModel {
     var tradableSymbols: [String] = []
 
     // Network client — set by BacktestLabView via .task { viewModel.networkClient = networkClient }
-    var networkClient: NetworkClientProtocol = MockNetworkClient()
+    var networkClient: NetworkClientProtocol = LiveNetworkClient()
 
     // Polling
     var pollingTask: Task<Void, Never>?

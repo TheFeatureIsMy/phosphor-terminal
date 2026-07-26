@@ -12,18 +12,18 @@ struct APIAuth {
         try await client.postForm("/auth/login", formFields: [
             "username": email,
             "password": password,
-        ], mock: MockData.mockTokenResponse)
+        ])
     }
 
     /// POST /auth/register — JSON body
     func register(username: String, email: String, password: String) async throws -> User {
         let body = RegisterBody(username: username, email: email, password: password)
-        return try await client.post("/auth/register", body: body, mock: MockData.mockRegisterUser)
+        return try await client.post("/auth/register", body: body)
     }
 
     /// GET /auth/me — Bearer token 认证
     func getMe() async throws -> User {
-        try await client.get("/auth/me", mock: MockData.mockRegisterUser)
+        try await client.get("/auth/me")
     }
 }
 

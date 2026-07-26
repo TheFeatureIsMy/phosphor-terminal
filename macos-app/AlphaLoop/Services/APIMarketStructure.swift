@@ -95,45 +95,13 @@ struct APIMarketStructure {
     let client: NetworkClientProtocol
 
     func getMarketView(symbol: String = "BTC/USDT", timeframe: String = "5m") async throws -> MarketStructureBFFResponse {
-        try await client.get("/api/structure/market-view?symbol=\(symbol)&timeframe=\(timeframe)", mock: MockMarketStructure.marketView)
+        try await client.get("/api/structure/market-view?symbol=\(symbol)&timeframe=\(timeframe)")
     }
 
     func getZones(symbol: String = "BTC/USDT") async throws -> MarketStructureBFFResponse {
-        try await client.get("/api/structure/zones?symbol=\(symbol)", mock: MockMarketStructure.marketView)
+        try await client.get("/api/structure/zones?symbol=\(symbol)")
     }
 }
 
 // MARK: - Mock
 
-enum MockMarketStructure {
-    static func marketView() -> MarketStructureBFFResponse {
-        MarketStructureBFFResponse(
-            state: "healthy",
-            reasonCodes: [],
-            availableActions: [
-                AvailableActionResponse(type: "refresh_structure", enabled: true, label: "刷新结构数据"),
-            ],
-            symbol: "BTC/USDT",
-            timeframe: "5m",
-            marketRegime: "trend_up",
-            structureScore: 76,
-            zones: [
-                StructureZoneResponse(zoneId: "fvg-001", zoneType: "fvg", direction: "bullish", timeframe: "1h", priceTop: 62000, priceBottom: 61550, status: "active", currentStrength: 0.82, filledRatio: 0.21),
-                StructureZoneResponse(zoneId: "fvg-002", zoneType: "fvg", direction: "bearish", timeframe: "4h", priceTop: 63200, priceBottom: 63050, status: "active", currentStrength: 0.68, filledRatio: 0.05),
-                StructureZoneResponse(zoneId: "ob-001", zoneType: "order_block", direction: "bullish", timeframe: "1h", priceTop: 61800, priceBottom: 61500, status: "active", currentStrength: 0.91),
-                StructureZoneResponse(zoneId: "lp-001", zoneType: "liquidity_pool", direction: "bearish", timeframe: "4h", priceTop: 60200, priceBottom: 60200, status: "active", currentStrength: 0.75),
-            ],
-            liquidityPools: [
-                LiquidityPoolBFFResponse(poolId: "pool-001", poolType: "equal_low", side: "sell_side", priceLevel: 60200, currentStrength: 0.85, status: "active", touchedCount: 2),
-                LiquidityPoolBFFResponse(poolId: "pool-002", poolType: "swing_high", side: "buy_side", priceLevel: 63500, currentStrength: 0.72, status: "active", touchedCount: 0),
-                LiquidityPoolBFFResponse(poolId: "pool-003", poolType: "equal_high", side: "buy_side", priceLevel: 64100, currentStrength: 0.68, status: "touched", touchedCount: 1),
-            ],
-            events: [
-                StructureEventResponse(eventId: "evt-001", eventType: "bos", direction: "bullish", price: 62100, timeframe: "1h", timestamp: "2026-06-05T14:30:00Z"),
-                StructureEventResponse(eventId: "evt-002", eventType: "sweep", direction: "bearish", price: 60200, timeframe: "4h", timestamp: "2026-06-05T12:00:00Z"),
-                StructureEventResponse(eventId: "evt-003", eventType: "fvg_fill", direction: "bullish", price: 61600, timeframe: "1h", timestamp: "2026-06-05T15:00:00Z"),
-            ],
-            premiumDiscount: "premium"
-        )
-    }
-}

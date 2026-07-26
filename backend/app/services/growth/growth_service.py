@@ -2,7 +2,7 @@
 
 Dependency boundary:
   ALLOWED: Execution Ledger (read), ExecutionTrade (read), StrategyVersion (read),
-           DSLValidator, DSLHasher, growth sub-modules
+        DSLValidator, DSLHasher, growth sub-modules
   FORBIDDEN: command bus, freqtrade adapter, trade intent, risk engine, container runtime
 """
 from __future__ import annotations
@@ -59,6 +59,7 @@ class GrowthService:
             period_end=run.stopped_at or datetime.now(timezone.utc),
             metrics=metrics.model_dump(),
             findings=[f.model_dump() for f in findings],
+            suggestions=suggestions,
         )
         self._db.add(report)
         self._db.commit()
@@ -81,6 +82,7 @@ class GrowthService:
             period_end=now,
             metrics=metrics.model_dump(),
             findings=[f.model_dump() for f in findings],
+            suggestions=suggestions,
         )
         self._db.add(report)
         self._db.commit()
@@ -96,7 +98,7 @@ class GrowthService:
         runs = list(self._db.scalars(
             select(StrategyRun)
             .where(StrategyRun.strategy_version_id == strategy_version_id)
-        ).all())
+         ).all())
 
         all_trades: list[ExecutionTrade] = []
         earliest_start = None
@@ -112,6 +114,7 @@ class GrowthService:
 
         metrics = compute_metrics(all_trades)
         findings = generate_findings(metrics)
+        suggestions = generate_suggestions(metrics, findings)
 
         report = GrowthReport(
             strategy_version_id=strategy_version_id,
@@ -120,6 +123,7 @@ class GrowthService:
             period_end=latest_end or datetime.now(timezone.utc),
             metrics=metrics.model_dump(),
             findings=[f.model_dump() for f in findings],
+            suggestions=suggestions,
         )
         self._db.add(report)
         self._db.commit()
@@ -147,7 +151,7 @@ class GrowthService:
             source_dsl=version.rule_dsl,
             metrics=metrics,
             findings=findings,
-        )
+         )
 
         candidate = StrategyCandidate(
             source_growth_report_id=candidate_data.source_growth_report_id,
@@ -159,7 +163,7 @@ class GrowthService:
             dsl_valid=candidate_data.dsl_valid,
             dsl_errors=candidate_data.dsl_errors,
             auto_execute=False,
-        )
+         )
         self._db.add(candidate)
         self._db.commit()
         return candidate
@@ -191,10 +195,12 @@ class GrowthService:
             rule_dsl=candidate.candidate_dsl,
             dsl_hash=compute_dsl_hash(candidate.candidate_dsl),
             created_by="growth_engine",
-        )
+         )
         repo.create_version(new_version)
 
         candidate.status = "confirmed"
+        candidate.confirmed_strategy_id = version.strategy_id
+        candidate.confirmed_version_no = next_no
         self._db.commit()
 
         return strategy, new_version
@@ -232,7 +238,7 @@ class GrowthService:
             select(ExecutionTrade)
             .where(ExecutionTrade.strategy_run_id == strategy_run_id)
             .where(ExecutionTrade.status == "closed")
-        )
+         )
         return list(self._db.scalars(stmt).all())
 
     def _get_trades_in_range(self, start: datetime, end: datetime) -> list[ExecutionTrade]:
@@ -241,5 +247,5 @@ class GrowthService:
             .where(ExecutionTrade.closed_at >= start)
             .where(ExecutionTrade.closed_at <= end)
             .where(ExecutionTrade.status == "closed")
-        )
+         )
         return list(self._db.scalars(stmt).all())

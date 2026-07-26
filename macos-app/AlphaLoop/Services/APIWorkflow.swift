@@ -143,15 +143,15 @@ struct APIWorkflow {
     let client: NetworkClientProtocol
 
     func getDailyWorkflow() async throws -> DailyWorkflow {
-        try await client.get("/api/workflow/daily", mock: Self.mockWorkflow)
+        try await client.get("/api/workflow/daily")
     }
 
     func refreshWorkflow() async throws -> DailyWorkflow {
-        try await client.post("/api/workflow/daily/refresh", body: nil as String?, mock: Self.mockWorkflow)
+        try await client.post("/api/workflow/daily/refresh", body: nil as String?)
     }
 
     func getTradeTrace(tradeId: String) async throws -> TradeSourceTrace {
-        try await client.get("/api/execution/trades/\(tradeId)/trace", mock: Self.mockTrace)
+        try await client.get("/api/execution/trades/\(tradeId)/trace")
     }
 
     // MARK: - Mock Data

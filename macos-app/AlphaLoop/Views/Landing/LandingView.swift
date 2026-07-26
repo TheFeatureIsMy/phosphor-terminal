@@ -12,45 +12,42 @@ struct LandingView: View {
 
     var body: some View {
         ZStack {
-            BackgroundLayersView()
-            ParticleFieldView().ignoresSafeArea()
+            colors.background.ignoresSafeArea()
 
             VStack(spacing: 0) {
                 Spacer()
 
                 // Logo + 标题
                 VStack(spacing: PulseSpacing.lg) {
-                    ZStack {
-                        RadialGradient(
-                            colors: [PulseColors.accent.opacity(0.15), .clear],
-                            center: .center, startRadius: 0, endRadius: 120
-                        )
-                        .frame(width: 240, height: 240).blur(radius: 40)
-
-                        PulseRing(color: PulseColors.accent, size: 72)
-
-                        AlphaLoopLogoView()
-                            .frame(width: 56, height: 56)
-                            .shadow(color: PulseColors.accent.opacity(0.5), radius: 15)
-                            .shadow(color: PulseColors.accent.opacity(0.2), radius: 30)
-                    }
+                    // 品牌 mark — protocol 钴蓝圆角方块 + 上升箭头
+                    RoundedRectangle(cornerRadius: 18)
+                        .fill(LinearGradient(colors: [PulseColors.accent, PulseColors.accentLight], startPoint: .topLeading, endPoint: .bottomTrailing))
+                        .frame(width: 64, height: 64)
+                        .overlay(Image(systemName: "arrow.up.right")
+                            .font(.system(size: 26, weight: .bold)).foregroundStyle(.white))
+                        .applyShadow(PulseShadow.glow)
 
                     if showContent {
                         VStack(spacing: PulseSpacing.sm) {
-                            BlurTextReveal(text: settings.language == .zhCN ? "弈机" : "AlphaLoop", delay: 0.2, duration: 0.8)
-                                .font(.system(size: 48, weight: .bold, design: .rounded))
-                            DecryptedText(text: settings.language == .zhCN ? "落子无悔 算无遗策" : "AI-POWERED QUANT TRADING", triggerOnAppear: true, speed: 0.03, revealDirection: .start)
-                                .font(PulseFonts.monoLabel).foregroundStyle(colors.textMuted).tracking(3)
+                            Text("AlphaLoop")
+                                .font(PulseFonts.display(44, .bold))
+                                .foregroundStyle(colors.textPrimary)
+                                .transition(.opacity.combined(with: .move(edge: .bottom)))
+                            Text(settings.language == .zhCN ? "AI 多 Agent 加密量化交易终端" : "AI Multi-Agent Crypto Quant Trading Terminal")
+                                .font(PulseFonts.body(15))
+                                .foregroundStyle(colors.textSecondary)
+                                .transition(.opacity)
                         }
                     }
 
-                    // 特性亮点 — 简洁 pill
+                    // 特性亮点 — protocol pill
                     if showContent {
                         HStack(spacing: PulseSpacing.sm) {
-                            FeaturePill(icon: "brain.head.profile", label: L10n.zh("多智能体", en: "Multi-Agent"), color: PulseColors.cyan)
-                            FeaturePill(icon: "chart.bar.fill", label: L10n.zh("量化策略", en: "Quant Strategies"), color: PulseColors.accent)
-                            FeaturePill(icon: "shield.checkered", label: L10n.zh("实时风控", en: "Real-Time Risk Control"), color: PulseColors.purple)
+                            FeaturePill(icon: "brain.head.profile", label: L10n.zh("多智能体", en: "Multi-Agent"), color: PulseColors.accent)
+                            FeaturePill(icon: "chart.bar.fill", label: L10n.zh("量化策略", en: "Quant Strategies"), color: PulseColors.bullish)
+                            FeaturePill(icon: "shield.checkered", label: L10n.zh("实时风控", en: "Real-Time Risk Control"), color: PulseColors.coral)
                         }
+                        .transition(.opacity)
                     }
                 }
 
@@ -65,8 +62,8 @@ struct LandingView: View {
 
                         HStack(spacing: PulseSpacing.xs) {
                             BadgeDot(color: PulseColors.success, label: "v1.0.0", size: .small)
-                            BadgeDot(color: PulseColors.cyan, label: "macOS 26", size: .small)
-                            BadgeDot(color: PulseColors.purple, label: "DEMO", size: .small)
+                            BadgeDot(color: PulseColors.accent, label: "macOS 26", size: .small)
+                            BadgeDot(color: PulseColors.coral, label: "LIVE", size: .small)
                         }
                     }
                     .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -95,12 +92,8 @@ struct FeaturePill: View {
             Text(label).font(PulseFonts.micro).foregroundStyle(colors.textSecondary)
         }
         .padding(.horizontal, 10).padding(.vertical, 5)
-        .background(
-            Capsule()
-                .fill(colors.surface.opacity(0.4))
-                .background(Capsule().fill(.ultraThinMaterial))
-        )
-        .overlay(Capsule().stroke(Color.white.opacity(0.06), lineWidth: 0.5))
+        .background(Capsule().fill(colors.cardBackground))
+        .overlay(Capsule().stroke(colors.border, lineWidth: 1))
         .opacity(appeared ? 1 : 0)
         .scaleEffect(appeared ? 1 : 0.9)
         .onAppear { withAnimation(PulseAnimation.springDefault.delay(0.5)) { appeared = true } }

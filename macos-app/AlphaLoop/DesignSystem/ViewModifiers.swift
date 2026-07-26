@@ -1,9 +1,9 @@
-// ViewModifiers.swift — Krypton 可复用视图修饰器
-// 玻璃态卡片、悬停/按压反馈、骨架屏、交错动画
+// ViewModifiers.swift — Protocol 可复用视图修饰器
+// 白卡 + 极轻边框 + 品牌色柔和阴影;悬停上浮反馈
 
 import SwiftUI
 
-// MARK: - 卡片样式 (Krypton 玻璃态)
+// MARK: - 卡片样式 (Protocol 白卡)
 struct CardModifier: ViewModifier {
     @Environment(PulseColors.self) private var colors
     var padding: CGFloat = PulseSpacing.md
@@ -14,12 +14,7 @@ struct CardModifier: ViewModifier {
             .background(
                 RoundedRectangle(cornerRadius: PulseRadii.card)
                     .fill(colors.cardBackground)
-                    .background(
-                        RoundedRectangle(cornerRadius: PulseRadii.card)
-                            .fill(colors.background.opacity(0.4))
-                    )
             )
-            .clipShape(RoundedRectangle(cornerRadius: PulseRadii.card))
             .overlay(
                 RoundedRectangle(cornerRadius: PulseRadii.card)
                     .stroke(colors.border, lineWidth: 1)
@@ -28,18 +23,13 @@ struct CardModifier: ViewModifier {
     }
 }
 
-// MARK: - 玻璃效果（侧边栏/顶栏面板用 — Krypton 玻璃态）
+// MARK: - 面板样式（侧边栏/顶栏 — Protocol 白底,不再玻璃拟态）
 struct GlassModifier: ViewModifier {
     @Environment(PulseColors.self) private var colors
 
     func body(content: Content) -> some View {
         content
-            .glassEffect()
-            .overlay(
-                Rectangle()
-                    .fill(PulseGlass.surfaceTint(colors))
-                    .allowsHitTesting(false)
-            )
+            .background(colors.cardBackground)
             .overlay(
                 Rectangle()
                     .stroke(colors.border, lineWidth: 1)
@@ -48,50 +38,54 @@ struct GlassModifier: ViewModifier {
     }
 }
 
-// MARK: - 条件玻璃效果（选中态专用）
+// MARK: - 条件强调（选中态专用 — Protocol accent-soft tint）
 struct ConditionalGlassModifier: ViewModifier {
     let isActive: Bool
     var cornerRadius: CGFloat = 0
+    @Environment(PulseColors.self) private var colors
 
     func body(content: Content) -> some View {
         if isActive {
-            if cornerRadius > 0 {
-                content.glassEffect(.regular, in: .rect(cornerRadius: cornerRadius))
-            } else {
-                content.glassEffect(.regular)
-            }
+            content.background(
+                RoundedRectangle(cornerRadius: cornerRadius > 0 ? cornerRadius : PulseRadii.button)
+                    .fill(PulseColors.accentSoft)
+            )
         } else {
             content
         }
     }
 }
 
-// MARK: - 交互式玻璃效果（可点击控件用）
+// MARK: - 交互式表面（可点击控件用 — Protocol 白底）
 struct InteractiveGlassModifier: ViewModifier {
+    @Environment(PulseColors.self) private var colors
     func body(content: Content) -> some View {
         content
-            .glassEffect(.regular.interactive())
+            .background(colors.cardBackground)
     }
 }
 
-// MARK: - 玻璃 ID（用于形态变换过渡）
+// MARK: - 玻璃 ID（用于形态变换过渡 — Protocol 下为空操作）
 struct GlassIDModifier: ViewModifier {
     let id: String
 
     func body(content: Content) -> some View {
         content
-            .glassEffectID(id)
     }
 }
 
-// MARK: - 悬停玻璃效果（侧边栏/设置按钮专用 — Liquid Glass + accent 描边）
+// MARK: - 悬停效果（侧边栏/设置按钮 — Protocol accent-soft hover）
 struct HoverGlassModifier: ViewModifier {
     @State private var isHovering = false
     var cornerRadius: CGFloat = PulseRadii.md
+    @Environment(PulseColors.self) private var colors
 
     func body(content: Content) -> some View {
         content
-            .glassEffect(.regular.interactive())
+            .background(
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .fill(isHovering ? colors.surfaceHover : Color.clear)
+            )
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius)
@@ -150,51 +144,62 @@ struct PressEffectModifier: ViewModifier {
     }
 }
 
-// MARK: - 骨架屏 Shimmer (TimelineView 驱动，离屏零开销)
+// MARK: - 骨架屏 Shimmer (TimelineView 驱动;reduced-motion 时静止)
 struct ShimmerModifier: ViewModifier {
     @Environment(PulseColors.self) private var colors
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     func body(content: Content) -> some View {
-        content
-            .overlay(
-                GeometryReader { geometry in
-                    TimelineView(.animation) { timeline in
-                        let phase = timeline.date.timeIntervalSince1970
-                            .truncatingRemainder(dividingBy: 1.5) / 1.5
-                        LinearGradient(
-                            stops: [
-                                .init(color: .clear, location: max(0, phase - 0.3)),
-                                .init(color: colors.surfaceHover, location: phase),
-                                .init(color: .clear, location: min(1, phase + 0.3)),
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                        .frame(width: geometry.size.width * 2)
-                        .offset(x: -geometry.size.width + geometry.size.width * 2 * phase)
+        if reduceMotion {
+            // 降级:静态浅色覆盖,不滚动
+            content.overlay(colors.surface.opacity(0.6))
+        } else {
+            content
+                .overlay(
+                    GeometryReader { geometry in
+                        TimelineView(.animation) { timeline in
+                            let phase = timeline.date.timeIntervalSince1970
+                                .truncatingRemainder(dividingBy: 1.5) / 1.5
+                            LinearGradient(
+                                stops: [
+                                    .init(color: .clear, location: max(0, phase - 0.3)),
+                                    .init(color: colors.surfaceHover, location: phase),
+                                    .init(color: .clear, location: min(1, phase + 0.3)),
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                            .frame(width: geometry.size.width * 2)
+                            .offset(x: -geometry.size.width + geometry.size.width * 2 * phase)
+                        }
                     }
-                }
-                .mask(content)
-            )
+                    .mask(content)
+                )
+        }
     }
 }
 
-// MARK: - 交错出场动画
+// MARK: - 交错出场动画(支持 reduced-motion 降级)
 struct StaggeredAppearanceModifier: ViewModifier {
     let index: Int
     let baseDelay: Double
     @State private var appeared = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     func body(content: Content) -> some View {
         content
             .opacity(appeared ? 1 : 0)
-            .offset(y: appeared ? 0 : 8)
+            .offset(y: appeared && !reduceMotion ? 0 : 8)
             .onAppear {
-                withAnimation(
-                    PulseAnimation.springDefault
-                        .delay(baseDelay + Double(index) * PulseAnimation.staggerDelay)
-                ) {
+                if reduceMotion {
                     appeared = true
+                } else {
+                    withAnimation(
+                        PulseAnimation.springDefault
+                            .delay(baseDelay + Double(index) * PulseAnimation.staggerDelay)
+                    ) {
+                        appeared = true
+                    }
                 }
             }
     }
@@ -206,10 +211,10 @@ struct TerminalLabelModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .font(PulseFonts.monoLabel)
-            .foregroundColor(colors.textMuted)
+            .font(PulseFonts.body(13, .semibold))
+            .foregroundColor(colors.textSecondary)
             .textCase(.uppercase)
-            .tracking(1.5)
+            .tracking(0.6)
     }
 }
 

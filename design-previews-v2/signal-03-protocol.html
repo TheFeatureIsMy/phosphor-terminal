@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlphaLoop · Signal Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F6F7FB;--card:#FFFFFF;--border:#E6E9F2;--ink:#0F1524;--muted:#5A6480;
+  --accent:#3D5AFE;--accent-soft:#EAEEFF;--coral:#FF7A59;
+  --up:#12B76A;--down:#F04438;--warn:#F59E0B;
+  --up-soft:#E6F7EF;--down-soft:#FDECEA;--warn-soft:#FEF4E2;
+  --shadow:0 1px 2px rgba(61,90,254,.04), 0 8px 24px rgba(61,90,254,.06);
+  --shadow-hover:0 2px 6px rgba(61,90,254,.06), 0 18px 40px rgba(61,90,254,.12);
+  --radius:18px;--radius-sm:12px;
+  --display:'Space Grotesk',system-ui,sans-serif;--body:'Inter',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--body);background:var(--bg);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased;letter-spacing:-.01em;padding-bottom:40px}
+.tab{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+h1,h2,h3,.display{font-family:var(--display);letter-spacing:-.02em}
+
+.backbar{max-width:1240px;margin:0 auto;padding:12px 28px 0}
+.backbar a{color:var(--muted);text-decoration:none;font-size:13px;font-weight:500}
+.backbar a:hover{color:var(--accent)}
+
+.nav{position:sticky;top:0;z-index:50;background:rgba(246,247,251,.82);backdrop-filter:saturate(160%) blur(12px);border-bottom:1px solid var(--border)}
+.nav-inner{max-width:1240px;margin:0 auto;padding:14px 28px;display:flex;align-items:center;gap:20px}
+.brand{display:flex;align-items:center;gap:11px;font-family:var(--display);font-weight:700;font-size:19px}
+.brand .mark{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--accent),#5B72FF);display:grid;place-items:center;box-shadow:0 4px 12px rgba(61,90,254,.32)}
+.brand .pg{font-family:var(--body);font-weight:500;font-size:13px;color:var(--muted);border-left:1px solid var(--border);padding-left:16px;margin-left:4px}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+.status-dot{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--muted);font-weight:500}
+.status-dot .dot{width:8px;height:8px;border-radius:50%;background:var(--up);box-shadow:0 0 0 3px var(--up-soft)}
+
+.wrap{max-width:1240px;margin:0 auto;padding:32px 28px 0}
+.hero{margin-bottom:26px}
+.eyebrow{font-size:13px;font-weight:600;color:var(--accent);letter-spacing:.04em;text-transform:uppercase;margin-bottom:10px}
+.hero h1{font-size:34px;font-weight:700;line-height:1.14;margin-bottom:8px}
+.hero p{color:var(--muted);font-size:15px;max-width:560px}
+
+/* stat pills row */
+.statrow{display:flex;flex-wrap:wrap;gap:12px;margin-top:22px}
+.spill{background:#fff;border:1px solid var(--border);border-radius:14px;padding:12px 18px;box-shadow:var(--shadow);min-width:104px}
+.spill .k{font-size:12px;color:var(--muted);font-weight:500;margin-bottom:4px}
+.spill .v{font-family:var(--display);font-size:24px;font-weight:700}
+.spill.a .v{color:var(--up)}.spill.p .v{color:var(--warn)}.spill.e .v{color:var(--muted)}.spill.r .v{color:var(--down)}.spill.c .v{color:var(--accent)}
+
+/* filter card */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+.card-pad{padding:20px 24px}
+.filtercard{margin-bottom:20px}
+.fgroup{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.fgroup:last-child{margin-bottom:0}
+.fgroup .fl{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;width:52px;flex:none}
+.chip{font-family:var(--body);font-size:13px;font-weight:500;color:var(--muted);background:#fff;border:1px solid var(--border);border-radius:20px;padding:6px 14px;cursor:pointer;transition:.16s}
+.chip:hover{border-color:#CDD3E6;background:#FBFBFE}
+.chip.on{color:var(--accent);background:var(--accent-soft);border-color:transparent}
+.chip:focus-visible{outline:2.5px solid var(--accent);outline-offset:2px}
+
+/* conflict banner */
+.section-h{display:flex;align-items:center;gap:10px;margin:6px 0 14px;font-size:16px;font-weight:600}
+.section-h svg{color:var(--accent)}
+.section-h .cnt{margin-left:auto;font-size:12.5px;color:var(--muted);font-weight:500}
+.conflicts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:24px}
+.conf{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);box-shadow:var(--shadow);padding:16px 18px;border-left:3px solid var(--warn)}
+.conf.crit{border-left-color:var(--down);background:linear-gradient(180deg,#FFF8F7,#fff)}
+.conf .csym{font-family:var(--display);font-weight:700;font-size:16px;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.conf .cbadge{font-size:10.5px;font-weight:600;padding:2px 8px;border-radius:12px;background:var(--warn-soft);color:#B4740B;letter-spacing:.02em}
+.conf.crit .cbadge{background:var(--down-soft);color:var(--down)}
+.conf .cvs{display:flex;flex-direction:column;gap:6px;font-size:13px}
+.conf .side-line{display:flex;align-items:center;gap:8px;color:var(--ink)}
+.conf .side-line .num{font-family:var(--display);font-weight:600;margin-left:auto}
+.conf .num.long{color:var(--up)}.conf .num.short{color:var(--down)}.conf .num.risk{color:var(--warn)}
+.conf .cx{text-align:center;color:var(--muted);font-size:12px;font-weight:600;letter-spacing:.1em}
+.conf .cnote{font-size:12px;color:var(--muted);margin-top:10px;line-height:1.5}
+.conf .cbtn{margin-top:12px;font-family:var(--body);font-size:12.5px;font-weight:600;color:var(--accent);background:var(--accent-soft);border:none;border-radius:9px;padding:8px 14px;cursor:pointer;transition:.16s}
+.conf .cbtn:hover{background:#DEE5FF}
+.conf.crit .cbtn{color:var(--down);background:var(--down-soft)}
+.conf .cbtn:focus-visible{outline:2.5px solid var(--accent);outline-offset:2px}
+
+/* signal table */
+.tbl-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.tbl-head .card-title{display:flex;align-items:center;gap:9px;font-size:14px;font-weight:600;color:var(--muted)}
+.tbl-head .card-title svg{color:var(--accent)}
+table{width:100%;border-collapse:collapse}
+thead th{text-align:right;font-size:11.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;padding:8px 12px 12px;border-bottom:1px solid var(--border)}
+thead th:first-child,thead th:nth-child(2),thead th:nth-child(3){text-align:left}
+tbody td{padding:14px 12px;border-bottom:1px solid var(--border);text-align:right;font-size:14px;vertical-align:middle}
+tbody td:first-child,tbody td:nth-child(2),tbody td:nth-child(3){text-align:left}
+.sigrow{cursor:pointer;transition:background .15s}
+.sigrow:hover{background:#FBFBFE}
+.sym{display:flex;align-items:center;gap:11px}
+.sym .ico{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;font-family:var(--display);font-weight:700;font-size:12px;color:#fff;flex:none}
+.sym .name{font-weight:600;font-size:14px}
+.sym .tf{font-size:11.5px;color:var(--muted)}
+.side{font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px;letter-spacing:.02em}
+.side.long{background:var(--up-soft);color:var(--up)}.side.short{background:var(--down-soft);color:var(--down)}
+.side.hold{background:#F1F3FA;color:var(--muted)}.side.risk{background:var(--warn-soft);color:#B4740B}
+.src{font-size:12.5px}.src .sn{font-weight:600;color:var(--ink)}.src .st{color:var(--muted);font-size:11.5px}
+.confwrap{display:inline-flex;align-items:center;gap:8px;justify-content:flex-end}
+.confbar{width:56px;height:6px;border-radius:20px;background:#EEF0F7;overflow:hidden}
+.confbar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),#6E86FF);border-radius:20px}
+.conf-n{font-family:var(--display);font-weight:600;font-size:13.5px}
+.stars{color:var(--warn);font-size:12px;letter-spacing:1px}
+.chip-r{font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px}
+.chip-r.low{background:var(--up-soft);color:var(--up)}.chip-r.medium{background:var(--warn-soft);color:#B4740B}.chip-r.high{background:var(--down-soft);color:var(--down)}.chip-r.extreme{background:var(--down);color:#fff}
+.chip-s{font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px}
+.chip-s.active{background:var(--up-soft);color:var(--up)}.chip-s.pending{background:var(--warn-soft);color:#B4740B}.chip-s.rejected{background:#F1F3FA;color:var(--muted)}
+.ttl{font-family:var(--display);font-weight:600;font-size:13px}
+.conflict-flag{font-size:10.5px;font-weight:700;color:var(--down);background:var(--down-soft);padding:1px 6px;border-radius:8px;margin-left:6px}
+
+/* detail row */
+.detrow td{padding:0!important;border-bottom:1px solid var(--border)!important}
+.detwrap{display:none;padding:22px 24px;background:#FBFCFF}
+.sigrow.open + .detrow .detwrap{display:block}
+.detgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px 28px}
+.qb .q{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:6px}
+.qb .a{font-size:14px;color:var(--ink)}.qb .a b{font-weight:600}
+.ev{grid-column:1/-1}
+.ev ul{list-style:none;margin-top:6px;display:grid;grid-template-columns:1fr 1fr;gap:8px 24px}
+.ev li{font-size:13px;color:var(--muted);padding-left:22px;position:relative;line-height:1.45}
+.ev li svg{position:absolute;left:0;top:3px;color:var(--accent)}
+.perm{display:flex;flex-direction:column;gap:6px;font-size:13.5px}
+.perm .p{display:flex;align-items:center;gap:8px}
+.perm .p.ok{color:var(--up)}.perm .p.no{color:var(--down)}.perm .p.wn{color:var(--warn)}
+.timeline{grid-column:1/-1;display:flex;gap:0;flex-wrap:wrap}
+.tl-node{flex:1;min-width:160px;padding-right:24px;position:relative}
+.tl-node .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);margin-bottom:8px}
+.tl-node.done .dot{background:var(--up)}.tl-node.rej .dot{background:var(--down)}.tl-node.pend .dot{background:var(--warn)}
+.tl-node .tt{font-size:13px;font-weight:600}
+.tl-node .td{font-size:12px;color:var(--muted);font-family:var(--display)}
+.acts{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}
+.abtn{font-family:var(--body);font-weight:600;font-size:13px;cursor:pointer;border:1px solid var(--border);border-radius:11px;padding:9px 16px;background:#fff;color:var(--ink);display:inline-flex;align-items:center;gap:7px;transition:.16s}
+.abtn:hover{border-color:#CDD3E6;box-shadow:var(--shadow);transform:translateY(-1px)}
+.abtn.pri{background:var(--accent);color:#fff;border-color:transparent;box-shadow:0 6px 16px rgba(61,90,254,.24)}
+.abtn.pri:hover{background:#2E4BF0}
+.abtn.arch{color:var(--muted)}
+.abtn:focus-visible{outline:2.5px solid var(--accent);outline-offset:2px}
+
+.reveal{opacity:0;transform:translateY(16px)}
+.reveal.in{opacity:1;transform:none;transition:opacity .6s ease, transform .6s cubic-bezier(.2,.7,.3,1)}
+
+@media (max-width:980px){.conflicts{grid-template-columns:1fr}.detgrid{grid-template-columns:1fr 1fr}.ev ul{grid-template-columns:1fr}}
+@media (max-width:768px){
+  .wrap{padding:22px 14px 0}.nav-inner{padding:12px 16px}.hero h1{font-size:26px}
+  thead th:nth-child(5),tbody td:nth-child(5),thead th:nth-child(7),tbody td:nth-child(7){display:none}
+  .detgrid{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}.reveal{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+
+<div class="backbar"><a href="index.html">← 返回矩阵</a></div>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="brand">
+      <span class="mark"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 3 8-9"/><path d="M15 6h5v5"/></svg></span>
+      AlphaLoop
+      <span class="pg">Signal Center · 信号中枢</span>
+    </div>
+    <div class="nav-right">
+      <span class="status-dot"><span class="dot"></span>信号引擎在线</span>
+    </div>
+  </div>
+</nav>
+
+<div class="wrap">
+  <div class="hero reveal">
+    <div class="eyebrow">Signal Center · 信号中枢</div>
+    <h1>所有交易观点，汇聚一处裁决</h1>
+    <p>AI、模型、研究、情绪、因子与操控雷达的结果统一生成 Signal，在此判断可信度、生命周期与冲突，再决定发布到策略。</p>
+    <div class="statrow">
+      <div class="spill"><div class="k">在场 Signal</div><div class="v tab" data-count="47">0</div></div>
+      <div class="spill a"><div class="k">active</div><div class="v tab" data-count="23">0</div></div>
+      <div class="spill p"><div class="k">pending</div><div class="v tab" data-count="12">0</div></div>
+      <div class="spill e"><div class="k">expired</div><div class="v tab" data-count="9">0</div></div>
+      <div class="spill r"><div class="k">rejected</div><div class="v tab" data-count="3">0</div></div>
+      <div class="spill c"><div class="k">冲突待裁决</div><div class="v tab" data-count="3">0</div></div>
+    </div>
+  </div>
+
+  <!-- filters -->
+  <div class="card card-pad filtercard reveal">
+    <div class="fgroup"><span class="fl">来源</span><button class="chip on">全部</button><button class="chip">technical</button><button class="chip">sentiment</button><button class="chip">tradingagents</button><button class="chip">freqai</button><button class="chip">prediction</button><button class="chip">manipulation</button><button class="chip">factor</button></div>
+    <div class="fgroup"><span class="fl">标的</span><button class="chip on">全部</button><button class="chip">BTC</button><button class="chip">ETH</button><button class="chip">SOL</button><button class="chip">PEPE</button><button class="chip">其他</button></div>
+    <div class="fgroup"><span class="fl">方向</span><button class="chip on">全部</button><button class="chip">long</button><button class="chip">short</button><button class="chip">hold</button><button class="chip">risk</button></div>
+    <div class="fgroup"><span class="fl">状态</span><button class="chip on">全部</button><button class="chip">active</button><button class="chip">pending</button><button class="chip">rejected</button></div>
+    <div class="fgroup"><span class="fl">排序</span><button class="chip on">评分 高→低</button><button class="chip">置信度 高→低</button><button class="chip">有效期 近→远</button></div>
+  </div>
+
+  <!-- conflicts -->
+  <div class="section-h reveal">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9L2 18a2 2 0 0 0 1.7 3h16.6a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+    冲突检测 · 需人工裁决<span class="cnt">3 组待裁决</span>
+  </div>
+  <div class="conflicts reveal">
+    <div class="conf">
+      <div class="csym">BTC/USDT <span class="cbadge">方向对立</span></div>
+      <div class="cvs">
+        <div class="side-line"><span class="side long">LONG</span>#1 breakout_v3<span class="num long">0.82</span></div>
+        <div class="cx">⚔ VS</div>
+        <div class="side-line"><span class="side short">SHORT</span>#8 投研委员会<span class="num short">0.71</span></div>
+      </div>
+      <div class="cnote">同标的多空对立，置信度接近，建议裁决后再发布到策略。</div>
+      <button class="cbtn">裁决冲突 →</button>
+    </div>
+    <div class="conf">
+      <div class="csym">SOL/USDT <span class="cbadge">方向对立</span></div>
+      <div class="cvs">
+        <div class="side-line"><span class="side short">SHORT</span>#3 投研委员会<span class="num short">0.71</span></div>
+        <div class="cx">⚔ VS</div>
+        <div class="side-line"><span class="side long">LONG</span>#9 FinBERT<span class="num long">0.55</span></div>
+      </div>
+      <div class="cnote">Agent 空头置信度高于情绪多头，建议以 Agent 结论为主。</div>
+      <button class="cbtn">裁决冲突 →</button>
+    </div>
+    <div class="conf crit">
+      <div class="csym">PEPE/USDT <span class="cbadge">操控预警</span></div>
+      <div class="cvs">
+        <div class="side-line"><span class="side risk">RISK</span>#6 操控雷达<span class="num risk">0.88</span></div>
+        <div class="cx">EXTREME</div>
+        <div class="side-line" style="color:var(--muted);font-size:12px">检出 M3 拉盘出货特征 · 高集中度</div>
+      </div>
+      <div class="cnote">建议 block 所有该标的多头信号进入实盘。</div>
+      <button class="cbtn">block 全部多头 →</button>
+    </div>
+  </div>
+
+  <!-- signal table -->
+  <div class="card card-pad reveal">
+    <div class="tbl-head">
+      <div class="card-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg>信号列表 · 10 条在列</div>
+      <span class="chip on" style="cursor:default">点击行展开完整信号</span>
+    </div>
+    <table>
+      <thead><tr>
+        <th>标的 / 周期</th><th>方向</th><th>来源</th><th>置信度</th><th>评分</th><th>风险</th><th>有效期</th><th>状态</th>
+      </tr></thead>
+      <tbody id="sigbody"></tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+  var ICO={'BTC':'#F7931A','ETH':'#627EEA','SOL':'#14F195','AVAX':'#E84142','LINK':'#2A5ADA','PEPE':'#4CAF50','DOGE':'#C2A633','ARB':'#28A0F0'};
+
+  var SIGNALS=[
+    {id:1,srcType:'technical',src:'breakout_v3',sym:'BTC/USDT',tf:'15m',dir:'long',conf:0.82,score:4.6,risk:'medium',ttl:'5h 12m',status:'active',reason:'结构突破颈线，量能确认，HTF 守卫放行',ev:['15m 颈线阻力放量突破，量为均量 1.8×','HTF 时序守卫返回 GO 态，多周期共振','ATR 扩张确认动能，非假突破'],live:'warn'},
+    {id:2,srcType:'sentiment',src:'FinBERT',sym:'ETH/USDT',tf:'1h',dir:'long',conf:0.67,score:3.8,risk:'low',ttl:'11h',status:'active',reason:'新闻情绪转多，社媒热度上行',ev:['过去 6h 新闻情绪均值由 -0.1 转 +0.34','社媒提及量环比 +42%','未检出对冲/操纵性异常热度'],live:'no'},
+    {id:3,srcType:'tradingagents',src:'投研委员会',sym:'SOL/USDT',tf:'4h',dir:'short',conf:0.71,score:4.1,risk:'high',ttl:'3h 40m',status:'active',reason:'多 Agent 辩论后偏空，链上流出加速',ev:['5 位 Agent 辩论 3 轮，4 空 1 多','链上净流出加速，交易所净流入放大','解锁抛压临近'],live:'no'},
+    {id:4,srcType:'freqai',src:'FreqAI-LGB',sym:'AVAX/USDT',tf:'1h',dir:'long',conf:0.58,score:3.2,risk:'medium',ttl:'8h',status:'pending',reason:'模型预测短期反弹，待确认',ev:['LightGBM 预测 8h 收益 +2.1%','特征重要性以量价背离为主','待二次确认后转 active'],live:'no'},
+    {id:5,srcType:'prediction',src:'TimesFM',sym:'LINK/USDT',tf:'1d',dir:'hold',conf:0.44,score:2.4,risk:'low',ttl:'20h',status:'pending',reason:'预测区间震荡，无明确方向',ev:['预测未来 24h 落在 ±1.5% 窄区间','方向性置信度不足','无趋势性驱动'],live:'no'},
+    {id:6,srcType:'manipulation',src:'操控雷达',sym:'PEPE/USDT',tf:'5m',dir:'risk',conf:0.88,score:4.9,risk:'extreme',ttl:'1h 20m',status:'active',reason:'检出 M3 拉盘出货特征，高集中度预警',ev:['M3 分型：快速拉升后大单派发','Top-10 地址持仓集中度 78%','社媒加速度骤增，疑似协同拉盘'],live:'no'},
+    {id:7,srcType:'technical',src:'range_bottom',sym:'DOGE/USDT',tf:'1h',dir:'long',conf:0.63,score:3.5,risk:'medium',ttl:'6h',status:'active',reason:'近 3 月低点分批建仓区间',ev:['价格回落至近 3 月支撑带','RSI 进入超卖回升区','建议分批建仓'],live:'warn'},
+    {id:8,srcType:'tradingagents',src:'投研委员会',sym:'BTC/USDT',tf:'1h',dir:'short',conf:0.71,score:4.0,risk:'medium',ttl:'4h',status:'active',reason:'空头观点：与 #1 方向冲突，需裁决',ev:['1h 级别顶背离，Agent 偏空','与 #1 breakout_v3 多头冲突','建议裁决冲突后再执行'],live:'no',conflict:'#1'},
+    {id:9,srcType:'sentiment',src:'FinBERT',sym:'SOL/USDT',tf:'15m',dir:'long',conf:0.55,score:3.0,risk:'medium',ttl:'2h',status:'active',reason:'情绪偏多：与 #3 方向冲突',ev:['短周期情绪转正，热度回升','与 #3 投研委员会空头冲突','置信度低于对立信号'],live:'no',conflict:'#3'},
+    {id:10,srcType:'factor',src:'因子研究',sym:'ARB/USDT',tf:'4h',dir:'long',conf:0.49,score:2.8,risk:'high',ttl:'9h',status:'rejected',reason:'因子失效，已被人工驳回',ev:['动量因子近 30d IC 转负','因子拥挤度过高','人工复核后驳回'],live:'no'}
+  ];
+
+  function stars(s){var f=Math.round(s);return '★'.repeat(f)+'<span style="color:#DCE0EC">'+'☆'.repeat(5-f)+'</span>';}
+  function riskCN(r){return{low:'低',medium:'中',high:'高',extreme:'极端'}[r];}
+  function dirCN(d){return{long:'看多 Long',short:'看空 Short',hold:'观望 Hold',risk:'风险 Risk'}[d];}
+  function dirUP(d){return d.toUpperCase();}
+  function statusCN(s){return{active:'active 生效中',pending:'pending 待确认',rejected:'rejected 已驳回'}[s];}
+  function perm(live){
+    var t='<div class="p ok"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>可回测</div>';
+    t+='<div class="p ok"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>可模拟 (dry-run)</div>';
+    if(live==='warn') t+='<div class="p wn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg>可实盘 ⚠ 需人工确认</div>';
+    else t+='<div class="p no"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>可实盘 ✗ (来源默认禁实盘)</div>';
+    return t;
+  }
+  function initials(sym){return sym.slice(0,2);}
+
+  var body=document.getElementById('sigbody'),out='';
+  SIGNALS.forEach(function(s){
+    var base=s.sym.split('/')[0];
+    out+='<tr class="sigrow" tabindex="0" role="button" aria-expanded="false">'+
+      '<td><div class="sym"><span class="ico" style="background:'+(ICO[base]||'#3D5AFE')+(base==='SOL'?';color:#0F1524':'')+'">'+initials(s.sym)+'</span><div><div class="name">'+s.sym+'</div><span class="tf">'+s.tf+(s.conflict?'<span class="conflict-flag">⚔ 冲突 '+s.conflict+'</span>':'')+'</span></div></div></td>'+
+      '<td><span class="side '+s.dir+'">'+dirUP(s.dir)+'</span></td>'+
+      '<td class="src"><span class="sn">'+s.src+'</span><br><span class="st">'+s.srcType+'</span></td>'+
+      '<td><span class="confwrap"><span class="confbar"><i style="width:'+(s.conf*100)+'%"></i></span><span class="conf-n">'+s.conf.toFixed(2)+'</span></span></td>'+
+      '<td><span class="stars">'+stars(s.score)+'</span> <span class="tab" style="color:var(--muted);font-size:12px">'+s.score.toFixed(1)+'</span></td>'+
+      '<td><span class="chip-r '+s.risk+'">'+riskCN(s.risk)+'</span></td>'+
+      '<td class="ttl tab">'+s.ttl+'</td>'+
+      '<td><span class="chip-s '+s.status+'">'+s.status+'</span></td>'+
+    '</tr>'+
+    '<tr class="detrow"><td colspan="8"><div class="detwrap"><div class="detgrid">'+
+      '<div class="qb"><div class="q">谁产生的 · Source</div><div class="a"><b>'+s.src+'</b> · '+s.srcType+' 引擎</div></div>'+
+      '<div class="qb"><div class="q">看什么标的 · Target</div><div class="a"><b>'+s.sym+'</b> · 周期 '+s.tf+'</div></div>'+
+      '<div class="qb"><div class="q">什么方向 · Direction</div><div class="a">'+dirCN(s.dir)+'</div></div>'+
+      '<div class="qb"><div class="q">多可信 · Confidence</div><div class="a">置信 <b>'+s.conf.toFixed(2)+'</b> · 评分 <b>'+s.score.toFixed(1)+'</b>/5 · '+riskCN(s.risk)+'风险</div></div>'+
+      '<div class="qb ev"><div class="q">为什么 · Reasoning &amp; Evidence</div><div class="a">'+s.reason+'</div><ul>'+s.ev.map(function(e){return '<li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>'+e+'</li>';}).join('')+'</ul></div>'+
+      '<div class="qb"><div class="q">何时有效 · Validity</div><div class="a">剩余 <b>'+s.ttl+'</b> · '+statusCN(s.status)+'</div></div>'+
+      '<div class="qb" style="grid-column:2/-1"><div class="q">能做什么 · Permission</div><div class="perm">'+perm(s.live)+'</div></div>'+
+      '<div class="timeline"><div class="q" style="width:100%;margin-bottom:14px">生命周期 · Lifecycle</div>'+
+        '<div class="tl-node done"><div class="dot"></div><div class="tt">生成</div><div class="td">由 '+s.src+' 产出</div></div>'+
+        '<div class="tl-node done"><div class="dot"></div><div class="tt">入账</div><div class="td">提交至信号总账</div></div>'+
+        (s.status==='rejected'
+          ?'<div class="tl-node rej"><div class="dot"></div><div class="tt">驳回</div><div class="td">人工复核未通过</div></div>'
+          :s.status==='pending'
+            ?'<div class="tl-node pend"><div class="dot"></div><div class="tt">待确认</div><div class="td">等待二次确认</div></div>'
+            :'<div class="tl-node"><div class="dot"></div><div class="tt">生效中</div><div class="td">可裁决/发布</div></div>')+
+      '</div>'+
+    '</div><div class="acts">'+
+      '<button class="abtn pri">发布到策略</button>'+
+      '<button class="abtn">加入 dry-run 观察</button>'+
+      '<button class="abtn">生成 StrategyDraft</button>'+
+      (s.conflict?'<button class="abtn">裁决冲突</button>':'')+
+      '<button class="abtn arch">归档</button>'+
+    '</div></div></td></tr>';
+  });
+  body.innerHTML=out;
+
+  body.querySelectorAll('.sigrow').forEach(function(row){
+    function toggle(){var o=row.classList.toggle('open');row.setAttribute('aria-expanded',o);}
+    row.addEventListener('click',function(e){if(e.target.closest('.abtn'))return;toggle();});
+    row.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle();}});
+  });
+
+  document.querySelectorAll('.fgroup').forEach(function(g){g.querySelectorAll('.chip').forEach(function(c){c.addEventListener('click',function(){g.querySelectorAll('.chip').forEach(function(x){x.classList.remove('on');});c.classList.add('on');});});});
+
+  // CountUp
+  function countUp(el){var t=parseFloat(el.dataset.count);if(reduce){el.textContent=t;return;}var dur=1200,start=null;function step(ts){if(!start)start=ts;var p=Math.min((ts-start)/dur,1);el.textContent=Math.round(t*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(step);else el.textContent=t;}requestAnimationFrame(step);}
+
+  var revs=document.querySelectorAll('.reveal');
+  if(reduce){revs.forEach(function(r){r.classList.add('in')});document.querySelectorAll('[data-count]').forEach(countUp);}
+  else{
+    var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){var idx=[].indexOf.call(revs,e.target);e.target.style.transitionDelay=Math.min(idx*70,300)+'ms';e.target.classList.add('in');io.unobserve(e.target);}});},{threshold:.12});
+    revs.forEach(function(r){io.observe(r)});
+    document.querySelectorAll('[data-count]').forEach(countUp);
+  }
+})();
+</script>
+</body>
+</html>

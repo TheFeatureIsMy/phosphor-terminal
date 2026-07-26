@@ -84,11 +84,11 @@ struct PositionRiskTable: View {
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
             .background(
-                RoundedRectangle(cornerRadius: PulseRadii.xs)
+                RoundedRectangle(cornerRadius: PulseRadii.badge)
                     .fill(PulseColors.warning.opacity(0.10))
             )
             .overlay(
-                RoundedRectangle(cornerRadius: PulseRadii.xs)
+                RoundedRectangle(cornerRadius: PulseRadii.badge)
                     .stroke(PulseColors.warning.opacity(0.25), lineWidth: 0.5)
             )
     }
@@ -128,9 +128,9 @@ struct PositionRiskTable: View {
     private func positionRow(_ position: PositionData) -> some View {
         HStack(spacing: 0) {
             Rectangle()
-                .fill(position.isLong ? PulseColors.accent : PulseColors.danger)
+                .fill(position.isLong ? PulseColors.bullish : PulseColors.bearish)
                 .frame(width: 3)
-                .shadow(color: (position.isLong ? PulseColors.accent : PulseColors.danger).opacity(0.4), radius: 3)
+                .shadow(color: (position.isLong ? PulseColors.bullish : PulseColors.bearish).opacity(0.4), radius: 3)
 
             Spacer().frame(width: PulseSpacing.xs)
 
@@ -143,7 +143,7 @@ struct PositionRiskTable: View {
             Text(position.isLong ? L10n.Dashboard.long : L10n.Dashboard.short)
                 .font(PulseFonts.micro)
                 .textCase(.uppercase)
-                .foregroundStyle(position.isLong ? PulseColors.accent : PulseColors.danger)
+                .foregroundStyle(position.isLong ? PulseColors.bullish : PulseColors.bearish)
                 .frame(minWidth: 60, alignment: .leading)
 
             Text(formatNumber(position.size))
@@ -163,12 +163,12 @@ struct PositionRiskTable: View {
 
             Text(formatPnl(position.pnl))
                 .font(PulseFonts.bodyMedium)
-                .foregroundStyle(position.pnl >= 0 ? PulseColors.accent : PulseColors.danger)
+                .foregroundStyle(position.pnl >= 0 ? PulseColors.bullish : PulseColors.bearish)
                 .frame(minWidth: 70, alignment: .trailing)
 
             Text(formatPnlPct(position.pnlPct))
                 .font(PulseFonts.bodyMedium)
-                .foregroundStyle(position.pnlPct >= 0 ? PulseColors.accent : PulseColors.danger)
+                .foregroundStyle(position.pnlPct >= 0 ? PulseColors.bullish : PulseColors.bearish)
                 .frame(minWidth: 60, alignment: .trailing)
 
             stateBadge(for: position)

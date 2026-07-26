@@ -15,5 +15,20 @@ extension L10n {
                en: "Backend data source is temporarily unavailable. Some data may be empty. Please retry later or check data source configuration.")
         }
         static var dataSourceUnavailableDetails: String { zh("原因代码", en: "Reason Codes") }
+
+        // Service Management
+        static var serviceManagement: String { zh("服务管理", en: "Service Management") }
+        static var serviceStatus: String { zh("服务状态", en: "Service Status") }
+        static var allServicesHealthy: String { zh("所有服务正常运行", en: "All Services Healthy") }
+        static var someServicesDegraded: String { zh("部分服务异常", en: "Some Services Degraded") }
+        static var serviceError: String { zh("服务异常", en: "Service Error") }
+        static var backendAPI: String { zh("后端 API", en: "Backend API") }
+        static var database: String { zh("数据库", en: "Database") }
+        static var redisCache: String { zh("Redis 缓存", en: "Redis Cache") }
+        static var connected: String { zh("已连接", en: "Connected") }
+        static var disconnected: String { zh("未连接", en: "Disconnected") }
+        static var configured: String { zh("已配置", en: "Configured") }
+        static var notConfigured: String { zh("未配置", en: "Not Configured") }
+        static var noStartStopButtons: String { zh("服务通过 Docker Compose 或系统服务管理，不支持从 UI 启停", en: "Services are managed via Docker Compose or system services; start/stop from UI is not supported") }
     }
 }

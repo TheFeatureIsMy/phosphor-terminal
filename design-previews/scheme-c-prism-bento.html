@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<!--
+  AlphaLoop · 方案 C — Prism Bento
+  Web3.0 深空棱镜 · Magic Bento 立体网格 + 3D Tilt + 光标聚光
+  纯 HTML/CSS/JS 复刻 ReactBits 观感（正式落地可换真组件）：
+    · MagicBento        → 不等格 bento 网格 + 边框光效
+    · TiltedCard        → data-tilt 3D 倾斜
+    · SpotlightCard     → 光标聚光渐变描边
+    · GradientText      → .grad 渐变标题
+    · CountUp           → data-countup 数字滚动
+  样板页：Dashboard 总览（对齐 macos-app DashboardView 真实结构）
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AlphaLoop · Prism Bento</title>
+<style>
+  :root {
+    --bg: #08090F;
+    --bg-2: #0C0E17;
+    --card: rgba(20,22,34,0.72);
+    --card-2: rgba(26,28,42,0.62);
+    --border: rgba(255,255,255,0.08);
+    --text: #ECEDF6;
+    --text-2: #9095B0;
+    --text-3: #565C79;
+    --p1: #6D5EFC;
+    --p2: #C15CFF;
+    --p3: #38BDF8;
+    --p4: #F472B6;
+    --bull: #34E5A0;
+    --bear: #FB5D74;
+    --amber: #FBBF4A;
+    --radius: 20px;
+    --font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', system-ui, sans-serif;
+    --mono: 'SF Mono', ui-monospace, 'JetBrains Mono', monospace;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:var(--font); background:var(--bg); color:var(--text); min-height:100dvh; overflow-x:hidden;
+    -webkit-font-smoothing:antialiased; }
+  /* 深空棱镜背景 */
+  body::before { content:''; position:fixed; inset:0; z-index:0; pointer-events:none;
+    background:
+      radial-gradient(ellipse 60% 50% at 15% 0%, rgba(109,94,252,0.16), transparent 60%),
+      radial-gradient(ellipse 50% 40% at 85% 10%, rgba(193,92,255,0.13), transparent 60%),
+      radial-gradient(ellipse 55% 45% at 60% 100%, rgba(56,189,248,0.10), transparent 60%); }
+  body::after { content:''; position:fixed; inset:0; z-index:0; pointer-events:none; opacity:0.5;
+    background-image:linear-gradient(rgba(255,255,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.025) 1px,transparent 1px);
+    background-size:48px 48px; mask-image:radial-gradient(ellipse 80% 60% at 50% 40%,#000,transparent 90%); }
+
+  .shell { position:relative; z-index:2; max-width:1340px; margin:0 auto; padding:22px 28px 80px; }
+
+  /* SpotlightCard + MagicBento 基座 */
+  .card { position:relative; background:var(--card); backdrop-filter:blur(20px) saturate(140%);
+    -webkit-backdrop-filter:blur(20px) saturate(140%); border:1px solid var(--border); border-radius:var(--radius);
+    overflow:hidden; box-shadow:0 20px 50px rgba(4,5,12,0.5); transition:transform .2s cubic-bezier(.16,1,.3,1); }
+  .card::before { content:''; position:absolute; inset:0; border-radius:inherit; padding:1px; opacity:0; transition:opacity .3s;
+    background:radial-gradient(320px circle at var(--mx,50%) var(--my,50%), rgba(193,92,255,0.6), rgba(109,94,252,0.2) 40%, transparent 65%);
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0); -webkit-mask-composite:xor; mask-composite:exclude; pointer-events:none; }
+  .card:hover::before { opacity:1; }
+  .card::after { content:''; position:absolute; inset:0; border-radius:inherit; opacity:0; transition:opacity .3s;
+    background:radial-gradient(360px circle at var(--mx,50%) var(--my,50%), rgba(193,92,255,0.06), transparent 60%); pointer-events:none; }
+  .card:hover::after { opacity:1; }
+
+  .grad { background:linear-gradient(100deg,var(--p1),var(--p2) 45%,var(--p3)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+
+  /* NAV */
+  nav { display:flex; align-items:center; justify-content:space-between; height:64px; margin-bottom:22px; }
+  .brand { display:flex; align-items:center; gap:12px; }
+  .brand-mark { width:36px; height:36px; border-radius:11px; background:linear-gradient(135deg,var(--p1),var(--p2));
+    display:grid; place-items:center; font-weight:800; font-size:17px; color:#fff; box-shadow:0 6px 22px rgba(109,94,252,0.5); }
+  .brand-name { font-size:17px; font-weight:700; letter-spacing:-0.02em; }
+  .nav-links { display:flex; gap:4px; }
+  .nav-links a { padding:8px 15px; border-radius:11px; font-size:13.5px; color:var(--text-2); text-decoration:none; transition:.2s; }
+  .nav-links a.active { color:#fff; background:linear-gradient(135deg,rgba(109,94,252,0.25),rgba(193,92,255,0.15)); border:1px solid rgba(193,92,255,0.2); }
+  .nav-links a:hover { color:var(--text); }
+  .live-pill { display:flex; align-items:center; gap:8px; padding:7px 14px; border-radius:999px;
+    background:rgba(52,229,160,0.10); border:1px solid rgba(52,229,160,0.28); font-size:12.5px; color:var(--bull); font-weight:600; }
+  .live-dot { width:7px; height:7px; border-radius:50%; background:var(--bull); animation:pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(52,229,160,0.5)} 70%{box-shadow:0 0 0 8px rgba(52,229,160,0)} }
+
+  /* BENTO GRID — 不等格 */
+  .bento { display:grid; grid-template-columns:repeat(4,1fr); gap:18px; grid-auto-rows:minmax(0,auto); }
+  .col-2 { grid-column:span 2; } .col-3 { grid-column:span 3; } .col-4 { grid-column:span 4; }
+
+  /* HERO (col-2) */
+  .hero { padding:28px 30px; display:flex; flex-direction:column; justify-content:space-between; min-height:220px; }
+  .hero-label { font-size:12.5px; color:var(--text-2); margin-bottom:12px; }
+  .equity { font-family:var(--mono); font-size:46px; font-weight:700; letter-spacing:-0.03em; line-height:1; }
+  .equity .cur { font-size:24px; color:var(--text-2); margin-right:4px; }
+  .pnl-row { display:flex; align-items:center; gap:12px; margin-top:14px; }
+  .pnl-chip { padding:6px 12px; border-radius:10px; font-family:var(--mono); font-size:13.5px; font-weight:600; }
+  .pnl-chip.up { background:rgba(52,229,160,0.12); color:var(--bull); }
+  .pnl-note { font-size:12px; color:var(--text-3); }
+
+  /* Sparkline card (col-2) */
+  .spark-card { padding:24px 26px; display:flex; flex-direction:column; }
+  .spark-card .k { font-size:12.5px; color:var(--text-2); margin-bottom:6px; }
+  .spark-card .v { font-family:var(--mono); font-size:28px; font-weight:700; }
+  .sparkline { width:100%; height:96px; margin-top:auto; }
+
+  /* metric tiles */
+  .tile { padding:20px 22px; }
+  .tile-head { display:flex; align-items:center; gap:9px; margin-bottom:14px; }
+  .tile-ic { width:30px; height:30px; border-radius:9px; display:grid; place-items:center; font-size:14px; }
+  .tile-title { font-size:13px; font-weight:600; }
+  .tile-sub { margin-left:auto; font-size:11px; color:var(--text-3); }
+  .stat { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05); }
+  .stat:last-child { border:none; }
+  .stat-k { font-size:12px; color:var(--text-2); }
+  .stat-v { font-family:var(--mono); font-size:13.5px; font-weight:600; }
+  .ring { width:88px; height:88px; margin:2px auto 6px; }
+  .big { font-family:var(--mono); font-size:32px; font-weight:700; }
+  .gauge { position:relative; width:100%; height:7px; border-radius:4px; background:rgba(255,255,255,0.06); overflow:hidden; margin-top:6px; }
+  .gauge>i { position:absolute; inset:0 auto 0 0; border-radius:4px; }
+  .up{color:var(--bull)} .dn{color:var(--bear)}
+
+  /* 持仓 (col-3) + 决策流 (col-1 tall) */
+  .sec-h { display:flex; align-items:center; gap:10px; margin-bottom:14px; font-size:14px; font-weight:700; }
+  .sec-h .tag { margin-left:auto; font-size:11px; color:var(--text-3); font-weight:500; padding:3px 9px; border-radius:7px; background:rgba(255,255,255,0.05); }
+  .list-card { padding:22px 24px; }
+  table { width:100%; border-collapse:collapse; }
+  th { text-align:left; font-size:11px; color:var(--text-3); padding:8px 10px; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; }
+  td { padding:11px 10px; font-size:13px; border-top:1px solid rgba(255,255,255,0.05); }
+  tbody tr:hover { background:rgba(255,255,255,0.03); }
+  .sym { display:flex; align-items:center; gap:9px; font-weight:600; }
+  .sym-ic { width:24px; height:24px; border-radius:50%; display:grid; place-items:center; font-size:10px; font-weight:700; color:#fff; }
+  .mono { font-family:var(--mono); }
+  .side { font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:6px; }
+  .side.long { background:rgba(52,229,160,0.14); color:var(--bull); }
+  .side.short { background:rgba(251,93,116,0.13); color:var(--bear); }
+  .bar { width:58px; height:5px; border-radius:3px; background:rgba(255,255,255,0.08); overflow:hidden; display:inline-block; vertical-align:middle; }
+  .bar>i { display:block; height:100%; border-radius:3px; }
+
+  .feed-item { display:flex; gap:11px; padding:11px 0; border-bottom:1px solid rgba(255,255,255,0.05); }
+  .feed-item:last-child { border:none; }
+  .feed-ic { width:28px; height:28px; border-radius:9px; display:grid; place-items:center; font-size:12px; flex-shrink:0; }
+  .feed-t { font-size:12.5px; font-weight:600; margin-bottom:2px; }
+  .feed-d { font-size:11.5px; color:var(--text-3); line-height:1.5; }
+  .feed-time { font-family:var(--mono); font-size:10.5px; color:var(--text-3); }
+
+  /* 紧急 (col-4) */
+  .emergency { padding:18px 26px; display:flex; align-items:center; justify-content:space-between;
+    background:linear-gradient(90deg,rgba(251,93,116,0.10),rgba(251,93,116,0.02)); border-color:rgba(251,93,116,0.25); }
+  .warn { display:flex; align-items:center; gap:14px; }
+  .warn-ic { width:42px; height:42px; border-radius:13px; background:rgba(251,93,116,0.14); display:grid; place-items:center; font-size:20px; }
+  .btn { padding:11px 20px; border-radius:12px; font-size:13.5px; font-weight:600; cursor:pointer; border:1px solid var(--border);
+    background:rgba(255,255,255,0.05); color:var(--text); transition:.2s; display:inline-flex; align-items:center; gap:8px; }
+  .btn:hover { transform:translateY(-1px); }
+  .btn.primary { background:linear-gradient(135deg,var(--p1),var(--p2)); border:none; color:#fff; box-shadow:0 8px 24px rgba(109,94,252,0.4); }
+  .btn.danger { background:rgba(251,93,116,0.12); border-color:rgba(251,93,116,0.3); color:var(--bear); }
+  .actions { display:flex; gap:10px; margin-top:18px; }
+
+  @media (max-width:1000px){ .bento{grid-template-columns:repeat(2,1fr)} .col-3,.col-4{grid-column:span 2} .nav-links{display:none} }
+  @media (max-width:640px){ .bento{grid-template-columns:1fr} .col-2,.col-3,.col-4{grid-column:span 1} .equity{font-size:38px} }
+  @media (prefers-reduced-motion:reduce){ *{animation:none!important;transition:none!important} }
+</style>
+</head>
+<body>
+  <div class="shell">
+    <nav>
+      <div class="brand">
+        <div class="brand-mark">α</div>
+        <div class="brand-name">Alpha<span class="grad">Loop</span></div>
+      </div>
+      <div class="nav-links">
+        <a href="#" class="active">总览</a><a href="#">策略</a><a href="#">结构</a>
+        <a href="#">执行</a><a href="#">风控</a><a href="#">AI 研究</a>
+      </div>
+      <div class="live-pill"><span class="live-dot"></span>实盘运行中</div>
+    </nav>
+
+    <div class="bento">
+      <!-- HERO 账户权益 -->
+      <div class="card hero col-2" data-tilt>
+        <div>
+          <div class="hero-label">账户总权益 · USDT 本位</div>
+          <div class="equity"><span class="cur">$</span><span class="grad" data-countup="1284736.52" data-dec="2">0.00</span></div>
+          <div class="pnl-row"><span class="pnl-chip up">▲ +$18,432.10</span><span class="pnl-chip up">+1.46%</span><span class="pnl-note">今日盈亏</span></div>
+        </div>
+        <div class="actions">
+          <button class="btn primary">⚡ 启动策略</button>
+          <button class="btn">📊 回测</button>
+          <button class="btn">🔁 同步</button>
+        </div>
+      </div>
+
+      <!-- 权益曲线 -->
+      <div class="card spark-card col-2" data-tilt>
+        <div class="k">近 7 日权益曲线</div>
+        <div class="v grad">+6.82%</div>
+        <svg class="sparkline" viewBox="0 0 400 96" preserveAspectRatio="none">
+          <defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#C15CFF" stop-opacity="0.4"/><stop offset="1" stop-color="#6D5EFC" stop-opacity="0"/>
+          </linearGradient>
+          <linearGradient id="sl" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#6D5EFC"/><stop offset="1" stop-color="#38BDF8"/></linearGradient></defs>
+          <path d="M0,74 L40,68 L80,72 L120,54 L160,60 L200,40 L240,46 L280,28 L320,34 L360,16 L400,10" fill="none" stroke="url(#sl)" stroke-width="2.5"/>
+          <path d="M0,74 L40,68 L80,72 L120,54 L160,60 L200,40 L240,46 L280,28 L320,34 L360,16 L400,10 L400,96 L0,96 Z" fill="url(#sg)"/>
+        </svg>
+      </div>
+
+      <!-- Runtime -->
+      <div class="card tile" data-tilt>
+        <div class="tile-head"><div class="tile-ic" style="background:rgba(109,94,252,0.18);color:#8B7CFF">◉</div><div class="tile-title">运行时</div><div class="tile-sub">Runtime</div></div>
+        <div class="stat"><span class="stat-k">活跃策略</span><span class="stat-v"><span data-countup="7">0</span>/12</span></div>
+        <div class="stat"><span class="stat-k">运行时长</span><span class="stat-v">14d 06h</span></div>
+        <div class="stat"><span class="stat-k">开放持仓</span><span class="stat-v">9</span></div>
+        <div class="stat"><span class="stat-k">今日成交</span><span class="stat-v up">142</span></div>
+      </div>
+
+      <!-- Readiness ring -->
+      <div class="card tile" data-tilt>
+        <div class="tile-head"><div class="tile-ic" style="background:rgba(52,229,160,0.16);color:#34E5A0">✓</div><div class="tile-title">实盘就绪</div><div class="tile-sub">Gate</div></div>
+        <svg class="ring" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="9"/>
+          <circle cx="50" cy="50" r="42" fill="none" stroke="url(#rg)" stroke-width="9" stroke-linecap="round"
+            stroke-dasharray="264" stroke-dashoffset="21" transform="rotate(-90 50 50)"/>
+          <defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#34E5A0"/><stop offset="1" stop-color="#38BDF8"/></linearGradient></defs>
+          <text x="50" y="50" text-anchor="middle" dy="0.35em" fill="#ECEDF6" font-size="24" font-family="var(--mono)" font-weight="700">92%</text>
+        </svg>
+        <div style="text-align:center;font-size:11.5px;color:var(--text-3)">7 / 8 项检查通过</div>
+      </div>
+
+      <!-- Risk -->
+      <div class="card tile" data-tilt>
+        <div class="tile-head"><div class="tile-ic" style="background:rgba(251,191,74,0.16);color:#FBBF4A">⚠</div><div class="tile-title">全局风险</div><div class="tile-sub">Risk</div></div>
+        <div class="stat"><span class="stat-k">当前回撤</span><span class="stat-v" style="color:var(--amber)">-4.82%</span></div>
+        <div class="gauge"><i style="width:48%;background:linear-gradient(90deg,#FBBF4A,#FB5D74)"></i></div>
+        <div class="stat" style="margin-top:8px"><span class="stat-k">保证金率</span><span class="stat-v">18.4%</span></div>
+        <div class="stat"><span class="stat-k">敞口占比</span><span class="stat-v">62%</span></div>
+      </div>
+
+      <!-- 情绪 -->
+      <div class="card tile" data-tilt>
+        <div class="tile-head"><div class="tile-ic" style="background:rgba(193,92,255,0.16);color:#C15CFF">◆</div><div class="tile-title">市场情绪</div><div class="tile-sub">Sentiment</div></div>
+        <div style="text-align:center;padding:6px 0"><div class="big grad">+0.34</div><div style="font-size:11.5px;color:var(--text-3);margin-top:2px">中性偏多</div></div>
+        <div class="gauge"><i style="width:67%;background:linear-gradient(90deg,#6D5EFC,#C15CFF)"></i></div>
+      </div>
+
+      <!-- 持仓表 col-3 -->
+      <div class="card list-card col-3" data-tilt>
+        <div class="sec-h">持仓风险<span class="tag">9 个持仓 · 实时</span></div>
+        <table>
+          <thead><tr><th>交易对</th><th>方向</th><th>标记价</th><th>未实现盈亏</th><th>风险敞口</th></tr></thead>
+          <tbody>
+            <tr><td><span class="sym"><span class="sym-ic" style="background:#F7931A">₿</span>BTC/USDT</span></td><td><span class="side long">多</span></td><td class="mono">64,180</td><td class="mono up">+$2,476</td><td><span class="bar"><i style="width:38%;background:#34E5A0"></i></span></td></tr>
+            <tr><td><span class="sym"><span class="sym-ic" style="background:#627EEA">Ξ</span>ETH/USDT</span></td><td><span class="side long">多</span></td><td class="mono">3,342</td><td class="mono up">+$2,008</td><td><span class="bar"><i style="width:52%;background:#34E5A0"></i></span></td></tr>
+            <tr><td><span class="sym"><span class="sym-ic" style="background:#00FFA3;color:#000">◎</span>SOL/USDT</span></td><td><span class="side short">空</span></td><td class="mono">172.4</td><td class="mono dn">-$756</td><td><span class="bar"><i style="width:71%;background:#FB5D74"></i></span></td></tr>
+            <tr><td><span class="sym"><span class="sym-ic" style="background:#E84142">A</span>AVAX/USDT</span></td><td><span class="side long">多</span></td><td class="mono">29.8</td><td class="mono up">+$588</td><td><span class="bar"><i style="width:29%;background:#34E5A0"></i></span></td></tr>
+            <tr><td><span class="sym"><span class="sym-ic" style="background:#2775CA">L</span>LINK/USDT</span></td><td><span class="side short">空</span></td><td class="mono">13.6</td><td class="mono up">+$384</td><td><span class="bar"><i style="width:44%;background:#FBBF4A"></i></span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 决策流 col-1 tall -->
+      <div class="card list-card" data-tilt>
+        <div class="sec-h" style="font-size:13px">AI 决策流</div>
+        <div class="feed-item"><div class="feed-ic" style="background:rgba(52,229,160,0.15);color:#34E5A0">▲</div><div style="flex:1"><div class="feed-t">BTC 结构突破</div><div class="feed-d">建议加仓 · 评分 0.82</div></div><div class="feed-time">12s</div></div>
+        <div class="feed-item"><div class="feed-ic" style="background:rgba(109,94,252,0.16);color:#8B7CFF">◈</div><div style="flex:1"><div class="feed-t">ETH 网格再平衡</div><div class="feed-d">重置 8 档挂单</div></div><div class="feed-time">1m</div></div>
+        <div class="feed-item"><div class="feed-ic" style="background:rgba(251,93,116,0.13);color:#FB5D74">▼</div><div style="flex:1"><div class="feed-t">SOL 止盈 40%</div><div class="feed-d">锁定部分利润</div></div><div class="feed-time">3m</div></div>
+        <div class="feed-item"><div class="feed-ic" style="background:rgba(193,92,255,0.15);color:#C15CFF">◆</div><div style="flex:1"><div class="feed-t">情绪信号更新</div><div class="feed-d">权重下调 0.1</div></div><div class="feed-time">6m</div></div>
+      </div>
+
+      <!-- 告警 col-4 分两列 -->
+      <div class="card list-card col-4" data-tilt>
+        <div class="sec-h">风险告警<span class="tag">2 条待处理</span></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 32px">
+          <div class="feed-item"><div class="feed-ic" style="background:rgba(251,191,74,0.15);color:#FBBF4A">⚠</div><div style="flex:1"><div class="feed-t">SOL 空头浮亏接近阈值</div><div class="feed-d">回撤 -1.8%，距止损线还剩 0.6%</div></div><div class="feed-time">2m</div></div>
+          <div class="feed-item"><div class="feed-ic" style="background:rgba(251,191,74,0.15);color:#FBBF4A">⚠</div><div style="flex:1"><div class="feed-t">风控守卫待确认</div><div class="feed-d">MTF 时序守卫 CAUTION 态</div></div><div class="feed-time">8m</div></div>
+          <div class="feed-item" style="border-bottom:none"><div class="feed-ic" style="background:rgba(52,229,160,0.15);color:#34E5A0">✓</div><div style="flex:1"><div class="feed-t">对账通过</div><div class="feed-d">142 笔成交全部匹配</div></div><div class="feed-time">14m</div></div>
+          <div class="feed-item" style="border-bottom:none"><div class="feed-ic" style="background:rgba(193,92,255,0.15);color:#C15CFF">◆</div><div style="flex:1"><div class="feed-t">操纵雷达</div><div class="feed-d">未检出异常，扫描 38 个标的</div></div><div class="feed-time">20m</div></div>
+        </div>
+      </div>
+
+      <!-- 紧急条 col-4 -->
+      <div class="card emergency col-4">
+        <div class="warn"><div class="warn-ic">🛑</div><div><div style="font-weight:700;font-size:15px">紧急停止总控</div><div style="font-size:12.5px;color:var(--text-3);margin-top:2px">一键撤单 · 平仓 · 冻结新开仓</div></div></div>
+        <button class="btn danger" style="font-size:14px;padding:13px 26px">■ 紧急停止全部</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const reduce = window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+
+  // CountUp
+  document.querySelectorAll('[data-countup]').forEach(el=>{
+    const t=parseFloat(el.dataset.countup), dec=parseInt(el.dataset.dec||0);
+    const fmt=v=>v.toLocaleString('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec});
+    if(reduce){ el.textContent=fmt(t); return; }
+    const dur=1500,s=performance.now();
+    (function tick(now){ const p=Math.min((now-s)/dur,1),e=1-Math.pow(1-p,3); el.textContent=fmt(t*e); if(p<1)requestAnimationFrame(tick); })(s);
+  });
+
+  // Spotlight 光标追踪
+  document.querySelectorAll('.card').forEach(c=>{
+    c.addEventListener('pointermove',e=>{ const r=c.getBoundingClientRect();
+      c.style.setProperty('--mx',(e.clientX-r.left)+'px'); c.style.setProperty('--my',(e.clientY-r.top)+'px'); });
+  });
+
+  // TiltedCard 3D 倾斜
+  if(!reduce){
+    document.querySelectorAll('[data-tilt]').forEach(c=>{
+      c.addEventListener('pointermove',e=>{ const r=c.getBoundingClientRect();
+        const px=(e.clientX-r.left)/r.width-0.5, py=(e.clientY-r.top)/r.height-0.5;
+        c.style.transform=`perspective(900px) rotateX(${-py*3.5}deg) rotateY(${px*3.5}deg)`; });
+      c.addEventListener('pointerleave',()=>{ c.style.transform=''; });
+    });
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlphaLoop · DEPTH · Signal Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#080807;--panel:#0E0D0B;--panel2:#0B0A09;--line:#211F1A;--line2:#2C2920;
+    --txt:#D6CBB0;--txt2:#7A7159;--txt3:#565044;
+    --amber:#F5A623;--green:#3FB950;--red:#E5484D;
+    --green-fill:rgba(63,185,80,0.14);--red-fill:rgba(229,72,77,0.14);--amber-fill:rgba(245,166,35,0.10);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--txt);
+    font-family:'JetBrains Mono',ui-monospace,'SF Mono',monospace;
+    font-size:12px;line-height:1.35;-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums;}
+  .up{color:var(--green)}.dn{color:var(--red)}.am{color:var(--amber)}.mut{color:var(--txt2)}
+  .lbl{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--txt2)}
+  .num{font-variant-numeric:tabular-nums}
+
+  /* back */
+  .backbar{height:20px;display:flex;align-items:center;padding:0 10px;border-bottom:1px solid var(--line);background:var(--panel2)}
+  .backbar a{color:var(--txt2);text-decoration:none;font-size:10px;letter-spacing:.1em}
+  .backbar a:hover{color:var(--amber)}
+
+  /* tape */
+  .tape{height:24px;border-bottom:1px solid var(--line);background:#0A0908;
+    display:flex;align-items:center;overflow:hidden;position:relative;white-space:nowrap}
+  .tape .track{display:inline-flex;align-items:center;animation:scroll 46s linear infinite;will-change:transform}
+  .tape:hover .track{animation-play-state:paused}
+  .tape .tk{display:inline-flex;align-items:center;gap:6px;padding:0 14px;border-right:1px solid var(--line);font-size:11px}
+  .tape .sym{color:var(--txt2);letter-spacing:.06em}
+  @keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+  /* topbar */
+  .topbar{display:flex;align-items:center;justify-content:space-between;height:34px;padding:0 10px;border-bottom:1px solid var(--line);background:var(--panel2)}
+  .brand{display:flex;align-items:center;gap:8px}
+  .brand .mark{color:var(--amber);font-weight:700;letter-spacing:.10em;font-size:13px}
+  .brand .tag{font-size:9px;letter-spacing:.22em;color:var(--txt2);text-transform:uppercase}
+  .brand .dot{color:var(--green);font-size:8px}
+  .stats{display:flex;gap:0;font-size:10px}
+  .stats .s{padding:0 12px;border-left:1px solid var(--line);letter-spacing:.06em}
+  .stats .s b{color:var(--txt)}
+
+  /* filter strip */
+  .filterbar{display:flex;align-items:center;gap:14px;height:30px;padding:0 10px;border-bottom:1px solid var(--line);background:var(--panel);overflow-x:auto}
+  .fg{display:flex;align-items:center;gap:3px;white-space:nowrap}
+  .fg .fl{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--txt3);margin-right:2px}
+  .chip{font-family:inherit;font-size:10px;color:var(--txt2);background:var(--panel2);border:1px solid var(--line2);
+    padding:2px 7px;cursor:pointer;letter-spacing:.04em;text-transform:uppercase;line-height:1.4}
+  .chip:hover{border-color:var(--amber);color:var(--amber)}
+  .chip.on{border-color:var(--amber);color:var(--bg);background:var(--amber);font-weight:500}
+  .chip:focus-visible{outline:2px solid var(--amber);outline-offset:1px}
+
+  /* grid */
+  .grid{display:grid;grid-template-columns:1fr 320px;gap:1px;background:var(--line);padding:1px 0}
+  .panel{background:var(--panel);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .ph{display:flex;align-items:center;justify-content:space-between;height:22px;padding:0 8px;border-bottom:1px solid var(--line);background:var(--panel2)}
+  .ph .t{font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber)}
+  .ph .r{font-size:9.5px;color:var(--txt2);letter-spacing:.08em}
+
+  /* conflict window */
+  .conf-item{display:grid;grid-template-columns:70px 1fr auto;gap:8px;padding:6px 8px;border-bottom:1px solid #16140F;align-items:center;font-size:11px}
+  .conf-item .csym{color:var(--txt);font-weight:500}
+  .conf-item .cbody{color:var(--txt2)}
+  .conf-item .cbody .cx{color:var(--red);font-weight:700;padding:0 3px}
+  .conf-item .cbody b.long{color:var(--green)}.conf-item .cbody b.short{color:var(--red)}.conf-item .cbody b.risk{color:var(--amber)}
+  .conf-item .cv{font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);white-space:nowrap}
+  .conf-item.crit{background:rgba(229,72,77,0.06)}
+  .conf-item.crit .cv{color:var(--red)}
+
+  /* signal table */
+  .sigtbl{width:100%;border-collapse:collapse;font-size:11px}
+  .sigtbl th{font-size:9px;letter-spacing:.10em;text-transform:uppercase;color:var(--txt3);text-align:right;padding:4px 8px;border-bottom:1px solid var(--line);font-weight:400;background:var(--panel2);position:sticky;top:0}
+  .sigtbl th:first-child,.sigtbl th:nth-child(2),.sigtbl th:nth-child(3){text-align:left}
+  .sigtbl td{padding:4px 8px;text-align:right;border-bottom:1px solid #16140F;line-height:1.3}
+  .sigtbl td:first-child,.sigtbl td:nth-child(2),.sigtbl td:nth-child(3){text-align:left}
+  .sigrow{cursor:pointer}
+  .sigrow:hover td{background:#100E0A}
+  .sigrow.open td{background:#120F0A}
+  .sigrow.active-row td:first-child{box-shadow:inset 2px 0 0 var(--amber)}
+  .sympair{color:var(--txt);font-weight:500}
+  .src{color:var(--txt2);font-size:10px}
+  .src b{color:var(--amber);font-weight:500}
+  .side{font-size:9px;letter-spacing:.06em;padding:0 4px;font-weight:500}
+  .side.long{color:var(--green)}.side.short{color:var(--red)}.side.hold{color:var(--txt2)}.side.risk{color:var(--amber)}
+  .confmini{display:inline-block;position:relative;width:44px;height:8px;background:#161410;border:1px solid var(--line2);vertical-align:middle;margin-right:5px}
+  .confmini i{position:absolute;left:0;top:0;bottom:0;background:var(--amber)}
+  .rk{font-size:9px;letter-spacing:.04em;text-transform:uppercase}
+  .rk.low{color:var(--green)}.rk.medium{color:var(--amber)}.rk.high{color:var(--red)}.rk.extreme{color:var(--red);font-weight:700}
+  .stt{font-size:9px;letter-spacing:.04em;text-transform:uppercase}
+  .stt.active{color:var(--green)}.stt.pending{color:var(--amber)}.stt.rejected{color:var(--red)}
+  .stars{color:var(--amber);font-size:10px;letter-spacing:.5px}
+  /* detail row */
+  .detrow td{padding:0!important;border-bottom:1px solid var(--line2)!important}
+  .detwrap{display:none;padding:10px 12px;background:#0B0A08}
+  .sigrow.open + .detrow .detwrap{display:block}
+  .detgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px 14px}
+  .qb{}
+  .qb .q{font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--txt3);margin-bottom:3px}
+  .qb .a{font-size:11px;color:var(--txt)}
+  .qb .a b{color:var(--amber)}
+  .ev{grid-column:1/-1}
+  .ev ul{list-style:none;margin-top:3px;display:grid;grid-template-columns:1fr 1fr;gap:2px 16px}
+  .ev li{font-size:10.5px;color:var(--txt2);padding-left:12px;position:relative}
+  .ev li::before{content:'░';position:absolute;left:0;color:var(--amber)}
+  .perm{display:flex;gap:12px;font-size:10.5px}
+  .perm .ok{color:var(--green)}.perm .no{color:var(--red)}.perm .wn{color:var(--amber)}
+  .tl{grid-column:1/-1;display:flex;gap:14px;font-size:10px;color:var(--txt2);flex-wrap:wrap}
+  .tl span b{color:var(--txt)}.tl span time{color:var(--amber)}
+  .acts{display:flex;gap:0;margin-top:10px;flex-wrap:wrap}
+  .abtn{background:var(--panel);color:var(--txt);border:1px solid var(--line2);border-right:none;font-family:inherit;font-size:10px;letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;cursor:pointer}
+  .abtn:last-child{border-right:1px solid var(--line2)}
+  .abtn:hover{border-color:var(--amber);color:var(--amber)}
+  .abtn:focus-visible{outline:2px solid var(--amber);outline-offset:1px;position:relative;z-index:1}
+
+  /* side col */
+  .distr{padding:8px}
+  .drow{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:10px}
+  .drow .dk{width:74px;color:var(--txt2);text-transform:uppercase;letter-spacing:.06em;flex:none}
+  .dbar{flex:1;height:10px;background:#161410;border:1px solid var(--line2);position:relative}
+  .dbar i{position:absolute;left:0;top:0;bottom:0}
+  .dbar i.a{background:var(--amber)}.dbar i.g{background:var(--green)}.dbar i.r{background:var(--red)}.dbar i.m{background:var(--txt2)}
+  .drow .dv{width:26px;text-align:right;color:var(--txt);flex:none}
+  .sidefeed .fitem{display:flex;gap:8px;padding:5px 9px;border-bottom:1px solid #16140F;font-size:10.5px;line-height:1.3;align-items:flex-start}
+  .sidefeed .tk{color:var(--amber);font-weight:500;flex-shrink:0}
+
+  /* footer bar */
+  .estop{position:sticky;bottom:0;display:flex;align-items:center;justify-content:space-between;height:30px;padding:0 10px;background:#120A08;border-top:1px solid #3A1512;z-index:5}
+  .estop .l{display:flex;align-items:center;gap:10px;font-size:10px;color:var(--txt2)}
+  .estop .l b{color:var(--txt)}
+  .estop .blink{color:var(--red);font-size:8px;animation:blink 1.2s steps(2) infinite}
+  @keyframes blink{50%{opacity:.2}}
+  .estop .btn{background:var(--panel);color:var(--red);border:1px solid var(--red);font-family:inherit;font-size:10px;letter-spacing:.10em;text-transform:uppercase;padding:5px 12px;cursor:pointer;font-weight:700}
+  .estop .btn:hover{background:var(--red);color:#0A0908}
+
+  @media (max-width:768px){
+    .grid{grid-template-columns:1fr}
+    .detgrid{grid-template-columns:1fr 1fr}
+    .ev ul{grid-template-columns:1fr}
+    .sigtbl th:nth-child(6),.sigtbl td:nth-child(6),.sigtbl th:nth-child(8),.sigtbl td:nth-child(8){display:none}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .tape .track{animation:none}.estop .blink{animation:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="backbar"><a href="index.html">← 返回矩阵</a></div>
+
+<!-- tape -->
+<div class="tape" aria-label="信号报价走马灯"><div class="track" id="track"></div></div>
+
+<!-- topbar -->
+<div class="topbar">
+  <div class="brand">
+    <span class="mark">ALPHALOOP</span><span class="tag">SIGNAL CENTER · 信号中枢</span>
+    <span class="dot">●</span><span class="mut" style="font-size:10px">LIVE</span>
+  </div>
+  <div class="stats">
+    <span class="s">在场 <b>47</b></span>
+    <span class="s up">active <b>23</b></span>
+    <span class="s am">pending <b>12</b></span>
+    <span class="s mut">expired <b>9</b></span>
+    <span class="s dn">rejected <b>3</b></span>
+    <span class="s dn">冲突 <b>3</b></span>
+  </div>
+</div>
+
+<!-- filter strip -->
+<div class="filterbar">
+  <div class="fg"><span class="fl">来源</span><button class="chip on">全部</button><button class="chip">tech</button><button class="chip">sent</button><button class="chip">agents</button><button class="chip">freqai</button><button class="chip">manip</button></div>
+  <div class="fg"><span class="fl">标的</span><button class="chip on">全部</button><button class="chip">BTC</button><button class="chip">ETH</button><button class="chip">SOL</button><button class="chip">PEPE</button></div>
+  <div class="fg"><span class="fl">方向</span><button class="chip on">全部</button><button class="chip">long</button><button class="chip">short</button><button class="chip">hold</button><button class="chip">risk</button></div>
+  <div class="fg"><span class="fl">状态</span><button class="chip on">全部</button><button class="chip">active</button><button class="chip">pending</button><button class="chip">rej</button></div>
+  <div class="fg"><span class="fl">排序</span><button class="chip on">评分↓</button><button class="chip">置信↓</button><button class="chip">有效期↑</button></div>
+</div>
+
+<!-- conflict window -->
+<div class="panel" style="margin-top:1px">
+  <div class="ph"><span class="t">■ 冲突检测 CONFLICTS</span><span class="r">3 待裁决 UNRESOLVED</span></div>
+  <div class="conf-item">
+    <span class="csym">BTC/USDT</span>
+    <span class="cbody">#1 breakout_v3 <b class="long">看多 0.82</b><span class="cx">⚔</span>#8 投研委员会 <b class="short">看空 0.71</b></span>
+    <span class="cv">需人工裁决</span>
+  </div>
+  <div class="conf-item">
+    <span class="csym">SOL/USDT</span>
+    <span class="cbody">#3 投研委员会 <b class="short">看空 0.71</b><span class="cx">⚔</span>#9 FinBERT <b class="long">看多 0.55</b></span>
+    <span class="cv">需人工裁决</span>
+  </div>
+  <div class="conf-item crit">
+    <span class="csym">PEPE/USDT</span>
+    <span class="cbody">#6 操控雷达 <b class="risk">EXTREME 风险 0.88</b> · M3 拉盘出货特征</span>
+    <span class="cv">建议 BLOCK 全部多头</span>
+  </div>
+</div>
+
+<!-- main grid -->
+<div class="grid">
+  <!-- signal table -->
+  <div class="panel">
+    <div class="ph"><span class="t">■ 信号列表 SIGNALS (10)</span><span class="r">点击行展开完整信号</span></div>
+    <table class="sigtbl">
+      <thead><tr>
+        <th>标的/周期</th><th>方向</th><th>来源</th><th>置信度</th><th>评分</th><th>风险</th><th>有效期</th><th>状态</th>
+      </tr></thead>
+      <tbody id="sigbody"></tbody>
+    </table>
+  </div>
+
+  <!-- side distribution + feed -->
+  <div class="panel">
+    <div class="ph"><span class="t">■ 分布 DISTRIBUTION</span><span class="r">10 shown</span></div>
+    <div class="distr">
+      <div class="drow"><span class="dk">Long</span><div class="dbar"><i class="g" style="width:60%"></i></div><span class="dv">6</span></div>
+      <div class="drow"><span class="dk">Short</span><div class="dbar"><i class="r" style="width:20%"></i></div><span class="dv">2</span></div>
+      <div class="drow"><span class="dk">Hold</span><div class="dbar"><i class="m" style="width:10%"></i></div><span class="dv">1</span></div>
+      <div class="drow"><span class="dk">Risk</span><div class="dbar"><i class="a" style="width:10%"></i></div><span class="dv">1</span></div>
+    </div>
+    <div class="ph" style="border-top:1px solid var(--line)"><span class="t">■ 来源占比 BY SOURCE</span></div>
+    <div class="distr">
+      <div class="drow"><span class="dk">technical</span><div class="dbar"><i class="a" style="width:66%"></i></div><span class="dv">2</span></div>
+      <div class="drow"><span class="dk">agents</span><div class="dbar"><i class="a" style="width:66%"></i></div><span class="dv">2</span></div>
+      <div class="drow"><span class="dk">sentiment</span><div class="dbar"><i class="a" style="width:66%"></i></div><span class="dv">2</span></div>
+      <div class="drow"><span class="dk">freqai</span><div class="dbar"><i class="a" style="width:33%"></i></div><span class="dv">1</span></div>
+      <div class="drow"><span class="dk">predict</span><div class="dbar"><i class="a" style="width:33%"></i></div><span class="dv">1</span></div>
+      <div class="drow"><span class="dk">manip</span><div class="dbar"><i class="r" style="width:33%"></i></div><span class="dv">1</span></div>
+      <div class="drow"><span class="dk">factor</span><div class="dbar"><i class="m" style="width:33%"></i></div><span class="dv">1</span></div>
+    </div>
+    <div class="ph" style="border-top:1px solid var(--line)"><span class="t">■ 最近入账 RECENT</span></div>
+    <div class="sidefeed">
+      <div class="fitem"><span class="tk">PEPE</span><span class="tx">操控雷达 EXTREME 预警 <span class="mut">评分 4.9 · 1m 前</span></span></div>
+      <div class="fitem"><span class="tk">BTC</span><span class="tx">breakout_v3 结构突破 <span class="mut">0.82 · 12s 前</span></span></div>
+      <div class="fitem"><span class="tk">SOL</span><span class="tx">投研委员会 偏空 <span class="mut">0.71 · 5m 前</span></span></div>
+      <div class="fitem"><span class="tk">ARB</span><span class="tx">因子研究 已驳回 <span class="mut">rejected · 20m 前</span></span></div>
+    </div>
+  </div>
+</div>
+
+<!-- footer -->
+<div class="estop">
+  <div class="l"><span class="blink">●</span> 信号中枢在线 · <b>10</b> 信号在列 · <b class="am">3</b> 组冲突待裁决 · <b>1</b> extreme 预警</div>
+  <button class="btn">■ 冻结全部信号进入实盘</button>
+</div>
+
+<script>
+(function(){
+  var reduce = window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+
+  /* tape */
+  var quotes=[
+    ['BTC','↑0.82','up'],['ETH','↑0.67','up'],['SOL','↓0.71','dn'],['AVAX','·0.58','am'],
+    ['LINK','=0.44','am'],['PEPE','!0.88','dn'],['DOGE','↑0.63','up'],['BTC','↓0.71','dn'],
+    ['SOL','↑0.55','up'],['ARB','✕0.49','dn']
+  ];
+  var track=document.getElementById('track');
+  var h='';for(var r=0;r<2;r++){quotes.forEach(function(q){h+='<span class="tk"><span class="sym">'+q[0]+'</span><span class="'+q[2]+'">'+q[1]+'</span></span>';});}
+  track.innerHTML=h;
+
+  var SIGNALS=[
+    {id:1,blk:'S-10',t:'14:10',srcType:'technical',src:'breakout_v3',sym:'BTC/USDT',tf:'15m',dir:'long',conf:0.82,score:4.6,risk:'medium',ttl:'5h 12m',status:'active',reason:'结构突破颈线，量能确认，HTF 守卫放行',ev:['15m 颈线放量突破，量为均量 1.8×','HTF 时序守卫 GO 态，多周期共振','ATR 扩张确认动能'],live:'warn'},
+    {id:2,blk:'S-09',t:'14:08',srcType:'sentiment',src:'FinBERT',sym:'ETH/USDT',tf:'1h',dir:'long',conf:0.67,score:3.8,risk:'low',ttl:'11h',status:'active',reason:'新闻情绪转多，社媒热度上行',ev:['6h 新闻情绪均值 -0.1→+0.34','社媒提及量 +42%','未检出操纵性热度'],live:'no'},
+    {id:3,blk:'S-08',t:'14:05',srcType:'tradingagents',src:'投研委员会',sym:'SOL/USDT',tf:'4h',dir:'short',conf:0.71,score:4.1,risk:'high',ttl:'3h 40m',status:'active',reason:'多 Agent 辩论后偏空，链上流出加速',ev:['5 Agent 辩论 3 轮，4 空 1 多','链上净流出加速','解锁抛压临近'],live:'no'},
+    {id:4,blk:'S-07',t:'14:02',srcType:'freqai',src:'FreqAI-LGB',sym:'AVAX/USDT',tf:'1h',dir:'long',conf:0.58,score:3.2,risk:'medium',ttl:'8h',status:'pending',reason:'模型预测短期反弹，待确认',ev:['LGB 预测 8h +2.1%','特征以量价背离为主','待二次确认转 active'],live:'no'},
+    {id:5,blk:'S-06',t:'13:58',srcType:'prediction',src:'TimesFM',sym:'LINK/USDT',tf:'1d',dir:'hold',conf:0.44,score:2.4,risk:'low',ttl:'20h',status:'pending',reason:'预测区间震荡，无明确方向',ev:['24h 预测落 ±1.5% 窄区间','方向置信不足','无趋势驱动'],live:'no'},
+    {id:6,blk:'S-05',t:'13:52',srcType:'manipulation',src:'操控雷达',sym:'PEPE/USDT',tf:'5m',dir:'risk',conf:0.88,score:4.9,risk:'extreme',ttl:'1h 20m',status:'active',reason:'检出 M3 拉盘出货特征，高集中度预警',ev:['M3：快速拉升后大单派发','Top-10 集中度 78%','社媒加速度骤增'],live:'no'},
+    {id:7,blk:'S-04',t:'13:46',srcType:'technical',src:'range_bottom',sym:'DOGE/USDT',tf:'1h',dir:'long',conf:0.63,score:3.5,risk:'medium',ttl:'6h',status:'active',reason:'近 3 月低点分批建仓区间',ev:['回落至近 3 月支撑带','RSI 超卖回升','建议分批建仓'],live:'warn'},
+    {id:8,blk:'S-03',t:'13:40',srcType:'tradingagents',src:'投研委员会',sym:'BTC/USDT',tf:'1h',dir:'short',conf:0.71,score:4.0,risk:'medium',ttl:'4h',status:'active',reason:'空头观点：与 #1 方向冲突，需裁决',ev:['1h 顶背离，Agent 偏空','与 #1 多头冲突','建议裁决后执行'],live:'no',conflict:'#1'},
+    {id:9,blk:'S-02',t:'13:34',srcType:'sentiment',src:'FinBERT',sym:'SOL/USDT',tf:'15m',dir:'long',conf:0.55,score:3.0,risk:'medium',ttl:'2h',status:'active',reason:'情绪偏多：与 #3 方向冲突',ev:['短周期情绪转正','与 #3 空头冲突','置信度低于对立信号'],live:'no',conflict:'#3'},
+    {id:10,blk:'S-01',t:'13:28',srcType:'factor',src:'因子研究',sym:'ARB/USDT',tf:'4h',dir:'long',conf:0.49,score:2.8,risk:'high',ttl:'9h',status:'rejected',reason:'因子失效，已被人工驳回',ev:['动量因子 IC 转负','因子拥挤度过高','人工复核驳回'],live:'no'}
+  ];
+
+  function stars(s){var f=Math.round(s);return '★'.repeat(f)+'☆'.repeat(5-f);}
+  function riskCN(r){return{low:'低',medium:'中',high:'高',extreme:'极端'}[r];}
+  function dirCN(d){return{long:'看多',short:'看空',hold:'观望',risk:'风险'}[d];}
+  function statusCN(s){return{active:'active 生效中',pending:'pending 待确认',rejected:'rejected 已驳回'}[s];}
+  function perm(live){var t='<span class="ok">回测✓</span><span class="ok">模拟✓</span>';t+=live==='warn'?'<span class="wn">实盘⚠需确认</span>':'<span class="no">实盘✗</span>';return t;}
+
+  var body=document.getElementById('sigbody');
+  var out='';
+  SIGNALS.forEach(function(s){
+    out+='<tr class="sigrow'+(s.status==='active'&&s.dir!=='risk'?' active-row':'')+'" tabindex="0" role="button" aria-expanded="false" data-id="'+s.id+'">'+
+      '<td><span class="sympair">'+s.sym+'</span> <span class="mut">'+s.tf+'</span>'+(s.conflict?' <span class="rk high">⚔'+s.conflict+'</span>':'')+'</td>'+
+      '<td><span class="side '+s.dir+'">'+s.dir.toUpperCase()+'</span></td>'+
+      '<td class="src"><b>'+s.src+'</b> · '+s.srcType+'</td>'+
+      '<td><span class="confmini"><i style="width:'+(s.conf*100)+'%"></i></span><span class="num am">'+s.conf.toFixed(2)+'</span></td>'+
+      '<td><span class="stars">'+stars(s.score)+'</span> <span class="mut num">'+s.score.toFixed(1)+'</span></td>'+
+      '<td><span class="rk '+s.risk+'">'+riskCN(s.risk)+'</span></td>'+
+      '<td class="num mut">'+s.ttl+'</td>'+
+      '<td><span class="stt '+s.status+'">'+s.status+'</span></td>'+
+    '</tr>'+
+    '<tr class="detrow"><td colspan="8"><div class="detwrap"><div class="detgrid">'+
+      '<div class="qb"><div class="q">来源 SOURCE</div><div class="a"><b>'+s.src+'</b> · '+s.srcType+'</div></div>'+
+      '<div class="qb"><div class="q">标的 TARGET</div><div class="a"><b>'+s.sym+'</b> · '+s.tf+'</div></div>'+
+      '<div class="qb"><div class="q">方向 DIR</div><div class="a">'+dirCN(s.dir)+'</div></div>'+
+      '<div class="qb"><div class="q">可信度</div><div class="a">置信 <b>'+s.conf.toFixed(2)+'</b> · 评分 <b>'+s.score.toFixed(1)+'</b> · '+riskCN(s.risk)+'风险</div></div>'+
+      '<div class="qb ev"><div class="q">为什么 REASONING &amp; EVIDENCE</div><div class="a">'+s.reason+'</div><ul>'+s.ev.map(function(e){return '<li>'+e+'</li>';}).join('')+'</ul></div>'+
+      '<div class="qb" style="grid-column:1/3"><div class="q">何时有效</div><div class="a">剩余 <b>'+s.ttl+'</b> · '+statusCN(s.status)+'</div></div>'+
+      '<div class="qb" style="grid-column:3/-1"><div class="q">能做什么 PERMISSION</div><div class="perm">'+perm(s.live)+'</div></div>'+
+      '<div class="qb tl"><div class="q" style="width:100%">生命周期 LIFECYCLE</div><span><time>'+s.t+'</time> <b>生成</b> '+s.src+'</span><span><time>'+s.t+'</time> <b>入账</b> 提交总账</span><span><time>—</time> <b>'+(s.status==='rejected'?'已驳回':s.status==='pending'?'待确认':'生效中')+'</b></span></div>'+
+    '</div><div class="acts">'+
+      '<button class="abtn">发布到策略</button><button class="abtn">加入 dry-run</button><button class="abtn">生成 Draft</button>'+(s.conflict?'<button class="abtn">裁决冲突</button>':'')+'<button class="abtn">归档</button>'+
+    '</div></div></td></tr>';
+  });
+  body.innerHTML=out;
+
+  body.querySelectorAll('.sigrow').forEach(function(row){
+    function toggle(){var o=row.classList.toggle('open');row.setAttribute('aria-expanded',o);}
+    row.addEventListener('click',function(e){if(e.target.closest('.abtn'))return;toggle();});
+    row.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle();}});
+  });
+
+  document.querySelectorAll('.fg').forEach(function(g){g.querySelectorAll('.chip').forEach(function(c){c.addEventListener('click',function(){g.querySelectorAll('.chip').forEach(function(x){x.classList.remove('on');});c.classList.add('on');});});});
+})();
+</script>
+</body>
+</html>

@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```bash
 cd backend
 python3 run.py                          # Start FastAPI on :8000
-python3 -m pytest tests/ -q             # Run all tests (~91 files, ~1262 functions)
+python3 -m pytest tests/ -q             # Run all tests (~146 files, ~1285 functions)
 python3 -m pytest tests/ -q --cov=app   # Tests with coverage (CI gate: ≥30%)
 python3 -m pytest tests/test_risk_rules.py -q          # Single file
 python3 -m pytest tests/ -q -k "structure"             # Filter by name
@@ -51,7 +51,7 @@ The product is bilingual (zh-CN default, en-US toggle) and dark cyberpunk themed
 
 ### Backend (`backend/app/`)
 
-FastAPI app with **46 routers** and **~50 service modules** (plus 21 manipulation services and 8 provider categories).
+FastAPI app with **46 routers** and **~87 service modules** (plus 21 manipulation services and 8 provider categories). The `admin` router is now a package (`routers/admin/` with `providers.py` + `system_settings.py`), not a single `admin.py`.
 
 - **`config.py`** — Pydantic `Settings` driven by `.env` (FREQTRADE_URL, DATABASE_URL, REDIS_URL, FREQTRADE_DB_PATH, etc.).
 - **`routers/`** — Thin handlers. They unmarshal/validate, delegate, and serialize. Business logic lives in services.
@@ -60,7 +60,7 @@ FastAPI app with **46 routers** and **~50 service modules** (plus 21 manipulatio
   2. **Standalone data-structure utilities** — `bloom_filter.py`, `trie.py`, `skip_list.py`, `segment_tree.py`, `lru_cache.py`, `graph.py`, etc. Not trading-specific; consumable from anywhere.
 - **`schemas/`** — Pydantic response models (shared between routers).
 - **`domain/`** — Enums and pure domain types. `domain/enums.py` is the source of truth for `MTFGuardState` (8 values) and `MTFGuardAction` (6 values).
-- **`tests/`** — ~91 pytest files, ~1262 test functions. Naming mirrors service/router. Uses pytest-asyncio.
+- **`tests/`** — ~146 pytest files, ~1285 test functions. Naming mirrors service/router. Uses pytest-asyncio.
 
 Freqtrade integration is dual-channel: REST via `freqtrade_client.py` *and* direct SQLite reads via `freqtrade_db.py`. Trade history → SQLite; orders/control → REST. Don't conflate the two.
 
@@ -82,12 +82,12 @@ configuration schema. Dropped files: `services/data_source_manager.py`,
 
 SwiftUI app organized by feature domain:
 
-- **`Models/Types.swift`** — All domain models (Strategy, Order, Position, Backtest, AIResearchRun, AgentSignal, ShadowWindowSnapshot, etc.).
-- **`Models/Enums.swift`** — Business enums. `SidebarSection` (8 sections: overview, strategy, structure, execution, risk, aiResearch, growth, system) and `AppRoute` (36 routes) drive all navigation.
-- **`Services/NetworkClient.swift`** — Protocol-based dual mode: `MockNetworkClient` (mock data + simulated delay) and `LiveNetworkClient` (`http://localhost:8000` + Bearer auth). Swapped via `@Environment(\.networkClient)`.
-- **`Services/API*.swift`** — One file per backend domain (40 files). Each adds typed methods on `NetworkClientProtocol` and **must ship a mock generator** (`MockX.something()`) alongside. New endpoint → add `Response` Codable type + method + mock factory in the same file. Notable: `APIStrategiesV2.swift` is the v2.5 strategy API (CRUD + versions + DSL validation + backtest).
-- **`ViewModels/`** — `@Observable` `@MainActor` classes (20 files). Prefer parallel fetches with `async let`.
-- **`Views/<Feature>/`** — Feature-scoped SwiftUI views (28 feature folders).
+- **`Models/`** — Domain models. `Types.swift` holds most (Strategy, Order, Position, AIResearchRun, AgentSignal, ShadowWindowSnapshot, etc.); backtest/dryrun/notification types are split into `BacktestTypes.swift`, `DryrunTypes.swift`, `NotificationModels.swift`. `MockData.swift` has been **deleted** — there is no bundled mock dataset anymore.
+- **`Models/Enums.swift`** — Business enums. `SidebarSection` (8 sections: overview, strategy, structure, execution, risk, aiResearch, growth, system) and `AppRoute` drive all navigation.
+- **`Services/NetworkClient.swift`** — Protocol-based, but **live-only in practice**: `NetworkClientKey.defaultValue = LiveNetworkClient()` (`http://localhost:8000` + Bearer auth). `MockNetworkClient` still exists as a `NetworkClientProtocol` conformance but its generic `get/post/...` throw `fatalError("MockNetworkClient has no mock for ...")` — it is a test/preview stub, not a runtime fallback. Do **not** rely on silent mock fallback.
+- **`Services/API*.swift`** — One file per backend domain (40 files). Each adds typed `Response` Codable types + methods on `NetworkClientProtocol`. Mock factories have been removed — new endpoint → add `Response` Codable + method against the live client; no `MockX.something()` generator is required or expected.
+- **`ViewModels/`** — `@Observable` `@MainActor` classes (21 files). Prefer parallel fetches with `async let`.
+- **`Views/<Feature>/`** — Feature-scoped SwiftUI views (24 feature folders).
 - **`Views/AppShell/StrategyLabRootView`** — Shared root that keeps Strategy + AI Research + Growth subviews alive across navigation. Prevents re-initialization when switching between these three sections.
 - **`Views/Strategies/Workbench/`** — Strategy Workspace "launch console" (3-column layout): `StrategyWorkspaceConsoleView` → `WorkspaceChrome` (outer frame + lifecycle rail) → `ConsoleCenterStack` → `SectionCards`. Driven by `StrategyWorkspaceViewModel`.
 - **`Views/BacktestAndDryrun/BacktestLabView`** — Backtest & simulation page as single-column data-terminal layout (2026-07-01 redesign, supersedes 2026-06-30 three-column layout). 48pt top bar (`BacktestTopBar`: `RunSwitcher` + `Backtest|Dryrun` segmented + New Run + Compare≥2), 360pt `EquityCurveHero` (gradient fill + drawdown + compare overlay), collapsible `StrategyContextStrip` (strategy + risk + promotion gate), `MetricsGrid` (2×4: totalReturn/maxDrawdown/sharpe/winRate/profitFactor/trades/filled/duration), `TradeListTable` (compact foldable table, 20-row pagination). Dryrun tab renders `DryrunStatusPanel` (status/apiUrl/pid/totalTrades/openTrades/totalProfit + Stop/Sync buttons) instead of equity/trades. Right-side drawers: `NewRunDrawer` (strategy Picker + version Picker + date range + capital/slippage/stake/maxOpenTrades — fields aligned with backend `StartBacktestRequest`/`StartDryRunRequest`) + `HistoryDrawer` (run list + compare checkboxes, tab-branched rows) via `DrawerContainer`. Dark terminal style: `surfaceHover.opacity(0.35)` + border, mono `PulseFonts.tabular` numbers, no glass/KryptonCard/serif italic. Driven by `BacktestLabViewModel` (`Phase` state machine, `activeTab`, `currentBacktestRun`, `currentDryrunRun`, `comparedRunIds`, `availableStrategies`/`availableVersions`/`selectedVersion`); key methods: `selectStrategy` (loads versions), `selectVersion`, `startBacktest(timerange:symbols:capital:slippageBps:)` (passes `selectedVersion.ruleDsl`), `startDryrun(symbols:stakeAmount:maxOpenTrades:capital:)`, `selectRun`/`selectDryrunRun`, `toggleCompare`, `switchTab`, `stopDryrun`/`syncDryrun`. Backend contracts: `POST /api/v2/backtest` requires `dsl`+`timerange`(YYYYMMDD-YYYYMMDD)+`symbols`+`initial_capital`; `POST /api/v2/dryrun` requires `dsl`+`symbols`+`stake_amount`+`max_open_trades`+`initial_wallet`+`strategy_id`. DSL source: `StrategyVersionV2.ruleDsl` via `APIStrategiesV2.listVersions(strategyId:)`. Spec: `docs/superpowers/specs/2026-07-01-backtest-lab-terminal-redesign.md`.
@@ -99,12 +99,12 @@ SwiftUI app organized by feature domain:
 - **`DesignSystem/`** — Design tokens (`DesignTokens.swift`), view modifiers, animated effects. See Design System section below.
 - **`Localization/`** — See L10n below.
 
-**Data flow**: View → ViewModel → API service → NetworkClient (mock or live) → Backend.
+**Data flow**: View → ViewModel → API service → `LiveNetworkClient` → Backend.
 
 **Routing**: `AppRoute` enum drives navigation. `LandingView` → login → `AppShellView` with sidebar (`SidebarSection`).
 
 #### L10n (bilingual UI)
-Every user-facing string routes through `L10n.<Domain>.something`. Each string is declared once as `static var foo: String { zh("中文", en: "English") }` in `Localization/L10n+<Domain>.swift` (18 domain files). `L10n.zh(...)` reads `SettingsState.shared.language` on the main actor. For reactive re-rendering on language change, use `L10nText("中文", en: "English")`.
+Every user-facing string routes through `L10n.<Domain>.something`. Each string is declared once as `static var foo: String { zh("中文", en: "English") }` in `Localization/L10n+<Domain>.swift` (21 domain files). `L10n.zh(...)` reads `SettingsState.shared.language` on the main actor. For reactive re-rendering on language change, use `L10nText("中文", en: "English")`.
 
 **Never hardcode user-visible strings in views.** When adding a new section, add keys to the matching `L10n+<Domain>.swift` first, then reference them.
 
@@ -141,7 +141,7 @@ GitHub Actions (`.github/workflows/ci.yml`):
 - **Emergency stop**: single real endpoint `POST /api/v2/emergency/stop` (EmergencyStopService). Old `/api/execution/emergency-stop` and `/api/risk/emergency-stop` are deprecated (410).
 - **macOS app**:
   - New domain types → `Models/Types.swift`. New enums → `Models/Enums.swift`.
-  - New API endpoint → add Codable response + method + mock factory in `Services/API<Domain>.swift` (all three in one file).
+  - New API endpoint → add `Response` Codable type + method in `Services/API<Domain>.swift` against `LiveNetworkClient`. No mock factory is needed — the bundled mock dataset was removed.
   - Views grouped by feature domain under `Views/<Feature>/`.
   - Use `@Environment(\.networkClient)` to get the client; never instantiate `LiveNetworkClient` directly in a view.
   - Design tokens in `DesignSystem/DesignTokens.swift`; reach for `ViewModifiers.swift` before writing one-off styling.

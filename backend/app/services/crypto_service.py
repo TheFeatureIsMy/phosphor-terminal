@@ -53,3 +53,7 @@ class CryptoService:
             # May be a legacy plaintext value stored before encryption was enabled
             logger.debug("Decryption failed, returning raw value (possible legacy plaintext)")
             return ciphertext
+
+
+# Module-level singleton
+crypto_service = CryptoService()

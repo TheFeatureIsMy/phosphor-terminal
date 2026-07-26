@@ -96,16 +96,11 @@ struct DataSourcesView: View {
     // MARK: - 页面标题
 
     private func headerSection(_ vm: DataSourcesViewModel) -> some View {
-        HStack {
-            VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
-                TerminalLabel(text: L10n.zh("数据源管理", en: "Data Sources"))
-                Text(L10n.zh("行情 · 链上 · 情绪 · 新闻 — 全链路数据接入", en: "Market · On-Chain · Sentiment · News — Full Pipeline Data Ingestion"))
-                    .font(PulseFonts.caption)
-                    .foregroundStyle(colors.textMuted)
-            }
-
-            Spacer()
-
+        QuantPageHeader(
+            eyebrow: "SYSTEM",
+            title: L10n.zh("数据源管理", en: "Data Sources"),
+            subtitle: L10n.zh("行情 · 链上 · 情绪 · 新闻 — 全链路数据接入", en: "Market · On-Chain · Sentiment · News — Full Pipeline Data Ingestion")
+        ) {
             HStack(spacing: PulseSpacing.sm) {
                 Button {
                     Task { await testAllConnections(vm) }
@@ -139,37 +134,15 @@ struct DataSourcesView: View {
         let totalSources = vm.data?.sources.count ?? 0
         let categoryCount = vm.categories.count
 
-        return LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: PulseSpacing.sm), count: 4), spacing: PulseSpacing.sm) {
-            summaryCard(label: L10n.zh("总数据源", en: "Total Sources"), value: "\(totalSources)", color: colors.textPrimary, icon: "externaldrive.connected.to.line.below")
-                .staggeredAppearance(index: 0)
-            summaryCard(label: L10n.zh("活跃", en: "Active"), value: "\(vm.totalActive)", color: PulseColors.StateColors.green, icon: "checkmark.circle")
-                .staggeredAppearance(index: 1)
-            summaryCard(label: L10n.zh("异常", en: "Error"), value: "\(vm.totalError)", color: PulseColors.StateColors.red, icon: "exclamationmark.triangle")
-                .staggeredAppearance(index: 2)
-            summaryCard(label: L10n.zh("分类数", en: "Categories"), value: "\(categoryCount)", color: PulseColors.info, icon: "square.grid.2x2")
-                .staggeredAppearance(index: 3)
-        }
-    }
-
-    private func summaryCard(label: String, value: String, color: Color, icon: String) -> some View {
-        KryptonCard(emphasis: .subtle) {
-            HStack(spacing: PulseSpacing.sm) {
-                Image(systemName: icon)
-                    .font(PulseFonts.displaySubheading)
-                    .foregroundStyle(color.opacity(0.8))
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(label)
-                        .font(PulseFonts.micro)
-                        .foregroundStyle(colors.textMuted)
-                    Text(value)
-                        .font(PulseFonts.tabularLarge)
-                        .foregroundStyle(color)
-                }
-
-                Spacer()
-            }
-        }
+        return MetricTileGrid(
+            tiles: [
+                MetricTileData(label: L10n.zh("总数据源", en: "Total Sources"), value: "\(totalSources)", valueColor: colors.textPrimary, icon: "externaldrive.connected.to.line.below"),
+                MetricTileData(label: L10n.zh("活跃", en: "Active"), value: "\(vm.totalActive)", valueColor: PulseColors.StateColors.green, icon: "checkmark.circle"),
+                MetricTileData(label: L10n.zh("异常", en: "Error"), value: "\(vm.totalError)", valueColor: PulseColors.StateColors.red, icon: "exclamationmark.triangle"),
+                MetricTileData(label: L10n.zh("分类数", en: "Categories"), value: "\(categoryCount)", valueColor: PulseColors.info, icon: "square.grid.2x2"),
+            ],
+            columns: 4
+        )
     }
 
     // MARK: - 分类筛选
@@ -313,7 +286,7 @@ struct DataSourcesView: View {
                     .padding(.horizontal, PulseSpacing.xs)
                     .padding(.vertical, 3)
                     .background(PulseColors.StateColors.orange.opacity(0.06))
-                    .clipShape(RoundedRectangle(cornerRadius: PulseRadii.xs))
+                    .clipShape(RoundedRectangle(cornerRadius: PulseRadii.badge))
                 }
 
                 // 操作按钮

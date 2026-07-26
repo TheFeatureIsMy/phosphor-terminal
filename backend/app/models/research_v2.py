@@ -27,6 +27,13 @@ class ResearchReport(UUIDMixin, Base):
     agent_opinions: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default="{}")
     summary: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
     evidence: Mapped[list] = mapped_column(JSONB, nullable=False, server_default="[]")
+    uncertainty: Mapped[float] = mapped_column(Float, nullable=False, server_default="0.5")
+    facts: Mapped[list] = mapped_column(JSONB, nullable=False, server_default="[]")
+    model_interpretation: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
+    trading_implication: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
+    risk_warning: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
+    strategy_impact: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
+    prompt_version: Mapped[str] = mapped_column(String(16), nullable=False, server_default="2.5.1")
     provider_trace_id: Mapped[uuid.UUID | None] = mapped_column(PG_UUID(as_uuid=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 

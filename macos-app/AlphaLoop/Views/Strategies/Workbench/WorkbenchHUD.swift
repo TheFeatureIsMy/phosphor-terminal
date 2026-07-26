@@ -286,7 +286,7 @@ private struct HUDButton: View {
             }
             .padding(.horizontal, 10)
             .frame(height: 26)
-            .foregroundStyle(emphasized ? Color.black : colors.textPrimary)
+            .foregroundStyle(emphasized ? PulseColors.onAccent : colors.textPrimary)
             .background(
                 RoundedRectangle(cornerRadius: 6, style: .continuous)
                     .fill(emphasized ? PulseColors.accent : colors.surface)

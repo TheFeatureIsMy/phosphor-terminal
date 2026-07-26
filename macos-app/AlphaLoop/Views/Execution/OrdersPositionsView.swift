@@ -32,13 +32,6 @@ struct OrdersPositionsView: View {
     var body: some View {
         VStack(spacing: 0) {
             LiveWireStrip(mode: resolvedMode)
-            EmergencyStopBar(
-                mode: resolvedMode,
-                affectedRuns: affectedRunCount,
-                emergencyLocked: viewModel?.ordersPositions?.state == "emergency_locked",
-                onStop: { await viewModel?.emergencyStop() },
-                onResume: { await viewModel?.emergencyResume() }
-            )
 
             if let vm = viewModel {
                 if vm.isLoading && vm.ordersPositions == nil {

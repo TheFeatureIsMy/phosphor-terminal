@@ -19,12 +19,10 @@ struct SentimentView: View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: PulseSpacing.lg) {
                 // Header
-                HStack {
-                    Text(L10n.Sentiment.title)
-                        .font(PulseFonts.displayHeading)
-                        .foregroundStyle(colors.textPrimary)
-                    Spacer()
-                }
+                QuantPageHeader(
+                    eyebrow: "AI RESEARCH",
+                    title: L10n.Sentiment.title
+                )
 
                 if isLoading {
                     ProgressView()
@@ -87,7 +85,7 @@ struct SentimentView: View {
                             .scrollContentBackground(.hidden)
                             .padding(PulseSpacing.xs)
                             .background(colors.surface)
-                            .clipShape(RoundedRectangle(cornerRadius: PulseRadii.xs))
+                            .clipShape(RoundedRectangle(cornerRadius: PulseRadii.badge))
 
                         HStack {
                             Spacer()
@@ -103,10 +101,9 @@ struct SentimentView: View {
                                         Text(L10n.Sentiment.analyze)
                                     }
                                 }
-                                .font(PulseFonts.monoLabel)
-                                .textCase(.uppercase)
-                                .tracking(0.8)
-                                .foregroundStyle(colors.background)
+                                .font(PulseFonts.body(14, .semibold))
+                                .tracking(0.3)
+                                .foregroundStyle(PulseColors.onAccent)
                                 .padding(.horizontal, 20)
                                 .padding(.vertical, 10)
                                 .background(PulseColors.accent)

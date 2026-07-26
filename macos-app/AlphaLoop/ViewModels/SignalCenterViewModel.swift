@@ -13,7 +13,21 @@ final class SignalCenterViewModel {
     var filterSource: String? = nil
     var filterDirection: String? = nil
     var filterRisk: String? = nil
+    var filterStatus: String? = nil
+    var filterSymbol: String? = nil
+    var sortOrder: SortOrder = .scoreDesc
     var errorHandler: ErrorHandler?
+
+    enum SortOrder: String, CaseIterable {
+        case scoreDesc, confidenceDesc, expiryAsc
+        var label: String {
+            switch self {
+            case .scoreDesc: return L10n.Signals.sortScoreDesc
+            case .confidenceDesc: return L10n.Signals.sortConfidenceDesc
+            case .expiryAsc: return L10n.Signals.sortExpiryAsc
+            }
+        }
+    }
 
     private let api: APISignalsV2
 
@@ -84,30 +98,74 @@ final class SignalCenterViewModel {
     // MARK: - 过滤逻辑
 
     var filteredSignals: [SignalV2] {
-        signals.filter { signal in
-            if let src = filterSource, src != "全部" {
+        let filtered = signals.filter { signal in
+            if let src = filterSource, src != L10n.Signals.sourceAll {
                 let mapping: [String: String] = [
-                    "AI研究": "ai_research",
+                    "AI研究": "ai_research", "AI Research": "ai_research",
                     "TradingAgents": "tradingagents",
-                    "手动": "manual",
+                    "手动": "manual", "Manual": "manual",
                     "Canvas": "canvas",
                 ]
-                if let mapped = mapping[src], signal.sourceType != mapped {
-                    return false
-                }
+                if let mapped = mapping[src], signal.sourceType != mapped { return false }
             }
-            if let dir = filterDirection, dir != "全部", signal.direction.lowercased() != dir.lowercased() {
+            if let dir = filterDirection, dir != L10n.Signals.directionAll, signal.direction.lowercased() != dir.lowercased() {
                 return false
             }
-            if let risk = filterRisk, risk != "全部" {
+            if let risk = filterRisk, risk != L10n.Signals.riskAll {
                 let mapping: [String: String] = [
-                    "低": "low", "中": "medium", "高": "high", "极高": "critical",
+                    "低": "low", "Low": "low", "中": "medium", "Medium": "medium",
+                    "高": "high", "High": "high", "极高": "critical", "Extreme": "critical",
                 ]
-                if let mapped = mapping[risk], signal.riskLevel != mapped {
-                    return false
-                }
+                if let mapped = mapping[risk], signal.riskLevel != mapped { return false }
+            }
+            if let st = filterStatus, st != L10n.Signals.statusAll, signal.status.lowercased() != st.lowercased() {
+                return false
+            }
+            if let sym = filterSymbol, sym != L10n.Signals.symbolAll, !signal.symbol.hasPrefix(sym) {
+                return false
             }
             return true
         }
+        return sortedSignals(filtered)
+    }
+
+    private func sortedSignals(_ list: [SignalV2]) -> [SignalV2] {
+        switch sortOrder {
+        case .scoreDesc:
+            return list.sorted { ($0.score ?? 0) > ($1.score ?? 0) }
+        case .confidenceDesc:
+            return list.sorted { $0.confidence > $1.confidence }
+        case .expiryAsc:
+            return list.sorted { $0.expiresAt < $1.expiresAt }
+        }
+    }
+
+    // MARK: - 状态计数(统计带)
+
+    func count(status: String) -> Int {
+        signals.filter { $0.status.lowercased() == status.lowercased() }.count
+    }
+
+    // MARK: - 冲突检测(同标的多空对立,真实数据派生)
+
+    struct ConflictGroup: Identifiable {
+        let id: String  // symbol
+        let symbol: String
+        let longs: [SignalV2]
+        let shorts: [SignalV2]
+    }
+
+    var conflictGroups: [ConflictGroup] {
+        let active = signals.filter { $0.status.lowercased() == "active" || $0.status.lowercased() == "pending" }
+        let bySymbol = Dictionary(grouping: active, by: { $0.symbol })
+        var groups: [ConflictGroup] = []
+        for (symbol, list) in bySymbol {
+            let longs = list.filter { $0.direction.lowercased() == "long" }
+            let shorts = list.filter { $0.direction.lowercased() == "short" }
+            if !longs.isEmpty && !shorts.isEmpty {
+                groups.append(ConflictGroup(id: symbol, symbol: symbol, longs: longs, shorts: shorts))
+            }
+        }
+        return groups
     }
 }

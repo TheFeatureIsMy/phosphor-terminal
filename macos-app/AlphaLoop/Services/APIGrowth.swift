@@ -1,103 +1,36 @@
-// APIGrowth.swift — Growth API (daily review, reports, candidates)
+// APIGrowth.swift - Growth API (daily review, reports, candidates, SHAP, signal validity)
 
 import Foundation
 
 struct APIGrowth {
     let client: NetworkClientProtocol
 
-    func runDailyReview(_ body: [String: Any]) async throws -> GrowthReport {
-        try await client.post("/api/v2/growth/daily-review", body: AnyEncodable(body),
-            mock: { MockGrowth.dailyReview })
+    func runDailyReview(days: Int = 1) async throws -> GrowthReport {
+        try await client.post("/api/growth/reports/daily-review", body: AnyEncodable(["days": days]))
     }
 
     func listReports(limit: Int = 20) async throws -> [GrowthReport] {
-        try await client.get("/api/v2/growth/reports?limit=\(limit)", mock: MockGrowth.reports)
+        try await client.get("/api/growth/reports?limit=\(limit)")
     }
 
     func listCandidates(limit: Int = 20) async throws -> [StrategyCandidate] {
-        try await client.get("/api/v2/growth/candidates?limit=\(limit)", mock: MockGrowth.candidates)
+        try await client.get("/api/growth/candidates?limit=\(limit)")
     }
 
-    func confirmCandidate(_ id: String) async throws -> StrategyCandidate {
-        try await client.post("/api/v2/growth/candidates/\(id)/confirm", body: AnyEncodable([String: String]()),
-            mock: { MockGrowth.confirmed(id: id) })
-    }
-}
-
-enum MockGrowth {
-    static var dailyReview: GrowthReport {
-        GrowthReport(
-            id: UUID().uuidString, reportType: "daily_review", status: "completed",
-            summary: AnyCodable([
-                "report_date": "2026-06-05", "total_strategies_reviewed": 8, "candidates_found": 3,
-                "top_performer": "RSI Mean Reversion", "top_performer_pnl": 1245.80,
-                "avg_win_rate": 0.62, "avg_sharpe_ratio": 1.35,
-                "recommendations": [
-                    "Increase position size on RSI Mean Reversion (consistent alpha)",
-                    "Consider pausing MACD Crossover (negative Sharpe last 7 days)",
-                    "New candidate: Volume Breakout shows promise on SOL/USDT",
-                ],
-            ] as [String: Any]),
-            createdAt: "2026-06-05T06:00:00Z"
-        )
+    func confirmCandidate(_ id: String) async throws -> ConfirmCandidateResponse {
+        try await client.post("/api/growth/candidates/\(id)/confirm", body: AnyEncodable([String: String]()))
     }
 
-    static func reports() -> [GrowthReport] {
-        [
-            dailyReview,
-            GrowthReport(
-                id: UUID().uuidString, reportType: "daily_review", status: "completed",
-                summary: AnyCodable([
-                    "report_date": "2026-06-04", "total_strategies_reviewed": 7, "candidates_found": 1,
-                    "top_performer": "MACD Crossover", "avg_win_rate": 0.58,
-                ] as [String: Any]),
-                createdAt: "2026-06-04T06:00:00Z"
-            ),
-            GrowthReport(
-                id: UUID().uuidString, reportType: "daily_review", status: "failed",
-                summary: nil, createdAt: "2026-06-03T06:00:00Z"
-            ),
-        ]
+    func getShapFeatures() async throws -> ShapFeaturesResponse {
+        try await client.get("/api/growth/shap-features")
     }
 
-    static func candidates() -> [StrategyCandidate] {
-        [
-            StrategyCandidate(
-                id: UUID().uuidString, status: "pending_review", confidence: 0.82,
-                createdAt: "2026-06-05T06:15:00Z",
-                dsl: AnyCodable(["name": "Volume Breakout v2", "symbol": "SOL/USDT",
-                    "source_type": "ai_generated", "backtest_win_rate": 0.68, "backtest_sharpe": 1.72,
-                    "reasoning": "Strong volume profile breakout pattern on 4H timeframe"] as [String: Any])
-            ),
-            StrategyCandidate(
-                id: UUID().uuidString, status: "confirmed", confidence: 0.91,
-                createdAt: "2026-06-04T14:30:00Z",
-                dsl: AnyCodable(["name": "Funding Rate Arb", "symbol": "BTC/USDT",
-                    "source_type": "manual", "backtest_win_rate": 0.82, "backtest_sharpe": 2.10,
-                    "reasoning": "Exploits funding rate divergence"] as [String: Any])
-            ),
-            StrategyCandidate(
-                id: UUID().uuidString, status: "rejected", confidence: 0.35,
-                createdAt: "2026-06-03T20:00:00Z",
-                dsl: AnyCodable(["name": "Momentum Scalper", "symbol": "ETH/USDT",
-                    "source_type": "ai_generated", "backtest_win_rate": 0.51, "backtest_sharpe": 0.45,
-                    "reasoning": "Rejected — poor risk-adjusted returns"] as [String: Any])
-            ),
-        ]
-    }
-
-    static func confirmed(id: String) -> StrategyCandidate {
-        StrategyCandidate(
-            id: id, status: "confirmed", confidence: 0.82,
-            createdAt: "2026-06-05T06:15:00Z",
-            dsl: AnyCodable(["name": "Volume Breakout v2", "symbol": "SOL/USDT",
-                "reasoning": "Confirmed for dryrun deployment"] as [String: Any])
-        )
+    func getSignalValidity() async throws -> SignalValidityResponse {
+        try await client.get("/api/growth/signal-validity")
     }
 }
 
-
-// MARK: - SHAP & Signal Validity Response Types
+// MARK: - Response Types
 
 struct ShapFeatureItem: Codable {
     let name: String
@@ -120,41 +53,16 @@ struct SignalValidityResponse: Codable {
     let sources: [SignalSourceItem]
 }
 
-// MARK: - APIGrowth SHAP & Signal Validity Extensions
+struct ConfirmCandidateResponse: Codable {
+    let strategyId: String
+    let versionId: String
+    let versionNo: Int
+    let status: String
 
-extension APIGrowth {
-    func getShapFeatures() async throws -> ShapFeaturesResponse {
-        try await client.get("/api/growth/shap-features", mock: MockGrowth.shapFeatures)
-    }
-
-    func getSignalValidity() async throws -> SignalValidityResponse {
-        try await client.get("/api/growth/signal-validity", mock: MockGrowth.signalValidity)
-    }
-}
-
-extension MockGrowth {
-    static func shapFeatures() -> ShapFeaturesResponse {
-        ShapFeaturesResponse(state: "healthy", features: [
-            ShapFeatureItem(name: "RSI_14", value: 0.312),
-            ShapFeatureItem(name: "MACD_hist", value: 0.248),
-            ShapFeatureItem(name: "Vol_24h", value: 0.201),
-            ShapFeatureItem(name: "BB_width", value: 0.178),
-            ShapFeatureItem(name: "EMA_cross", value: 0.156),
-            ShapFeatureItem(name: "ATR_14", value: 0.123),
-            ShapFeatureItem(name: "OBV_slope", value: 0.098),
-            ShapFeatureItem(name: "ADX_14", value: 0.087),
-            ShapFeatureItem(name: "Funding_rate", value: 0.065),
-            ShapFeatureItem(name: "Sentiment", value: 0.042),
-        ])
-    }
-
-    static func signalValidity() -> SignalValidityResponse {
-        SignalValidityResponse(state: "healthy", sources: [
-            SignalSourceItem(name: "AI Research", accuracy: 0.72, total: 45),
-            SignalSourceItem(name: "TradingAgents", accuracy: 0.68, total: 38),
-            SignalSourceItem(name: "Manual", accuracy: 0.61, total: 25),
-            SignalSourceItem(name: "Sentiment", accuracy: 0.55, total: 28),
-            SignalSourceItem(name: "KOL", accuracy: 0.42, total: 20),
-        ])
+    enum CodingKeys: String, CodingKey {
+        case status
+        case strategyId = "strategy_id"
+        case versionId = "version_id"
+        case versionNo = "version_no"
     }
 }

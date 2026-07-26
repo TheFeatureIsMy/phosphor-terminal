@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AlphaLoop · Web3 视觉方案预览</title>
+<style>
+  :root {
+    --bg:#08090F; --text:#ECEDF6; --text-2:#9095B0; --text-3:#565C79; --border:rgba(255,255,255,0.08);
+    --font:-apple-system,BlinkMacSystemFont,'SF Pro Display','Inter',system-ui,sans-serif;
+    --mono:'SF Mono',ui-monospace,'JetBrains Mono',monospace;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:var(--font); background:var(--bg); color:var(--text); min-height:100dvh; -webkit-font-smoothing:antialiased; }
+  body::before { content:''; position:fixed; inset:0; z-index:0; pointer-events:none;
+    background:radial-gradient(ellipse 60% 50% at 20% 0%,rgba(109,94,252,0.14),transparent 60%),radial-gradient(ellipse 50% 40% at 80% 20%,rgba(56,189,248,0.10),transparent 60%); }
+  .wrap { position:relative; z-index:1; max-width:1200px; margin:0 auto; padding:60px 32px 80px; }
+  .head { margin-bottom:44px; }
+  .kicker { font-family:var(--mono); font-size:12.5px; color:var(--text-3); letter-spacing:0.1em; margin-bottom:14px; }
+  h1 { font-size:38px; font-weight:800; letter-spacing:-0.03em; line-height:1.1; margin-bottom:14px; }
+  h1 .grad { background:linear-gradient(100deg,#6D5EFC,#C15CFF 50%,#38BDF8); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .lead { font-size:15px; color:var(--text-2); line-height:1.7; max-width:70ch; }
+  .lead b { color:var(--text); font-weight:600; }
+  .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:22px; margin-top:8px; }
+  .scheme { display:block; text-decoration:none; color:inherit; border:1px solid var(--border); border-radius:18px; overflow:hidden;
+    background:rgba(20,22,34,0.5); transition:.25s cubic-bezier(.16,1,.3,1); }
+  .scheme:hover { transform:translateY(-4px); border-color:rgba(193,92,255,0.35); box-shadow:0 24px 60px rgba(4,5,12,0.6); }
+  .preview { height:150px; position:relative; overflow:hidden; }
+  .pv-a { background:#070A12; }
+  .pv-a::before { content:''; position:absolute; width:120%; height:120%; top:-30%; left:-10%; filter:blur(30px); opacity:0.7;
+    background:radial-gradient(circle at 20% 30%,#3B82F6,transparent 45%),radial-gradient(circle at 70% 40%,#8B5CF6,transparent 45%),radial-gradient(circle at 50% 70%,#22D3EE,transparent 45%); }
+  .pv-b { background:#05070A; background-image:radial-gradient(rgba(0,255,214,0.18) 1px,transparent 1px); background-size:18px 18px; }
+  .pv-b::before { content:'▶ DEPLOY   ■ HALT'; position:absolute; bottom:16px; left:16px; font-family:var(--mono); font-size:11px; color:#00FFD6; text-shadow:0 0 8px rgba(0,255,214,0.6); letter-spacing:0.08em; }
+  .pv-c { background:#0C0E17; display:grid; grid-template-columns:2fr 1fr 1fr; grid-template-rows:1fr 1fr; gap:6px; padding:14px; }
+  .pv-c > i { border-radius:8px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.07); }
+  .pv-c > i:nth-child(1){ grid-row:span 2; background:linear-gradient(135deg,rgba(109,94,252,0.3),rgba(193,92,255,0.12)); }
+  .pv-c > i:nth-child(4){ background:linear-gradient(135deg,rgba(56,189,248,0.2),transparent); }
+  .card-body { padding:20px 22px; }
+  .badge { display:inline-block; font-family:var(--mono); font-size:11px; padding:3px 9px; border-radius:6px; margin-bottom:12px; }
+  .scheme-name { font-size:18px; font-weight:700; margin-bottom:8px; letter-spacing:-0.01em; }
+  .scheme-desc { font-size:13px; color:var(--text-2); line-height:1.6; margin-bottom:14px; }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; }
+  .chip { font-family:var(--mono); font-size:10.5px; color:var(--text-3); padding:3px 8px; border:1px solid var(--border); border-radius:6px; }
+  .open { margin-top:14px; font-size:13px; font-weight:600; color:#8B7CFF; }
+  .note { margin-top:44px; padding:20px 24px; border:1px solid var(--border); border-radius:14px; background:rgba(255,255,255,0.02); font-size:13px; color:var(--text-2); line-height:1.7; }
+  .note b { color:var(--text); }
+  @media (max-width:860px){ .grid{grid-template-columns:1fr} h1{font-size:30px} }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="head">
+      <div class="kicker">ALPHALOOP · DESIGN EXPLORATION · 2026-07-14</div>
+      <h1>Web3.0 视觉方向 · <span class="grad">三套预览方案</span></h1>
+      <p class="lead">以 <b>Dashboard 总览</b>为样板页，用同一份数据出三套不同调性，方便你只对比<b>纯视觉风格</b>。动效观感忠实复刻 <b>ReactBits</b> 组件，正式落地时可直接替换为真正的 React 组件。点卡片进入全屏预览，移动鼠标可体验光标聚光 / 3D 倾斜等交互。</p>
+    </div>
+
+    <div class="grid">
+      <a class="scheme" href="scheme-a-aurora-glass.html">
+        <div class="preview pv-a"></div>
+        <div class="card-body">
+          <span class="badge" style="background:rgba(91,154,255,0.14);color:#5B9AFF">方案 A</span>
+          <div class="scheme-name">Aurora Glass · 极光玻璃</div>
+          <div class="scheme-desc">流动极光 mesh 背景 + 玻璃拟态卡片，明快高级的 DeFi 调性，接近 Solana / 现代 Web3 门户观感。</div>
+          <div class="chips"><span class="chip">Aurora</span><span class="chip">GlassSurface</span><span class="chip">CountUp</span><span class="chip">ShinyText</span></div>
+          <div class="open">进入预览 →</div>
+        </div>
+      </a>
+
+      <a class="scheme" href="scheme-b-neon-terminal.html">
+        <div class="preview pv-b"></div>
+        <div class="card-body">
+          <span class="badge" style="background:rgba(0,255,214,0.12);color:#00FFD6">方案 B</span>
+          <div class="scheme-name">Neon Terminal · 霓虹终端</div>
+          <div class="scheme-desc">纯黑点阵网格 + 青霓虹描边 + 扫描线 + 漂浮粒子，硬核赛博交易终端，最贴合量化操盘手气质。</div>
+          <div class="chips"><span class="chip">DotGrid</span><span class="chip">Particles</span><span class="chip">DecryptedText</span><span class="chip">Spotlight</span></div>
+          <div class="open">进入预览 →</div>
+        </div>
+      </a>
+
+      <a class="scheme" href="scheme-c-prism-bento.html">
+        <div class="preview pv-c"><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="card-body">
+          <span class="badge" style="background:rgba(193,92,255,0.14);color:#C15CFF">方案 C</span>
+          <div class="scheme-name">Prism Bento · 棱镜便当</div>
+          <div class="scheme-desc">深空 Magic Bento 不等格布局 + 光标聚光渐变描边 + 3D Tilt 倾斜，立体质感强，信息密度与美感平衡。</div>
+          <div class="chips"><span class="chip">MagicBento</span><span class="chip">TiltedCard</span><span class="chip">SpotlightCard</span><span class="chip">GradientText</span></div>
+          <div class="open">进入预览 →</div>
+        </div>
+      </a>
+    </div>
+
+    <div class="note">
+      <b>说明：</b>这三套是<b>视觉方向探索稿</b>，与现有 OKX 黑白极简体系（<span style="font-family:var(--mono)">tokens.css / DesignTokens.swift</span>）刻意拉开距离，用于敲定 Web3 方向。数据、指标结构对齐真实 <span style="font-family:var(--mono)">DashboardView</span>（账户权益 / 运行时·就绪·风控三栏 / 持仓风险表 / 决策·告警双流 / 紧急停止）。<br>
+      <b>敲定后我会：</b>①把选中风格提炼成 Web3 版 design token；②铺到 Risk / Manipulation / Execution 等核心页；③正式实现时接入真正的 ReactBits 组件（canvas-web 已是 React 19 环境，可直接 <span style="font-family:var(--mono)">npm i</span>）。
+    </div>
+  </div>
+</body>
+</html>

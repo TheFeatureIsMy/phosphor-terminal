@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<!--
+  AlphaLoop · 方案 A — Aurora Glass
+  Web3.0 极光玻璃拟态 · 明快高级 DeFi 调性
+  纯 HTML/CSS/JS 复刻 ReactBits 观感（正式落地可换真组件）：
+    · Aurora            → 顶部极光 mesh 流动背景
+    · GlassSurface      → .glass 卡片（backdrop-filter + 内描边）
+    · CountUp           → data-countup 数字滚动
+    · ShinyText         → .shiny 标题流光
+    · GradientText      → .grad-text 渐变文字
+  样板页：Dashboard 总览（对齐 macos-app DashboardView 真实结构）
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AlphaLoop · Aurora Glass</title>
+<style>
+  :root {
+    --bg: #070A12;
+    --bg-2: #0B1020;
+    --glass: rgba(255,255,255,0.045);
+    --glass-2: rgba(255,255,255,0.07);
+    --border: rgba(255,255,255,0.10);
+    --border-glow: rgba(122,162,255,0.35);
+    --text: #EAF0FF;
+    --text-2: #98A6C4;
+    --text-3: #5A6788;
+    --accent: #5B9AFF;
+    --accent-2: #7A6CFF;
+    --aurora-1: #3B82F6;
+    --aurora-2: #8B5CF6;
+    --aurora-3: #22D3EE;
+    --bull: #22E39A;
+    --bear: #FF5D6C;
+    --amber: #F5B544;
+    --radius: 18px;
+    --radius-sm: 12px;
+    --font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', system-ui, sans-serif;
+    --mono: 'SF Mono', ui-monospace, 'JetBrains Mono', monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100dvh;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Aurora 背景（ReactBits: Aurora）───────────────── */
+  .aurora-wrap { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+  .aurora {
+    position: absolute; border-radius: 50%;
+    filter: blur(90px); opacity: 0.55; mix-blend-mode: screen;
+  }
+  .aurora.a1 { width: 60vw; height: 60vw; top: -22vw; left: -8vw;
+    background: radial-gradient(circle, var(--aurora-1), transparent 62%);
+    animation: drift1 22s ease-in-out infinite; }
+  .aurora.a2 { width: 48vw; height: 48vw; top: -14vw; right: -6vw;
+    background: radial-gradient(circle, var(--aurora-2), transparent 62%);
+    animation: drift2 26s ease-in-out infinite; }
+  .aurora.a3 { width: 40vw; height: 40vw; top: 6vw; left: 34vw;
+    background: radial-gradient(circle, var(--aurora-3), transparent 60%);
+    animation: drift3 30s ease-in-out infinite; }
+  @keyframes drift1 { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(6vw,4vw) scale(1.12)} }
+  @keyframes drift2 { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(-5vw,5vw) scale(1.08)} }
+  @keyframes drift3 { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(-4vw,-3vw) scale(1.15)} }
+  .grain { position: fixed; inset: 0; z-index: 1; pointer-events: none; opacity: 0.04;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+  .shell { position: relative; z-index: 2; max-width: 1320px; margin: 0 auto; padding: 22px 28px 80px; }
+
+  /* ── 玻璃卡片（ReactBits: GlassSurface）───────────── */
+  .glass {
+    background: var(--glass);
+    backdrop-filter: blur(22px) saturate(150%);
+    -webkit-backdrop-filter: blur(22px) saturate(150%);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.10), 0 22px 60px rgba(3,7,20,0.5);
+    position: relative;
+  }
+  .glass::after { content:''; position:absolute; inset:0; border-radius:inherit; padding:1px;
+    background: linear-gradient(135deg, rgba(122,162,255,0.4), transparent 40%, rgba(139,92,246,0.25));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor; mask-composite: exclude; opacity:0.5; pointer-events:none; }
+
+  /* ── Nav ─────────────────────────────────────────── */
+  nav { display:flex; align-items:center; justify-content:space-between; height:64px; margin-bottom:22px; }
+  .brand { display:flex; align-items:center; gap:12px; }
+  .brand-mark { width:34px; height:34px; border-radius:10px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display:grid; place-items:center; font-weight:800; font-size:16px; color:#fff;
+    box-shadow: 0 6px 20px rgba(91,154,255,0.4); }
+  .brand-name { font-size:17px; font-weight:700; letter-spacing:-0.02em; }
+  .brand-name .grad-text {
+    background: linear-gradient(90deg, var(--accent), var(--aurora-3));
+    -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .nav-links { display:flex; gap:6px; }
+  .nav-links a { padding:8px 14px; border-radius:10px; font-size:13.5px; color:var(--text-2);
+    text-decoration:none; transition:.25s; }
+  .nav-links a.active { color:var(--text); background:var(--glass-2); }
+  .nav-links a:hover { color:var(--text); }
+  .nav-right { display:flex; align-items:center; gap:14px; }
+  .live-pill { display:flex; align-items:center; gap:8px; padding:7px 14px; border-radius:999px;
+    background: rgba(34,227,154,0.10); border:1px solid rgba(34,227,154,0.3); font-size:12.5px; color:var(--bull);
+    font-weight:600; }
+  .live-dot { width:7px; height:7px; border-radius:50%; background:var(--bull);
+    box-shadow:0 0 0 0 rgba(34,227,154,0.6); animation:pulse 2s infinite; }
+  @keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(34,227,154,0.5)} 70%{box-shadow:0 0 0 8px rgba(34,227,154,0)} 100%{box-shadow:0 0 0 0 rgba(34,227,154,0)} }
+  .avatar { width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg,#7A6CFF,#22D3EE); }
+
+  /* ── Hero 账户权益卡 ─────────────────────────────── */
+  .hero { padding:30px 34px; margin-bottom:20px; overflow:hidden; }
+  .hero-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; }
+  .hero-label { font-size:12.5px; color:var(--text-2); letter-spacing:.04em; margin-bottom:10px; }
+  .equity { font-family:var(--mono); font-size:56px; font-weight:700; letter-spacing:-0.03em; line-height:1;
+    background:linear-gradient(120deg,#fff 20%,#9EC0FF 55%,#C6B4FF);
+    -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .equity .cur { font-size:28px; color:var(--text-2); -webkit-text-fill-color:var(--text-2); margin-right:6px; }
+  .pnl-row { display:flex; align-items:center; gap:14px; margin-top:14px; }
+  .pnl-chip { display:flex; align-items:center; gap:6px; padding:6px 12px; border-radius:10px;
+    font-family:var(--mono); font-size:14px; font-weight:600; }
+  .pnl-chip.up { background:rgba(34,227,154,0.12); color:var(--bull); border:1px solid rgba(34,227,154,0.25); }
+  .pnl-chip.dn { background:rgba(255,93,108,0.10); color:var(--bear); border:1px solid rgba(255,93,108,0.22); }
+  .pnl-note { font-size:12.5px; color:var(--text-3); }
+  .sparkline { width:220px; height:70px; }
+  .actions { display:flex; gap:10px; margin-top:24px; }
+  .btn { padding:11px 20px; border-radius:12px; font-size:13.5px; font-weight:600; cursor:pointer;
+    border:1px solid var(--border); background:var(--glass-2); color:var(--text); transition:.2s;
+    display:inline-flex; align-items:center; gap:8px; }
+  .btn:hover { transform:translateY(-1px); border-color:var(--border-glow); }
+  .btn:active { transform:translateY(0) scale(.98); }
+  .btn.primary { background:linear-gradient(135deg,var(--accent),var(--accent-2)); border:none; color:#fff;
+    box-shadow:0 8px 24px rgba(91,154,255,0.35); }
+  .btn.danger { background:rgba(255,93,108,0.12); border-color:rgba(255,93,108,0.3); color:var(--bear); }
+
+  /* ── 三栏指标 ─────────────────────────────────────── */
+  .metrics-row { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-bottom:20px; }
+  .metric-card { padding:22px 24px; }
+  .metric-head { display:flex; align-items:center; gap:10px; margin-bottom:18px; }
+  .metric-icon { width:32px; height:32px; border-radius:9px; display:grid; place-items:center; font-size:15px; }
+  .metric-title { font-size:13.5px; font-weight:600; color:var(--text); }
+  .metric-sub { font-size:11.5px; color:var(--text-3); margin-left:auto; }
+  .stat { display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-bottom:1px solid rgba(255,255,255,0.05); }
+  .stat:last-child { border:none; }
+  .stat-k { font-size:12.5px; color:var(--text-2); }
+  .stat-v { font-family:var(--mono); font-size:14px; font-weight:600; }
+  .gauge { position:relative; width:100%; height:8px; border-radius:4px; background:rgba(255,255,255,0.06); overflow:hidden; margin-top:4px; }
+  .gauge > i { position:absolute; inset:0; border-radius:4px; display:block; }
+
+  /* ── 持仓表 ───────────────────────────────────────── */
+  .section-title { display:flex; align-items:center; gap:10px; margin:0 4px 14px; font-size:15px; font-weight:700; letter-spacing:-0.01em; }
+  .section-title .tag { font-size:11px; font-weight:600; color:var(--text-3); padding:3px 9px; border-radius:7px; background:var(--glass-2); }
+  table { width:100%; border-collapse:collapse; }
+  .table-card { padding:8px 10px 12px; margin-bottom:20px; }
+  th { text-align:left; font-size:11.5px; font-weight:600; color:var(--text-3); padding:12px 16px; text-transform:uppercase; letter-spacing:.05em; }
+  td { padding:14px 16px; font-size:13.5px; border-top:1px solid rgba(255,255,255,0.05); }
+  tbody tr { transition:.15s; }
+  tbody tr:hover { background:rgba(255,255,255,0.03); }
+  .sym { display:flex; align-items:center; gap:10px; font-weight:600; }
+  .sym-ic { width:26px; height:26px; border-radius:50%; display:grid; place-items:center; font-size:11px; font-weight:700; color:#fff; }
+  .mono { font-family:var(--mono); }
+  .up { color:var(--bull); } .dn { color:var(--bear); }
+  .side { font-size:11px; font-weight:700; padding:3px 8px; border-radius:6px; }
+  .side.long { background:rgba(34,227,154,0.14); color:var(--bull); }
+  .side.short { background:rgba(255,93,108,0.13); color:var(--bear); }
+  .bar { width:70px; height:6px; border-radius:3px; background:rgba(255,255,255,0.08); overflow:hidden; display:inline-block; vertical-align:middle; }
+  .bar > i { display:block; height:100%; border-radius:3px; }
+
+  /* ── 双流 ─────────────────────────────────────────── */
+  .feeds { display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-bottom:20px; }
+  .feed-card { padding:20px 22px; }
+  .feed-item { display:flex; gap:12px; padding:13px 0; border-bottom:1px solid rgba(255,255,255,0.05); }
+  .feed-item:last-child { border:none; }
+  .feed-ic { width:30px; height:30px; border-radius:9px; display:grid; place-items:center; font-size:13px; flex-shrink:0; }
+  .feed-body { flex:1; }
+  .feed-t { font-size:13px; font-weight:600; margin-bottom:3px; }
+  .feed-d { font-size:12px; color:var(--text-3); line-height:1.5; }
+  .feed-time { font-family:var(--mono); font-size:11px; color:var(--text-3); }
+
+  /* ── 紧急条 ───────────────────────────────────────── */
+  .emergency { display:flex; align-items:center; justify-content:space-between; padding:18px 26px;
+    background:linear-gradient(90deg, rgba(255,93,108,0.10), rgba(255,93,108,0.03));
+    border:1px solid rgba(255,93,108,0.25); }
+  .emergency .warn { display:flex; align-items:center; gap:14px; }
+  .warn-ic { width:40px; height:40px; border-radius:12px; background:rgba(255,93,108,0.15);
+    display:grid; place-items:center; font-size:20px; }
+
+  .shiny { position:relative; background:linear-gradient(90deg,var(--text-2) 0%,#fff 50%,var(--text-2) 100%);
+    background-size:200% 100%; -webkit-background-clip:text; background-clip:text; color:transparent;
+    animation:shine 3.5s linear infinite; }
+  @keyframes shine { to { background-position:-200% 0; } }
+
+  @media (max-width:900px){ .metrics-row,.feeds{grid-template-columns:1fr} .equity{font-size:40px} .nav-links{display:none} }
+  @media (prefers-reduced-motion:reduce){ *{animation:none!important} }
+</style>
+</head>
+<body>
+  <div class="aurora-wrap">
+    <div class="aurora a1"></div><div class="aurora a2"></div><div class="aurora a3"></div>
+  </div>
+  <div class="grain"></div>
+
+  <div class="shell">
+    <!-- NAV -->
+    <nav>
+      <div class="brand">
+        <div class="brand-mark">α</div>
+        <div class="brand-name">Alpha<span class="grad-text">Loop</span></div>
+      </div>
+      <div class="nav-links">
+        <a href="#" class="active">总览</a><a href="#">策略</a><a href="#">结构</a>
+        <a href="#">执行</a><a href="#">风控</a><a href="#">AI 研究</a>
+      </div>
+      <div class="nav-right">
+        <div class="live-pill"><span class="live-dot"></span>实盘运行中</div>
+        <div class="avatar"></div>
+      </div>
+    </nav>
+
+    <!-- HERO -->
+    <div class="glass hero">
+      <div class="hero-top">
+        <div>
+          <div class="hero-label">账户总权益 · USDT 本位</div>
+          <div class="equity"><span class="cur">$</span><span data-countup="1284736.52" data-dec="2">0.00</span></div>
+          <div class="pnl-row">
+            <span class="pnl-chip up">▲ +$18,432.10</span>
+            <span class="pnl-chip up">+1.46%</span>
+            <span class="pnl-note">今日盈亏 · 较昨日结算</span>
+          </div>
+        </div>
+        <svg class="sparkline" viewBox="0 0 220 70" preserveAspectRatio="none">
+          <defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#22E39A" stop-opacity="0.35"/><stop offset="1" stop-color="#22E39A" stop-opacity="0"/>
+          </linearGradient></defs>
+          <path d="M0,55 L20,50 L40,52 L60,40 L80,44 L100,30 L120,34 L140,22 L160,26 L180,14 L200,18 L220,8"
+            fill="none" stroke="#22E39A" stroke-width="2"/>
+          <path d="M0,55 L20,50 L40,52 L60,40 L80,44 L100,30 L120,34 L140,22 L160,26 L180,14 L200,18 L220,8 L220,70 L0,70 Z" fill="url(#sg)"/>
+        </svg>
+      </div>
+      <div class="actions">
+        <button class="btn primary">⚡ 启动策略</button>
+        <button class="btn">📊 回测实验室</button>
+        <button class="btn">🔁 同步 Freqtrade</button>
+        <button class="btn danger">■ 紧急停止</button>
+      </div>
+    </div>
+
+    <!-- 三栏指标 -->
+    <div class="metrics-row">
+      <div class="glass metric-card">
+        <div class="metric-head">
+          <div class="metric-icon" style="background:rgba(91,154,255,0.15);color:#5B9AFF">◉</div>
+          <div class="metric-title">运行时状态</div><div class="metric-sub">Runtime</div>
+        </div>
+        <div class="stat"><span class="stat-k">活跃策略</span><span class="stat-v"><span data-countup="7">0</span> / 12</span></div>
+        <div class="stat"><span class="stat-k">运行时长</span><span class="stat-v">14d 06:22</span></div>
+        <div class="stat"><span class="stat-k">开放持仓</span><span class="stat-v">9</span></div>
+        <div class="stat"><span class="stat-k">今日成交</span><span class="stat-v up">142</span></div>
+      </div>
+      <div class="glass metric-card">
+        <div class="metric-head">
+          <div class="metric-icon" style="background:rgba(34,227,154,0.15);color:#22E39A">✓</div>
+          <div class="metric-title">实盘就绪度</div><div class="metric-sub">Readiness</div>
+        </div>
+        <div style="text-align:center;padding:8px 0 4px">
+          <div class="mono" style="font-size:38px;font-weight:700;color:#22E39A"><span data-countup="92">0</span><span style="font-size:20px">%</span></div>
+          <div style="font-size:12px;color:var(--text-3);margin-top:2px">7 / 8 项检查通过</div>
+        </div>
+        <div class="gauge"><i style="width:92%;background:linear-gradient(90deg,#22E39A,#5B9AFF)"></i></div>
+        <div class="stat" style="margin-top:10px"><span class="stat-k">API 连接</span><span class="stat-v up">正常</span></div>
+        <div class="stat"><span class="stat-k">风控守卫</span><span class="stat-v" style="color:var(--amber)">1 待确认</span></div>
+      </div>
+      <div class="glass metric-card">
+        <div class="metric-head">
+          <div class="metric-icon" style="background:rgba(245,181,68,0.15);color:#F5B544">⚠</div>
+          <div class="metric-title">全局风险</div><div class="metric-sub">Risk</div>
+        </div>
+        <div class="stat"><span class="stat-k">当前回撤</span><span class="stat-v" style="color:var(--amber)">-4.82%</span></div>
+        <div class="gauge"><i style="width:48%;background:linear-gradient(90deg,#F5B544,#FF5D6C)"></i></div>
+        <div class="stat" style="margin-top:8px"><span class="stat-k">保证金率</span><span class="stat-v">18.4%</span></div>
+        <div class="stat"><span class="stat-k">敞口占比</span><span class="stat-v">62%</span></div>
+        <div class="stat"><span class="stat-k">熔断事件</span><span class="stat-v up">0 未决</span></div>
+      </div>
+    </div>
+
+    <!-- 持仓表 -->
+    <div class="section-title">持仓风险 <span class="tag">9 个持仓 · 实时</span></div>
+    <div class="glass table-card">
+      <table>
+        <thead><tr><th>交易对</th><th>方向</th><th>数量</th><th>开仓价</th><th>标记价</th><th>未实现盈亏</th><th>风险敞口</th></tr></thead>
+        <tbody>
+          <tr><td><span class="sym"><span class="sym-ic" style="background:#F7931A">₿</span>BTC/USDT</span></td><td><span class="side long">多</span></td><td class="mono">0.842</td><td class="mono">61,240</td><td class="mono">64,180</td><td class="mono up">+$2,476</td><td><span class="bar"><i style="width:38%;background:#22E39A"></i></span></td></tr>
+          <tr><td><span class="sym"><span class="sym-ic" style="background:#627EEA">Ξ</span>ETH/USDT</span></td><td><span class="side long">多</span></td><td class="mono">12.4</td><td class="mono">3,180</td><td class="mono">3,342</td><td class="mono up">+$2,008</td><td><span class="bar"><i style="width:52%;background:#22E39A"></i></span></td></tr>
+          <tr><td><span class="sym"><span class="sym-ic" style="background:#00FFA3;color:#000">◎</span>SOL/USDT</span></td><td><span class="side short">空</span></td><td class="mono">180</td><td class="mono">168.2</td><td class="mono">172.4</td><td class="mono dn">-$756</td><td><span class="bar"><i style="width:71%;background:#FF5D6C"></i></span></td></tr>
+          <tr><td><span class="sym"><span class="sym-ic" style="background:#E84142">A</span>AVAX/USDT</span></td><td><span class="side long">多</span></td><td class="mono">420</td><td class="mono">28.4</td><td class="mono">29.8</td><td class="mono up">+$588</td><td><span class="bar"><i style="width:29%;background:#22E39A"></i></span></td></tr>
+          <tr><td><span class="sym"><span class="sym-ic" style="background:#2775CA">L</span>LINK/USDT</span></td><td><span class="side short">空</span></td><td class="mono">640</td><td class="mono">14.2</td><td class="mono">13.6</td><td class="mono up">+$384</td><td><span class="bar"><i style="width:44%;background:#F5B544"></i></span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 双流 -->
+    <div class="feeds">
+      <div class="glass feed-card">
+        <div class="section-title" style="margin:0 0 8px">AI 决策流 <span class="tag shiny">实时推送</span></div>
+        <div class="feed-item"><div class="feed-ic" style="background:rgba(34,227,154,0.15);color:#22E39A">▲</div><div class="feed-body"><div class="feed-t">BTC 结构突破 · 建议加仓</div><div class="feed-d">15m HTF 守卫放行，动量评分 0.82，触发 breakout_v3</div></div><div class="feed-time">12s</div></div>
+        <div class="feed-item"><div class="feed-ic" style="background:rgba(91,154,255,0.15);color:#5B9AFF">◈</div><div class="feed-body"><div class="feed-t">ETH 网格再平衡</div><div class="feed-d">价格进入区间上沿，重置 8 档挂单</div></div><div class="feed-time">1m</div></div>
+        <div class="feed-item"><div class="feed-ic" style="background:rgba(255,93,108,0.13);color:#FF5D6C">▼</div><div class="feed-body"><div class="feed-t">SOL 止盈平仓 40%</div><div class="feed-d">达到第一目标位 172.4，锁定部分利润</div></div><div class="feed-time">3m</div></div>
+        <div class="feed-item"><div class="feed-ic" style="background:rgba(122,108,255,0.15);color:#7A6CFF">◆</div><div class="feed-body"><div class="feed-t">情绪信号更新</div><div class="feed-d">FinBERT 综合情绪转中性偏多，权重下调 0.1</div></div><div class="feed-time">6m</div></div>
+      </div>
+      <div class="glass feed-card">
+        <div class="section-title" style="margin:0 0 8px">风险告警 <span class="tag">2 条待处理</span></div>
+        <div class="feed-item"><div class="feed-ic" style="background:rgba(245,181,68,0.15);color:#F5B544">⚠</div><div class="feed-body"><div class="feed-t">SOL 空头浮亏接近阈值</div><div class="feed-d">回撤 -1.8%，距止损线还剩 0.6%</div></div><div class="feed-time">2m</div></div>
+        <div class="feed-item"><div class="feed-ic" style="background:rgba(245,181,68,0.15);color:#F5B544">⚠</div><div class="feed-body"><div class="feed-t">风控守卫待确认</div><div class="feed-d">MTF 时序守卫处于 CAUTION 态，需人工放行</div></div><div class="feed-time">8m</div></div>
+        <div class="feed-item"><div class="feed-ic" style="background:rgba(34,227,154,0.15);color:#22E39A">✓</div><div class="feed-body"><div class="feed-t">对账通过</div><div class="feed-d">Freqtrade ↔ 交易所 142 笔成交全部匹配</div></div><div class="feed-time">14m</div></div>
+        <div class="feed-item"><div class="feed-ic" style="background:rgba(122,108,255,0.15);color:#7A6CFF">◆</div><div class="feed-body"><div class="feed-t">操纵雷达</div><div class="feed-d">未检出 M1-M8 型异常，扫描 38 个标的</div></div><div class="feed-time">20m</div></div>
+      </div>
+    </div>
+
+    <!-- 紧急条 -->
+    <div class="glass emergency">
+      <div class="warn">
+        <div class="warn-ic">🛑</div>
+        <div>
+          <div style="font-weight:700;font-size:15px">紧急停止总控</div>
+          <div style="font-size:12.5px;color:var(--text-3);margin-top:2px">一键撤销全部挂单 · 平掉所有持仓 · 冻结新开仓</div>
+        </div>
+      </div>
+      <button class="btn danger" style="font-size:14px;padding:13px 26px">■ 紧急停止全部</button>
+    </div>
+  </div>
+
+<script>
+  // CountUp（ReactBits: CountUp）
+  function countUp(el){
+    const target = parseFloat(el.dataset.countup); const dec = parseInt(el.dataset.dec||0);
+    const dur = 1400; const start = performance.now();
+    function tick(now){
+      const p = Math.min((now-start)/dur,1); const e = 1-Math.pow(1-p,3);
+      el.textContent = (target*e).toLocaleString('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec});
+      if(p<1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+  const mq = window.matchMedia('(prefers-reduced-motion:reduce)');
+  document.querySelectorAll('[data-countup]').forEach(el=>{
+    if(mq.matches){ const t=parseFloat(el.dataset.countup); el.textContent=t.toLocaleString('en-US',{minimumFractionDigits:parseInt(el.dataset.dec||0),maximumFractionDigits:parseInt(el.dataset.dec||0)}); }
+    else countUp(el);
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AlphaLoop · 信号星图</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#070B0C;--grid:rgba(120,180,170,0.06);--node:#0F1614;--node-border:#22403A;
+    --txt:#CFE0DA;--txt-dim:#6C8079;
+    --lime:#5CE6A8;--blue:#3FA9E0;--up:#5CE6A8;--down:#F0645B;--warn:#E8B84B;
+    --panel:rgba(11,18,17,0.72);--panel-border:rgba(92,230,168,0.14);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--txt);font-family:'IBM Plex Mono',ui-monospace,monospace;overflow:hidden;-webkit-font-smoothing:antialiased}
+  h1,h2,h3,.display{font-family:'Space Grotesk',sans-serif}
+
+  .stage{position:relative;width:100vw;height:100vh;
+    background:radial-gradient(1200px 800px at 60% 44%, rgba(92,230,168,0.05), transparent 60%),
+      radial-gradient(900px 700px at 18% 88%, rgba(63,169,224,0.045), transparent 55%),var(--bg)}
+  .stage::before{content:"";position:absolute;inset:0;background-image:radial-gradient(circle, var(--grid) 1px, transparent 1px);background-size:34px 34px;background-position:center;pointer-events:none}
+  .stage::after{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(120,180,170,0.028) 1px, transparent 1px),linear-gradient(90deg, rgba(120,180,170,0.028) 1px, transparent 1px);background-size:170px 170px;pointer-events:none}
+
+  /* topbar */
+  .topbar{position:absolute;top:0;left:0;right:0;height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;z-index:40}
+  .brand{display:flex;align-items:center;gap:12px}
+  .brand .name{font-family:'Space Grotesk';font-weight:600;font-size:15px;letter-spacing:1px;color:var(--txt)}
+  .brand .tag{font-size:11px;color:var(--txt-dim);letter-spacing:2px;text-transform:uppercase}
+  .back{font-size:11px;color:var(--txt-dim);letter-spacing:1px;text-decoration:none;margin-left:6px}
+  .back:hover{color:var(--lime)}
+  .coord{font-size:11px;color:var(--txt-dim);letter-spacing:1.5px}
+  .coord b{color:var(--lime);font-weight:500}
+
+  .graph-wrap{position:absolute;inset:0;z-index:5}
+  svg.graph{width:100%;height:100%;display:block}
+  .edge{fill:none;stroke-linecap:round}
+  .edge-flow{stroke:rgba(92,230,168,0.18);stroke-width:1.3}
+  .edge-signal{stroke:rgba(63,169,224,0.20);stroke-width:1.3;stroke-dasharray:5 6}
+  .edge-conflict{stroke:rgba(240,100,91,0.55);stroke-width:1.8;stroke-dasharray:2 5}
+  .pulse-flow{fill:var(--lime)}.pulse-signal{fill:var(--blue)}.pulse-conflict{fill:var(--down)}
+
+  .node{cursor:pointer}
+  .node .body{fill:var(--node);stroke:var(--node-border);stroke-width:1.4;transition:stroke .2s,filter .2s}
+  .node .ttl{font-family:'Space Grotesk';font-weight:600;font-size:12.5px;fill:var(--txt)}
+  .node .sub{font-family:'IBM Plex Mono';font-size:9.5px;fill:var(--txt-dim);letter-spacing:.5px}
+  .node .cf{font-family:'IBM Plex Mono';font-weight:600;font-size:12px;fill:var(--txt)}
+  .node.long .body{stroke:var(--lime)}
+  .node.short .body{stroke:var(--down)}
+  .node.hold .body{stroke:var(--txt-dim)}
+  .node.risk .body{stroke:var(--warn)}
+  .node.hub .body{stroke:var(--lime);fill:#0c1512}
+  .node.pending .body{stroke-dasharray:4 3}
+  .node.rejected .body{stroke:#3a3330;opacity:.6}
+  .node:hover .body{stroke:#EAF6F1}
+  .node:focus{outline:none}
+  .node:focus .body{stroke:#EAF6F1;filter:drop-shadow(0 0 6px rgba(234,246,241,.7))}
+  .node.long .halo,.node.hub .halo{fill:none;stroke:var(--lime);stroke-width:1;opacity:.4;transform-box:fill-box;transform-origin:center;animation:breathe 3.4s ease-in-out infinite}
+  .node.short .halo{fill:none;stroke:var(--down);stroke-width:1;opacity:.4;transform-box:fill-box;transform-origin:center;animation:breathe 3.4s ease-in-out infinite}
+  .node.risk .halo{fill:none;stroke:var(--warn);stroke-width:1;opacity:.5;transform-box:fill-box;transform-origin:center;animation:breathe 2.2s ease-in-out infinite}
+  @keyframes breathe{0%,100%{opacity:.1;transform:scale(1)}50%{opacity:.5;transform:scale(1.16)}}
+
+  /* HUD */
+  .hud{position:absolute;backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);background:var(--panel);border:1px solid var(--panel-border);border-radius:12px;z-index:30}
+  .hud-head{display:flex;align-items:center;gap:8px;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--txt-dim);margin-bottom:8px}
+  .hud-head .dot{width:6px;height:6px;border-radius:50%;background:var(--lime);box-shadow:0 0 8px var(--lime)}
+  .hud-stats{top:66px;left:22px;width:230px;padding:16px 18px}
+  .hud-stats .big{font-family:'Space Grotesk';font-weight:600;font-size:38px;color:var(--txt);line-height:1;font-variant-numeric:tabular-nums}
+  .hud-stats .lbl{font-size:10px;color:var(--txt-dim);letter-spacing:1px;margin-top:2px}
+  .hud-stats .row{display:flex;justify-content:space-between;font-size:11px;margin-top:8px}
+  .hud-stats .row .k{color:var(--txt-dim)}
+  .hud-stats .row .v{font-variant-numeric:tabular-nums}
+  .v.good{color:var(--up)}.v.warn{color:var(--warn)}.v.bad{color:var(--down)}.v.dim{color:var(--txt-dim)}
+
+  /* legend */
+  .legend{position:absolute;bottom:24px;left:22px;z-index:30;backdrop-filter:blur(8px);background:var(--panel);border:1px solid var(--panel-border);border-radius:10px;padding:11px 13px;font-size:10px;color:var(--txt-dim);letter-spacing:.5px}
+  .legend .lrow{display:flex;align-items:center;gap:8px;margin:3px 0}
+  .legend .sw{width:16px;height:0;border-top:2px solid}
+  .legend .sw.flow{border-color:var(--lime)}.legend .sw.sig{border-color:var(--blue);border-top-style:dashed}.legend .sw.cf{border-color:var(--down);border-top-style:dotted}
+  .legend .dotm{width:9px;height:9px;border:1.4px solid}
+  .legend .dotm.l{border-color:var(--lime)}.legend .dotm.s{border-color:var(--down)}.legend .dotm.r{border-color:var(--warn)}
+
+  /* filter dock (top right) */
+  .fdock{position:absolute;top:66px;right:22px;width:236px;z-index:30;backdrop-filter:blur(9px);background:var(--panel);border:1px solid var(--panel-border);border-radius:12px;padding:14px}
+  .fdock .fh{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--txt-dim);margin-bottom:10px}
+  .fg{margin-bottom:9px}
+  .fg .fl{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--txt-dim);margin-bottom:5px}
+  .fg .chips{display:flex;flex-wrap:wrap;gap:4px}
+  .chip{font-family:'IBM Plex Mono';font-size:9.5px;color:var(--txt-dim);background:transparent;border:1px solid var(--node-border);border-radius:6px;padding:3px 7px;cursor:pointer;transition:.15s;letter-spacing:.5px}
+  .chip:hover{border-color:var(--lime);color:var(--txt)}
+  .chip.on{color:var(--bg);background:var(--lime);border-color:var(--lime);font-weight:600}
+  .chip:focus-visible{outline:2px solid #EAF6F1;outline-offset:1px}
+
+  /* conflict HUD */
+  .cfhud{position:absolute;bottom:24px;right:22px;width:266px;z-index:30;backdrop-filter:blur(9px);background:var(--panel);border:1px solid rgba(240,100,91,0.32);border-radius:12px;padding:14px}
+  .cfhud .fh{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--down);margin-bottom:10px;display:flex;justify-content:space-between}
+  .cfitem{border-left:2px solid var(--down);padding:3px 0 3px 10px;margin-bottom:9px;font-size:10.5px}
+  .cfitem:last-child{margin-bottom:0}
+  .cfitem .cs{color:var(--txt);font-family:'Space Grotesk';font-weight:600;font-size:12px}
+  .cfitem .cd{color:var(--txt-dim);margin-top:2px;line-height:1.45}
+  .cfitem .cd b.l{color:var(--up)}.cfitem .cd b.s{color:var(--down)}.cfitem .cd b.r{color:var(--warn)}
+
+  /* detail drawer (bottom center) */
+  .drawer{position:absolute;left:50%;bottom:-320px;transform:translateX(-50%);width:min(94vw,860px);z-index:45;backdrop-filter:blur(12px);background:rgba(9,15,14,0.9);border:1px solid var(--panel-border);border-radius:14px;box-shadow:0 12px 48px rgba(0,0,0,.6);transition:bottom .3s cubic-bezier(.2,.7,.3,1);max-height:56vh;overflow-y:auto}
+  .drawer.open{bottom:24px}
+  .drawer-head{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--node-border);position:sticky;top:0;background:rgba(9,15,14,0.95);z-index:2}
+  .drawer-head .dsym{font-family:'Space Grotesk';font-weight:600;font-size:17px}
+  .drawer-head .dside{font-size:10px;letter-spacing:1px;padding:2px 8px;border-radius:5px}
+  .dside.long{color:var(--up);border:1px solid rgba(92,230,168,.4)}.dside.short{color:var(--down);border:1px solid rgba(240,100,91,.4)}.dside.hold{color:var(--txt-dim);border:1px solid var(--node-border)}.dside.risk{color:var(--warn);border:1px solid rgba(232,184,75,.4)}
+  .drawer-head .dsrc{font-size:11px;color:var(--txt-dim)}
+  .drawer-head .dsrc b{color:var(--lime)}
+  .drawer-head .dclose{margin-left:auto;background:none;border:1px solid var(--node-border);color:var(--txt-dim);border-radius:7px;width:28px;height:28px;cursor:pointer;font-family:inherit}
+  .drawer-head .dclose:hover{border-color:var(--down);color:var(--down)}
+  .drawer-head .dclose:focus-visible{outline:2px solid var(--lime);outline-offset:1px}
+  .drawer-body{padding:16px 18px}
+  .dgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px 22px}
+  .qb .q{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--txt-dim);margin-bottom:4px}
+  .qb .a{font-size:12.5px;color:var(--txt)}.qb .a b{color:var(--lime)}
+  .ev{grid-column:1/-1}
+  .ev ul{list-style:none;margin-top:4px;display:grid;grid-template-columns:1fr 1fr;gap:4px 20px}
+  .ev li{font-size:11.5px;color:var(--txt-dim);padding-left:14px;position:relative}
+  .ev li::before{content:"◇";position:absolute;left:0;color:var(--blue)}
+  .perm{display:flex;flex-direction:column;gap:4px;font-size:12px}
+  .perm .ok{color:var(--up)}.perm .no{color:var(--down)}.perm .wn{color:var(--warn)}
+  .tl{grid-column:1/-1;display:flex;gap:20px;font-size:11px;color:var(--txt-dim);flex-wrap:wrap}
+  .tl span b{color:var(--txt)}.tl span time{color:var(--lime)}
+  .acts{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+  .abtn{font-family:'Space Grotesk';font-weight:500;font-size:11.5px;letter-spacing:.5px;color:var(--txt);background:var(--node);border:1px solid var(--node-border);border-radius:8px;padding:8px 13px;cursor:pointer;transition:.15s}
+  .abtn:hover{border-color:var(--lime);color:var(--lime)}
+  .abtn.stop:hover{border-color:var(--down);color:var(--down)}
+  .abtn:focus-visible{outline:2px solid var(--lime);outline-offset:1px}
+
+  /* tooltip */
+  .tooltip{position:fixed;z-index:60;pointer-events:none;background:rgba(9,15,14,0.94);border:1px solid var(--lime);border-radius:9px;padding:9px 12px;min-width:160px;opacity:0;transform:translateY(4px);transition:opacity .14s,transform .14s}
+  .tooltip.on{opacity:1;transform:translateY(0)}
+  .tooltip .tt{font-family:'Space Grotesk';font-weight:600;font-size:13px;color:var(--txt)}
+  .tooltip .ts{font-size:10px;color:var(--txt-dim);margin-top:3px}
+  .tooltip .tp{font-size:11px;color:var(--lime);margin-top:5px;font-variant-numeric:tabular-nums}
+
+  .mobile-list{display:none}
+  @media (max-width:768px){
+    body{overflow-y:auto}
+    .stage{height:auto;min-height:100vh;padding-bottom:40px}
+    .graph-wrap{display:none}
+    .hud-stats,.fdock,.cfhud,.legend{position:static;width:auto;margin:12px 16px}
+    .topbar{position:static;height:auto;padding:14px 16px;flex-direction:column;gap:8px;align-items:flex-start}
+    .drawer{position:fixed;width:100%;left:0;transform:none;border-radius:14px 14px 0 0;max-height:70vh}
+    .drawer.open{bottom:0}
+    .dgrid{grid-template-columns:1fr 1fr}.ev ul{grid-template-columns:1fr}
+    .mobile-list{display:block;margin:12px 16px}
+    .mobile-list h3{font-size:12px;color:var(--txt-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px}
+    .mnode{background:var(--node);border:1px solid var(--node-border);border-radius:10px;padding:11px 13px;margin-bottom:8px;border-left-width:3px;cursor:pointer}
+    .mnode.long{border-left-color:var(--lime)}.mnode.short{border-left-color:var(--down)}.mnode.risk{border-left-color:var(--warn)}.mnode.hold{border-left-color:var(--txt-dim)}
+    .mnode .mn{font-family:'Space Grotesk';font-weight:600;font-size:14px;color:var(--txt)}
+    .mnode .ms{font-size:10.5px;color:var(--txt-dim);margin-top:3px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .pulse-flow,.pulse-signal,.pulse-conflict{display:none!important}
+    .node .halo{animation:none!important;opacity:.3!important}
+    .edge-signal,.edge-conflict{stroke-dasharray:none}
+    .drawer{transition:none}
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="topbar">
+    <div class="brand">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><polygon points="12,2 21,7 21,17 12,22 3,17 3,7" stroke="#5CE6A8" stroke-width="1.4"/><circle cx="12" cy="12" r="3.2" fill="#5CE6A8"/></svg>
+      <div class="name">AlphaLoop</div>
+      <span class="tag">SIGNAL STARMAP · 信号中枢</span>
+      <a href="index.html" class="back">← 返回矩阵</a>
+    </div>
+    <div class="coord">SIGNALS <b>47</b> · ACTIVE <b>23</b> · PENDING <b>12</b> · CONFLICTS <b>3</b> · FLOW <b>LIVE</b></div>
+  </div>
+
+  <div class="graph-wrap">
+    <svg class="graph" viewBox="0 0 1200 760" preserveAspectRatio="xMidYMid meet" aria-label="信号拓扑星图">
+      <g id="edges"></g>
+      <g id="pulses"></g>
+      <g id="nodes"></g>
+    </svg>
+  </div>
+
+  <!-- global stats HUD -->
+  <div class="hud hud-stats">
+    <div class="hud-head"><span class="dot"></span>SIGNAL LEDGER</div>
+    <div class="big"><span id="total">0</span></div>
+    <div class="lbl">在场 Signal 总数</div>
+    <div class="row"><span class="k">active</span><span class="v good">23</span></div>
+    <div class="row"><span class="k">pending</span><span class="v warn">12</span></div>
+    <div class="row"><span class="k">expired</span><span class="v dim">9</span></div>
+    <div class="row"><span class="k">rejected</span><span class="v bad">3</span></div>
+    <div class="row"><span class="k">冲突待裁决</span><span class="v bad">3 组</span></div>
+  </div>
+
+  <!-- filter dock -->
+  <div class="fdock">
+    <div class="fh">FILTER · 筛选</div>
+    <div class="fg"><div class="fl">来源</div><div class="chips"><button class="chip on">全部</button><button class="chip">tech</button><button class="chip">sent</button><button class="chip">agents</button><button class="chip">freqai</button><button class="chip">manip</button></div></div>
+    <div class="fg"><div class="fl">标的</div><div class="chips"><button class="chip on">全部</button><button class="chip">BTC</button><button class="chip">ETH</button><button class="chip">SOL</button><button class="chip">PEPE</button></div></div>
+    <div class="fg"><div class="fl">方向</div><div class="chips"><button class="chip on">全部</button><button class="chip">long</button><button class="chip">short</button><button class="chip">hold</button><button class="chip">risk</button></div></div>
+    <div class="fg"><div class="fl">状态</div><div class="chips"><button class="chip on">全部</button><button class="chip">active</button><button class="chip">pending</button><button class="chip">rej</button></div></div>
+    <div class="fg"><div class="fl">排序</div><div class="chips"><button class="chip on">评分↓</button><button class="chip">置信↓</button><button class="chip">有效期↑</button></div></div>
+  </div>
+
+  <!-- legend -->
+  <div class="legend">
+    <div class="lrow"><span class="sw flow"></span>资金流 / 发布路径</div>
+    <div class="lrow"><span class="sw sig"></span>信号流入中枢</div>
+    <div class="lrow"><span class="sw cf"></span>冲突碰撞连线</div>
+    <div class="lrow" style="margin-top:6px"><span class="dotm l"></span>多头 <span class="dotm s" style="margin-left:6px"></span>空头 <span class="dotm r" style="margin-left:6px"></span>风险</div>
+  </div>
+
+  <!-- conflict HUD -->
+  <div class="cfhud">
+    <div class="fh"><span>⚔ CONFLICTS 冲突</span><span>3 待裁决</span></div>
+    <div class="cfitem"><div class="cs">BTC/USDT</div><div class="cd">#1 breakout_v3 <b class="l">多 0.82</b> ⚔ #8 投研委员会 <b class="s">空 0.71</b> — 需人工裁决</div></div>
+    <div class="cfitem"><div class="cs">SOL/USDT</div><div class="cd">#3 投研委员会 <b class="s">空 0.71</b> ⚔ #9 FinBERT <b class="l">多 0.55</b> — 需人工裁决</div></div>
+    <div class="cfitem"><div class="cs">PEPE/USDT</div><div class="cd">#6 操控雷达 <b class="r">EXTREME 0.88</b> — 建议 block 全部多头</div></div>
+  </div>
+
+  <div class="mobile-list" id="mobileList"><h3>信号节点 · Signals</h3></div>
+</div>
+
+<!-- detail drawer -->
+<div class="drawer" id="drawer" role="dialog" aria-modal="false" aria-label="信号详情">
+  <div class="drawer-head">
+    <span class="dsym" id="d-sym"></span>
+    <span class="dside" id="d-side"></span>
+    <span class="dsrc" id="d-src"></span>
+    <button class="dclose" id="d-close" aria-label="关闭详情">✕</button>
+  </div>
+  <div class="drawer-body" id="d-body"></div>
+</div>
+
+<div class="tooltip" id="tooltip" role="status" aria-live="polite">
+  <div class="tt" id="tt-t"></div><div class="ts" id="tt-s"></div><div class="tp" id="tt-p"></div>
+</div>
+
+<script>
+"use strict";
+var reduce = window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+
+/* signal nodes — 10 signals orbit the central hub */
+var SIGNALS=[
+  {id:1,x:340,y:150,src:'breakout_v3',srcType:'technical',sym:'BTC/USDT',tf:'15m',dir:'long',conf:0.82,score:4.6,risk:'medium',ttl:'5h 12m',status:'active',t:'14:10',reason:'结构突破颈线，量能确认，HTF 守卫放行',ev:['15m 颈线放量突破，量为均量 1.8×','HTF 时序守卫 GO 态，多周期共振','ATR 扩张确认动能'],live:'warn'},
+  {id:2,x:200,y:330,src:'FinBERT',srcType:'sentiment',sym:'ETH/USDT',tf:'1h',dir:'long',conf:0.67,score:3.8,risk:'low',ttl:'11h',status:'active',t:'14:08',reason:'新闻情绪转多，社媒热度上行',ev:['6h 新闻情绪 -0.1→+0.34','社媒提及量 +42%','未检出操纵性热度'],live:'no'},
+  {id:3,x:880,y:150,src:'投研委员会',srcType:'tradingagents',sym:'SOL/USDT',tf:'4h',dir:'short',conf:0.71,score:4.1,risk:'high',ttl:'3h 40m',status:'active',t:'14:05',reason:'多 Agent 辩论后偏空，链上流出加速',ev:['5 Agent 辩论 3 轮，4 空 1 多','链上净流出加速','解锁抛压临近'],live:'no'},
+  {id:4,x:150,y:540,src:'FreqAI-LGB',srcType:'freqai',sym:'AVAX/USDT',tf:'1h',dir:'long',conf:0.58,score:3.2,risk:'medium',ttl:'8h',status:'pending',t:'14:02',reason:'模型预测短期反弹，待确认',ev:['LGB 预测 8h +2.1%','特征以量价背离为主','待二次确认转 active'],live:'no'},
+  {id:5,x:380,y:640,src:'TimesFM',srcType:'prediction',sym:'LINK/USDT',tf:'1d',dir:'hold',conf:0.44,score:2.4,risk:'low',ttl:'20h',status:'pending',t:'13:58',reason:'预测区间震荡，无明确方向',ev:['24h 预测落 ±1.5% 窄区间','方向置信不足','无趋势驱动'],live:'no'},
+  {id:6,x:1030,y:340,src:'操控雷达',srcType:'manipulation',sym:'PEPE/USDT',tf:'5m',dir:'risk',conf:0.88,score:4.9,risk:'extreme',ttl:'1h 20m',status:'active',t:'13:52',reason:'检出 M3 拉盘出货特征，高集中度预警',ev:['M3：快速拉升后大单派发','Top-10 集中度 78%','社媒加速度骤增'],live:'no'},
+  {id:7,x:820,y:640,src:'range_bottom',srcType:'technical',sym:'DOGE/USDT',tf:'1h',dir:'long',conf:0.63,score:3.5,risk:'medium',ttl:'6h',status:'active',t:'13:46',reason:'近 3 月低点分批建仓区间',ev:['回落至近 3 月支撑带','RSI 超卖回升','建议分批建仓'],live:'warn'},
+  {id:8,x:520,y:110,src:'投研委员会',srcType:'tradingagents',sym:'BTC/USDT',tf:'1h',dir:'short',conf:0.71,score:4.0,risk:'medium',ttl:'4h',status:'active',t:'13:40',reason:'空头观点：与 #1 方向冲突，需裁决',ev:['1h 顶背离，Agent 偏空','与 #1 多头冲突','建议裁决后执行'],live:'no',conflict:1},
+  {id:9,x:1000,y:560,src:'FinBERT',srcType:'sentiment',sym:'SOL/USDT',tf:'15m',dir:'long',conf:0.55,score:3.0,risk:'medium',ttl:'2h',status:'active',t:'13:34',reason:'情绪偏多：与 #3 方向冲突',ev:['短周期情绪转正','与 #3 空头冲突','置信度低于对立信号'],live:'no',conflict:3},
+  {id:10,x:610,y:680,src:'因子研究',srcType:'factor',sym:'ARB/USDT',tf:'4h',dir:'long',conf:0.49,score:2.8,risk:'high',ttl:'9h',status:'rejected',t:'13:28',reason:'因子失效，已被人工驳回',ev:['动量因子 IC 转负','因子拥挤度过高','人工复核驳回'],live:'no'}
+];
+var HUB={id:'hub',x:600,y:400,src:'Signal Center',ttl:'信号中枢',sub:'HUB · 47 SIGNALS'};
+
+/* edges: each signal flows into hub (signal type); active long/short published (flow); conflict pairs collide */
+var EDGES=[];
+SIGNALS.forEach(function(s){
+  EDGES.push({from:s.id,to:'hub',type: (s.status==='active'&&s.dir!=='risk'&&!s.conflict)?'flow':'signal'});
+});
+EDGES.push({from:1,to:8,type:'conflict'});   // BTC long vs short
+EDGES.push({from:3,to:9,type:'conflict'});   // SOL short vs long
+
+var SVGNS='http://www.w3.org/2000/svg';
+var byId=function(id){return id==='hub'?HUB:SIGNALS.find(function(n){return n.id===id;});};
+function el(tag,attrs){var e=document.createElementNS(SVGNS,tag);for(var k in attrs)e.setAttribute(k,attrs[k]);return e;}
+function pathD(a,b,curve){var mx=(a.x+b.x)/2,my=(a.y+b.y)/2,dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy)||1,nx=-dy/len,ny=dx/len,cx=mx+nx*curve,cy=my+ny*curve;return 'M'+a.x+','+a.y+' Q'+cx+','+cy+' '+b.x+','+b.y;}
+
+var gEdges=document.getElementById('edges'),gPulses=document.getElementById('pulses'),gNodes=document.getElementById('nodes');
+
+EDGES.forEach(function(edge,i){
+  var a=byId(edge.from),b=byId(edge.to);
+  var curve = edge.type==='conflict'? 60 : ((a.x<600?-1:1)*24);
+  var d=pathD(a,b,curve),pid='ep-'+i;
+  gEdges.appendChild(el('path',{d:d,id:pid,class:'edge edge-'+edge.type}));
+  if(!reduce){
+    var count = edge.type==='flow'?2:(edge.type==='conflict'?2:1);
+    var dur = edge.type==='flow'?3.4:(edge.type==='conflict'?2.6:4.4);
+    for(var k=0;k<count;k++){
+      var dot=el('circle',{r: edge.type==='conflict'?2.6:(edge.type==='flow'?3:2.2),class:'pulse-'+edge.type});
+      var anim=el('animateMotion',{dur:dur+'s',repeatCount:'indefinite',begin:(k*dur/count).toFixed(2)+'s',rotate:'auto',keyPoints: edge.type==='conflict'?'0;1':'1;0',keyTimes:'0;1',calcMode:'linear'});
+      var mp=el('mpath',{});mp.setAttributeNS('http://www.w3.org/1999/xlink','href','#'+pid);mp.setAttribute('href','#'+pid);
+      anim.appendChild(mp);dot.appendChild(anim);gPulses.appendChild(dot);
+    }
+  }
+});
+
+/* hub node */
+(function(){
+  var g=el('g',{class:'node hub',tabindex:'0',role:'button','aria-label':'信号中枢 Hub'});
+  g.appendChild(el('circle',{cx:HUB.x,cy:HUB.y,r:56,class:'halo'}));
+  var pts=[];for(var i=0;i<6;i++){var ang=Math.PI/180*(60*i-30);pts.push((HUB.x+48*Math.cos(ang)).toFixed(1)+','+(HUB.y+48*Math.sin(ang)).toFixed(1));}
+  g.appendChild(el('polygon',{points:pts.join(' '),class:'body'}));
+  g.appendChild(el('circle',{cx:HUB.x,cy:HUB.y,r:9,fill:'#5CE6A8'}));
+  var t1=el('text',{x:HUB.x,y:HUB.y+70,'text-anchor':'middle',class:'ttl'});t1.textContent=HUB.ttl;
+  var t2=el('text',{x:HUB.x,y:HUB.y+85,'text-anchor':'middle',class:'sub'});t2.textContent=HUB.sub;
+  g.appendChild(t1);g.appendChild(t2);
+  gNodes.appendChild(g);
+})();
+
+/* signal nodes */
+SIGNALS.forEach(function(s){
+  var r=30+s.score*3;
+  var g=el('g',{class:'node '+s.dir+' '+s.status,tabindex:'0',role:'button','aria-label':s.sym+' '+s.dir,'data-id':s.id});
+  if(s.dir!=='hold'&&s.status!=='rejected') g.appendChild(el('circle',{cx:s.x,cy:s.y,r:r+7,class:'halo'}));
+  g.appendChild(el('circle',{cx:s.x,cy:s.y,r:r,class:'body'}));
+  var cf=el('text',{x:s.x,y:s.y+4,'text-anchor':'middle',class:'cf'});cf.textContent=s.conf.toFixed(2);
+  g.appendChild(cf);
+  var t1=el('text',{x:s.x,y:s.y+r+16,'text-anchor':'middle',class:'ttl'});t1.textContent=s.sym.split('/')[0];
+  var t2=el('text',{x:s.x,y:s.y+r+29,'text-anchor':'middle',class:'sub'});t2.textContent='#'+s.id+' '+s.src+' · '+s.dir.toUpperCase();
+  g.appendChild(t1);g.appendChild(t2);
+  g.addEventListener('mouseenter',function(e){showTip(s,e);});
+  g.addEventListener('mousemove',function(e){showTip(s,e);});
+  g.addEventListener('mouseleave',hideTip);
+  g.addEventListener('click',function(){openDrawer(s);});
+  g.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();openDrawer(s);}});
+  g.addEventListener('focus',function(){showTipAt(s,g);});
+  g.addEventListener('blur',hideTip);
+  gNodes.appendChild(g);
+});
+
+/* tooltip */
+var tip=document.getElementById('tooltip');
+function fillTip(s){document.getElementById('tt-t').textContent='#'+s.id+' '+s.sym+' · '+s.tf;document.getElementById('tt-s').textContent=s.src+' · '+s.srcType+' · '+s.status;document.getElementById('tt-p').textContent='置信 '+s.conf.toFixed(2)+' · 评分 '+s.score.toFixed(1)+' · 有效 '+s.ttl;}
+function showTip(s,ev){fillTip(s);tip.classList.add('on');var x=ev.clientX+16,y=ev.clientY+16;if(x+200>window.innerWidth)x=ev.clientX-200;if(y+120>window.innerHeight)y=ev.clientY-120;tip.style.left=x+'px';tip.style.top=y+'px';}
+function showTipAt(s,g){fillTip(s);tip.classList.add('on');var r=g.getBoundingClientRect();var x=r.right+10,y=r.top;if(x+200>window.innerWidth)x=r.left-200;tip.style.left=x+'px';tip.style.top=y+'px';}
+function hideTip(){tip.classList.remove('on');}
+
+/* drawer */
+var drawer=document.getElementById('drawer');
+function riskCN(r){return{low:'低',medium:'中',high:'高',extreme:'极端'}[r];}
+function dirCN(d){return{long:'看多 LONG',short:'看空 SHORT',hold:'观望 HOLD',risk:'风险 RISK'}[d];}
+function statusCN(s){return{active:'active 生效中',pending:'pending 待确认',rejected:'rejected 已驳回'}[s];}
+function perm(live){var t='<div class="ok">可回测 ✓</div><div class="ok">可模拟 ✓</div>';t+=live==='warn'?'<div class="wn">可实盘 ⚠ 需人工确认</div>':'<div class="no">可实盘 ✗ (来源默认禁实盘)</div>';return t;}
+function openDrawer(s){
+  document.getElementById('d-sym').textContent='#'+s.id+' '+s.sym+' · '+s.tf;
+  var side=document.getElementById('d-side');side.textContent=s.dir.toUpperCase();side.className='dside '+s.dir;
+  document.getElementById('d-src').innerHTML='<b>'+s.src+'</b> · '+s.srcType;
+  document.getElementById('d-body').innerHTML=
+    '<div class="dgrid">'+
+      '<div class="qb"><div class="q">谁产生的</div><div class="a"><b>'+s.src+'</b> · '+s.srcType+'</div></div>'+
+      '<div class="qb"><div class="q">看什么标的</div><div class="a"><b>'+s.sym+'</b> · '+s.tf+'</div></div>'+
+      '<div class="qb"><div class="q">什么方向</div><div class="a">'+dirCN(s.dir)+'</div></div>'+
+      '<div class="qb"><div class="q">多可信</div><div class="a">置信 <b>'+s.conf.toFixed(2)+'</b> · 评分 <b>'+s.score.toFixed(1)+'</b> · '+riskCN(s.risk)+'风险</div></div>'+
+      '<div class="qb ev"><div class="q">为什么 · reasoning &amp; evidence</div><div class="a">'+s.reason+(s.conflict?' <span style="color:var(--down)">⚔ 与 #'+s.conflict+' 冲突</span>':'')+'</div><ul>'+s.ev.map(function(e){return '<li>'+e+'</li>';}).join('')+'</ul></div>'+
+      '<div class="qb" style="grid-column:1/3"><div class="q">何时有效</div><div class="a">剩余 <b>'+s.ttl+'</b> · '+statusCN(s.status)+'</div></div>'+
+      '<div class="qb" style="grid-column:3/-1"><div class="q">能做什么 · permission</div><div class="perm">'+perm(s.live)+'</div></div>'+
+      '<div class="qb tl"><div class="q" style="width:100%">生命周期</div><span><time>'+s.t+'</time> <b>生成</b> '+s.src+'</span><span><time>'+s.t+'</time> <b>入账</b> 提交中枢</span><span><time>—</time> <b>'+(s.status==='rejected'?'已驳回':s.status==='pending'?'待确认':'生效中')+'</b></span></div>'+
+    '</div>'+
+    '<div class="acts"><button class="abtn">发布到策略</button><button class="abtn">加入 dry-run 观察</button><button class="abtn">生成 StrategyDraft</button>'+(s.conflict?'<button class="abtn stop">裁决冲突</button>':'')+'<button class="abtn">归档</button></div>';
+  drawer.classList.add('open');
+}
+document.getElementById('d-close').addEventListener('click',function(){drawer.classList.remove('open');});
+document.addEventListener('keydown',function(e){if(e.key==='Escape')drawer.classList.remove('open');});
+
+/* filters */
+document.querySelectorAll('.fg').forEach(function(g){g.querySelectorAll('.chip').forEach(function(c){c.addEventListener('click',function(){g.querySelectorAll('.chip').forEach(function(x){x.classList.remove('on');});c.classList.add('on');});});});
+
+/* count up total */
+(function(){var t=47,node=document.getElementById('total');if(reduce){node.textContent=t;return;}var dur=1400,start=performance.now();function fr(now){var p=Math.min(1,(now-start)/dur);node.textContent=Math.round(t*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(fr);else node.textContent=t;}requestAnimationFrame(fr);})();
+
+/* mobile list */
+(function(){var list=document.getElementById('mobileList');SIGNALS.forEach(function(s){var d=document.createElement('div');d.className='mnode '+s.dir;d.innerHTML='<div class="mn">#'+s.id+' '+s.sym+' · '+s.dir.toUpperCase()+'</div><div class="ms">'+s.src+' · 置信 '+s.conf.toFixed(2)+' · 评分 '+s.score.toFixed(1)+' · '+s.status+'</div>';d.addEventListener('click',function(){openDrawer(s);});list.appendChild(d);});})();
+</script>
+</body>
+</html>

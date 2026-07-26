@@ -89,7 +89,7 @@ struct DryrunStatusPanel: View {
         HStack(spacing: PulseSpacing.md) {
             metricCell(L10n.BacktestLab.dryrunTotalTrades, value: "\(run.totalTrades)")
             metricCell(L10n.BacktestLab.dryrunOpenTrades, value: "\(run.openTrades)")
-            metricCell(L10n.BacktestLab.dryrunTotalProfit, value: String(format: "%+.2f", run.totalProfit), color: run.totalProfit >= 0 ? PulseColors.accent : PulseColors.danger)
+            metricCell(L10n.BacktestLab.dryrunTotalProfit, value: String(format: "%+.2f", run.totalProfit), color: run.totalProfit >= 0 ? PulseColors.bullish : PulseColors.bearish)
         }
     }
 

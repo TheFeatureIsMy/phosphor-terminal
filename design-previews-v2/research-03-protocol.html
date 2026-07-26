@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlphaLoop · AI 投研室</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F6F7FB;--card:#FFFFFF;--border:#E6E9F2;--ink:#0F1524;--muted:#5A6480;
+  --accent:#3D5AFE;--accent-soft:#EAEEFF;--coral:#FF7A59;
+  --up:#12B76A;--down:#F04438;--warn:#F59E0B;
+  --up-soft:#E6F7EF;--down-soft:#FDECEA;--warn-soft:#FEF4E2;
+  --shadow:0 1px 2px rgba(61,90,254,.04), 0 8px 24px rgba(61,90,254,.06);
+  --shadow-hover:0 2px 6px rgba(61,90,254,.06), 0 18px 40px rgba(61,90,254,.12);
+  --radius:18px;--radius-sm:12px;
+  --display:'Space Grotesk',system-ui,sans-serif;--body:'Inter',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--body);background:var(--bg);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased;letter-spacing:-.01em;padding-bottom:96px}
+.tab{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+h1,h2,h3,.display{font-family:var(--display);letter-spacing:-.02em}
+button{font-family:var(--body)}
+
+/* nav */
+.nav{position:sticky;top:0;z-index:50;background:rgba(246,247,251,.82);backdrop-filter:saturate(160%) blur(12px);border-bottom:1px solid var(--border)}
+.nav-inner{max-width:1160px;margin:0 auto;padding:13px 28px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:11px;font-family:var(--display);font-weight:700;font-size:18px}
+.brand .mark{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--accent),#5B72FF);display:grid;place-items:center;box-shadow:0 4px 12px rgba(61,90,254,.32)}
+.nav-title{font-size:14px;color:var(--muted);font-weight:500}
+.nav-title b{color:var(--ink);font-weight:600}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:14px}
+.back{font-size:13px;color:var(--muted);text-decoration:none;font-weight:500}
+.back:hover{color:var(--accent)}
+.status-dot{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--muted);font-weight:500}
+.status-dot .dot{width:8px;height:8px;border-radius:50%;background:var(--up);box-shadow:0 0 0 3px var(--up-soft)}
+
+.wrap{max-width:1160px;margin:0 auto;padding:32px 28px 0}
+
+/* hero */
+.hero{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-bottom:24px}
+.eyebrow{font-size:13px;font-weight:600;color:var(--accent);letter-spacing:.04em;text-transform:uppercase;margin-bottom:8px}
+.hero h1{font-size:34px;font-weight:700;line-height:1.12}
+.hero p{color:var(--muted);font-size:15px;max-width:560px;margin-top:8px}
+.depth-ctrl{display:flex;flex-direction:column;gap:10px;align-items:flex-end}
+.seg{display:inline-flex;background:#fff;border:1px solid var(--border);border-radius:12px;padding:4px;box-shadow:var(--shadow)}
+.seg button{border:none;background:none;font-size:13.5px;font-weight:600;color:var(--muted);padding:7px 16px;border-radius:9px;cursor:pointer;transition:.16s}
+.seg button[aria-pressed="true"]{background:var(--accent);color:#fff;box-shadow:0 4px 12px rgba(61,90,254,.28)}
+.seg button:hover:not([aria-pressed="true"]){background:#F1F3FA;color:var(--ink)}
+.seg button:focus-visible{outline:2.5px solid var(--accent);outline-offset:2px}
+.runstat{font-size:13px;color:var(--muted);font-weight:500;display:flex;align-items:center;gap:8px}
+.runstat .dot{width:7px;height:7px;border-radius:50%;background:var(--accent)}
+.runstat b{color:var(--ink)}
+
+/* subject card */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);transition:transform .22s cubic-bezier(.2,.7,.3,1),box-shadow .22s}
+.subject{padding:22px 26px;display:flex;align-items:center;gap:28px;flex-wrap:wrap;margin-bottom:24px}
+.subj-ico{width:52px;height:52px;border-radius:14px;background:#F7931A;display:grid;place-items:center;color:#fff;font-family:var(--display);font-weight:700;font-size:16px}
+.subj-main .p{font-family:var(--display);font-size:24px;font-weight:700}
+.subj-main .s{font-size:13px;color:var(--muted);margin-top:2px}
+.subj-px{display:flex;flex-direction:column}
+.subj-px .k{font-size:12px;color:var(--muted);font-weight:500}
+.subj-px .v{font-family:var(--display);font-size:22px;font-weight:700}
+.chip{font-size:12px;font-weight:600;padding:4px 11px;border-radius:20px}
+.chip.up{background:var(--up-soft);color:var(--up)}
+.chip.warn{background:var(--warn-soft);color:#B4740B}
+.chip.neutral{background:#F1F3FA;color:var(--muted)}
+.subj-reason{margin-left:auto;max-width:340px;font-size:13px;color:var(--muted);line-height:1.5}
+.subj-reason b{color:var(--ink);font-weight:600}
+
+.section-h{display:flex;align-items:center;gap:10px;margin:8px 0 16px;font-size:17px;font-weight:600}
+.section-h svg{color:var(--accent)}
+.section-h .count{font-size:13px;color:var(--muted);font-weight:500;margin-left:4px}
+
+/* agent grid */
+.agents{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:8px}
+.agent{padding:20px 22px;display:flex;flex-direction:column;gap:12px;cursor:default}
+.agent:hover{transform:translateY(-3px);box-shadow:var(--shadow-hover)}
+.agent-head{display:flex;align-items:center;gap:9px}
+.agent-avatar{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-family:var(--display);font-weight:700;font-size:13px;color:#fff;flex:none}
+.agent-name{font-family:var(--display);font-weight:600;font-size:15px}
+.stance{font-size:11px;font-weight:700;padding:3px 9px;border-radius:7px;margin-left:auto;letter-spacing:.01em}
+.stance.bull{background:var(--up-soft);color:var(--up)}
+.stance.bear{background:var(--down-soft);color:var(--down)}
+.stance.neu{background:var(--warn-soft);color:#B4740B}
+.stance.risk{background:var(--accent-soft);color:var(--accent)}
+.conf-row{display:flex;align-items:center;gap:10px}
+.conf-bar{flex:1;height:7px;border-radius:20px;background:#EEF0F7;overflow:hidden}
+.conf-bar i{display:block;height:100%;border-radius:20px;width:0;transition:width 1.1s cubic-bezier(.2,.7,.2,1)}
+.conf-bar i.bull{background:linear-gradient(90deg,var(--up),#3ED28C)}
+.conf-bar i.bear{background:linear-gradient(90deg,var(--down),#F87C74)}
+.conf-bar i.neu{background:linear-gradient(90deg,var(--warn),#FBBF5B)}
+.conf-bar i.risk{background:linear-gradient(90deg,var(--accent),#6E86FF)}
+.conf-val{font-family:var(--display);font-size:14px;font-weight:700}
+.agent-view{font-size:13.5px;color:#3A4258;line-height:1.6}
+.evid{display:flex;flex-direction:column;gap:6px}
+.evid .e{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted)}
+.evid .e svg{color:var(--accent);flex:none}
+
+/* debate chat flow */
+.debate{padding:26px 28px;margin-bottom:24px}
+.debate-tl{display:flex;flex-direction:column;gap:0;position:relative;margin-top:6px}
+.debate-tl::before{content:"";position:absolute;left:50%;top:8px;bottom:8px;width:2px;background:var(--border);transform:translateX(-50%)}
+.turn{display:flex;margin:10px 0;position:relative;opacity:1}
+.turn.bull{justify-content:flex-start}
+.turn.bear{justify-content:flex-end}
+.turn.tech{justify-content:center}
+.bubble{max-width:46%;background:#fff;border:1px solid var(--border);border-radius:16px;padding:14px 18px;box-shadow:var(--shadow);position:relative;transition:transform .18s,box-shadow .18s,opacity .4s}
+.turn.bull .bubble{border-top-left-radius:4px}
+.turn.bear .bubble{border-top-right-radius:4px}
+.turn.tech .bubble{max-width:64%;background:linear-gradient(180deg,#FFF9F0,#fff);border-color:#FCE8CC;text-align:center}
+.bubble:hover{transform:translateY(-2px);box-shadow:var(--shadow-hover)}
+.bub-head{display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12.5px;font-weight:600}
+.turn.bear .bub-head{flex-direction:row-reverse}
+.turn.tech .bub-head{justify-content:center}
+.bub-avatar{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;font-family:var(--display);font-weight:700;font-size:10px;color:#fff;flex:none}
+.bub-round{font-size:11px;color:var(--muted);font-weight:600;font-family:var(--display)}
+.turn.bull .bub-round{margin-left:auto}
+.turn.bear .bub-round{margin-right:auto}
+.bub-txt{font-size:13.5px;color:#3A4258;line-height:1.55}
+.bub-txt b{color:var(--ink);font-weight:700}
+.bull .bub-avatar{background:linear-gradient(135deg,var(--up),#3ED28C)}
+.bear .bub-avatar{background:linear-gradient(135deg,var(--down),#F87C74)}
+.tech .bub-avatar{background:linear-gradient(135deg,var(--warn),#FBBF5B)}
+.turn.hidden{opacity:0;transform:translateY(14px)}
+.debate-foot{display:flex;justify-content:center;margin-top:18px}
+.step-btn{background:var(--accent);color:#fff;border:none;font-weight:600;font-size:13.5px;padding:10px 20px;border-radius:11px;cursor:pointer;box-shadow:0 6px 16px rgba(61,90,254,.28);transition:.16s;display:inline-flex;gap:8px;align-items:center}
+.step-btn:hover{background:#2E4BF0;transform:translateY(-1px)}
+.step-btn:focus-visible{outline:2.5px solid var(--accent);outline-offset:2px}
+.step-btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--border);box-shadow:var(--shadow);margin-left:10px}
+
+/* ruling + verdict */
+.rv{display:grid;grid-template-columns:1fr 1.2fr;gap:18px;margin-bottom:24px}
+.ruling{padding:22px 26px}
+.ruling-top{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.ruling-ico{width:34px;height:34px;border-radius:10px;background:var(--up-soft);color:var(--up);display:grid;place-items:center;flex:none}
+.ruling-title{font-family:var(--display);font-size:16px;font-weight:600}
+.ruling-sub{font-size:12.5px;color:var(--muted)}
+.cst{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:6px}
+.cst-item{background:#F8F9FD;border:1px solid var(--border);border-radius:12px;padding:14px}
+.cst-item .k{font-size:12px;color:var(--muted);font-weight:500;margin-bottom:6px}
+.cst-item .v{font-family:var(--display);font-size:19px;font-weight:700}
+.cst-item .v.down{color:var(--down)}
+.cst-item .v.up{color:var(--up)}
+
+.verdict{padding:24px 28px;background:linear-gradient(180deg,#F4F6FF,#fff);border-color:#D8DFFB}
+.vgrade{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;margin-bottom:6px}
+.vbadge{font-family:var(--display);font-size:34px;font-weight:700;color:var(--accent)}
+.vdir{font-size:12px;font-weight:700;color:var(--up);background:var(--up-soft);padding:5px 12px;border-radius:20px;letter-spacing:.04em}
+.vconf{font-size:14px;color:var(--muted)}
+.vconf b{font-family:var(--display);color:var(--ink);font-weight:700}
+.vgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:18px}
+.vg{background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px}
+.vg .k{font-size:12px;color:var(--muted);font-weight:500;margin-bottom:6px}
+.vg .v{font-family:var(--display);font-size:18px;font-weight:700}
+.vg .v.up{color:var(--up)} .vg .v.down{color:var(--down)} .vg .v.warn{color:#B4740B}
+.perm{margin-top:18px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding-top:16px;border-top:1px solid var(--border)}
+.perm-pill{font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:20px;display:inline-flex;align-items:center;gap:6px}
+.perm-pill.ok{background:var(--up-soft);color:var(--up)}
+.perm-pill.no{background:var(--down-soft);color:var(--down)}
+.perm .note{margin-left:auto;font-size:12px;color:var(--muted)}
+.perm .note code{font-family:var(--display);color:var(--down)}
+
+/* outputs */
+.outs{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+.obtn{background:#fff;border:1px solid var(--border);border-radius:12px;padding:11px 18px;font-size:14px;font-weight:600;color:var(--ink);cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:.16s;box-shadow:var(--shadow)}
+.obtn:hover{transform:translateY(-2px);box-shadow:var(--shadow-hover);border-color:#CDD3E6}
+.obtn.pri{background:var(--accent);color:#fff;border-color:transparent;box-shadow:0 6px 16px rgba(61,90,254,.28)}
+.obtn.pri:hover{background:#2E4BF0}
+.obtn:focus-visible{outline:2.5px solid var(--accent);outline-offset:2px}
+.obtn svg{color:var(--accent)}
+.obtn.pri svg{color:#fff}
+
+.foot{font-size:12.5px;color:var(--muted);display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding-bottom:12px}
+.foot .dot{width:5px;height:5px;border-radius:50%;background:#CDD3E6}
+
+.reveal{opacity:0;transform:translateY(16px)}
+.reveal.in{opacity:1;transform:none;transition:opacity .6s ease,transform .6s cubic-bezier(.2,.7,.3,1)}
+
+@media (max-width:980px){
+  .agents{grid-template-columns:1fr}
+  .rv{grid-template-columns:1fr}
+  .cst,.vgrid{grid-template-columns:1fr 1fr}
+  .bubble,.turn.tech .bubble{max-width:80%}
+}
+@media (max-width:768px){
+  .wrap{padding:24px 16px 0}
+  .hero h1{font-size:27px}
+  .depth-ctrl{align-items:flex-start}
+  .subj-reason{margin-left:0}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+  .reveal{opacity:1;transform:none}
+  .turn.hidden{opacity:1;transform:none}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="brand">
+      <span class="mark"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 3 8-9"/><path d="M15 6h5v5"/></svg></span>
+      AlphaLoop
+    </div>
+    <span class="nav-title">AI 投研室 · <b>Research Desk</b></span>
+    <div class="nav-right">
+      <a class="back" href="index.html">← 返回矩阵</a>
+      <span class="status-dot"><span class="dot"></span>6/6 Agent 已发言</span>
+    </div>
+  </div>
+</nav>
+
+<div class="wrap">
+
+  <!-- hero -->
+  <div class="hero reveal">
+    <div>
+      <div class="eyebrow">Multi-Agent Research · 多 Agent 投研辩论</div>
+      <h1>让六位分析师为你辩一场</h1>
+      <p>对 BTC/USDT 展开多 Agent 研究、多空辩论、风控裁定，产出可读的投研结论与可发布信号。</p>
+    </div>
+    <div class="depth-ctrl">
+      <div class="seg" role="group" aria-label="研究深度">
+        <button type="button" aria-pressed="false">快速</button>
+        <button type="button" aria-pressed="false">标准</button>
+        <button type="button" aria-pressed="true">深度</button>
+      </div>
+      <span class="runstat"><span class="dot"></span>研究中 · <b>6/6</b> 已发言 · 用时 <b>42s</b></span>
+    </div>
+  </div>
+
+  <!-- subject card -->
+  <div class="card subject reveal">
+    <div class="subj-ico">BT</div>
+    <div class="subj-main"><div class="p">BTC/USDT</div><div class="s">Bitcoin · 永续</div></div>
+    <div class="subj-px"><span class="k">现价</span><span class="v tab">64,180</span></div>
+    <span class="chip up">24h +1.46%</span>
+    <div class="subj-reason">本次研究触发原因 · <b>结构突破信号 #1</b> 请求深度复核，日线突破颈线 64k</div>
+  </div>
+
+  <!-- agents -->
+  <div class="section-h reveal">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M2 20c0-3.3 3-5 7-5s7 1.7 7 5"/><path d="M16 20c0-2 .8-3.4 2.5-4"/></svg>
+    多 Agent 观点<span class="count">6 位分析师并陈</span>
+  </div>
+  <div class="agents">
+    <div class="card agent reveal">
+      <div class="agent-head"><span class="agent-avatar" style="background:linear-gradient(135deg,var(--up),#3ED28C)">牛</span><span class="agent-name">多头 Bull</span><span class="stance bull">看多</span></div>
+      <div class="conf-row"><div class="conf-bar"><i class="bull" data-w="78"></i></div><span class="conf-val" style="color:var(--up)">0.78</span></div>
+      <div class="agent-view">日线结构突破颈线 64k，量能放大确认，回踩不破即二次上车。趋势级别信号，非日内噪声。</div>
+      <div class="evid">
+        <div class="e"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>突破成交量 +142%</div>
+        <div class="e"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>OBV 创新高</div>
+        <div class="e"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>HTF 守卫 PASS</div>
+      </div>
+    </div>
+    <div class="card agent reveal">
+      <div class="agent-head"><span class="agent-avatar" style="background:linear-gradient(135deg,var(--down),#F87C74)">熊</span><span class="agent-name">空头 Bear</span><span class="stance bear">看空</span></div>
+      <div class="conf-row"><div class="conf-bar"><i class="bear" data-w="64"></i></div><span class="conf-val" style="color:var(--down)">0.64</span></div>
+      <div class="agent-view">上方 65.2k 有密集套牢盘，RSI 顶背离，谨防假突破诱多。追高的风险回报比不划算。</div>
+      <div class="evid">
+        <div class="e"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v5"/><path d="M12 16h.01"/></svg>RSI 顶背离</div>
+        <div class="e"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v5"/><path d="M12 16h.01"/></svg>65.2k 挂单墙</div>
+        <div class="e"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v5"/><path d="M12 16h.01"/></svg>资金费率偏高 0.043%</div>
+      </div>
+    </div>
+    <div class="card agent reveal">
+      <div class="agent-head"><span class="agent-avatar" style="background:linear-gradient(135deg,var(--accent),#6E86FF)">技</span><span class="agent-name">技术面 Tech</span><span class="stance bull">偏多</span></div>
+      <div class="conf-row"><div class="conf-bar"><i class="bull" data-w="71"></i></div><span class="conf-val" style="color:var(--up)">0.71</span></div>
+      <div class="agent-view">多周期共振向上，15m/1h/4h 均线多头排列，MACD 金叉。动能结构健康，尚无顶部背离。</div>
+      <div class="evid">
+        <div class="e"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 3 8-9"/></svg>均线多头排列</div>
+        <div class="e"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 3 8-9"/></svg>MACD 金叉</div>
+        <div class="e"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 3 8-9"/></svg>ATR 扩张</div>
+      </div>
+    </div>
+    <div class="card agent reveal">
+      <div class="agent-head"><span class="agent-avatar" style="background:linear-gradient(135deg,var(--warn),#FBBF5B)">情</span><span class="agent-name">情绪面 Sentiment</span><span class="stance neu">中性偏多</span></div>
+      <div class="conf-row"><div class="conf-bar"><i class="neu" data-w="60"></i></div><span class="conf-val" style="color:#B4740B">0.60</span></div>
+      <div class="agent-view">FinBERT 新闻情绪 +0.34 中性偏多，社媒热度回升但未过热。情绪面支撑温和，无过热风险。</div>
+      <div class="evid">
+        <div class="e"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/></svg>新闻情绪 +0.34</div>
+        <div class="e"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/></svg>社媒提及 +28%</div>
+        <div class="e"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/></svg>恐贪指数 62</div>
+      </div>
+    </div>
+    <div class="card agent reveal">
+      <div class="agent-head"><span class="agent-avatar" style="background:linear-gradient(135deg,#5A6480,#8A93AE)">链</span><span class="agent-name">链上 On-chain</span><span class="stance neu">谨慎</span></div>
+      <div class="conf-row"><div class="conf-bar"><i class="neu" data-w="55"></i></div><span class="conf-val" style="color:#B4740B">0.55</span></div>
+      <div class="agent-view">交易所净流出放缓，巨鲸地址近 24h 小幅增持但不显著。链上信号中性，未提供强方向依据。</div>
+      <div class="evid">
+        <div class="e"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h16"/></svg>净流出放缓</div>
+        <div class="e"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h16"/></svg>巨鲸 +0.8%</div>
+        <div class="e"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h16"/></svg>稳定币储备平</div>
+      </div>
+    </div>
+    <div class="card agent reveal">
+      <div class="agent-head"><span class="agent-avatar" style="background:linear-gradient(135deg,var(--accent),#3D5AFE)">控</span><span class="agent-name">风控 Risk</span><span class="stance risk">放行(约束)</span></div>
+      <div class="conf-row"><div class="conf-bar"><i class="risk" data-w="100"></i></div><span class="conf-val" style="color:var(--accent)">CLR</span></div>
+      <div class="agent-view">允许进入 dry-run，但因资金费率偏高与 65.2k 阻力，限仓位 ≤10% 并强制止损，须绑定独立资金池。</div>
+      <div class="evid">
+        <div class="e"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z"/></svg>约束 仓位≤10%</div>
+        <div class="e"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z"/></svg>止损 62.4k</div>
+        <div class="e"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z"/></svg>独立资金池</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- debate -->
+  <div class="section-h reveal">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 10h.01M12 10h.01M16 10h.01"/><path d="M21 12a8 8 0 0 1-11.5 7.2L4 20l1-4.2A8 8 0 1 1 21 12z"/></svg>
+    多空辩论时间线<span class="count">4 轮往复 + 技术裁量</span>
+  </div>
+  <div class="card debate reveal">
+    <div class="debate-tl" id="debate">
+      <div class="turn bull" data-turn="1">
+        <div class="bubble"><div class="bub-head"><span class="bub-avatar">牛</span>多头 Bull<span class="bub-round">R1 · 14:22:44</span></div><div class="bub-txt">突破量能 <b>+142%</b>，配合 OBV 创新高——这是真突破，不是诱多。回踩确认即可二次上车。</div></div>
+      </div>
+      <div class="turn bear hidden" data-turn="2">
+        <div class="bubble"><div class="bub-head"><span class="bub-avatar">熊</span>空头 Bear<span class="bub-round">R2 · 14:22:48</span></div><div class="bub-txt">但 65.2k 挂单墙 <b>3,200 万</b>未消化，且 RSI 顶背离先兆。量能大不代表能吃掉厚墙。</div></div>
+      </div>
+      <div class="turn bull hidden" data-turn="3">
+        <div class="bubble"><div class="bub-head"><span class="bub-avatar">牛</span>多头 Bull<span class="bub-round">R3 · 14:22:52</span></div><div class="bub-txt">挂单墙已在过去 2h 被吃掉 <b>40%</b>，厚度缩减。而 RSI 背离在强趋势中常失效。</div></div>
+      </div>
+      <div class="turn bear hidden" data-turn="4">
+        <div class="bubble"><div class="bub-head"><span class="bub-avatar">熊</span>空头 Bear<span class="bub-round">R4 · 14:22:56</span></div><div class="bub-txt">即便上攻，风险回报比不佳，资金费率 <b>0.043%</b> 多头拥挤。追高不如等回踩 <b>63.5k</b>。</div></div>
+      </div>
+      <div class="turn tech hidden" data-turn="5">
+        <div class="bubble"><div class="bub-head"><span class="bub-avatar">技</span>技术面 Tech · 裁量<span class="bub-round">R5 · 14:23:01</span></div><div class="bub-txt"><b>4h 未破位</b>前，回踩 <b>63.5–64k</b> 确为更优入场区。方向偏多成立，入场应等回踩确认，而非追高。</div></div>
+      </div>
+    </div>
+    <div class="debate-foot">
+      <button class="step-btn" id="stepBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>下一轮辩论</button>
+      <button class="step-btn ghost" id="allBtn">展开全部</button>
+    </div>
+  </div>
+
+  <!-- ruling + verdict -->
+  <div class="rv">
+    <div class="card ruling reveal">
+      <div class="ruling-top">
+        <span class="ruling-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg></span>
+        <div><div class="ruling-title">风控裁定 · 放行（有约束）</div><div class="ruling-sub">风险等级 中 · 允许进入 dry-run · 须绑定独立资金池</div></div>
+      </div>
+      <div class="cst">
+        <div class="cst-item"><div class="k">仓位上限</div><div class="v up">≤10%</div></div>
+        <div class="cst-item"><div class="k">强制止损</div><div class="v down">62,400</div></div>
+        <div class="cst-item"><div class="k">资金隔离</div><div class="v">独立池</div></div>
+      </div>
+    </div>
+
+    <div class="card verdict reveal">
+      <div class="vgrade"><span class="vbadge">偏多 B+</span><span class="vdir">方向 LONG</span><span class="vconf">综合置信度 <b>0.74</b></span></div>
+      <p style="font-size:13px;color:var(--muted)">六 Agent 共识：方向偏多成立，入场应等回踩确认；受风控约束限仓 ≤10%。</p>
+      <div class="vgrid">
+        <div class="vg"><div class="k">目标价</div><div class="v up tab">66,800</div></div>
+        <div class="vg"><div class="k">止损</div><div class="v down tab">62,400</div></div>
+        <div class="vg"><div class="k">止盈(分批)</div><div class="v tab">65.2k / 66.8k</div></div>
+        <div class="vg"><div class="k">建议仓位</div><div class="v warn tab">≤10%</div></div>
+      </div>
+      <div class="perm">
+        <span class="perm-pill ok"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6L9 17l-5-5"/></svg>可回测</span>
+        <span class="perm-pill ok"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6L9 17l-5-5"/></svg>可模拟</span>
+        <span class="perm-pill no"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>可实盘 · 需人工确认</span>
+        <span class="note">can_live_trade = <code>false</code></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- outputs -->
+  <div class="outs reveal">
+    <button class="obtn pri"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg>发布为 Signal</button>
+    <button class="obtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>创建 StrategyDraft</button>
+    <button class="obtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M7 3v6h9"/></svg>存为 ResearchReport</button>
+    <button class="obtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>加入观察</button>
+  </div>
+
+  <div class="foot">
+    <span>provider OpenAI GPT + DeepSeek 混合</span><span class="dot"></span><span>prompt_version v3</span><span class="dot"></span><span>model_version 已记录</span><span class="dot"></span><span>本次用时 42s · 6/6 Agent 已发言</span>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+
+  // segmented
+  var seg=document.querySelectorAll('.seg button');
+  seg.forEach(function(b){b.addEventListener('click',function(){seg.forEach(function(x){x.setAttribute('aria-pressed','false');});b.setAttribute('aria-pressed','true');});});
+
+  // debate step reveal
+  var turns=Array.prototype.slice.call(document.querySelectorAll('.turn[data-turn]'));
+  var shown=1;
+  function updateStep(){
+    turns.forEach(function(t,i){t.classList.toggle('hidden',i>=shown);});
+    var btn=document.getElementById('stepBtn');
+    if(shown>=turns.length){btn.disabled=true;btn.style.opacity=.5;btn.style.cursor='default';btn.querySelector('svg').style.display='none';btn.childNodes[1].nodeValue='辩论已结束';}
+  }
+  document.getElementById('stepBtn').addEventListener('click',function(){if(shown<turns.length){shown++;updateStep();turns[shown-1].scrollIntoView({behavior:reduce?'auto':'smooth',block:'center'});}});
+  document.getElementById('allBtn').addEventListener('click',function(){shown=turns.length;updateStep();});
+  if(reduce){shown=turns.length;}
+  updateStep();
+
+  // reveal + conf bars
+  var revs=document.querySelectorAll('.reveal');
+  function fillBars(){document.querySelectorAll('.conf-bar i').forEach(function(b){b.style.width=b.dataset.w+'%';});}
+  if(reduce){revs.forEach(function(r){r.classList.add('in');});fillBars();}
+  else{
+    var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){var idx=[].indexOf.call(revs,e.target);e.target.style.transitionDelay=Math.min(idx*50,260)+'ms';e.target.classList.add('in');io.unobserve(e.target);}});},{threshold:.1});
+    revs.forEach(function(r){io.observe(r);});
+    setTimeout(fillBars,400);
+  }
+})();
+</script>
+</body>
+</html>

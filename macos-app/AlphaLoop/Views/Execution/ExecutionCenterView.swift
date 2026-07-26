@@ -20,13 +20,6 @@ struct ExecutionCenterView: View {
     var body: some View {
         VStack(spacing: 0) {
             LiveWireStrip(mode: resolvedMode)
-            EmergencyStopBar(
-                mode: resolvedMode,
-                affectedRuns: viewModel?.centerData?.totalRunning ?? 0,
-                emergencyLocked: viewModel?.centerData?.state == "emergency_locked",
-                onStop: { await viewModel?.emergencyStop() },
-                onResume: { await viewModel?.emergencyResume() }
-            )
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: PulseSpacing.lg) {
                     if let vm = viewModel {
@@ -104,66 +97,42 @@ struct ExecutionCenterView: View {
     // MARK: - 汇总卡片
 
     private func summaryCardsRow(_ data: ExecutionCenterBFFResponse) -> some View {
-        HStack(spacing: PulseSpacing.md) {
-            summaryCard(
-                title: L10n.Execution.runningSessions,
-                value: "\(data.totalRunning)",
-                icon: "play.circle.fill",
-                color: PulseColors.StateColors.green
-            )
-            .staggeredAppearance(index: 0)
-
-            summaryCard(
-                title: L10n.Execution.positions,
-                value: "\(data.totalOpenPositions)",
-                icon: "chart.bar.fill",
-                color: PulseColors.StateColors.orange
-            )
-            .staggeredAppearance(index: 1)
-
-            summaryCard(
-                title: L10n.Execution.pendingOrders,
-                value: "\(data.totalPendingOrders)",
-                icon: "clock.fill",
-                color: PulseColors.StateColors.yellow
-            )
-            .staggeredAppearance(index: 2)
-
-            summaryCard(
-                title: "Freqtrade",
-                value: heartbeatLabel(data.freqtradeHeartbeat),
-                icon: "heart.fill",
-                color: heartbeatColor(data.freqtradeHeartbeat)
-            )
-            .staggeredAppearance(index: 3)
-
-            summaryCard(
-                title: L10n.Execution.latency,
-                value: "\(data.executionLatencyMs)ms",
-                icon: "timer",
-                color: latencyColor(data.executionLatencyMs)
-            )
-            .staggeredAppearance(index: 4)
-
-        }
-    }
-
-    private func summaryCard(title: String, value: String, icon: String, color: Color) -> some View {
-        KryptonCard(emphasis: .subtle) {
-            HStack(spacing: PulseSpacing.xs) {
-                Image(systemName: icon)
-                    .font(.system(size: 14))
-                    .foregroundStyle(color)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(value)
-                        .font(PulseFonts.bodyMedium)
-                        .foregroundStyle(colors.textPrimary)
-                    Text(title)
-                        .font(PulseFonts.micro)
-                        .foregroundStyle(colors.textMuted)
-                }
-            }
-        }
+        MetricTileGrid(
+            tiles: [
+                MetricTileData(
+                    label: L10n.Execution.runningSessions,
+                    value: "\(data.totalRunning)",
+                    valueColor: PulseColors.StateColors.green,
+                    icon: "play.circle.fill"
+                ),
+                MetricTileData(
+                    label: L10n.Execution.positions,
+                    value: "\(data.totalOpenPositions)",
+                    valueColor: PulseColors.StateColors.orange,
+                    icon: "chart.bar.fill"
+                ),
+                MetricTileData(
+                    label: L10n.Execution.pendingOrders,
+                    value: "\(data.totalPendingOrders)",
+                    valueColor: PulseColors.StateColors.yellow,
+                    icon: "clock.fill"
+                ),
+                MetricTileData(
+                    label: "Freqtrade",
+                    value: heartbeatLabel(data.freqtradeHeartbeat),
+                    valueColor: heartbeatColor(data.freqtradeHeartbeat),
+                    icon: "heart.fill"
+                ),
+                MetricTileData(
+                    label: L10n.Execution.latency,
+                    value: "\(data.executionLatencyMs)ms",
+                    valueColor: latencyColor(data.executionLatencyMs),
+                    icon: "timer"
+                ),
+            ],
+            columns: 5
+        )
+        .staggeredAppearance(index: 0)
     }
 
     // MARK: - 会话列表

@@ -94,7 +94,6 @@ struct APIShadowStrategy {
         try await client.post(
             "/api/growth/failure-clusters/\(clusterId)/generate-shadow-strategy",
             body: nil as String?,
-            mock: Self.mockDraft
         )
     }
 
@@ -102,18 +101,17 @@ struct APIShadowStrategy {
         let path = strategyId != nil
             ? "/api/shadow-strategies?strategy_id=\(strategyId!)"
             : "/api/shadow-strategies"
-        return try await client.get(path, mock: { [Self.mockDraft()] })
+        return try await client.get(path)
     }
 
     func getDraft(id: String) async throws -> ShadowStrategyDraftResponse {
-        try await client.get("/api/shadow-strategies/\(id)", mock: Self.mockDraft)
+        try await client.get("/api/shadow-strategies/\(id)")
     }
 
     func validateDraft(id: String) async throws -> [String: AnyCodable] {
         try await client.post(
             "/api/shadow-strategies/\(id)/validate",
             body: nil as String?,
-            mock: { ["status": AnyCodable("valid"), "errors": AnyCodable(0)] }
         )
     }
 
@@ -121,14 +119,12 @@ struct APIShadowStrategy {
         try await client.post(
             "/api/shadow-strategies/\(id)/request-upgrade",
             body: nil as String?,
-            mock: Self.mockUpgradeRequest
         )
     }
 
     func listUpgradeRequests(strategyId: String) async throws -> [UpgradeRequestResponse] {
         try await client.get(
             "/api/v2/strategies/\(strategyId)/upgrade-requests",
-            mock: { [Self.mockUpgradeRequest()] }
         )
     }
 
@@ -136,7 +132,6 @@ struct APIShadowStrategy {
         try await client.post(
             "/api/v2/strategies/\(strategyId)/upgrade-requests/\(requestId)/approve",
             body: ["approved_by": "user"],
-            mock: { ["result": AnyCodable("approved")] }
         )
     }
 
@@ -144,7 +139,6 @@ struct APIShadowStrategy {
         try await client.post(
             "/api/v2/strategies/\(strategyId)/upgrade-requests/\(requestId)/reject",
             body: ["reason": reason],
-            mock: { ["result": AnyCodable("rejected")] }
         )
     }
 

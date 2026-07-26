@@ -1,6 +1,5 @@
-// PanelChrome.swift — 320px floating glass shell shared by ⌘1–⌘6 panels.
-// Per CLAUDE.md: .glassEffect() must be applied directly to the content,
-// never inside .background(). Spec §5.3 / Plan 2026-06-18 Task 17.
+// PanelChrome.swift — 320px floating panel shell shared by ⌘1–⌘6 panels.
+// Protocol 风格: 白卡 + 极轻边框 + 品牌色柔和阴影(非玻璃拟态)。
 import SwiftUI
 
 struct PanelChrome<Content: View>: View {
@@ -26,13 +25,16 @@ struct PanelChrome<Content: View>: View {
         }
         .frame(width: 320)
         .frame(maxHeight: 600)
-        .glassEffect(.regular, in: .rect(cornerRadius: PulseRadii.md))
-        .overlay(
-            RoundedRectangle(cornerRadius: PulseRadii.md, style: .continuous)
-                .stroke(colors.border, lineWidth: 0.5)
+        .background(
+            RoundedRectangle(cornerRadius: PulseRadii.card, style: .continuous)
+                .fill(colors.cardBackground)
         )
-        .clipShape(RoundedRectangle(cornerRadius: PulseRadii.md, style: .continuous))
-        .shadow(color: .black.opacity(0.4), radius: 16, y: 6)
+        .overlay(
+            RoundedRectangle(cornerRadius: PulseRadii.card, style: .continuous)
+                .stroke(colors.border, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: PulseRadii.card, style: .continuous))
+        .applyShadow(PulseShadow.elevated(colors))
         .focusable()
         .focused($focused)
         .onKeyPress(.escape) {

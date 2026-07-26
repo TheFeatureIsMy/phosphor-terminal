@@ -250,3 +250,31 @@ data-preserving — the dev environment accepts that.
 - Spec: `docs/superpowers/specs/2026-06-16-provider-adapter-foundation-design.md` §6
 - API contracts: `docs/backend/api-contracts.md`
 - Configuration model: `docs/settings/configuration-model.md`
+
+---
+
+## 2026-07-10 - Growth Schema Additions
+
+### Migration: `a7b8c9d0e1f2_growth_suggestions_candidate_confirm`
+
+**Revises:** `f6d3a74173ea`
+
+**Changes:**
+
+1. `growth_reports` table: Added `suggestions JSON` column (nullable) to persist improvement recommendations alongside metrics and findings.
+
+2. `strategy_candidates` table: Added two columns:
+   - `confirmed_strategy_id UUID` (nullable, FK -> `strategies_v2.id`) - tracks which strategy a candidate was promoted into
+   - `confirmed_version_no INTEGER` (nullable) - the version number after confirmation
+
+3. New FK constraint: `fk_strategy_candidates_confirmed_strategy` on `strategy_candidates.confirmed_strategy_id` -> `strategies_v2.id`.
+
+**Downgrade:** Drops the FK constraint and both new columns.
+
+### Impact
+
+- `GrowthService.create_run_review()`, `create_daily_review()`, and `strategy_performance()` now persist `suggestions`.
+- `GrowthService.confirm_candidate()` now sets `confirmed_strategy_id` and `confirmed_version_no` on the candidate.
+- `GrowthReportResponse` schema exposes `suggestions: list[str]`.
+- `StrategyCandidateResponse` schema exposes `confirmed_strategy_id` and `confirmed_version_no`.
+

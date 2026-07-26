@@ -1,9 +1,8 @@
-// APISettings.swift — Settings API 封装
-// GET/PUT /auth/settings — 云端持久化用户设置
+// APISettings.swift - Settings API 封装
+// GET/PUT /auth/settings - 云端持久化用户设置
+// GET/PUT/DELETE /api/admin/system-settings - 系统级设置
 
 import Foundation
-
-// MARK: - 响应模型
 
 struct UserSettingsResponse: Decodable, Sendable {
     let id: Int
@@ -26,8 +25,6 @@ struct UserSettingsResponse: Decodable, Sendable {
     }
 }
 
-// MARK: - 请求体
-
 struct UserSettingsUpdateBody: Encodable, Sendable {
     let theme: String?
     let language: String?
@@ -45,44 +42,56 @@ struct UserSettingsUpdateBody: Encodable, Sendable {
     }
 }
 
-// MARK: - API 服务
+struct SystemSettingView: Codable, Identifiable {
+    let id: Int
+    let key: String
+    let value: AnyCodable
+    let category: String?
+    let updatedAt: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, key, value, category
+        case updatedAt = "updated_at"
+    }
+}
+
+struct SystemSettingUpsertBody: Encodable {
+    let value: AnyCodable
+    let category: String?
+    let updatedBy: String?
+
+    enum CodingKeys: String, CodingKey {
+        case value, category
+        case updatedBy = "updated_by"
+    }
+}
 
 struct APISettings {
     let client: any NetworkClientProtocol
 
-    /// GET /auth/settings — 获取当前用户设置
     func fetch() async throws -> UserSettingsResponse {
-        try await client.get("/auth/settings", mock: mockSettings)
+        try await client.get("/auth/settings")
     }
 
-    /// PUT /auth/settings — 更新用户设置（部分更新）
     func update(_ body: UserSettingsUpdateBody) async throws -> UserSettingsResponse {
-        try await client.put("/auth/settings", body: body, mock: {
-            UserSettingsResponse(
-                id: 1,
-                userId: 1,
-                theme: body.theme ?? "dark",
-                language: body.language ?? "zh-CN",
-                notificationsEnabled: body.notificationsEnabled ?? true,
-                defaultExchange: body.defaultExchange ?? "binance",
-                defaultMarket: body.defaultMarket ?? "crypto",
-                riskTolerance: body.riskTolerance ?? "medium"
-            )
-        })
+        try await client.put("/auth/settings", body: body)
     }
 
-    // MARK: - Mock 数据
+    func listSystemSettings(category: String? = nil) async throws -> [SystemSettingView] {
+        let endpoint = category != nil ? "/api/admin/system-settings?category=\(category!)" : "/api/admin/system-settings"
+        return try await client.get(endpoint)
+    }
 
-    private func mockSettings() -> UserSettingsResponse {
-        UserSettingsResponse(
-            id: 1,
-            userId: 1,
-            theme: "dark",
-            language: "zh-CN",
-            notificationsEnabled: true,
-            defaultExchange: "binance",
-            defaultMarket: "crypto",
-            riskTolerance: "medium"
-        )
+    func getSystemSetting(key: String) async throws -> SystemSettingView {
+        try await client.get("/api/admin/system-settings/\(key)")
+    }
+
+    func upsertSystemSetting(key: String, value: AnyCodable, category: String? = nil) async throws -> SystemSettingView {
+        let body = SystemSettingUpsertBody(value: value, category: category, updatedBy: "ui")
+        return try await client.put("/api/admin/system-settings/\(key)", body: body)
+    }
+
+    func deleteSystemSetting(key: String) async throws {
+        try await client.delete("/api/admin/system-settings/\(key)")
     }
 }

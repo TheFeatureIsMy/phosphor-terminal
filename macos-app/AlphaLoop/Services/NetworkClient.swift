@@ -18,6 +18,35 @@ extension EnvironmentValues {
     }
 }
 
+
+// MARK: - Default mock-free overloads (for real API calls that never fall back to mock data)
+
+extension NetworkClientProtocol {
+    func get<T: Decodable>(_ endpoint: String) async throws -> T {
+        try await get(endpoint) { () -> T in fatalError("MockNetworkClient has no mock for \(endpoint). Real API calls require LiveNetworkClient.") }
+    }
+
+    func post<T: Decodable>(_ endpoint: String, body: (any Encodable)?) async throws -> T {
+        try await post(endpoint, body: body) { () -> T in fatalError("MockNetworkClient has no mock for \(endpoint). Real API calls require LiveNetworkClient.") }
+    }
+
+    func postForm<T: Decodable>(_ endpoint: String, formFields: [String: String]) async throws -> T {
+        try await postForm(endpoint, formFields: formFields) { () -> T in fatalError("MockNetworkClient has no mock for \(endpoint). Real API calls require LiveNetworkClient.") }
+    }
+
+    func put<T: Decodable>(_ endpoint: String, body: (any Encodable)?) async throws -> T {
+        try await put(endpoint, body: body) { () -> T in fatalError("MockNetworkClient has no mock for \(endpoint). Real API calls require LiveNetworkClient.") }
+    }
+
+    func patch<T: Decodable>(_ endpoint: String, body: (any Encodable)?) async throws -> T {
+        try await patch(endpoint, body: body) { () -> T in fatalError("MockNetworkClient has no mock for \(endpoint). Real API calls require LiveNetworkClient.") }
+    }
+
+    func delete(_ endpoint: String) async throws {
+        try await delete(endpoint) {}
+    }
+}
+
 // MARK: - API 错误
 enum APIError: Error, LocalizedError {
     case invalidURL
@@ -111,8 +140,23 @@ final class LiveNetworkClient: NetworkClientProtocol, @unchecked Sendable {
         }
     }
 
+    private func buildURL(_ endpoint: String) -> URL {
+        if endpoint.contains("?") {
+            let parts = endpoint.split(separator: "?", maxSplits: 1)
+            let path = String(parts[0])
+            let query = parts.count > 1 ? String(parts[1]) : ""
+            var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)!
+            components.path += path.hasPrefix("/") ? path : "/\(path)"
+            // endpoint 的 query 段调用方已百分号编码，用 percentEncodedQuery 直接赋值，
+            // 避免 .query setter 再编码一次（%2F → %252F）
+            components.percentEncodedQuery = query.isEmpty ? nil : query
+            return components.url!
+        }
+        return baseURL.appendingPathComponent(endpoint)
+    }
+
     func get<T: Decodable>(_ endpoint: String, mock: @escaping @Sendable () -> T) async throws -> T {
-        let url = baseURL.appendingPathComponent(endpoint)
+        let url = buildURL(endpoint)
         var request = URLRequest(url: url)
         request.timeoutInterval = timeout
         request.setValue("Bearer \(KeychainService.accessToken ?? "")", forHTTPHeaderField: "Authorization")
@@ -120,7 +164,7 @@ final class LiveNetworkClient: NetworkClientProtocol, @unchecked Sendable {
     }
 
     func post<T: Decodable>(_ endpoint: String, body: (any Encodable)?, mock: @escaping @Sendable () -> T) async throws -> T {
-        let url = baseURL.appendingPathComponent(endpoint)
+        let url = buildURL(endpoint)
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.timeoutInterval = timeout
@@ -133,14 +177,15 @@ final class LiveNetworkClient: NetworkClientProtocol, @unchecked Sendable {
     }
 
     func postForm<T: Decodable>(_ endpoint: String, formFields: [String: String], mock: @escaping @Sendable () -> T) async throws -> T {
-        let url = baseURL.appendingPathComponent(endpoint)
+        let url = buildURL(endpoint)
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.timeoutInterval = timeout
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        // x-www-form-urlencoded 需转义 + & = 等；.urlQueryAllowed 会漏掉它们导致 body 被截断/误解析
         let bodyString = formFields
             .map { key, value in
-                "\(key.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? key)=\(value.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? value)"
+                "\(key.formURLEncoded)=\(value.formURLEncoded)"
             }
             .joined(separator: "&")
         request.httpBody = bodyString.data(using: .utf8)
@@ -148,7 +193,7 @@ final class LiveNetworkClient: NetworkClientProtocol, @unchecked Sendable {
     }
 
     func put<T: Decodable>(_ endpoint: String, body: (any Encodable)?, mock: @escaping @Sendable () -> T) async throws -> T {
-        let url = baseURL.appendingPathComponent(endpoint)
+        let url = buildURL(endpoint)
         var request = URLRequest(url: url)
         request.httpMethod = "PUT"
         request.timeoutInterval = timeout
@@ -161,7 +206,7 @@ final class LiveNetworkClient: NetworkClientProtocol, @unchecked Sendable {
     }
 
     func patch<T: Decodable>(_ endpoint: String, body: (any Encodable)?, mock: @escaping @Sendable () -> T) async throws -> T {
-        let url = baseURL.appendingPathComponent(endpoint)
+        let url = buildURL(endpoint)
         var request = URLRequest(url: url)
         request.httpMethod = "PATCH"
         request.timeoutInterval = timeout
@@ -174,7 +219,7 @@ final class LiveNetworkClient: NetworkClientProtocol, @unchecked Sendable {
     }
 
     func delete(_ endpoint: String, mock: @escaping @Sendable () -> Void) async throws {
-        let url = baseURL.appendingPathComponent(endpoint)
+        let url = buildURL(endpoint)
         var request = URLRequest(url: url)
         request.httpMethod = "DELETE"
         request.timeoutInterval = timeout
@@ -257,48 +302,36 @@ final class LiveNetworkClient: NetworkClientProtocol, @unchecked Sendable {
 }
 
 // MARK: - Keychain 服务（macOS Keychain 持久化）
+// 登录已移除:改为进程内内存存储,不再访问 macOS 钥匙串。
+// 未签名的 SPM 可执行文件每次读钥匙串都会弹出授权框,内存存储可根除此问题。
 enum KeychainService {
-    private static let service = "com.pulsedesk.auth"
+    private static let lock = NSLock()
+    nonisolated(unsafe) private static var _accessToken: String?
+    nonisolated(unsafe) private static var _refreshToken: String?
 
     static var accessToken: String? {
-        get { load(key: "access_token") }
-        set { save(key: "access_token", value: newValue) }
+        get { lock.lock(); defer { lock.unlock() }; return _accessToken }
+        set { lock.lock(); defer { lock.unlock() }; _accessToken = newValue }
     }
 
     static var refreshToken: String? {
-        get { load(key: "refresh_token") }
-        set { save(key: "refresh_token", value: newValue) }
-    }
-
-    private static func save(key: String, value: String?) {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: key,
-        ]
-        SecItemDelete(query as CFDictionary)
-        guard let value, let data = value.data(using: .utf8) else { return }
-        var add = query
-        add[kSecValueData as String] = data
-        SecItemAdd(add as CFDictionary, nil)
-    }
-
-    private static func load(key: String) -> String? {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: key,
-            kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne,
-        ]
-        var result: AnyObject?
-        let status = SecItemCopyMatching(query as CFDictionary, &result)
-        guard status == errSecSuccess, let data = result as? Data else { return nil }
-        return String(data: data, encoding: .utf8)
+        get { lock.lock(); defer { lock.unlock() }; return _refreshToken }
+        set { lock.lock(); defer { lock.unlock() }; _refreshToken = newValue }
     }
 
     static func clear() {
         accessToken = nil
         refreshToken = nil
+    }
+}
+
+// MARK: - x-www-form-urlencoded 编码
+private extension String {
+    /// 按 application/x-www-form-urlencoded 规则转义：仅保留 unreserved 字符（A-Z a-z 0-9 - . _ ~），
+    /// 其余（含 + & = / 空格）全部百分号编码，避免凭据里的特殊字符破坏 body。
+    var formURLEncoded: String {
+        var allowed = CharacterSet.alphanumerics
+        allowed.insert(charactersIn: "-._~")
+        return addingPercentEncoding(withAllowedCharacters: allowed) ?? self
     }
 }

@@ -41,63 +41,43 @@ struct FailureClusteringView: View {
     // MARK: - Header
 
     private var pageHeader: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
-                Text(L10n.zh("失败聚类", en: "Loss Patterns"))
-                    .font(PulseFonts.displayHeading)
-                    .foregroundStyle(colors.textPrimary)
-                HStack(spacing: PulseSpacing.xxs) {
-                    StatusDot(status: .online)
-                    Text(L10n.zh("发现策略失败模式，精准优化", en: "Identify failure patterns for targeted optimization"))
-                        .font(PulseFonts.caption)
-                        .foregroundStyle(colors.textMuted)
-                }
-            }
-            Spacer()
+        QuantPageHeader(
+            eyebrow: "GROWTH",
+            title: L10n.zh("失败聚类", en: "Loss Patterns"),
+            subtitle: L10n.zh("发现策略失败模式，精准优化", en: "Identify failure patterns for targeted optimization")
+        ) {
+            StatusDot(status: .online)
         }
     }
 
     // MARK: - Summary Cards
 
     private func summaryCards(vm: FailureClusteringViewModel) -> some View {
-        HStack(spacing: PulseSpacing.sm) {
-            summaryCard(
-                label: L10n.zh("总亏损交易", en: "Total Losing Trades"),
-                value: "\(vm.totalLossTrades)",
-                color: PulseColors.warning
-            )
-            summaryCard(
-                label: L10n.zh("总亏损金额", en: "Total Loss"),
-                value: String(format: "$%.2f", vm.totalLossAmount),
-                color: PulseColors.danger
-            )
-            summaryCard(
-                label: L10n.zh("Top 聚类", en: "Top Cluster"),
-                value: vm.clusters.first?.label ?? "—",
-                color: PulseColors.amber
-            )
-            summaryCard(
-                label: L10n.zh("聚类数量", en: "Cluster Count"),
-                value: "\(vm.clusters.count)",
-                color: PulseColors.info
-            )
-        }
-    }
-
-    private func summaryCard(label: String, value: String, color: Color) -> some View {
-        KryptonCard(emphasis: .subtle) {
-            VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
-                Text(label)
-                    .font(PulseFonts.micro)
-                    .foregroundStyle(colors.textMuted)
-                    .textCase(.uppercase)
-                Text(value)
-                    .font(PulseFonts.tabular)
-                    .foregroundStyle(color)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-            }
-        }
+        MetricTileGrid(
+            tiles: [
+                MetricTileData(
+                    label: L10n.zh("总亏损交易", en: "Total Losing Trades"),
+                    value: "\(vm.totalLossTrades)",
+                    valueColor: PulseColors.warning
+                ),
+                MetricTileData(
+                    label: L10n.zh("总亏损金额", en: "Total Loss"),
+                    value: String(format: "$%.2f", vm.totalLossAmount),
+                    valueColor: PulseColors.danger
+                ),
+                MetricTileData(
+                    label: L10n.zh("Top 聚类", en: "Top Cluster"),
+                    value: vm.clusters.first?.label ?? "—",
+                    valueColor: PulseColors.amber
+                ),
+                MetricTileData(
+                    label: L10n.zh("聚类数量", en: "Cluster Count"),
+                    value: "\(vm.clusters.count)",
+                    valueColor: PulseColors.info
+                ),
+            ],
+            columns: 4
+        )
     }
 
     // MARK: - Tab Selector
@@ -261,11 +241,11 @@ struct FailureClusteringView: View {
                                 .padding(.horizontal, 5)
                                 .padding(.vertical, 2)
                                 .background(
-                                    RoundedRectangle(cornerRadius: PulseRadii.xs)
+                                    RoundedRectangle(cornerRadius: PulseRadii.badge)
                                         .fill(PulseColors.cyan.opacity(0.06))
                                 )
                                 .overlay(
-                                    RoundedRectangle(cornerRadius: PulseRadii.xs)
+                                    RoundedRectangle(cornerRadius: PulseRadii.badge)
                                         .stroke(PulseColors.cyan.opacity(0.12), lineWidth: 1)
                                 )
                         }
@@ -347,11 +327,11 @@ struct FailureClusteringView: View {
                 .padding(PulseSpacing.xxs)
                 .frame(maxWidth: .infinity)
                 .background(
-                    RoundedRectangle(cornerRadius: PulseRadii.xs)
+                    RoundedRectangle(cornerRadius: PulseRadii.badge)
                         .fill(PulseColors.danger.opacity(0.05 + intensity * 0.20))
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: PulseRadii.xs)
+                    RoundedRectangle(cornerRadius: PulseRadii.badge)
                         .stroke(PulseColors.danger.opacity(0.1 + intensity * 0.15), lineWidth: 1)
                 )
             } else {
@@ -361,7 +341,7 @@ struct FailureClusteringView: View {
                     .padding(PulseSpacing.xxs)
                     .frame(maxWidth: .infinity)
                     .background(
-                        RoundedRectangle(cornerRadius: PulseRadii.xs)
+                        RoundedRectangle(cornerRadius: PulseRadii.badge)
                             .fill(colors.surface)
                     )
             }

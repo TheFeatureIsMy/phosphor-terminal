@@ -1,5 +1,5 @@
-// GrowthReportCard.swift — 增长报告卡片
-// KryptonCard(.subtle): 报告类型 badge + 时间 + 摘要 + 状态
+// GrowthReportCard.swift - 增长报告卡片
+// KryptonCard(.subtle): 报告类型 badge + 时间 + 真实 metrics + findings + suggestions
 
 import SwiftUI
 
@@ -24,24 +24,114 @@ struct GrowthReportCard: View {
                         .foregroundStyle(colors.textMuted)
                 }
 
-                // Summary preview (2-3 lines)
-                Text(summaryText)
-                    .font(PulseFonts.body)
-                    .foregroundStyle(colors.textSecondary)
-                    .lineLimit(3)
+                // Metrics summary (real data from backend)
+                if let metricsDict = metricsDict {
+                    metricsGrid(metricsDict)
+                } else {
+                    Text(L10n.zh("暂无指标数据", en: "No metrics data"))
+                        .font(PulseFonts.caption)
+                        .foregroundStyle(colors.textMuted)
+                }
 
-                // Status badge
-                HStack {
-                    Spacer()
-                    BadgeDot(
-                        color: statusColor,
-                        label: statusLabel,
-                        size: .small
-                    )
+                // Findings (evidence-backed)
+                if let findingsArray = findingsArray, !findingsArray.isEmpty {
+                    VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
+                        Text(L10n.zh("发现", en: "Findings"))
+                            .font(PulseFonts.monoLabel)
+                            .foregroundStyle(colors.textMuted)
+                        ForEach(Array(findingsArray.prefix(3).enumerated()), id: \.offset) { _, finding in
+                            findingRow(finding)
+                        }
+                    }
+                }
+
+                // Suggestions (actionable improvement recommendations)
+                if let suggestions = report.suggestions, !suggestions.isEmpty {
+                    VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
+                        Text(L10n.zh("优化建议", en: "Suggestions"))
+                            .font(PulseFonts.monoLabel)
+                            .foregroundStyle(colors.textMuted)
+                        ForEach(Array(suggestions.prefix(3).enumerated()), id: \.offset) { _, suggestion in
+                            HStack(alignment: .top, spacing: PulseSpacing.xxs) {
+                                Image(systemName: "arrowtriangle.right.fill")
+                                    .font(.system(size: 7))
+                                    .foregroundStyle(PulseColors.accent)
+                                    .padding(.top, 3)
+                                Text(suggestion)
+                                    .font(PulseFonts.caption)
+                                    .foregroundStyle(colors.textSecondary)
+                            }
+                        }
+                    }
+                }
+
+                // Strategy version evidence
+                if let versionId = report.strategyVersionId {
+                    HStack(spacing: PulseSpacing.xxs) {
+                        Image(systemName: "link.badge.plus")
+                            .font(PulseFonts.micro)
+                            .foregroundStyle(colors.textMuted)
+                        Text(L10n.zh("策略版本: \(String(versionId.prefix(8)))", en: "Strategy Version: \(String(versionId.prefix(8)))"))
+                            .font(PulseFonts.micro)
+                            .foregroundStyle(colors.textMuted)
+                    }
                 }
             }
         }
         .id(settingsState.language)
+    }
+
+    // MARK: - Metrics
+
+    private var metricsDict: [String: Any]? {
+        guard let metrics = report.metrics, let dict = metrics.value as? [String: Any] else { return nil }
+        return dict
+    }
+
+    private var findingsArray: [[String: Any]]? {
+        guard let findings = report.findings else { return nil }
+        if let arr = findings.value as? [[String: Any]] { return arr }
+        return nil
+    }
+
+    private func metricsGrid(_ metrics: [String: Any]) -> some View {
+       let totalTrades = (metrics["total_trades"] as? Int) ?? 0
+        let winRate = (metrics["win_rate"] as? Double) ?? Double(metrics["win_rate"] as? Int ?? 0)
+        let totalPnl = (metrics["total_pnl"] as? Double) ?? Double(metrics["total_pnl"] as? Int ?? 0)
+        let profitFactor = (metrics["profit_factor"] as? Double) ?? Double(metrics["profit_factor"] as? Int ?? 0)
+
+        return HStack(spacing: PulseSpacing.md) {
+            metricCell(label: L10n.zh("交易数", en: "Trades"), value: "\(totalTrades)", color: PulseColors.info)
+            metricCell(label: L10n.zh("胜率", en: "Win Rate"), value: String(format: "%.0f%%", winRate * 100), color: winRate >= 0.5 ? PulseColors.success : PulseColors.danger)
+            metricCell(label: L10n.zh("总盈亏", en: "Total PnL"), value: String(format: "%.2f", totalPnl), color: totalPnl >= 0 ? PulseColors.success : PulseColors.danger)
+            metricCell(label: L10n.zh("盈亏比", en: "PF"), value: String(format: "%.2f", profitFactor), color: profitFactor >= 1.0 ? PulseColors.success : PulseColors.danger)
+        }
+    }
+
+    private func metricCell(label: String, value: String, color: Color) -> some View {
+        VStack(spacing: 2) {
+            Text(value)
+                .font(PulseFonts.tabular)
+                .foregroundStyle(color)
+            Text(label)
+                .font(PulseFonts.micro)
+                .foregroundStyle(colors.textMuted)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private func findingRow(_ finding: [String: Any]) -> some View {
+        let category = (finding["category"] as? String) ?? ""
+        let description = (finding["description"] as? String) ?? ""
+        return HStack(alignment: .top, spacing: PulseSpacing.xxs) {
+            Text(categoryBadge(category))
+                .font(PulseFonts.micro)
+                .foregroundStyle(categoryColor(category))
+                .frame(width: 40, alignment: .leading)
+            Text(description)
+                .font(PulseFonts.caption)
+                .foregroundStyle(colors.textSecondary)
+        }
     }
 
     // MARK: - Computed Properties
@@ -49,8 +139,8 @@ struct GrowthReportCard: View {
     private var reportTypeLabel: String {
         switch report.reportType {
         case "daily_review": return L10n.zh("日报", en: "Daily Review")
-        case "weekly_review": return L10n.zh("周报", en: "Weekly Review")
-        case "performance": return L10n.zh("绩效", en: "Performance")
+        case "run_review": return L10n.zh("运行报告", en: "Run Review")
+        case "strategy_performance": return L10n.zh("策略绩效", en: "Performance")
         default: return report.reportType
         }
     }
@@ -58,40 +148,28 @@ struct GrowthReportCard: View {
     private var reportTypeColor: Color {
         switch report.reportType {
         case "daily_review": return PulseColors.accent
-        case "weekly_review": return PulseColors.info
-        case "performance": return PulseColors.purple
+        case "run_review": return PulseColors.info
+        case "strategy_performance": return PulseColors.purple
         default: return PulseColors.amber
         }
     }
 
-    private var summaryText: String {
-        guard let summary = report.summary,
-              let dict = summary.value as? [String: Any] else {
-            return L10n.zh("暂无摘要信息", en: "No summary available")
-        }
-        var parts: [String] = []
-        if let date = dict["report_date"] as? String { parts.append(L10n.zh("日期: \(date)", en: "Date: \(date)")) }
-        if let reviewed = dict["total_strategies_reviewed"] as? Int { parts.append(L10n.zh("已审查策略: \(reviewed)", en: "Reviewed: \(reviewed)")) }
-        if let found = dict["candidates_found"] as? Int { parts.append(L10n.zh("发现候选: \(found)", en: "Candidates: \(found)")) }
-        if let top = dict["top_performer"] as? String { parts.append(L10n.zh("最佳策略: \(top)", en: "Top Strategy: \(top)")) }
-        if let wr = dict["avg_win_rate"] as? Double { parts.append(L10n.zh("平均胜率: \(String(format: "%.0f%%", wr * 100))", en: "Avg Win Rate: \(String(format: "%.0f%%", wr * 100))")) }
-        return parts.joined(separator: " · ")
-    }
-
-    private var statusLabel: String {
-        switch report.status {
-        case "completed": return L10n.zh("已完成", en: "Completed")
-        case "running": return L10n.zh("运行中", en: "Running")
-        case "failed": return L10n.zh("失败", en: "Failed")
-        default: return report.status
+    private func categoryBadge(_ category: String) -> String {
+        switch category {
+        case "strength": return L10n.zh("优势", en: "Strength")
+        case "weakness": return L10n.zh("弱点", en: "Weakness")
+        case "pattern": return L10n.zh("模式", en: "Pattern")
+        case "risk": return L10n.zh("风险", en: "Risk")
+        default: return category
         }
     }
 
-    private var statusColor: Color {
-        switch report.status {
-        case "completed": return PulseColors.success
-        case "running": return PulseColors.info
-        case "failed": return PulseColors.danger
+    private func categoryColor(_ category: String) -> Color {
+        switch category {
+        case "strength": return PulseColors.success
+        case "weakness": return PulseColors.warning
+        case "pattern": return PulseColors.info
+        case "risk": return PulseColors.danger
         default: return PulseColors.amber
         }
     }

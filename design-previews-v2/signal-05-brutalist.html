@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AlphaLoop // SIGNAL CENTER · BRUTALIST</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:ital,wght@0,400;0,600;0,800;0,900;1,900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#0A0A0A;--pure:#000000;--block:#141414;--block2:#1c1c1c;
+    --yellow:#E5FF00;--white:#FFFFFF;--up:#00E676;--down:#FF3B3B;--magenta:#FF2E9A;
+    --grid:#2a2a2a;--shadow:6px 6px 0 #000;--shadow-y:6px 6px 0 var(--yellow);--shadow-w:5px 5px 0 var(--white);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;border-radius:0 !important}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--white);font-family:'Space Mono',monospace;font-size:14px;line-height:1.4;overflow-x:hidden;-webkit-font-smoothing:none}
+  ::selection{background:var(--yellow);color:#000}
+  a{color:inherit;text-decoration:none}
+  .display{font-family:'Anton',sans-serif;letter-spacing:-.01em;text-transform:uppercase}
+  .up{color:var(--up)}.down{color:var(--down)}
+
+  .backbar{padding:8px 20px;border-bottom:2px solid var(--grid);font-family:'Archivo';font-weight:900;font-size:11px;letter-spacing:.1em;text-transform:uppercase}
+  .backbar a:hover{color:var(--yellow)}
+
+  .wrap{max-width:1440px;margin:0 auto;padding:0 20px 140px}
+
+  /* topbar */
+  .topbar{display:flex;align-items:stretch;gap:0;border-bottom:3px solid var(--white);background:var(--pure);position:sticky;top:0;z-index:50;margin:0 -20px 0;padding:0 20px}
+  .brand{display:flex;align-items:center;gap:12px;padding:14px 24px 14px 0;border-right:3px solid var(--white);margin-right:20px}
+  .brand .logo{width:34px;height:34px;background:var(--yellow);display:grid;place-items:center;color:#000;font-family:'Anton';font-size:22px;transform:skewX(-8deg);box-shadow:3px 3px 0 var(--magenta)}
+  .brand .name{font-family:'Anton';font-size:22px;letter-spacing:.02em;line-height:1;text-transform:uppercase}
+  .brand .sub{font-size:9px;letter-spacing:.24em;color:var(--yellow);text-transform:uppercase}
+  .topnav{display:flex;align-items:center;flex:1}
+  .status-pills{display:flex;gap:0;align-items:center}
+  .pill{font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;padding:6px 12px;border-right:2px solid var(--grid);white-space:nowrap}
+  .pill .dot{display:inline-block;width:8px;height:8px;margin-right:6px;transform:translateY(1px)}
+  .dot.g{background:var(--up)}.dot.y{background:var(--yellow)}.dot.r{background:var(--down)}
+  .top-actions{display:flex;align-items:center;gap:10px;margin-left:auto;padding:10px 0;flex-wrap:wrap}
+  .btn{font-family:'Archivo';font-weight:900;text-transform:uppercase;font-size:12px;letter-spacing:.04em;background:var(--white);color:#000;border:3px solid #000;padding:9px 14px;cursor:pointer;box-shadow:var(--shadow);transition:transform .08s linear,box-shadow .08s linear;display:inline-flex;align-items:center;gap:6px}
+  .btn:hover{transform:translate(3px,3px);box-shadow:3px 3px 0 #000}
+  .btn:active{transform:translate(6px,6px);box-shadow:0 0 0 #000}
+  .btn:focus-visible{outline:3px solid var(--magenta);outline-offset:2px}
+  .btn.yellow{background:var(--yellow)}
+  .btn.danger{background:var(--down);color:#000;box-shadow:6px 6px 0 var(--pure)}
+
+  /* marquee */
+  .marquee{background:var(--yellow);color:#000;border-top:3px solid #000;border-bottom:3px solid #000;overflow:hidden;white-space:nowrap;margin:0 -20px;display:flex}
+  .marquee:hover .track{animation-play-state:paused}
+  .track{display:inline-flex;padding:7px 0;font-family:'Anton';font-size:19px;letter-spacing:.02em;text-transform:uppercase;animation:scroll 30s linear infinite;flex-shrink:0}
+  .track span{padding:0 24px;position:relative}
+  .track span::after{content:"·";position:absolute;right:-3px;color:var(--magenta)}
+  .track .neg{color:var(--down);-webkit-text-stroke:1px #000}
+  .track .pos{color:#0a7a3d}
+  @keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+  /* section heads */
+  .sec-head{display:flex;align-items:baseline;gap:14px;margin:34px 0 14px;border-bottom:3px solid var(--white);padding-bottom:8px}
+  .sec-head h2{font-family:'Anton';font-size:26px;text-transform:uppercase;letter-spacing:.01em}
+  .sec-head .idx{font-family:'Anton';font-size:26px;color:var(--yellow)}
+  .sec-head .meta{margin-left:auto;font-size:11px;color:#888;letter-spacing:.14em;text-transform:uppercase}
+
+  /* stat strip */
+  .strip{display:grid;grid-template-columns:repeat(6,1fr);gap:0;margin-top:24px;border:3px solid var(--white);box-shadow:var(--shadow-y)}
+  .strip .cell{background:var(--pure);padding:14px 16px;border-right:3px solid var(--white)}
+  .strip .cell:last-child{border-right:none}
+  .strip .cell:hover{background:#161600}
+  .strip .c-k{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--yellow);margin-bottom:6px}
+  .strip .c-v{font-family:'Anton';font-size:38px;line-height:.9}
+  .strip .cell.big .c-v{font-size:44px}
+  .strip .c-v.dn{color:var(--down)}.strip .c-v.gd{color:var(--up)}.strip .c-v.wn{color:var(--yellow)}
+
+  /* filter block */
+  .filterblock{border:3px solid var(--white);box-shadow:var(--shadow);margin-top:22px;background:var(--block)}
+  .filterblock .fb-head{background:var(--white);color:#000;padding:8px 14px;font-family:'Archivo';font-weight:900;text-transform:uppercase;font-size:13px;letter-spacing:.04em}
+  .filterblock .fb-body{padding:14px 16px}
+  .fg{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+  .fg:last-child{margin-bottom:0}
+  .fg .fl{font-family:'Archivo';font-weight:900;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--yellow);width:60px;flex:none}
+  .chip{font-family:'Space Mono';font-weight:700;font-size:11px;text-transform:uppercase;color:var(--white);background:var(--pure);border:2px solid var(--grid);padding:5px 11px;cursor:pointer;letter-spacing:.04em;transition:.08s}
+  .chip:hover{border-color:var(--white)}
+  .chip.on{background:var(--yellow);color:#000;border-color:#000;box-shadow:3px 3px 0 #000;transform:translate(-1px,-1px)}
+  .chip:focus-visible{outline:3px solid var(--magenta);outline-offset:2px}
+
+  /* conflicts */
+  .conflicts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-top:22px}
+  .conf{border:3px solid var(--white);box-shadow:var(--shadow);background:var(--block);padding:0}
+  .conf.crit{border-color:var(--down);box-shadow:6px 6px 0 var(--down)}
+  .conf .ch{background:var(--yellow);color:#000;padding:10px 14px;font-family:'Anton';font-size:20px;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between}
+  .conf.crit .ch{background:var(--down)}
+  .conf .ch .cb{font-family:'Space Mono';font-weight:700;font-size:10px;background:#000;color:var(--yellow);padding:2px 7px}
+  .conf.crit .ch .cb{color:var(--down)}
+  .conf .cbdy{padding:14px}
+  .vs-line{display:flex;align-items:center;gap:8px;font-family:'Archivo';font-weight:900;text-transform:uppercase;font-size:13px;margin-bottom:6px}
+  .vs-line .tag{font-family:'Space Mono';font-weight:700;font-size:12px;padding:2px 6px}
+  .vs-line .tag.l{background:var(--up);color:#000}.vs-line .tag.s{background:var(--down);color:#000}.vs-line .tag.r{background:var(--magenta);color:#fff}
+  .vs-line .sc{margin-left:auto;font-family:'Anton';font-size:22px}
+  .vsx{font-family:'Anton';font-size:16px;color:var(--magenta);text-align:center;margin:2px 0}
+  .cnote{font-size:11px;color:#999;margin-top:8px;line-height:1.5}
+  .cbtn{margin-top:12px;width:100%;font-family:'Anton';font-size:15px;text-transform:uppercase;background:var(--white);color:#000;border:3px solid #000;padding:8px;cursor:pointer;box-shadow:3px 3px 0 #000;transition:.08s;letter-spacing:.03em}
+  .cbtn:hover{transform:translate(3px,3px);box-shadow:0 0 0 #000}
+  .conf.crit .cbtn{background:var(--down);color:#000}
+  .cbtn:focus-visible{outline:3px solid var(--magenta);outline-offset:2px}
+
+  /* signal list — hard blocks */
+  .siglist{margin-top:22px;display:flex;flex-direction:column;gap:14px}
+  .sig{border:3px solid var(--white);background:var(--block);box-shadow:var(--shadow);transition:transform .08s linear,box-shadow .08s linear}
+  .sig:hover{transform:translate(3px,3px);box-shadow:3px 3px 0 #000}
+  .sig.open{box-shadow:6px 6px 0 var(--yellow)}
+  .sigbar{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;padding:14px 16px;cursor:pointer}
+  .sig-id{font-family:'Anton';font-size:40px;line-height:.8;color:var(--yellow);transform:skewX(-6deg);width:56px;text-align:center;flex:none}
+  .sig-main{min-width:0}
+  .sig-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .sig-sym{font-family:'Anton';font-size:24px;text-transform:uppercase;letter-spacing:.01em}
+  .sig-tf{font-family:'Space Mono';font-size:11px;color:#888}
+  .side{font-family:'Archivo';font-weight:900;font-size:11px;padding:3px 9px;letter-spacing:.06em}
+  .side.long{background:var(--up);color:#000}.side.short{background:var(--down);color:#000}.side.hold{background:var(--grid);color:#fff}.side.risk{background:var(--magenta);color:#fff}
+  .src{font-family:'Space Mono';font-size:12px;color:#aaa;margin-top:5px}
+  .src b{color:var(--yellow)}
+  .cflag{font-family:'Archivo';font-weight:900;font-size:10px;background:var(--down);color:#000;padding:2px 7px;letter-spacing:.06em}
+  .sig-metrics{display:flex;align-items:center;gap:18px;flex:none}
+  .m{text-align:right}
+  .m .mk{font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:#777}
+  .m .mv{font-family:'Anton';font-size:26px;line-height:.9}
+  .m .mv.wn{color:var(--yellow)}
+  .stars{color:var(--yellow);font-size:13px;letter-spacing:1px}
+  .rtag{font-family:'Archivo';font-weight:900;font-size:11px;padding:3px 8px;letter-spacing:.04em}
+  .rtag.low{background:var(--up);color:#000}.rtag.medium{background:var(--yellow);color:#000}.rtag.high{background:var(--down);color:#000}.rtag.extreme{background:var(--magenta);color:#fff}
+  .stag{font-family:'Space Mono';font-weight:700;font-size:11px;text-transform:uppercase}
+  .stag.active{color:var(--up)}.stag.pending{color:var(--yellow)}.stag.rejected{color:#777}
+  .reason{grid-column:1/-1;font-size:12px;color:#bbb;border-top:1px dashed #333;padding-top:10px;margin-top:2px}
+  .reason .hint{font-family:'Archivo';font-weight:900;font-size:10px;color:var(--yellow);letter-spacing:.06em;margin-left:8px}
+
+  /* detail */
+  .detail{display:none;border-top:3px solid var(--yellow);padding:18px 16px;background:var(--pure)}
+  .sig.open .detail{display:block}
+  .dgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px 20px}
+  .qb .q{font-family:'Archivo';font-weight:900;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--yellow);margin-bottom:5px}
+  .qb .a{font-size:13px;color:#ddd}.qb .a b{color:#fff}
+  .ev{grid-column:1/-1}
+  .ev ul{list-style:none;margin-top:6px;display:grid;grid-template-columns:1fr 1fr;gap:6px 20px}
+  .ev li{font-size:12px;color:#aaa;padding-left:18px;position:relative;line-height:1.45}
+  .ev li::before{content:"►";position:absolute;left:0;color:var(--yellow);font-size:9px;top:3px}
+  .perm{display:flex;flex-direction:column;gap:5px;font-family:'Space Mono';font-weight:700;font-size:12px}
+  .perm .ok{color:var(--up)}.perm .no{color:var(--down)}.perm .wn{color:var(--yellow)}
+  .tl{grid-column:1/-1;display:flex;gap:0;flex-wrap:wrap;border-top:2px solid #222;padding-top:12px}
+  .tl .tn{flex:1;min-width:130px;border-left:4px solid var(--yellow);padding-left:10px;margin-right:16px}
+  .tl .tn.rej{border-left-color:var(--down)}.tl .tn.pend{border-left-color:var(--magenta)}
+  .tl .tn .tt{font-family:'Archivo';font-weight:900;font-size:12px;text-transform:uppercase}
+  .tl .tn .td{font-size:10px;color:#888;margin-top:2px}
+  .acts{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+  .abtn{font-family:'Archivo';font-weight:900;text-transform:uppercase;font-size:12px;letter-spacing:.04em;background:var(--yellow);color:#000;border:3px solid #000;padding:9px 14px;cursor:pointer;box-shadow:4px 4px 0 #000;transition:.08s}
+  .abtn:hover{transform:translate(2px,2px);box-shadow:2px 2px 0 #000}
+  .abtn.gh{background:var(--pure);color:#fff;border-color:#fff;box-shadow:4px 4px 0 #fff}
+  .abtn.gh:hover{box-shadow:2px 2px 0 #fff}
+  .abtn:focus-visible{outline:3px solid var(--magenta);outline-offset:2px}
+
+  /* emergency */
+  .emergency{position:fixed;left:0;right:0;bottom:0;z-index:60;background:repeating-linear-gradient(45deg,#000 0 20px,var(--down) 20px 40px);border-top:4px solid #000;padding:0}
+  .emergency-inner{max-width:1440px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:18px;background:var(--pure);border-left:4px solid var(--down);border-right:4px solid var(--down)}
+  .emergency .warn-lbl{font-family:'Anton';font-size:20px;color:var(--down);letter-spacing:.02em;text-transform:uppercase;display:flex;align-items:center;gap:10px}
+  .emergency .warn-lbl .x{color:var(--yellow)}
+  .emergency .warn-sub{font-size:11px;color:#888;letter-spacing:.06em;text-transform:uppercase}
+  .btn-kill{margin-left:auto;font-family:'Anton';font-size:20px;letter-spacing:.03em;text-transform:uppercase;background:var(--down);color:#000;border:3px solid #000;padding:10px 24px;cursor:pointer;box-shadow:6px 6px 0 var(--yellow);transition:.08s}
+  .btn-kill:hover{transform:translate(3px,3px);box-shadow:3px 3px 0 var(--yellow)}
+  .btn-kill:focus-visible{outline:3px solid #fff;outline-offset:3px}
+  .footnote{margin-top:26px;font-size:10px;color:#555;letter-spacing:.14em;text-transform:uppercase;text-align:center}
+
+  @media(max-width:1024px){.conflicts{grid-template-columns:1fr}.strip{grid-template-columns:1fr 1fr 1fr}.strip .cell:nth-child(3){border-right:none}}
+  @media(max-width:768px){
+    .wrap{padding:0 12px 150px}.topbar{flex-wrap:wrap}.brand{border-right:none;margin-right:0}
+    .status-pills{display:none}.strip{grid-template-columns:1fr 1fr}
+    .sigbar{grid-template-columns:1fr}.sig-metrics{flex-wrap:wrap;gap:12px}.dgrid{grid-template-columns:1fr 1fr}.ev ul{grid-template-columns:1fr}
+    .emergency-inner{flex-wrap:wrap;gap:8px}.btn-kill{margin-left:0;width:100%}
+  }
+  @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}.track{animation:none!important}}
+</style>
+</head>
+<body>
+
+<div class="backbar"><a href="index.html">◄ 返回矩阵 BACK</a></div>
+
+<!-- topbar -->
+<div class="topbar">
+  <div class="brand">
+    <div class="logo">A</div>
+    <div><div class="name">AlphaLoop</div><div class="sub">Signal Center // 信号中枢</div></div>
+  </div>
+  <div class="topnav">
+    <div class="status-pills">
+      <div class="pill"><span class="dot g"></span>在场 47</div>
+      <div class="pill"><span class="dot g"></span>ACTIVE 23</div>
+      <div class="pill"><span class="dot y"></span>PENDING 12</div>
+      <div class="pill"><span class="dot r"></span>冲突 3</div>
+    </div>
+  </div>
+  <div class="top-actions">
+    <button class="btn yellow">▶ 裁决冲突</button>
+    <button class="btn">■ 发布到策略</button>
+    <button class="btn danger">✕ BLOCK PEPE</button>
+  </div>
+</div>
+
+<!-- marquee -->
+<div class="marquee" aria-hidden="true">
+  <div class="track">
+    <span>47 SIGNALS LIVE</span><span class="pos">BTC LONG 0.82</span><span class="down">3 CONFLICTS UNRESOLVED</span><span class="neg">PEPE M3 PUMP&amp;DUMP</span><span>SOL SHORT 0.71</span><span class="pos">ETH LONG 0.67</span><span>23 ACTIVE</span><span class="neg">EXTREME RISK DETECTED</span><span>12 PENDING</span>
+    <span>47 SIGNALS LIVE</span><span class="pos">BTC LONG 0.82</span><span class="down">3 CONFLICTS UNRESOLVED</span><span class="neg">PEPE M3 PUMP&amp;DUMP</span><span>SOL SHORT 0.71</span><span class="pos">ETH LONG 0.67</span><span>23 ACTIVE</span><span class="neg">EXTREME RISK DETECTED</span><span>12 PENDING</span>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- stat strip -->
+  <div class="strip">
+    <div class="cell big"><div class="c-k">在场 SIGNALS</div><div class="c-v"><span id="total">0</span></div></div>
+    <div class="cell"><div class="c-k">ACTIVE</div><div class="c-v gd">23</div></div>
+    <div class="cell"><div class="c-k">PENDING</div><div class="c-v wn">12</div></div>
+    <div class="cell"><div class="c-k">EXPIRED</div><div class="c-v">09</div></div>
+    <div class="cell"><div class="c-k">REJECTED</div><div class="c-v dn">03</div></div>
+    <div class="cell"><div class="c-k">冲突待裁决</div><div class="c-v dn">03</div></div>
+  </div>
+
+  <!-- filters -->
+  <div class="sec-head"><span class="idx">01</span><h2>Filter // 筛选</h2><span class="meta">Source · Symbol · Dir · Status · Sort</span></div>
+  <div class="filterblock">
+    <div class="fb-head">FILTER SIGNALS</div>
+    <div class="fb-body">
+      <div class="fg"><span class="fl">来源</span><button class="chip on">ALL</button><button class="chip">TECH</button><button class="chip">SENT</button><button class="chip">AGENTS</button><button class="chip">FREQAI</button><button class="chip">MANIP</button><button class="chip">FACTOR</button></div>
+      <div class="fg"><span class="fl">标的</span><button class="chip on">ALL</button><button class="chip">BTC</button><button class="chip">ETH</button><button class="chip">SOL</button><button class="chip">PEPE</button></div>
+      <div class="fg"><span class="fl">方向</span><button class="chip on">ALL</button><button class="chip">LONG</button><button class="chip">SHORT</button><button class="chip">HOLD</button><button class="chip">RISK</button></div>
+      <div class="fg"><span class="fl">状态</span><button class="chip on">ALL</button><button class="chip">ACTIVE</button><button class="chip">PENDING</button><button class="chip">REJECTED</button></div>
+      <div class="fg"><span class="fl">排序</span><button class="chip on">SCORE ↓</button><button class="chip">CONF ↓</button><button class="chip">TTL ↑</button></div>
+    </div>
+  </div>
+
+  <!-- conflicts -->
+  <div class="sec-head"><span class="idx">02</span><h2>Conflicts // 冲突</h2><span class="meta">3 Unresolved · 需人工裁决</span></div>
+  <div class="conflicts">
+    <div class="conf">
+      <div class="ch">BTC/USDT<span class="cb">对立</span></div>
+      <div class="cbdy">
+        <div class="vs-line"><span class="tag l">LONG</span>#1 breakout_v3<span class="sc up">0.82</span></div>
+        <div class="vsx">⚔ VS ⚔</div>
+        <div class="vs-line"><span class="tag s">SHORT</span>#8 投研委员会<span class="sc down">0.71</span></div>
+        <div class="cnote">同标的多空对立，置信度接近，裁决后再发布。</div>
+        <button class="cbtn">裁决冲突</button>
+      </div>
+    </div>
+    <div class="conf">
+      <div class="ch">SOL/USDT<span class="cb">对立</span></div>
+      <div class="cbdy">
+        <div class="vs-line"><span class="tag s">SHORT</span>#3 投研委员会<span class="sc down">0.71</span></div>
+        <div class="vsx">⚔ VS ⚔</div>
+        <div class="vs-line"><span class="tag l">LONG</span>#9 FinBERT<span class="sc up">0.55</span></div>
+        <div class="cnote">Agent 空头置信高于情绪多头，建议以 Agent 为主。</div>
+        <button class="cbtn">裁决冲突</button>
+      </div>
+    </div>
+    <div class="conf crit">
+      <div class="ch">PEPE/USDT<span class="cb">预警</span></div>
+      <div class="cbdy">
+        <div class="vs-line"><span class="tag r">RISK</span>#6 操控雷达<span class="sc" style="color:var(--magenta)">0.88</span></div>
+        <div class="vsx" style="color:var(--down)">EXTREME</div>
+        <div class="vs-line" style="font-size:11px;color:#999">检出 M3 拉盘出货 · 集中度 78%</div>
+        <div class="cnote">建议 block 所有该标的多头信号进入实盘。</div>
+        <button class="cbtn">BLOCK 全部多头</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- signal list -->
+  <div class="sec-head"><span class="idx">03</span><h2>Signals // 信号</h2><span class="meta">10 Shown · 点击展开</span></div>
+  <div class="siglist" id="siglist"></div>
+
+  <div class="footnote">// AlphaLoop v2.5 · Signal Center · 所有交易观点统一裁决 · Not Financial Advice · DYOR //</div>
+</div>
+
+<!-- emergency -->
+<div class="emergency">
+  <div class="emergency-inner">
+    <div class="warn-lbl"><span class="x">✕</span> BLOCK ALL</div>
+    <div class="warn-sub">冻结全部信号进入实盘 · 立即拦截 PEPE 多头 · 操作不可逆</div>
+    <button class="btn-kill" onclick="alert('已冻结全部信号进入实盘，PEPE 多头已 block。');return false;">■ 冻结进实盘 FREEZE</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+
+  var SIGNALS=[
+    {id:1,t:'14:10',src:'breakout_v3',srcType:'TECHNICAL',sym:'BTC/USDT',tf:'15m',dir:'long',conf:0.82,score:4.6,risk:'medium',ttl:'5h 12m',status:'active',reason:'结构突破颈线，量能确认，HTF 守卫放行',ev:['15m 颈线放量突破，量为均量 1.8×','HTF 时序守卫 GO 态，多周期共振','ATR 扩张确认动能'],live:'warn'},
+    {id:2,t:'14:08',src:'FinBERT',srcType:'SENTIMENT',sym:'ETH/USDT',tf:'1h',dir:'long',conf:0.67,score:3.8,risk:'low',ttl:'11h',status:'active',reason:'新闻情绪转多，社媒热度上行',ev:['6h 新闻情绪 -0.1→+0.34','社媒提及量 +42%','未检出操纵性热度'],live:'no'},
+    {id:3,t:'14:05',src:'投研委员会',srcType:'TRADINGAGENTS',sym:'SOL/USDT',tf:'4h',dir:'short',conf:0.71,score:4.1,risk:'high',ttl:'3h 40m',status:'active',reason:'多 Agent 辩论后偏空，链上流出加速',ev:['5 Agent 辩论 3 轮，4 空 1 多','链上净流出加速','解锁抛压临近'],live:'no'},
+    {id:4,t:'14:02',src:'FreqAI-LGB',srcType:'FREQAI',sym:'AVAX/USDT',tf:'1h',dir:'long',conf:0.58,score:3.2,risk:'medium',ttl:'8h',status:'pending',reason:'模型预测短期反弹，待确认',ev:['LGB 预测 8h +2.1%','特征以量价背离为主','待二次确认转 active'],live:'no'},
+    {id:5,t:'13:58',src:'TimesFM',srcType:'PREDICTION',sym:'LINK/USDT',tf:'1d',dir:'hold',conf:0.44,score:2.4,risk:'low',ttl:'20h',status:'pending',reason:'预测区间震荡，无明确方向',ev:['24h 预测落 ±1.5% 窄区间','方向置信不足','无趋势驱动'],live:'no'},
+    {id:6,t:'13:52',src:'操控雷达',srcType:'MANIPULATION',sym:'PEPE/USDT',tf:'5m',dir:'risk',conf:0.88,score:4.9,risk:'extreme',ttl:'1h 20m',status:'active',reason:'检出 M3 拉盘出货特征，高集中度预警',ev:['M3：快速拉升后大单派发','Top-10 集中度 78%','社媒加速度骤增'],live:'no'},
+    {id:7,t:'13:46',src:'range_bottom',srcType:'TECHNICAL',sym:'DOGE/USDT',tf:'1h',dir:'long',conf:0.63,score:3.5,risk:'medium',ttl:'6h',status:'active',reason:'近 3 月低点分批建仓区间',ev:['回落至近 3 月支撑带','RSI 超卖回升','建议分批建仓'],live:'warn'},
+    {id:8,t:'13:40',src:'投研委员会',srcType:'TRADINGAGENTS',sym:'BTC/USDT',tf:'1h',dir:'short',conf:0.71,score:4.0,risk:'medium',ttl:'4h',status:'active',reason:'空头观点：与 #1 方向冲突，需裁决',ev:['1h 顶背离，Agent 偏空','与 #1 多头冲突','建议裁决后执行'],live:'no',conflict:'#1'},
+    {id:9,t:'13:34',src:'FinBERT',srcType:'SENTIMENT',sym:'SOL/USDT',tf:'15m',dir:'long',conf:0.55,score:3.0,risk:'medium',ttl:'2h',status:'active',reason:'情绪偏多：与 #3 方向冲突',ev:['短周期情绪转正','与 #3 空头冲突','置信度低于对立信号'],live:'no',conflict:'#3'},
+    {id:10,t:'13:28',src:'因子研究',srcType:'FACTOR',sym:'ARB/USDT',tf:'4h',dir:'long',conf:0.49,score:2.8,risk:'high',ttl:'9h',status:'rejected',reason:'因子失效，已被人工驳回',ev:['动量因子 IC 转负','因子拥挤度过高','人工复核驳回'],live:'no'}
+  ];
+  function stars(s){var f=Math.round(s);return '★'.repeat(f)+'☆'.repeat(5-f);}
+  function riskCN(r){return{low:'低',medium:'中',high:'高',extreme:'极端'}[r];}
+  function dirCN(d){return{long:'看多 LONG',short:'看空 SHORT',hold:'观望 HOLD',risk:'风险 RISK'}[d];}
+  function statusCN(s){return{active:'ACTIVE 生效中',pending:'PENDING 待确认',rejected:'REJECTED 已驳回'}[s];}
+  function perm(live){var t='<div class="ok">[✓] 可回测</div><div class="ok">[✓] 可模拟 DRY-RUN</div>';t+=live==='warn'?'<div class="wn">[!] 可实盘 ⚠ 需人工确认</div>':'<div class="no">[✗] 可实盘 ✗ 来源默认禁实盘</div>';return t;}
+
+  var list=document.getElementById('siglist'),out='';
+  SIGNALS.forEach(function(s){
+    out+='<div class="sig" data-id="'+s.id+'">'+
+      '<div class="sigbar" tabindex="0" role="button" aria-expanded="false">'+
+        '<div class="sig-id">'+(s.id<10?'0'+s.id:s.id)+'</div>'+
+        '<div class="sig-main">'+
+          '<div class="sig-top"><span class="sig-sym">'+s.sym+'</span><span class="sig-tf">'+s.tf+'</span><span class="side '+s.dir+'">'+s.dir.toUpperCase()+'</span>'+(s.conflict?'<span class="cflag">⚔ 冲突 '+s.conflict+'</span>':'')+'</div>'+
+          '<div class="src"><b>'+s.src+'</b> // '+s.srcType+'</div>'+
+        '</div>'+
+        '<div class="sig-metrics">'+
+          '<div class="m"><div class="mk">置信度</div><div class="mv wn">'+s.conf.toFixed(2)+'</div></div>'+
+          '<div class="m"><div class="mk">评分</div><div class="mv">'+s.score.toFixed(1)+'</div><div class="stars">'+stars(s.score)+'</div></div>'+
+          '<div class="m"><div class="mk">风险</div><span class="rtag '+s.risk+'">'+riskCN(s.risk)+'</span></div>'+
+          '<div class="m"><div class="mk">有效期</div><div class="mv" style="font-size:16px">'+s.ttl+'</div></div>'+
+          '<div class="m"><div class="mk">状态</div><span class="stag '+s.status+'">'+s.status+'</span></div>'+
+        '</div>'+
+        '<div class="reason">'+s.reason+'<span class="hint">► 点击展开 EXPAND</span></div>'+
+      '</div>'+
+      '<div class="detail"><div class="dgrid">'+
+        '<div class="qb"><div class="q">谁产生的 SOURCE</div><div class="a"><b>'+s.src+'</b> // '+s.srcType+'</div></div>'+
+        '<div class="qb"><div class="q">看什么标的 TARGET</div><div class="a"><b>'+s.sym+'</b> · '+s.tf+'</div></div>'+
+        '<div class="qb"><div class="q">什么方向 DIR</div><div class="a">'+dirCN(s.dir)+'</div></div>'+
+        '<div class="qb"><div class="q">多可信 CONF</div><div class="a">置信 <b>'+s.conf.toFixed(2)+'</b> · 评分 <b>'+s.score.toFixed(1)+'</b>/5 · '+riskCN(s.risk)+'风险</div></div>'+
+        '<div class="qb ev"><div class="q">为什么 REASONING &amp; EVIDENCE</div><div class="a">'+s.reason+'</div><ul>'+s.ev.map(function(e){return '<li>'+e+'</li>';}).join('')+'</ul></div>'+
+        '<div class="qb" style="grid-column:1/3"><div class="q">何时有效 VALIDITY</div><div class="a">剩余 <b>'+s.ttl+'</b> · '+statusCN(s.status)+'</div></div>'+
+        '<div class="qb" style="grid-column:3/-1"><div class="q">能做什么 PERMISSION</div><div class="perm">'+perm(s.live)+'</div></div>'+
+        '<div class="tl"><div class="tn"><div class="tt">生成</div><div class="td">'+s.t+' · '+s.src+'</div></div><div class="tn"><div class="tt">入账</div><div class="td">提交至信号中枢</div></div><div class="tn '+(s.status==='rejected'?'rej':s.status==='pending'?'pend':'')+'"><div class="tt">'+(s.status==='rejected'?'驳回':s.status==='pending'?'待确认':'生效中')+'</div><div class="td">当前状态</div></div></div>'+
+      '</div><div class="acts">'+
+        '<button class="abtn">发布到策略</button><button class="abtn gh">加入 dry-run</button><button class="abtn gh">生成 Draft</button>'+(s.conflict?'<button class="abtn">裁决冲突</button>':'')+'<button class="abtn gh">归档</button>'+
+      '</div></div>'+
+    '</div>';
+  });
+  list.innerHTML=out;
+
+  list.querySelectorAll('.sig').forEach(function(sig){
+    var bar=sig.querySelector('.sigbar');
+    function toggle(){var o=sig.classList.toggle('open');bar.setAttribute('aria-expanded',o);}
+    bar.addEventListener('click',function(e){if(e.target.closest('.abtn'))return;toggle();});
+    bar.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle();}});
+  });
+
+  document.querySelectorAll('.fg').forEach(function(g){g.querySelectorAll('.chip').forEach(function(c){c.addEventListener('click',function(){g.querySelectorAll('.chip').forEach(function(x){x.classList.remove('on');});c.classList.add('on');});});});
+
+  // countup
+  var el=document.getElementById('total');
+  if(reduce){el.textContent=47;return;}
+  var start=null,dur=1400;
+  function step(ts){if(!start)start=ts;var p=Math.min((ts-start)/dur,1);el.textContent=Math.round(47*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(step);else el.textContent=47;}
+  requestAnimationFrame(step);
+})();
+</script>
+</body>
+</html>

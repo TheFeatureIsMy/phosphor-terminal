@@ -63,10 +63,17 @@ class ResearchService:
             rating=report_data.rating,
             direction=report_data.direction.value if hasattr(report_data.direction, 'value') else str(report_data.direction),
             confidence=report_data.confidence,
+            uncertainty=getattr(report_data, 'uncertainty', 0.5),
             risk_level=report_data.risk_level.value if hasattr(report_data.risk_level, 'value') else str(report_data.risk_level),
             agent_opinions={k: v.model_dump() for k, v in report_data.agent_opinions.items()},
             summary=report_data.summary,
+            facts=getattr(report_data, 'facts', []),
+            model_interpretation=getattr(report_data, 'model_interpretation', ''),
+            trading_implication=getattr(report_data, 'trading_implication', ''),
+            risk_warning=getattr(report_data, 'risk_warning', ''),
+            strategy_impact=getattr(report_data, 'strategy_impact', ''),
             evidence=report_data.evidence,
+            prompt_version=getattr(report_data, 'prompt_version', '2.5.1'),
         )
         self._db.add(report_model)
         self._db.flush()

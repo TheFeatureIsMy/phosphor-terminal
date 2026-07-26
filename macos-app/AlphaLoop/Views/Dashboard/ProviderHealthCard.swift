@@ -1,6 +1,4 @@
-// ProviderHealthCard.swift — Aggregated provider health card.
-// Driven by /api/admin/providers (summary) and shows total/healthy/warn/error
-// plus a per-category breakdown. Empty-state when no providers configured.
+// ProviderHealthCard.swift - Aggregated provider health card.
 
 import SwiftUI
 
@@ -10,8 +8,6 @@ struct ProviderHealthCard: View {
 
     let summary: ProviderHealthSummary?
     let dataSourceAvailable: Bool
-
-    @State private var expanded = false
 
     var body: some View {
         KryptonCard(emphasis: .subtle) {
@@ -27,22 +23,6 @@ struct ProviderHealthCard: View {
                     .frame(minHeight: 100)
                 } else if let summary, summary.total > 0 {
                     summaryRow(summary)
-                    if !summary.entries.isEmpty {
-                        Button {
-                            withAnimation(PulseAnimation.easeOutFast) { expanded.toggle() }
-                        } label: {
-                            Text(expanded ? L10n.Dashboard.collapsePanel : L10n.Dashboard.expandPanel)
-                                .font(PulseFonts.micro)
-                                .foregroundStyle(colors.textMuted)
-                                .textCase(.uppercase)
-                                .tracking(0.5)
-                        }
-                        .buttonStyle(.plain)
-
-                        if expanded {
-                            entriesList(summary)
-                        }
-                    }
                 } else {
                     EmptyStateView(
                         icon: "tray",
@@ -61,7 +41,7 @@ struct ProviderHealthCard: View {
             TerminalLabel(text: L10n.Dashboard.providerHealth)
             Spacer()
             if let summary, dataSourceAvailable {
-                Text("\(summary.healthy)/\(summary.total)")
+                Text("\(summary.totalActive)/\(summary.total)")
                     .font(PulseFonts.monoLabel)
                     .foregroundStyle(PulseColors.StateColors.green)
             }
@@ -69,58 +49,23 @@ struct ProviderHealthCard: View {
     }
 
     private func summaryRow(_ s: ProviderHealthSummary) -> some View {
-        let text = L10n.Dashboard.providerSummary(s.total, s.healthy, s.warning, s.error)
-        return Text(text)
-            .font(PulseFonts.caption)
-            .foregroundStyle(colors.textSecondary)
-    }
-
-    private func entriesList(_ s: ProviderHealthSummary) -> some View {
-        VStack(spacing: PulseSpacing.xxs) {
-            ForEach(s.entries) { entry in
-                entryRow(entry)
-            }
+        HStack(spacing: PulseSpacing.md) {
+            statItem(label: L10n.zh("总数", en: "Total"), value: "\(s.total)", color: colors.textPrimary)
+            statItem(label: L10n.zh("活跃", en: "Active"), value: "\(s.totalActive)", color: PulseColors.success)
+            statItem(label: L10n.zh("异常", en: "Error"), value: "\(s.totalError)", color: PulseColors.danger)
+            statItem(label: L10n.zh("已禁用", en: "Disabled"), value: "\(s.totalDisabled)", color: colors.textMuted)
+            Spacer()
         }
     }
 
-    private func entryRow(_ entry: ProviderHealthEntry) -> some View {
-        let tone = entryTone(entry)
-        return HStack(spacing: PulseSpacing.xs) {
-            Circle().fill(tone.color).frame(width: 6, height: 6)
-                .shadow(color: tone.color.opacity(0.4), radius: 2)
-            Text(entry.providerName)
-                .font(PulseFonts.bodyMedium)
-                .foregroundStyle(colors.textPrimary)
-            Text(L10n.Dashboard.providerCategory(entry.category))
+    private func statItem(label: String, value: String, color: Color) -> some View {
+        VStack(spacing: 2) {
+            Text(value)
+                .font(PulseFonts.tabular)
+                .foregroundStyle(color)
+            Text(label)
                 .font(PulseFonts.micro)
                 .foregroundStyle(colors.textMuted)
-                .textCase(.uppercase)
-            Spacer()
-            if let latency = entry.latencyMs {
-                Text("\(latency)ms")
-                    .font(PulseFonts.monoLabel)
-                    .foregroundStyle(colors.textMuted)
-            } else if let err = entry.lastError {
-                Text(err)
-                    .font(PulseFonts.micro)
-                    .foregroundStyle(PulseColors.warning)
-                    .lineLimit(1)
-            }
-        }
-        .padding(.vertical, PulseSpacing.xxs)
-    }
-
-    private func entryTone(_ e: ProviderHealthEntry) -> (color: Color, label: String) {
-        let lower = e.status.lowercased()
-        switch lower {
-        case "active", "healthy", "ok", "running":
-            return (PulseColors.StateColors.green, L10n.Dashboard.providerStatusOk)
-        case "warning", "degraded":
-            return (PulseColors.StateColors.amber, L10n.Dashboard.providerStatusWarn)
-        case "error", "failed", "down", "unavailable":
-            return (PulseColors.StateColors.red, L10n.Dashboard.providerStatusError)
-        default:
-            return (colors.textMuted, e.status.uppercased())
         }
     }
 }

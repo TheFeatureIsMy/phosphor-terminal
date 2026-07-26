@@ -1,5 +1,5 @@
-// StrategyOptimizationViewModel.swift — 策略优化视图模型
-// 管理 AI 驱动的策略改进候选建议
+// StrategyOptimizationViewModel.swift - 策略优化视图模型
+// 管理策略改进候选建议
 
 import SwiftUI
 
@@ -37,7 +37,7 @@ final class StrategyOptimizationViewModel {
     }
 
     var pendingCandidates: [StrategyCandidate] {
-        suggestions.filter { $0.status == "pending_review" }
+        suggestions.filter { $0.status == "draft" || $0.status == "pending_review" }
     }
 
     var confirmedCandidates: [StrategyCandidate] {

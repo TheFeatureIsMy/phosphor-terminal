@@ -1,0 +1,1414 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PulseDesk · AI 量化交易工作台</title>
+<link rel="preconnect" href="https://unpkg.com" />
+<script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+<style>
+  /* ============================================================
+     PulseDesk 产品全景预览
+     设计语言：OKX 冷黑交易终端 + 克制 Web3.0 科技感
+     token 对齐 macos-app/DesignTokens.swift + canvas-web/tokens.css
+     主题锁定：暗色。单一强调色：白。语义色：绿涨 #20B26C / 红跌 #EF454A
+     ============================================================ */
+  :root {
+    --bg: #0B0E11;
+    --bg-2: #0d1116;
+    --card: #161A1E;
+    --card-2: #1a1f24;
+    --surface: rgba(255,255,255,.04);
+    --surface-hi: rgba(255,255,255,.07);
+    --border: #2A2E36;
+    --border-hi: #3D4450;
+    --accent: #FFFFFF;
+    --on-accent: #0B0E11;
+    --bullish: #20B26C;
+    --bearish: #EF454A;
+    --amber: #F0A020;
+    --purple: #A855F7;
+    --cyan: #17C0C9;
+    --text-1: #EAECEF;
+    --text-2: #929AA5;
+    --text-3: #5E6673;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Inter', 'Helvetica Neue', sans-serif;
+    --font-mono: 'SF Mono', ui-monospace, 'JetBrains Mono', 'Fira Code', monospace;
+    --r-sm: 6px;
+    --r-md: 10px;
+    --r-lg: 14px;
+    --maxw: 1220px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text-1);
+    font-family: var(--font-sans);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+  /* ---- 背景层：极光光晕 + 网点栅格（固定，pointer-events:none） ---- */
+  .bg-layers { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+  .aurora {
+    position: absolute; border-radius: 999px; filter: blur(120px); opacity: .22;
+    animation: drift 26s ease-in-out infinite alternate;
+  }
+  .aurora.a { width: 620px; height: 620px; top: -180px; left: -120px;
+    background: radial-gradient(circle, var(--bullish), transparent 68%); }
+  .aurora.b { width: 560px; height: 560px; top: 420px; right: -160px;
+    background: radial-gradient(circle, var(--purple), transparent 68%); animation-delay: -8s; opacity:.16; }
+  .aurora.c { width: 500px; height: 500px; bottom: -160px; left: 30%;
+    background: radial-gradient(circle, var(--cyan), transparent 68%); animation-delay: -14s; opacity:.12; }
+  @keyframes drift {
+    from { transform: translate3d(0,0,0) scale(1); }
+    to   { transform: translate3d(40px,-30px,0) scale(1.12); }
+  }
+  .grid-dots {
+    position: absolute; inset: 0;
+    background-image: radial-gradient(rgba(255,255,255,.05) 1px, transparent 1px);
+    background-size: 34px 34px;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 30%, transparent 78%);
+  }
+  .grain {
+    position: fixed; inset: 0; z-index: 60; pointer-events: none; opacity: .04;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+  /* ---- 导航（单行，≤72px） ---- */
+  header.nav {
+    position: sticky; top: 0; z-index: 50;
+    height: 64px; display: flex; align-items: center;
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    background: rgba(11,14,17,.72);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-inner { display: flex; align-items: center; justify-content: space-between; width: 100%; max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: -.01em; }
+  .brand .logo {
+    width: 26px; height: 26px; border-radius: 7px;
+    display: grid; place-items: center;
+    background: linear-gradient(135deg, var(--bullish), #0f7a4a);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 0 20px rgba(32,178,108,.35);
+  }
+  .brand .logo i { font-size: 15px; color: #fff; }
+  .brand .sub { color: var(--text-3); font-weight: 400; font-size: 12px; }
+  .nav-links { display: flex; align-items: center; gap: 26px; }
+  .nav-links a { color: var(--text-2); text-decoration: none; font-size: 13px; transition: color .2s; }
+  .nav-links a:hover { color: var(--text-1); }
+  .nav-actions { display: flex; align-items: center; gap: 12px; }
+  .lang-toggle {
+    font-family: var(--font-mono); font-size: 11px; color: var(--text-2);
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-sm);
+    padding: 6px 10px; cursor: pointer; transition: all .2s;
+  }
+  .lang-toggle:hover { color: var(--text-1); border-color: var(--border-hi); }
+  .btn-accent {
+    background: var(--accent); color: var(--on-accent); font-weight: 600; font-size: 13px;
+    border: none; border-radius: var(--r-sm); padding: 8px 16px; cursor: pointer;
+    transition: transform .15s, box-shadow .2s;
+  }
+  .btn-accent:hover { box-shadow: 0 0 24px rgba(255,255,255,.18); }
+  .btn-accent:active { transform: scale(.97); }
+  @media (max-width: 900px) { .nav-links { display: none; } }
+
+  /* ---- 通用区块 ---- */
+  section { padding: 88px 0; position: relative; z-index: 1; }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: .16em;
+    text-transform: uppercase; color: var(--text-3); margin-bottom: 18px;
+  }
+  .eyebrow .tick { width: 6px; height: 6px; border-radius: 2px; background: var(--bullish); box-shadow: 0 0 8px var(--bullish); }
+  h2.section-title { font-size: clamp(28px, 4vw, 42px); font-weight: 700; letter-spacing: -.02em; line-height: 1.08; }
+  .section-lead { color: var(--text-2); font-size: 16px; max-width: 62ch; margin-top: 16px; }
+
+  /* ---- Hero ---- */
+  .hero { padding-top: 72px; padding-bottom: 72px; min-height: 88vh; display: flex; align-items: center; }
+  .hero-grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: 56px; align-items: center; width: 100%; }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 999px;
+    padding: 6px 14px; font-size: 12px; color: var(--text-2); margin-bottom: 26px;
+  }
+  .hero-badge .dot { width: 7px; height: 7px; border-radius: 999px; background: var(--bullish); box-shadow: 0 0 10px var(--bullish); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
+  .hero h1 { font-size: clamp(38px, 5.4vw, 68px); font-weight: 700; letter-spacing: -.03em; line-height: 1.02; }
+  .hero h1 .grad {
+    background: linear-gradient(120deg, var(--bullish) 0%, var(--cyan) 60%, #fff 100%);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .hero p.lead { color: var(--text-2); font-size: 17px; margin-top: 22px; max-width: 52ch; }
+  .hero-cta { display: flex; gap: 14px; margin-top: 34px; flex-wrap: wrap; }
+  .btn-ghost {
+    background: var(--surface); color: var(--text-1); font-weight: 500; font-size: 13px;
+    border: 1px solid var(--border); border-radius: var(--r-sm); padding: 10px 18px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 8px; transition: all .2s; text-decoration: none;
+  }
+  .btn-ghost:hover { border-color: var(--border-hi); background: var(--surface-hi); }
+  .btn-accent.lg { padding: 11px 22px; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; }
+  .hero-stats { display: flex; gap: 30px; margin-top: 40px; }
+  .hero-stats .st .v { font-family: var(--font-mono); font-size: 24px; font-weight: 600; }
+  .hero-stats .st .l { color: var(--text-3); font-size: 12px; margin-top: 2px; }
+
+  /* Hero 右侧：终端窗口 mock */
+  .terminal {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--r-lg);
+    overflow: hidden; box-shadow: 0 30px 80px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.04);
+  }
+  .term-bar { display: flex; align-items: center; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--border); background: var(--bg-2); }
+  .term-bar .d { width: 11px; height: 11px; border-radius: 999px; }
+  .term-bar .d.r { background: #ff5f57; } .term-bar .d.y { background: #febc2e; } .term-bar .d.g { background: #28c840; }
+  .term-bar .t { margin-left: 8px; font-family: var(--font-mono); font-size: 11px; color: var(--text-3); }
+  .term-body { padding: 18px; }
+  .verdict { display: flex; align-items: center; justify-content: space-between; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+  .verdict .side { display: flex; align-items: center; gap: 12px; }
+  .verdict .ring {
+    width: 46px; height: 46px; border-radius: 999px; display: grid; place-items: center;
+    background: conic-gradient(var(--bullish) 0% 72%, var(--surface) 72% 100%);
+    font-family: var(--font-mono); font-size: 12px; font-weight: 600;
+  }
+  .verdict .ring span { width: 36px; height: 36px; border-radius: 999px; background: var(--card); display: grid; place-items: center; }
+  .verdict .lab { font-size: 12px; color: var(--text-3); }
+  .verdict .val { font-size: 18px; font-weight: 700; color: var(--bullish); }
+  .tag { font-family: var(--font-mono); font-size: 10px; padding: 3px 8px; border-radius: 4px; background: rgba(32,178,108,.12); color: var(--bullish); border: 1px solid rgba(32,178,108,.25); }
+  .term-rows { margin-top: 14px; display: grid; gap: 9px; }
+  .trow { display: flex; align-items: center; justify-content: space-between; font-size: 13px; }
+  .trow .k { color: var(--text-2); display: flex; align-items: center; gap: 8px; }
+  .trow .k i { color: var(--text-3); font-size: 14px; }
+  .trow .v { font-family: var(--font-mono); }
+  .up { color: var(--bullish); } .down { color: var(--bearish); } .amb { color: var(--amber); }
+  .spark { display: flex; align-items: flex-end; gap: 3px; height: 34px; margin-top: 16px; }
+  .spark i { flex: 1; background: linear-gradient(to top, rgba(32,178,108,.15), var(--bullish)); border-radius: 2px 2px 0 0; display: block; }
+
+  /* ---- 核心闭环 pipeline ---- */
+  .loop-track { display: flex; align-items: stretch; gap: 0; margin-top: 44px; flex-wrap: wrap; }
+  .loop-node {
+    flex: 1; min-width: 130px; background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--r-md); padding: 18px 16px; position: relative; transition: all .25s;
+  }
+  .loop-node:hover { border-color: var(--border-hi); transform: translateY(-3px); background: var(--card-2); }
+  .loop-node .idx { font-family: var(--font-mono); font-size: 10px; color: var(--text-3); }
+  .loop-node .ic { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; background: var(--surface); margin: 10px 0 12px; }
+  .loop-node .ic i { font-size: 17px; color: var(--text-1); }
+  .loop-node h4 { font-size: 14px; font-weight: 600; }
+  .loop-node p { font-size: 12px; color: var(--text-3); margin-top: 5px; }
+  .loop-arrow { display: grid; place-items: center; color: var(--text-3); padding: 0 6px; }
+  .loop-arrow i { font-size: 16px; }
+  .loop-node.hot { border-color: rgba(32,178,108,.4); box-shadow: 0 0 24px rgba(32,178,108,.1); }
+  .loop-node.hot .ic { background: rgba(32,178,108,.12); } .loop-node.hot .ic i { color: var(--bullish); }
+  @media (max-width: 760px) { .loop-arrow { transform: rotate(90deg); } }
+
+  /* ---- 8 大板块 bento ---- */
+  .bento { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; margin-top: 44px; }
+  .cell {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--r-lg);
+    padding: 24px; position: relative; overflow: hidden; transition: all .28s;
+  }
+  .cell:hover { border-color: var(--border-hi); transform: translateY(-4px); }
+  .cell .kicker { font-family: var(--font-mono); font-size: 10px; letter-spacing: .12em; color: var(--text-3); text-transform: uppercase; }
+  .cell h3 { font-size: 19px; font-weight: 650; margin: 8px 0 8px; letter-spacing: -.01em; }
+  .cell p { font-size: 13px; color: var(--text-2); }
+  .cell .pages { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 16px; }
+  .cell .pages span { font-size: 11px; font-family: var(--font-mono); color: var(--text-2); background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 4px 10px; }
+  .cell .hic { position: absolute; top: 22px; right: 22px; font-size: 22px; opacity: .5; }
+  /* bento 尺寸编排：8 板块 = 8 cell，无空格 */
+  .cell.big { grid-column: span 3; }
+  .cell.mid { grid-column: span 3; }
+  .cell.sm  { grid-column: span 2; }
+  .cell.overview { background: linear-gradient(135deg, rgba(32,178,108,.10), var(--card) 60%); border-color: rgba(32,178,108,.22); }
+  .cell.ai { background: linear-gradient(135deg, rgba(168,85,247,.10), var(--card) 60%); border-color: rgba(168,85,247,.2); }
+  .cell.risk { background: linear-gradient(135deg, rgba(239,69,74,.08), var(--card) 60%); border-color: rgba(239,69,74,.2); }
+  .cell .glow-dot { position:absolute; width:5px; height:5px; border-radius:999px; }
+  @media (max-width: 980px) { .bento { grid-template-columns: repeat(2, 1fr); } .cell.big, .cell.mid, .cell.sm { grid-column: span 1; } }
+
+  /* ---- Signal 契约 ---- */
+  .signal-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 44px; align-items: start; }
+  .lifecycle { display: flex; flex-direction: column; gap: 0; }
+  .lc-node { display: flex; align-items: center; gap: 14px; padding: 12px 0; }
+  .lc-node .num { width: 30px; height: 30px; border-radius: 999px; border: 1px solid var(--border); display: grid; place-items: center; font-family: var(--font-mono); font-size: 12px; color: var(--text-2); flex-shrink: 0; }
+  .lc-node.on .num { background: var(--bullish); color: var(--on-accent); border-color: var(--bullish); box-shadow: 0 0 16px rgba(32,178,108,.4); }
+  .lc-node .lc-t { font-size: 14px; font-weight: 600; }
+  .lc-node .lc-d { font-size: 12px; color: var(--text-3); }
+  .lc-line { width: 1px; height: 14px; background: var(--border); margin-left: 15px; }
+  .fields { background: var(--card); border: 1px solid var(--border); border-radius: var(--r-lg); overflow: hidden; }
+  .fields .fhead { padding: 14px 18px; border-bottom: 1px solid var(--border); font-family: var(--font-mono); font-size: 12px; color: var(--text-3); display:flex; justify-content:space-between; }
+  .frow { display: grid; grid-template-columns: 1.2fr 1fr auto; gap: 10px; padding: 11px 18px; font-size: 12px; align-items: center; }
+  .frow:not(:last-child) { border-bottom: 1px solid rgba(42,46,54,.6); }
+  .frow .fn { font-family: var(--font-mono); color: var(--text-1); }
+  .frow .ft { color: var(--text-3); font-family: var(--font-mono); font-size: 11px; }
+  .req { font-size: 9px; padding: 2px 6px; border-radius: 3px; background: rgba(32,178,108,.12); color: var(--bullish); }
+  @media (max-width: 860px) { .signal-layout { grid-template-columns: 1fr; } }
+
+  /* ---- 技术底座 ---- */
+  .stack-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-top: 44px; }
+  .stack-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 22px; }
+  .stack-card i.big { font-size: 24px; color: var(--text-1); }
+  .stack-card h4 { font-size: 15px; margin: 14px 0 6px; font-weight: 600; }
+  .stack-card p { font-size: 12px; color: var(--text-3); }
+  .guard-strip { margin-top: 24px; background: var(--card); border: 1px solid rgba(239,69,74,.22); border-radius: var(--r-lg); padding: 22px 24px; display: flex; align-items: center; gap: 18px; }
+  .guard-strip i { font-size: 26px; color: var(--bearish); }
+  .guard-strip .gt { font-size: 15px; font-weight: 600; }
+  .guard-strip .gd { font-size: 13px; color: var(--text-2); margin-top: 3px; }
+  @media (max-width: 860px) { .stack-row { grid-template-columns: repeat(2,1fr); } .guard-strip { flex-direction: column; align-items: flex-start; } }
+
+  /* ---- CTA ---- */
+  .cta-box { text-align: center; background: linear-gradient(135deg, rgba(32,178,108,.08), rgba(23,192,201,.05)); border: 1px solid var(--border); border-radius: 20px; padding: 64px 40px; margin: 40px 0; }
+  .cta-box h2 { font-size: clamp(26px, 4vw, 40px); font-weight: 700; letter-spacing: -.02em; }
+  .cta-box p { color: var(--text-2); margin: 16px auto 30px; max-width: 48ch; }
+
+  /* ---- footer ---- */
+  footer { border-top: 1px solid var(--border); padding: 40px 0; position: relative; z-index: 1; }
+  .foot-inner { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+  .foot-inner .fl { color: var(--text-3); font-size: 12px; }
+  .foot-note { color: var(--text-3); font-size: 11px; margin-top: 8px; }
+
+  /* ---- scroll reveal ---- */
+  .reveal { opacity: 0; transform: translateY(24px); transition: opacity .7s cubic-bezier(.16,1,.3,1), transform .7s cubic-bezier(.16,1,.3,1); }
+  .reveal.in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { opacity: 1; transform: none; transition: none; }
+    .aurora, .hero-badge .dot { animation: none; }
+    html { scroll-behavior: auto; }
+  }
+
+  /* ============================================================
+     界面走查 mock -- 逼真面板样式
+     ============================================================ */
+  /* 通用应用窗口外壳 */
+  .app-window {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--r-lg);
+    overflow: hidden; box-shadow: 0 24px 70px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.04);
+    margin-top: 34px;
+  }
+  .aw-bar { display: flex; align-items: center; gap: 8px; padding: 11px 14px; border-bottom: 1px solid var(--border); background: var(--bg-2); }
+  .aw-bar .d { width: 11px; height: 11px; border-radius: 999px; }
+  .aw-bar .d.r { background: #ff5f57; } .aw-bar .d.y { background: #febc2e; } .aw-bar .d.g { background: #28c840; }
+  .aw-bar .path { margin-left: 10px; font-family: var(--font-mono); font-size: 11px; color: var(--text-3); }
+  .aw-bar .route-pill { margin-left: auto; font-family: var(--font-mono); font-size: 10px; color: var(--text-2); background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 3px 10px; }
+
+  /* 应用内布局：迷你侧边栏 + 主区 */
+  .aw-body { display: grid; grid-template-columns: 190px 1fr; min-height: 380px; }
+  .mini-side { border-right: 1px solid var(--border); background: var(--bg-2); padding: 12px 10px; }
+  .mini-side .grp { font-family: var(--font-mono); font-size: 9px; letter-spacing: .14em; color: var(--text-3); text-transform: uppercase; padding: 12px 8px 6px; }
+  .mini-side .item { display: flex; align-items: center; gap: 9px; padding: 7px 8px; border-radius: var(--r-sm); font-size: 12px; color: var(--text-2); cursor: default; }
+  .mini-side .item i { font-size: 14px; width: 16px; text-align: center; }
+  .mini-side .item.on { background: var(--surface-hi); color: var(--text-1); }
+  .mini-side .item.on::before { content: ''; position: absolute; }
+  .mini-side .item.on { position: relative; box-shadow: inset 2px 0 0 var(--bullish); }
+  .aw-main { padding: 20px 22px; overflow: hidden; }
+  @media (max-width: 820px) { .aw-body { grid-template-columns: 1fr; } .mini-side { display: none; } }
+
+  /* 区块小标题（终端风） */
+  .term-h { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .term-h .tl { font-family: var(--font-mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--text-3); }
+  .term-h .tr { font-family: var(--font-mono); font-size: 11px; color: var(--text-2); }
+
+  /* 指标网格 */
+  .metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .metric { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); padding: 13px 14px; }
+  .metric .ml { font-size: 11px; color: var(--text-3); }
+  .metric .mv { font-family: var(--font-mono); font-size: 19px; font-weight: 600; margin-top: 5px; }
+  .metric .mtiny { font-family: var(--font-mono); font-size: 10px; margin-top: 3px; }
+  @media (max-width: 680px) { .metric-grid { grid-template-columns: repeat(2, 1fr); } }
+
+  /* 数据表 */
+  table.data { width: 100%; border-collapse: collapse; font-size: 12px; }
+  table.data th { font-family: var(--font-mono); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--text-3); text-align: right; padding: 8px 10px; font-weight: 500; border-bottom: 1px solid var(--border); }
+  table.data th:first-child, table.data td:first-child { text-align: left; }
+  table.data td { font-family: var(--font-mono); padding: 10px; border-bottom: 1px solid rgba(42,46,54,.5); text-align: right; }
+  table.data tr:last-child td { border-bottom: none; }
+  table.data tbody tr { transition: background .15s; }
+  table.data tbody tr:hover td { background: var(--surface); }
+  table.data .sym { color: var(--text-1); font-weight: 600; }
+  .dir-tag { font-size: 10px; text-transform: uppercase; }
+  .side-rail { display: inline-block; width: 3px; height: 13px; border-radius: 2px; vertical-align: middle; margin-right: 7px; }
+  .state-dot { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; text-transform: uppercase; }
+  .state-dot b { width: 6px; height: 6px; border-radius: 999px; display: inline-block; }
+
+  /* 信号卡列表 */
+  .sig-list { display: grid; gap: 10px; }
+  .sig-card { display: flex; align-items: center; gap: 14px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); padding: 13px 15px; transition: border-color .2s; }
+  .sig-card:hover { border-color: var(--border-hi); }
+  .sig-dir { width: 36px; height: 36px; border-radius: var(--r-sm); display: grid; place-items: center; flex-shrink: 0; }
+  .sig-dir i { font-size: 16px; }
+  .sig-mid { flex: 1; min-width: 0; }
+  .sig-mid .r1 { display: flex; align-items: center; gap: 9px; }
+  .sig-mid .sym { font-family: var(--font-mono); font-size: 13px; font-weight: 600; }
+  .sig-src { font-size: 9px; padding: 2px 7px; border-radius: 999px; font-family: var(--font-mono); }
+  .sig-reason { font-size: 11px; color: var(--text-2); margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sig-meta { display: flex; align-items: center; gap: 8px; margin-top: 5px; }
+  .sig-status { font-size: 9px; font-family: var(--font-mono); display: inline-flex; align-items: center; gap: 4px; }
+  .sig-status b { width: 5px; height: 5px; border-radius: 999px; display: inline-block; }
+  .sig-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
+  .conf-bar { display: flex; align-items: center; gap: 6px; }
+  .conf-track { width: 58px; height: 4px; border-radius: 2px; background: var(--surface-hi); overflow: hidden; }
+  .conf-fill { height: 100%; border-radius: 2px; }
+  .conf-pct { font-family: var(--font-mono); font-size: 10px; }
+  .sig-score { font-family: var(--font-mono); font-size: 11px; display: inline-flex; align-items: center; gap: 3px; }
+  .risk-badge { font-size: 9px; font-family: var(--font-mono); padding: 2px 7px; border-radius: 3px; }
+
+  /* 操纵雷达 verdict */
+  .manip-layout { display: grid; grid-template-columns: 260px 1fr; gap: 20px; }
+  @media (max-width: 820px) { .manip-layout { grid-template-columns: 1fr; } }
+  .verdict-panel { background: var(--surface); border: 1px solid rgba(240,160,32,.25); border-radius: var(--r-md); padding: 18px; text-align: center; }
+  .conf-ring-lg { width: 96px; height: 96px; border-radius: 999px; margin: 6px auto 14px; display: grid; place-items: center;
+    background: conic-gradient(var(--amber) 0% 61%, var(--surface-hi) 61% 100%); }
+  .conf-ring-lg span { width: 76px; height: 76px; border-radius: 999px; background: var(--card); display: grid; place-items: center; flex-direction: column; }
+  .conf-ring-lg .cv { font-family: var(--font-mono); font-size: 24px; font-weight: 700; color: var(--amber); line-height: 1; }
+  .conf-ring-lg .cl { font-size: 9px; color: var(--text-3); margin-top: 3px; }
+  .mtype { font-family: var(--font-mono); font-size: 13px; font-weight: 700; color: var(--amber); }
+  .mdesc { font-size: 11px; color: var(--text-2); margin-top: 6px; }
+  /* 生命周期水平时间线 */
+  .lc-timeline { display: flex; align-items: center; justify-content: space-between; margin: 4px 0 18px; }
+  .lc-stage { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1; }
+  .lc-stage .node { width: 26px; height: 26px; border-radius: 999px; display: grid; place-items: center; border: 1px solid var(--border); background: var(--card); }
+  .lc-stage .node i { font-size: 12px; color: var(--text-3); }
+  .lc-stage.past .node { background: rgba(240,160,32,.2); border-color: rgba(240,160,32,.4); }
+  .lc-stage.past .node i { color: var(--amber); }
+  .lc-stage.cur .node { background: var(--amber); border-color: var(--amber); box-shadow: 0 0 14px rgba(240,160,32,.5); }
+  .lc-stage.cur .node i { color: var(--on-accent); }
+  .lc-stage .st-lab { font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; color: var(--text-3); }
+  .lc-stage.cur .st-lab, .lc-stage.past .st-lab { color: var(--text-2); }
+  .lc-conn { height: 1px; flex: 0 0 auto; width: 100%; background: var(--border); margin-top: -20px; }
+  /* 证据层矩阵 */
+  .evidence { display: grid; gap: 8px; }
+  .ev-layer { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 10px 13px; }
+  .ev-layer .en { font-size: 12px; color: var(--text-1); min-width: 96px; }
+  .ev-bar { flex: 1; height: 6px; border-radius: 3px; background: var(--surface-hi); overflow: hidden; }
+  .ev-bar b { display: block; height: 100%; background: linear-gradient(90deg, var(--amber), #d48e00); }
+  .ev-q { font-family: var(--font-mono); font-size: 9px; padding: 2px 7px; border-radius: 3px; text-transform: uppercase; }
+
+  /* 风控守卫 arc 网格 */
+  .guard-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  @media (max-width: 680px) { .guard-grid { grid-template-columns: repeat(2, 1fr); } }
+  .guard-cell { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); padding: 15px; text-align: center; }
+  .gauge { width: 74px; height: 74px; border-radius: 999px; margin: 0 auto 10px; display: grid; place-items: center; }
+  .gauge span { width: 58px; height: 58px; border-radius: 999px; background: var(--card); display: grid; place-items: center; font-family: var(--font-mono); font-size: 15px; font-weight: 600; }
+  .guard-cell .gn { font-size: 11px; color: var(--text-2); }
+  .guard-cell .gs { font-size: 9px; font-family: var(--font-mono); text-transform: uppercase; margin-top: 3px; }
+
+  /* SHAP 特征贡献条 */
+  .shap-list { display: grid; gap: 9px; }
+  .shap-row { display: grid; grid-template-columns: 120px 1fr 52px; align-items: center; gap: 12px; }
+  .shap-row .fn { font-family: var(--font-mono); font-size: 11px; color: var(--text-2); }
+  .shap-track { height: 18px; background: var(--surface); border-radius: var(--r-sm); position: relative; overflow: hidden; }
+  .shap-track b { position: absolute; top: 0; bottom: 0; border-radius: var(--r-sm); }
+  .shap-row .sv { font-family: var(--font-mono); font-size: 11px; text-align: right; }
+
+  /* 复盘双列 */
+  .review-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 720px) { .review-cols { grid-template-columns: 1fr; } }
+  .cand-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); padding: 14px 16px; }
+  .cand-card .ch { display: flex; align-items: center; justify-content: space-between; }
+  .cand-card .cn { font-size: 13px; font-weight: 600; }
+  .cand-card .cstat { font-size: 9px; font-family: var(--font-mono); text-transform: uppercase; padding: 3px 8px; border-radius: 999px; }
+  .cand-metrics { display: flex; gap: 18px; margin-top: 12px; }
+  .cand-metrics .cm .cmv { font-family: var(--font-mono); font-size: 15px; font-weight: 600; }
+  .cand-metrics .cm .cml { font-size: 10px; color: var(--text-3); margin-top: 2px; }
+
+  /* tab 条 */
+  .tabbar { display: flex; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 3px; width: fit-content; }
+  .tabbar .tab { font-size: 11px; font-family: var(--font-mono); color: var(--text-2); padding: 5px 12px; border-radius: 4px; cursor: default; }
+  .tabbar .tab.on { background: var(--card); color: var(--text-1); box-shadow: 0 1px 3px rgba(0,0,0,.3); }
+
+  /* 页面小标签（每个 mock 上方） */
+  .mock-caption { display: flex; align-items: center; gap: 10px; margin-top: 40px; }
+  .mock-caption .num { font-family: var(--font-mono); font-size: 12px; color: var(--text-3); }
+  .mock-caption h3 { font-size: 20px; font-weight: 650; letter-spacing: -.01em; }
+  .mock-caption .rt { margin-left: auto; font-family: var(--font-mono); font-size: 11px; color: var(--text-3); }
+  .mock-desc { color: var(--text-2); font-size: 13px; margin-top: 8px; max-width: 68ch; }
+
+  /* ---- 回测：权益曲线 ---- */
+  .equity-hero { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); padding: 16px 18px; position: relative; overflow: hidden; }
+  .equity-hero svg { display: block; width: 100%; height: 150px; }
+  .eq-legend { display: flex; align-items: center; gap: 16px; margin-bottom: 8px; }
+  .eq-legend .lg { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-2); }
+  .eq-legend .lg b { width: 14px; height: 2px; border-radius: 2px; display: inline-block; }
+  .eq-dd { position: absolute; left: 0; right: 0; pointer-events: none; }
+
+  /* ---- 策略工作台三栏 ---- */
+  .console-3 { display: grid; grid-template-columns: 200px 1fr 220px; gap: 0; min-height: 400px; }
+  @media (max-width: 900px) { .console-3 { grid-template-columns: 1fr; } }
+  .console-3 .col { padding: 16px; }
+  .console-3 .col.left { border-right: 1px solid var(--border); background: var(--bg-2); }
+  .console-3 .col.right { border-left: 1px solid var(--border); background: var(--bg-2); }
+  .col-title { font-family: var(--font-mono); font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: var(--text-3); margin-bottom: 12px; }
+  .strat-item { padding: 10px 11px; border-radius: var(--r-sm); border: 1px solid transparent; margin-bottom: 7px; cursor: default; transition: all .18s; }
+  .strat-item:hover { background: var(--surface); }
+  .strat-item.on { background: var(--surface-hi); border-color: var(--border-hi); }
+  .strat-item .sn { font-size: 12px; font-weight: 600; color: var(--text-1); }
+  .strat-item .sm { display: flex; align-items: center; gap: 6px; margin-top: 5px; }
+  .strat-stat { font-size: 8px; font-family: var(--font-mono); text-transform: uppercase; padding: 2px 6px; border-radius: 3px; }
+  .strat-item .ver { font-size: 9px; color: var(--text-3); font-family: var(--font-mono); }
+  /* 生命周期 rail */
+  .lifecycle-rail { display: flex; flex-direction: column; gap: 0; }
+  .lr-node { display: flex; align-items: center; gap: 10px; padding: 8px 0; font-size: 11px; color: var(--text-3); }
+  .lr-node .rd { width: 22px; height: 22px; border-radius: 999px; border: 1px solid var(--border); display: grid; place-items: center; flex-shrink: 0; font-family: var(--font-mono); font-size: 9px; }
+  .lr-node.done .rd { background: rgba(32,178,108,.16); border-color: rgba(32,178,108,.4); color: var(--bullish); }
+  .lr-node.done { color: var(--text-2); }
+  .lr-node.cur .rd { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+  .lr-node.cur { color: var(--text-1); font-weight: 600; }
+  .lr-line { width: 1px; height: 10px; background: var(--border); margin-left: 11px; }
+  /* 中间 DSL 预览 */
+  .dsl-preview { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--r-md); padding: 14px 16px; font-family: var(--font-mono); font-size: 11px; line-height: 1.7; overflow-x: auto; }
+  .dsl-preview .k { color: var(--purple); } .dsl-preview .s { color: var(--bullish); } .dsl-preview .n { color: var(--amber); } .dsl-preview .c { color: var(--text-3); }
+  .center-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+  .sc-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); padding: 13px; }
+  .sc-card .scl { font-size: 10px; color: var(--text-3); }
+  .sc-card .scv { font-family: var(--font-mono); font-size: 15px; font-weight: 600; margin-top: 4px; }
+
+  /* ---- AI 投研辩论流 ---- */
+  .debate { display: grid; gap: 12px; }
+  .agent-msg { display: flex; gap: 12px; }
+  .agent-av { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; flex-shrink: 0; }
+  .agent-av i { font-size: 16px; }
+  .agent-body { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); border-top-left-radius: 3px; padding: 12px 14px; }
+  .agent-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .agent-name { font-size: 12px; font-weight: 600; }
+  .agent-role { font-size: 9px; font-family: var(--font-mono); text-transform: uppercase; padding: 2px 7px; border-radius: 999px; }
+  .agent-text { font-size: 12px; color: var(--text-2); line-height: 1.6; }
+  .agent-verdict { margin-left: auto; font-family: var(--font-mono); font-size: 11px; font-weight: 600; }
+  .final-rating { display: flex; align-items: center; gap: 16px; background: linear-gradient(135deg, rgba(32,178,108,.1), var(--surface) 70%); border: 1px solid rgba(32,178,108,.25); border-radius: var(--r-md); padding: 16px 18px; margin-top: 4px; }
+  .final-rating .fr-ring { width: 52px; height: 52px; border-radius: 999px; display: grid; place-items: center; background: conic-gradient(var(--bullish) 0% 78%, var(--surface-hi) 78% 100%); flex-shrink: 0; }
+  .final-rating .fr-ring span { width: 40px; height: 40px; border-radius: 999px; background: var(--card); display: grid; place-items: center; font-family: var(--font-mono); font-size: 13px; font-weight: 700; color: var(--bullish); }
+  .final-rating .fr-t { font-size: 13px; font-weight: 600; }
+  .final-rating .fr-d { font-size: 11px; color: var(--text-2); margin-top: 3px; }
+  .final-rating .fr-act { margin-left: auto; }
+
+  /* ---- 执行中心：订单状态 ---- */
+  .exec-toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .btn-mini { font-size: 11px; font-family: var(--font-mono); color: var(--text-2); background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 6px 12px; cursor: default; display: inline-flex; align-items: center; gap: 6px; transition: all .18s; }
+  .btn-mini:hover { border-color: var(--border-hi); color: var(--text-1); }
+  .btn-mini.danger { color: var(--bearish); border-color: rgba(239,69,74,.3); background: rgba(239,69,74,.08); }
+  .ostatus { font-size: 9px; font-family: var(--font-mono); text-transform: uppercase; padding: 2px 7px; border-radius: 3px; }
+
+  /* ---- 市场结构：相关性矩阵热力 ---- */
+  .matrix { display: grid; gap: 3px; }
+  .matrix-row { display: grid; grid-template-columns: 56px repeat(6, 1fr); gap: 3px; align-items: center; }
+  .matrix-lab { font-family: var(--font-mono); font-size: 10px; color: var(--text-2); text-align: right; padding-right: 6px; }
+  .matrix-head { font-family: var(--font-mono); font-size: 9px; color: var(--text-3); text-align: center; }
+  .mcell { aspect-ratio: 1.9/1; border-radius: 4px; display: grid; place-items: center; font-family: var(--font-mono); font-size: 10px; color: var(--text-1); }
+  /* 结构状态条 */
+  .struct-bar { display: grid; grid-template-columns: repeat(6,1fr); gap: 8px; margin-top: 18px; }
+  .struct-cell { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 11px 10px; text-align: center; }
+  .struct-cell .ss { font-size: 9px; font-family: var(--font-mono); text-transform: uppercase; margin-top: 4px; }
+  .struct-cell .ssym { font-size: 11px; font-weight: 600; }
+  @media (max-width: 680px) { .struct-bar { grid-template-columns: repeat(3,1fr); } .matrix-row { grid-template-columns: 44px repeat(6, 1fr); } }
+
+  /* ---- Agent 平台 ---- */
+  .agent-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+  @media (max-width: 820px) { .agent-grid { grid-template-columns: 1fr; } }
+  .agent-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); padding: 16px; }
+  .agent-card .ah { display: flex; align-items: center; gap: 10px; }
+  .agent-card .aic { width: 36px; height: 36px; border-radius: 9px; display: grid; place-items: center; flex-shrink: 0; }
+  .agent-card .aic i { font-size: 17px; }
+  .agent-card .an { font-size: 13px; font-weight: 600; }
+  .agent-card .aperm { font-size: 8px; font-family: var(--font-mono); text-transform: uppercase; padding: 2px 6px; border-radius: 3px; margin-top: 3px; display: inline-block; }
+  .agent-card .astate { margin-left: auto; font-size: 9px; font-family: var(--font-mono); display: inline-flex; align-items: center; gap: 5px; }
+  .agent-card .astate b { width: 6px; height: 6px; border-radius: 999px; display: inline-block; }
+  .agent-stats { display: flex; gap: 16px; margin: 14px 0 12px; }
+  .agent-stats .as .asv { font-family: var(--font-mono); font-size: 15px; font-weight: 600; }
+  .agent-stats .as .asl { font-size: 9px; color: var(--text-3); margin-top: 2px; }
+  .weight-row { display: flex; align-items: center; gap: 8px; }
+  .weight-track { flex: 1; height: 5px; border-radius: 3px; background: var(--surface-hi); overflow: hidden; }
+  .weight-track b { display: block; height: 100%; border-radius: 3px; }
+  .weight-val { font-family: var(--font-mono); font-size: 10px; color: var(--text-2); }
+
+  [data-en] { display: none; }
+  html[lang="en-US"] [data-zh] { display: none; }
+  html[lang="en-US"] [data-en] { display: inline; }
+</style>
+</head>
+<body>
+
+<div class="bg-layers">
+  <div class="aurora a"></div>
+  <div class="aurora b"></div>
+  <div class="aurora c"></div>
+  <div class="grid-dots"></div>
+</div>
+<div class="grain"></div>
+
+<!-- ===== 导航 ===== -->
+<header class="nav">
+  <div class="nav-inner">
+    <div class="brand">
+      <div class="logo"><i class="ph-fill ph-pulse"></i></div>
+      <span>PulseDesk</span>
+      <span class="sub" data-zh="/ AI 量化工作台" data-en="/ AI Quant Desk">/ AI 量化工作台</span>
+    </div>
+    <nav class="nav-links">
+      <a href="#loop" data-zh="核心闭环" data-en="The Loop">核心闭环</a>
+      <a href="#modules" data-zh="工作台" data-en="Workspace">工作台</a>
+      <a href="#screens" data-zh="界面走查" data-en="Screens">界面走查</a>
+      <a href="#signal" data-zh="Signal 契约" data-en="Signal">Signal 契约</a>
+      <a href="#stack" data-zh="技术底座" data-en="Engine">技术底座</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="lang-toggle" id="langBtn">中 / EN</button>
+      <button class="btn-accent" data-zh="进入工作台" data-en="Open Desk">进入工作台</button>
+    </div>
+  </div>
+</header>
+
+<!-- ===== Hero ===== -->
+<section class="hero wrap" style="padding-top:48px;">
+  <div class="hero-grid">
+    <div class="reveal in">
+      <div class="hero-badge">
+        <span class="dot"></span>
+        <span data-zh="个人专用 · 强风控 · 不绕过 RiskEngine" data-en="Single-user · Risk-first · No bypass of RiskEngine">个人专用 · 强风控 · 不绕过 RiskEngine</span>
+      </div>
+      <h1>
+        <span data-zh="把 AI、信号与策略" data-en="Turn AI, signals & strategy">把 AI、信号与策略</span><br />
+        <span class="grad" data-zh="串成一个可执行闭环" data-en="into one executable loop">串成一个可执行闭环</span>
+      </h1>
+      <p class="lead" data-zh="每天打开就知道该做什么、不该做什么、昨天为什么赚或亏。以 Signal Center 为中枢，Freqtrade 为执行底座，从数据到自我进化全程可追溯。" data-en="Open it and know what to do, what to avoid, and why yesterday won or lost. Signal Center at the core, Freqtrade as the execution base, fully traceable from data to self-evolution.">每天打开就知道该做什么、不该做什么、昨天为什么赚或亏。以 Signal Center 为中枢，Freqtrade 为执行底座，从数据到自我进化全程可追溯。</p>
+      <div class="hero-cta">
+        <button class="btn-accent lg"><i class="ph ph-arrow-right"></i><span data-zh="查看全景" data-en="Explore Overview">查看全景</span></button>
+        <a class="btn-ghost" href="#loop"><i class="ph ph-git-branch"></i><span data-zh="核心闭环" data-en="The Loop">核心闭环</span></a>
+      </div>
+      <div class="hero-stats mono">
+        <div class="st"><div class="v">8</div><div class="l" data-zh="工作台板块" data-en="workspace areas">工作台板块</div></div>
+        <div class="st"><div class="v">23</div><div class="l" data-zh="功能页面" data-en="feature pages">功能页面</div></div>
+        <div class="st"><div class="v up">M1-M8</div><div class="l" data-zh="操纵模式识别" data-en="manipulation patterns">操纵模式识别</div></div>
+      </div>
+    </div>
+
+    <!-- 终端 mock -->
+    <div class="terminal reveal in">
+      <div class="term-bar">
+        <span class="d r"></span><span class="d y"></span><span class="d g"></span>
+        <span class="t">pulsedesk · dashboard/overview</span>
+      </div>
+      <div class="term-body">
+        <div class="verdict">
+          <div class="side">
+            <div class="ring"><span class="up">72</span></div>
+            <div>
+              <div class="lab" data-zh="今日 AI 市场判断" data-en="Today's AI read">今日 AI 市场判断</div>
+              <div class="val" data-zh="偏多 · 中等风险" data-en="Bullish · Medium risk">偏多 · 中等风险</div>
+            </div>
+          </div>
+          <span class="tag">SIGNAL ×14</span>
+        </div>
+        <div class="term-rows">
+          <div class="trow"><span class="k"><i class="ph ph-wallet"></i><span data-zh="账户权益" data-en="Equity">账户权益</span></span><span class="v">$48,213.90</span></div>
+          <div class="trow"><span class="k"><i class="ph ph-trend-up"></i><span data-zh="今日盈亏" data-en="Today PnL">今日盈亏</span></span><span class="v up">+$612.40 · +1.29%</span></div>
+          <div class="trow"><span class="k"><i class="ph ph-shield-check"></i><span data-zh="风控状态" data-en="Risk gate">风控状态</span></span><span class="v up" data-zh="通行" data-en="Pass">通行</span></div>
+          <div class="trow"><span class="k"><i class="ph ph-warning"></i><span data-zh="待人工确认" data-en="Await review">待人工确认</span></span><span class="v amb">3</span></div>
+          <div class="trow"><span class="k"><i class="ph ph-radar"></i><span data-zh="操纵雷达" data-en="Surveillance">操纵雷达</span></span><span class="v down">PEPE M3 · 0.61</span></div>
+        </div>
+        <div class="spark">
+          <i style="height:40%"></i><i style="height:55%"></i><i style="height:45%"></i><i style="height:62%"></i>
+          <i style="height:58%"></i><i style="height:72%"></i><i style="height:66%"></i><i style="height:80%"></i>
+          <i style="height:74%"></i><i style="height:88%"></i><i style="height:82%"></i><i style="height:96%"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 核心闭环 ===== -->
+<section id="loop" class="wrap">
+  <div class="reveal">
+    <div class="eyebrow"><span class="tick"></span><span data-zh="核心闭环" data-en="The core loop">核心闭环</span></div>
+    <h2 class="section-title" data-zh="不是做更多 AI 工具，而是串成一条执行链" data-en="Not more AI tools. One execution chain.">不是做更多 AI 工具，而是串成一条执行链</h2>
+    <p class="section-lead" data-zh="所有研究、情绪、因子、模型结果都汇聚成 Signal，经策略工作台编译为规则 DSL，回测与 dry-run 验证后由风控门禁放行，最终交给 Freqtrade 执行，再回流到归因与自我进化。" data-en="Research, sentiment, factors and models converge into Signals, compiled into a rule DSL, validated by backtest and dry-run, gated by risk control, then executed via Freqtrade and fed back into attribution and self-evolution.">所有研究、情绪、因子、模型结果都汇聚成 Signal，经策略工作台编译为规则 DSL，回测与 dry-run 验证后由风控门禁放行，最终交给 Freqtrade 执行，再回流到归因与自我进化。</p>
+  </div>
+  <div class="loop-track reveal">
+    <div class="loop-node"><div class="idx">01</div><div class="ic"><i class="ph ph-database"></i></div><h4 data-zh="数据 / 特征" data-en="Data / Features">数据 / 特征</h4><p data-zh="CCXT · OHLCV · 资金费率" data-en="CCXT · OHLCV · funding">CCXT · OHLCV · 资金费率</p></div>
+    <div class="loop-arrow"><i class="ph ph-arrow-right"></i></div>
+    <div class="loop-node"><div class="idx">02</div><div class="ic"><i class="ph ph-brain"></i></div><h4 data-zh="AI / Agent" data-en="AI / Agents">AI / Agent</h4><p data-zh="投研委员会 · 情绪 · 预测" data-en="Research · sentiment · forecast">投研委员会 · 情绪 · 预测</p></div>
+    <div class="loop-arrow"><i class="ph ph-arrow-right"></i></div>
+    <div class="loop-node hot"><div class="idx">03</div><div class="ic"><i class="ph ph-broadcast"></i></div><h4>Signal Center</h4><p data-zh="统一评分 · 冲突检测" data-en="Scoring · conflict check">统一评分 · 冲突检测</p></div>
+    <div class="loop-arrow"><i class="ph ph-arrow-right"></i></div>
+    <div class="loop-node"><div class="idx">04</div><div class="ic"><i class="ph ph-cpu"></i></div><h4 data-zh="策略 / DSL" data-en="Strategy / DSL">策略 / DSL</h4><p data-zh="版本 · 画布 · RulePackage" data-en="Versions · canvas · rules">版本 · 画布 · RulePackage</p></div>
+    <div class="loop-arrow"><i class="ph ph-arrow-right"></i></div>
+    <div class="loop-node"><div class="idx">05</div><div class="ic"><i class="ph ph-flask"></i></div><h4 data-zh="回测 / dry-run" data-en="Backtest / dry-run">回测 / dry-run</h4><p data-zh="Freqtrade 验证" data-en="Freqtrade validation">Freqtrade 验证</p></div>
+    <div class="loop-arrow"><i class="ph ph-arrow-right"></i></div>
+    <div class="loop-node hot"><div class="idx">06</div><div class="ic"><i class="ph ph-shield-check"></i></div><h4 data-zh="风控门禁" data-en="Risk gate">风控门禁</h4><p data-zh="强制拦截 · 不可绕过" data-en="Hard block · no bypass">强制拦截 · 不可绕过</p></div>
+    <div class="loop-arrow"><i class="ph ph-arrow-right"></i></div>
+    <div class="loop-node"><div class="idx">07</div><div class="ic"><i class="ph ph-arrows-clockwise"></i></div><h4 data-zh="执行 / 归因" data-en="Execute / Attribute">执行 / 归因</h4><p data-zh="订单 · SHAP · 进化" data-en="Orders · SHAP · evolve">订单 · SHAP · 进化</p></div>
+  </div>
+</section>
+
+<!-- ===== 8 大板块 bento ===== -->
+<section id="modules" class="wrap">
+  <div class="reveal">
+    <h2 class="section-title" data-zh="八大工作台，一个心智模型" data-en="Eight workspaces, one mental model">八大工作台，一个心智模型</h2>
+    <p class="section-lead" data-zh="侧边栏八个板块覆盖从概览到系统的全生命周期，23 个功能页面各司其职，却始终围绕同一条 Signal 主线。" data-en="Eight sidebar areas span the full lifecycle from overview to system. Twenty-three pages, each with a job, all orbiting the same Signal spine.">侧边栏八个板块覆盖从概览到系统的全生命周期，23 个功能页面各司其职，却始终围绕同一条 Signal 主线。</p>
+  </div>
+  <div class="bento reveal">
+    <div class="cell big overview">
+      <i class="ph ph-squares-four hic"></i>
+      <div class="kicker">01 · OVERVIEW</div>
+      <h3 data-zh="概览" data-en="Overview">概览</h3>
+      <p data-zh="打开第一眼：今日 AI 判断、持仓风险、待人工确认三类一级信息，加实盘准入门禁。" data-en="First glance: today's AI read, position risk, items awaiting review, plus the go-live gate.">打开第一眼：今日 AI 判断、持仓风险、待人工确认三类一级信息，加实盘准入门禁。</p>
+      <div class="pages"><span>总览控制台</span><span>实盘准入</span></div>
+    </div>
+    <div class="cell mid ai">
+      <i class="ph ph-brain hic"></i>
+      <div class="kicker">06 · AI RESEARCH</div>
+      <h3 data-zh="AI 研究" data-en="AI Research">AI 研究</h3>
+      <p data-zh="TradingAgents 多智能体投研、Agent 平台、信号中心与市场情绪，全部只产出 Signal、不直接下单。" data-en="Multi-agent research, the agent platform, Signal Center and sentiment. All emit Signals only, never orders.">TradingAgents 多智能体投研、Agent 平台、信号中心与市场情绪，全部只产出 Signal、不直接下单。</p>
+      <div class="pages"><span>AI 投研室</span><span>Agent 平台</span><span>信号中心</span><span>市场情绪</span></div>
+    </div>
+    <div class="cell sm">
+      <i class="ph ph-cpu hic"></i>
+      <div class="kicker">02 · STRATEGY</div>
+      <h3 data-zh="策略" data-en="Strategy">策略</h3>
+      <p data-zh="生命周期管理 + 回测模拟。" data-en="Lifecycle plus backtest & paper.">生命周期管理 + 回测模拟。</p>
+      <div class="pages"><span>策略工作台</span><span>回测 / 模拟</span></div>
+    </div>
+    <div class="cell sm">
+      <i class="ph ph-chart-bar hic"></i>
+      <div class="kicker">03 · MARKET</div>
+      <h3 data-zh="结构" data-en="Structure">结构</h3>
+      <p data-zh="市场结构、相关性矩阵与操纵雷达。" data-en="Structure, correlation matrix, surveillance.">市场结构、相关性矩阵与操纵雷达。</p>
+      <div class="pages"><span>市场结构</span><span>结构矩阵</span><span>操纵雷达</span></div>
+    </div>
+    <div class="cell sm">
+      <i class="ph ph-play-circle hic"></i>
+      <div class="kicker">04 · EXECUTION</div>
+      <h3 data-zh="执行" data-en="Execution">执行</h3>
+      <p data-zh="执行中心、订单持仓、对账总线。" data-en="Execution, orders, reconciliation.">执行中心、订单持仓、对账总线。</p>
+      <div class="pages"><span>执行中心</span><span>订单 / 持仓</span><span>对账总线</span></div>
+    </div>
+    <div class="cell mid risk">
+      <i class="ph ph-shield-warning hic"></i>
+      <div class="kicker">05 · RISK</div>
+      <h3 data-zh="风控" data-en="Risk">风控</h3>
+      <p data-zh="所有 TradeIntent 的强制门禁：全局/组合/相关性/操纵风险、止损保护与熔断记录，紧急停止一键可达。" data-en="The hard gate for every TradeIntent: global, portfolio, correlation and manipulation risk, stop-loss rules, circuit breakers, one-tap emergency stop.">所有 TradeIntent 的强制门禁：全局/组合/相关性/操纵风险、止损保护与熔断记录，紧急停止一键可达。</p>
+      <div class="pages"><span>风控中心</span><span>止损保护</span><span>熔断记录</span></div>
+    </div>
+    <div class="cell big">
+      <i class="ph ph-chart-line-up hic"></i>
+      <div class="kicker">07 · PERFORMANCE</div>
+      <h3 data-zh="增长" data-en="Growth">增长</h3>
+      <p data-zh="从历史订单挖掘高胜率模式：每日复盘、失败聚类、SHAP 特征贡献，自动产出候选策略并回流回测。" data-en="Mine winning patterns from order history: daily reviews, loss clustering, SHAP contributions, auto-generated candidate strategies fed back to backtesting.">从历史订单挖掘高胜率模式：每日复盘、失败聚类、SHAP 特征贡献，自动产出候选策略并回流回测。</p>
+      <div class="pages"><span>复盘成长</span><span>失败聚类</span><span>策略优化</span></div>
+    </div>
+    <div class="cell mid">
+      <i class="ph ph-gear hic"></i>
+      <div class="kicker">08 · SYSTEM</div>
+      <h3 data-zh="系统" data-en="System">系统</h3>
+      <p data-zh="AI 服务与 Provider 路由、数据源管理、系统设置。切换 Provider 不静默修改历史结果，全部记录模型版本。" data-en="AI services & provider routing, data sources, settings. Switching providers never silently rewrites past results; every model version is recorded.">AI 服务与 Provider 路由、数据源管理、系统设置。切换 Provider 不静默修改历史结果，全部记录模型版本。</p>
+      <div class="pages"><span>服务管理</span><span>数据源管理</span><span>系统设置</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 界面走查 ===== -->
+<section id="screens" class="wrap">
+  <div class="reveal">
+    <div class="eyebrow"><span class="tick"></span><span data-zh="界面走查" data-en="Screen walkthrough">界面走查</span></div>
+    <h2 class="section-title" data-zh="真实界面，逐屏拆解" data-en="Real screens, panel by panel">真实界面，逐屏拆解</h2>
+    <p class="section-lead" data-zh="以下为十一个核心页面的界面预览，字段与语义色严格对齐 app 设计系统：绿涨红跌、白色强调、等宽数字。数值为示例数据。" data-en="Eleven core screens previewed below. Fields and semantic colors align strictly with the app design system: green up, red down, white accent, monospaced figures. Values are sample data.">以下为十一个核心页面的界面预览，字段与语义色严格对齐 app 设计系统：绿涨红跌、白色强调、等宽数字。数值为示例数据。</p>
+  </div>
+
+  <!-- ---- ① 总览控制台 ---- -->
+  <div class="mock-caption reveal">
+    <span class="num">01</span>
+    <h3 data-zh="总览控制台" data-en="Dashboard">总览控制台</h3>
+    <span class="rt mono">/api/overview/dashboard</span>
+  </div>
+  <p class="mock-desc reveal" data-zh="Bento 命令网格：一屏看清账户权益、今日 AI 判断、持仓风险与待确认操作，底部常驻紧急停止条。" data-en="Bento command grid: equity, today's AI read, position risk and pending actions in one view, with a sticky emergency-stop bar.">Bento 命令网格：一屏看清账户权益、今日 AI 判断、持仓风险与待确认操作，底部常驻紧急停止条。</p>
+  <div class="app-window reveal">
+    <div class="aw-bar">
+      <span class="d r"></span><span class="d y"></span><span class="d g"></span>
+      <span class="path">pulsedesk · overview / dashboard</span>
+      <span class="route-pill up">● LIVE-SMALL</span>
+    </div>
+    <div class="aw-body">
+      <aside class="mini-side">
+        <div class="grp" data-zh="概览" data-en="Overview">概览</div>
+        <div class="item on"><i class="ph ph-squares-four"></i><span data-zh="总览控制台" data-en="Dashboard">总览控制台</span></div>
+        <div class="item"><i class="ph ph-shield-check"></i><span data-zh="实盘准入" data-en="Go-Live">实盘准入</span></div>
+        <div class="grp" data-zh="策略" data-en="Strategy">策略</div>
+        <div class="item"><i class="ph ph-cpu"></i><span data-zh="策略工作台" data-en="Strategies">策略工作台</span></div>
+        <div class="item"><i class="ph ph-flask"></i><span data-zh="回测 / 模拟" data-en="Backtest">回测 / 模拟</span></div>
+        <div class="grp" data-zh="风控" data-en="Risk">风控</div>
+        <div class="item"><i class="ph ph-shield-warning"></i><span data-zh="风控中心" data-en="Risk">风控中心</span></div>
+      </aside>
+      <div class="aw-main">
+        <div class="term-h">
+          <span class="tl" data-zh="账户 · 权益总览" data-en="Account · Equity">账户 · 权益总览</span>
+          <span class="tr up">Freqtrade · healthy</span>
+        </div>
+        <div class="metric-grid">
+          <div class="metric"><div class="ml" data-zh="账户权益" data-en="Equity">账户权益</div><div class="mv">$48,213.90</div><div class="mtiny up">+1.29% · 24h</div></div>
+          <div class="metric"><div class="ml" data-zh="今日盈亏" data-en="Today PnL">今日盈亏</div><div class="mv up">+$612.40</div><div class="mtiny up">↑ 4 laddered</div></div>
+          <div class="metric"><div class="ml" data-zh="AI 市场判断" data-en="AI read">AI 市场判断</div><div class="mv up">72<span class="muted" style="font-size:12px"> / 偏多</span></div><div class="mtiny amb" data-zh="中等风险" data-en="Medium risk">中等风险</div></div>
+          <div class="metric"><div class="ml" data-zh="待人工确认" data-en="Awaiting review">待人工确认</div><div class="mv amb">3</div><div class="mtiny muted" data-zh="2 dry-run · 1 解除" data-en="2 dry-run · 1 unblock">2 dry-run · 1 解除</div></div>
+        </div>
+        <div class="term-h" style="margin-top:22px;">
+          <span class="tl" data-zh="持仓风险 · 未平仓 3" data-en="Position risk · 3 open">持仓风险 · 未平仓 3</span>
+          <span class="tr muted">reconciliation ✓</span>
+        </div>
+        <table class="data">
+          <thead><tr><th data-zh="标的" data-en="Symbol">标的</th><th data-zh="方向" data-en="Side">方向</th><th data-zh="数量" data-en="Size">数量</th><th data-zh="开仓" data-en="Entry">开仓</th><th data-zh="标记" data-en="Mark">标记</th><th data-zh="盈亏" data-en="PnL">盈亏</th><th data-zh="回报" data-en="PnL%">回报</th><th data-zh="对账" data-en="Sync">对账</th></tr></thead>
+          <tbody>
+            <tr><td><span class="side-rail" style="background:var(--bullish)"></span><span class="sym">BTC/USDT</span></td><td class="up dir-tag">LONG</td><td>0.42</td><td>61,240</td><td>62,980</td><td class="up">+730.80</td><td class="up">+2.84%</td><td><span class="state-dot up"><b style="background:var(--bullish)"></b>IN SYNC</span></td></tr>
+            <tr><td><span class="side-rail" style="background:var(--bullish)"></span><span class="sym">SOL/USDT</span></td><td class="up dir-tag">LONG</td><td>18.5</td><td>142.60</td><td>147.20</td><td class="up">+85.10</td><td class="up">+3.22%</td><td><span class="state-dot amb"><b style="background:var(--amber)"></b>DRIFT</span></td></tr>
+            <tr><td><span class="side-rail" style="background:var(--bearish)"></span><span class="sym">DOGE/USDT</span></td><td class="down dir-tag">SHORT</td><td>4200</td><td>0.1685</td><td>0.1712</td><td class="down">-11.34</td><td class="down">-1.60%</td><td><span class="state-dot up"><b style="background:var(--bullish)"></b>IN SYNC</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---- ② 信号中心 ---- -->
+  <div class="mock-caption reveal">
+    <span class="num">02</span>
+    <h3 data-zh="信号中心" data-en="Signal Center">信号中心</h3>
+    <span class="rt mono">/api/v2/signals</span>
+  </div>
+  <p class="mock-desc reveal" data-zh="所有来源的 Signal 在此汇聚：方向、来源、置信度、评分、风险等级、生命周期状态一目了然，AI 信号默认 can_live_trade=false。" data-en="Signals from every source converge here: direction, source, confidence, score, risk level and lifecycle at a glance. AI signals default to can_live_trade=false.">所有来源的 Signal 在此汇聚：方向、来源、置信度、评分、风险等级、生命周期状态一目了然，AI 信号默认 can_live_trade=false。</p>
+  <div class="app-window reveal">
+    <div class="aw-bar">
+      <span class="d r"></span><span class="d y"></span><span class="d g"></span>
+      <span class="path">pulsedesk · ai-research / signals</span>
+      <span class="route-pill">14 active · 3 pending</span>
+    </div>
+    <div class="aw-main" style="padding:20px 22px;">
+      <div class="term-h">
+        <div class="tabbar">
+          <span class="tab on" data-zh="全部" data-en="All">全部</span>
+          <span class="tab" data-zh="待处理" data-en="Pending">待处理</span>
+          <span class="tab" data-zh="已激活" data-en="Active">已激活</span>
+          <span class="tab" data-zh="已过期" data-en="Expired">已过期</span>
+        </div>
+        <span class="tr muted" data-zh="按评分排序 ↓" data-en="Sort by score ↓">按评分排序 ↓</span>
+      </div>
+      <div class="sig-list">
+        <!-- 多头 · AI研究 -->
+        <div class="sig-card">
+          <div class="sig-dir" style="background:rgba(32,178,108,.12)"><i class="ph ph-arrow-up up"></i></div>
+          <div class="sig-mid">
+            <div class="r1"><span class="sym">BTC/USDT</span><span class="sig-src" style="background:rgba(23,192,201,.14);color:var(--cyan)">AI 研究</span></div>
+            <div class="sig-reason" data-zh="4H 底部横盘 32 天后放量突破颈线，成交量确认" data-en="Breakout above neckline after 32-day base, volume-confirmed">4H 底部横盘 32 天后放量突破颈线，成交量确认</div>
+            <div class="sig-meta"><span class="sig-status up"><b style="background:var(--bullish)"></b>ACTIVE</span><span class="muted mono" style="font-size:9px" data-zh="6 小时后到期" data-en="6h left">6 小时后到期</span></div>
+          </div>
+          <div class="sig-right">
+            <div class="conf-bar"><div class="conf-track"><div class="conf-fill up" style="width:84%;background:var(--bullish)"></div></div><span class="conf-pct up">84%</span></div>
+            <span class="sig-score up"><i class="ph-fill ph-star"></i>4.6</span>
+            <span class="risk-badge" style="background:rgba(32,178,108,.12);color:var(--bullish)" data-zh="低" data-en="Low">低</span>
+          </div>
+        </div>
+        <!-- 空头 · TradingAgents -->
+        <div class="sig-card">
+          <div class="sig-dir" style="background:rgba(239,69,74,.12)"><i class="ph ph-arrow-down down"></i></div>
+          <div class="sig-mid">
+            <div class="r1"><span class="sym">DOGE/USDT</span><span class="sig-src" style="background:rgba(168,85,247,.14);color:var(--purple)">TA 委员会</span></div>
+            <div class="sig-reason" data-zh="资金费率异常 + 高集中度地址派发，空头委员会 4:1 通过" data-en="Funding anomaly + concentrated distribution, bear panel 4:1">资金费率异常 + 高集中度地址派发，空头委员会 4:1 通过</div>
+            <div class="sig-meta"><span class="sig-status up"><b style="background:var(--bullish)"></b>ACTIVE</span><span class="muted mono" style="font-size:9px" data-zh="2 小时后到期" data-en="2h left">2 小时后到期</span></div>
+          </div>
+          <div class="sig-right">
+            <div class="conf-bar"><div class="conf-track"><div class="conf-fill amb" style="width:67%;background:var(--amber)"></div></div><span class="conf-pct amb">67%</span></div>
+            <span class="sig-score amb"><i class="ph-fill ph-star"></i>3.4</span>
+            <span class="risk-badge" style="background:rgba(239,69,74,.12);color:var(--bearish)" data-zh="高" data-en="High">高</span>
+          </div>
+        </div>
+        <!-- 观望 · 手动 pending -->
+        <div class="sig-card">
+          <div class="sig-dir" style="background:rgba(240,160,32,.12)"><i class="ph ph-arrow-right amb"></i></div>
+          <div class="sig-mid">
+            <div class="r1"><span class="sym">ETH/USDT</span><span class="sig-src" style="background:rgba(240,160,32,.14);color:var(--amber)" data-zh="手动" data-en="Manual">手动</span></div>
+            <div class="sig-reason" data-zh="等待 ETF 数据确认，暂列观察，未达入场条件" data-en="Awaiting ETF flow confirmation, watch-only, no entry yet">等待 ETF 数据确认，暂列观察，未达入场条件</div>
+            <div class="sig-meta"><span class="sig-status amb"><b style="background:var(--amber)"></b>PENDING</span><span class="muted mono" style="font-size:9px" data-zh="1 天后到期" data-en="1d left">1 天后到期</span></div>
+          </div>
+          <div class="sig-right">
+            <div class="conf-bar"><div class="conf-track"><div class="conf-fill" style="width:52%;background:var(--text-2)"></div></div><span class="conf-pct muted">52%</span></div>
+            <span class="sig-score amb"><i class="ph-fill ph-star"></i>2.8</span>
+            <span class="risk-badge" style="background:rgba(240,160,32,.12);color:var(--amber)" data-zh="中" data-en="Med">中</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---- ③ 操纵雷达 ---- -->
+  <div class="mock-caption reveal">
+    <span class="num">03</span>
+    <h3 data-zh="操纵雷达" data-en="Surveillance">操纵雷达</h3>
+    <span class="rt mono">/api/v2/manipulation/radar</span>
+  </div>
+  <p class="mock-desc reveal" data-zh="识别高集中度、插针、拉盘出货、资金费率收割。用概率化措辞与逐层数据质量徽章表达不确定性，完成度决定置信度上限。" data-en="Detects concentration, wick hunts, pump-and-dump and funding harvests. Uncertainty shown via probabilistic language and per-layer data-quality badges; completeness caps confidence.">识别高集中度、插针、拉盘出货、资金费率收割。用概率化措辞与逐层数据质量徽章表达不确定性，完成度决定置信度上限。</p>
+  <div class="app-window reveal">
+    <div class="aw-bar">
+      <span class="d r"></span><span class="d y"></span><span class="d g"></span>
+      <span class="path">pulsedesk · market / surveillance</span>
+      <span class="route-pill amb">⚠ 2 active cases</span>
+    </div>
+    <div class="aw-main">
+      <div class="manip-layout">
+        <div class="verdict-panel">
+          <div class="conf-ring-lg"><span><span class="cv">61</span><span class="cl" data-zh="置信度" data-en="confidence">置信度</span></span></div>
+          <div class="mtype">M3 · <span data-zh="拉盘出货" data-en="Pump &amp; Dump">拉盘出货</span></div>
+          <div class="mdesc" data-zh="证据与「派发阶段」一致 · 数据完整度 74%" data-en="Evidence consistent with distribution · 74% data completeness">证据与「派发阶段」一致 · 数据完整度 74%</div>
+        </div>
+        <div>
+          <div class="term-h"><span class="tl">PEPE/USDT · <span data-zh="生命周期" data-en="Lifecycle">生命周期</span></span><span class="tr muted">FSM</span></div>
+          <div class="lc-timeline">
+            <div class="lc-stage past"><div class="node"><i class="ph ph-eye"></i></div><span class="st-lab">SUSPECT</span></div>
+            <div class="lc-conn"></div>
+            <div class="lc-stage past"><div class="node"><i class="ph ph-stack"></i></div><span class="st-lab">ACCUM</span></div>
+            <div class="lc-conn"></div>
+            <div class="lc-stage past"><div class="node"><i class="ph ph-trend-up"></i></div><span class="st-lab">MARKUP</span></div>
+            <div class="lc-conn"></div>
+            <div class="lc-stage cur"><div class="node"><i class="ph ph-share-network"></i></div><span class="st-lab">DISTRIB</span></div>
+            <div class="lc-conn"></div>
+            <div class="lc-stage"><div class="node"><i class="ph ph-trend-down"></i></div><span class="st-lab">COLLAPSE</span></div>
+          </div>
+          <div class="term-h" style="margin-top:6px;"><span class="tl" data-zh="证据层矩阵" data-en="Evidence layers">证据层矩阵</span></div>
+          <div class="evidence">
+            <div class="ev-layer"><span class="en" data-zh="钱包集中度" data-en="Wallet conc.">钱包集中度</span><div class="ev-bar"><b style="width:82%"></b></div><span class="ev-q" style="background:rgba(32,178,108,.14);color:var(--bullish)">HIGH</span></div>
+            <div class="ev-layer"><span class="en" data-zh="成交量异常" data-en="Volume">成交量异常</span><div class="ev-bar"><b style="width:71%"></b></div><span class="ev-q" style="background:rgba(32,178,108,.14);color:var(--bullish)">HIGH</span></div>
+            <div class="ev-layer"><span class="en" data-zh="资金费率" data-en="Funding">资金费率</span><div class="ev-bar"><b style="width:58%"></b></div><span class="ev-q" style="background:rgba(240,160,32,.14);color:var(--amber)">MED</span></div>
+            <div class="ev-layer"><span class="en" data-zh="社交加速" data-en="Social">社交加速</span><div class="ev-bar"><b style="width:0%"></b></div><span class="ev-q" style="background:var(--surface-hi);color:var(--text-3)" data-zh="缺失" data-en="N/A">缺失</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---- ④ 风控中心 ---- -->
+  <div class="mock-caption reveal">
+    <span class="num">04</span>
+    <h3 data-zh="风控中心" data-en="Risk Monitor">风控中心</h3>
+    <span class="rt mono">/api/risk/*</span>
+  </div>
+  <p class="mock-desc reveal" data-zh="所有 TradeIntent 的强制门禁。守卫弧形仪表实时反映各维度风险，被拒交易展示 risk_codes 与理由，紧急停止一键可达。" data-en="The hard gate for every TradeIntent. Arc gauges reflect each risk dimension live; blocked trades show risk_codes and reasons; emergency stop is one tap away.">所有 TradeIntent 的强制门禁。守卫弧形仪表实时反映各维度风险，被拒交易展示 risk_codes 与理由，紧急停止一键可达。</p>
+  <div class="app-window reveal">
+    <div class="aw-bar">
+      <span class="d r"></span><span class="d y"></span><span class="d g"></span>
+      <span class="path">pulsedesk · risk / monitor</span>
+      <span class="route-pill up">● NORMAL</span>
+    </div>
+    <div class="aw-main">
+      <div class="metric-grid" style="margin-bottom:20px;">
+        <div class="metric"><div class="ml" data-zh="系统状态" data-en="System state">系统状态</div><div class="mv up" style="font-size:15px" data-zh="正常" data-en="Normal">正常</div></div>
+        <div class="metric"><div class="ml" data-zh="守卫告警" data-en="Guard alerts">守卫告警</div><div class="mv amb">1</div></div>
+        <div class="metric"><div class="ml" data-zh="紧急锁定" data-en="Emergency lock">紧急锁定</div><div class="mv" style="font-size:15px" data-zh="未启用" data-en="Off">未启用</div></div>
+        <div class="metric"><div class="ml" data-zh="风险原因" data-en="Reason codes">风险原因</div><div class="mv">0</div></div>
+      </div>
+      <div class="term-h"><span class="tl" data-zh="风控守卫" data-en="Risk guards">风控守卫</span><span class="tr muted">4 / 4 online</span></div>
+      <div class="guard-grid">
+        <div class="guard-cell">
+          <div class="gauge" style="background:conic-gradient(var(--bullish) 0% 34%, var(--surface-hi) 34% 100%)"><span class="up">34%</span></div>
+          <div class="gn" data-zh="全局回撤" data-en="Global DD">全局回撤</div><div class="gs up">OK</div>
+        </div>
+        <div class="guard-cell">
+          <div class="gauge" style="background:conic-gradient(var(--amber) 0% 68%, var(--surface-hi) 68% 100%)"><span class="amb">68%</span></div>
+          <div class="gn" data-zh="组合相关性" data-en="Correlation">组合相关性</div><div class="gs amb" data-zh="警告" data-en="Warning">警告</div>
+        </div>
+        <div class="guard-cell">
+          <div class="gauge" style="background:conic-gradient(var(--bullish) 0% 22%, var(--surface-hi) 22% 100%)"><span class="up">22%</span></div>
+          <div class="gn" data-zh="操纵暴露" data-en="Manip. exposure">操纵暴露</div><div class="gs up">OK</div>
+        </div>
+        <div class="guard-cell">
+          <div class="gauge" style="background:conic-gradient(var(--bullish) 0% 15%, var(--surface-hi) 15% 100%)"><span class="up">15%</span></div>
+          <div class="gn" data-zh="API / 连接" data-en="API / link">API / 连接</div><div class="gs up">healthy</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---- ⑤ 复盘成长 ---- -->
+  <div class="mock-caption reveal">
+    <span class="num">05</span>
+    <h3 data-zh="复盘成长" data-en="Trade Review">复盘成长</h3>
+    <span class="rt mono">/api/growth/*</span>
+  </div>
+  <p class="mock-desc reveal" data-zh="从历史订单挖掘高胜率模式。SHAP 特征贡献解释「为什么赚 / 亏」，自动产出候选策略并回流回测验证。" data-en="Mine winning patterns from order history. SHAP contributions explain why trades won or lost; candidate strategies are auto-generated and fed back to backtesting.">从历史订单挖掘高胜率模式。SHAP 特征贡献解释「为什么赚 / 亏」，自动产出候选策略并回流回测验证。</p>
+  <div class="app-window reveal">
+    <div class="aw-bar">
+      <span class="d r"></span><span class="d y"></span><span class="d g"></span>
+      <span class="path">pulsedesk · performance / trade-review</span>
+      <span class="route-pill">daily · 2026-07-12</span>
+    </div>
+    <div class="aw-main">
+      <div class="review-cols">
+        <div>
+          <div class="term-h"><span class="tl" data-zh="SHAP 特征贡献 · 盈利订单" data-en="SHAP · winning trades">SHAP 特征贡献 · 盈利订单</span></div>
+          <div class="shap-list">
+            <div class="shap-row"><span class="fn">base_breakout</span><div class="shap-track"><b class="up" style="left:50%;width:32%;background:var(--bullish)"></b></div><span class="sv up">+0.34</span></div>
+            <div class="shap-row"><span class="fn">volume_confirm</span><div class="shap-track"><b class="up" style="left:50%;width:24%;background:var(--bullish)"></b></div><span class="sv up">+0.26</span></div>
+            <div class="shap-row"><span class="fn">rsi_divergence</span><div class="shap-track"><b class="up" style="left:50%;width:15%;background:var(--bullish)"></b></div><span class="sv up">+0.16</span></div>
+            <div class="shap-row"><span class="fn">funding_rate</span><div class="shap-track"><b class="down" style="left:38%;width:12%;background:var(--bearish)"></b></div><span class="sv down">-0.13</span></div>
+            <div class="shap-row"><span class="fn">entry_timing</span><div class="shap-track"><b class="down" style="left:41%;width:9%;background:var(--bearish)"></b></div><span class="sv down">-0.09</span></div>
+          </div>
+        </div>
+        <div>
+          <div class="term-h"><span class="tl" data-zh="候选策略" data-en="Candidate strategies">候选策略</span><span class="tr muted">auto-generated</span></div>
+          <div style="display:grid;gap:12px;">
+            <div class="cand-card">
+              <div class="ch"><span class="cn" data-zh="底部横盘突破 v3" data-en="Base Breakout v3">底部横盘突破 v3</span><span class="cstat" style="background:rgba(32,178,108,.14);color:var(--bullish)" data-zh="回测通过" data-en="Backtested">回测通过</span></div>
+              <div class="cand-metrics">
+                <div class="cm"><div class="cmv up">+38.2%</div><div class="cml" data-zh="累计收益" data-en="Return">累计收益</div></div>
+                <div class="cm"><div class="cmv">1.94</div><div class="cml">Sharpe</div></div>
+                <div class="cm"><div class="cmv up">63%</div><div class="cml" data-zh="胜率" data-en="Win rate">胜率</div></div>
+              </div>
+            </div>
+            <div class="cand-card">
+              <div class="ch"><span class="cn" data-zh="前低突破 · 分批建仓" data-en="Prior-Low Breakout">前低突破 · 分批建仓</span><span class="cstat" style="background:rgba(240,160,32,.14);color:var(--amber)" data-zh="待回测" data-en="Queued">待回测</span></div>
+              <div class="cand-metrics">
+                <div class="cm"><div class="cmv muted">··</div><div class="cml" data-zh="累计收益" data-en="Return">累计收益</div></div>
+                <div class="cm"><div class="cmv muted">··</div><div class="cml">Sharpe</div></div>
+                <div class="cm"><div class="cmv muted">··</div><div class="cml" data-zh="胜率" data-en="Win rate">胜率</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---- ⑥ 回测中心 ---- -->
+  <div class="mock-caption reveal">
+    <span class="num">06</span>
+    <h3 data-zh="回测中心" data-en="Backtest Lab">回测中心</h3>
+    <span class="rt mono">POST /api/v2/backtest</span>
+  </div>
+  <p class="mock-desc reveal" data-zh="数据终端式单列布局：顶部权益曲线 hero（渐变填充 + 回撤带），2×4 指标网格，可折叠交易列表。DSL 来自策略版本，回测走 Freqtrade。" data-en="Data-terminal single column: equity-curve hero (gradient fill + drawdown band), a 2×4 metrics grid and a foldable trade list. DSL comes from the strategy version; backtest runs on Freqtrade.">数据终端式单列布局：顶部权益曲线 hero（渐变填充 + 回撤带），2×4 指标网格，可折叠交易列表。DSL 来自策略版本，回测走 Freqtrade。</p>
+  <div class="app-window reveal">
+    <div class="aw-bar">
+      <span class="d r"></span><span class="d y"></span><span class="d g"></span>
+      <span class="path">pulsedesk · strategy / backtest</span>
+      <span class="route-pill">BTC/USDT · 20260401-20260712</span>
+    </div>
+    <div class="aw-main">
+      <div class="term-h">
+        <div class="tabbar" data-tabs>
+          <span class="tab on" data-zh="回测" data-en="Backtest">回测</span>
+          <span class="tab" data-zh="模拟盘" data-en="Dryrun">模拟盘</span>
+        </div>
+        <span class="tr up">Base Breakout v3 · sharpe 1.94</span>
+      </div>
+      <div class="equity-hero">
+        <div class="eq-legend">
+          <span class="lg"><b style="background:var(--bullish)"></b><span data-zh="策略权益" data-en="Strategy equity">策略权益</span></span>
+          <span class="lg"><b style="background:var(--text-3)"></b>Buy &amp; Hold</span>
+          <span class="lg"><b style="background:var(--bearish);opacity:.6"></b><span data-zh="回撤" data-en="Drawdown">回撤</span></span>
+        </div>
+        <svg viewBox="0 0 600 150" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="eqfill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#20B26C" stop-opacity="0.28"/>
+              <stop offset="100%" stop-color="#20B26C" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <!-- 回撤带 -->
+          <rect x="250" y="0" width="70" height="150" fill="#EF454A" opacity="0.06"/>
+          <!-- buy&hold 基准 -->
+          <polyline fill="none" stroke="#5E6673" stroke-width="1.5" stroke-dasharray="4 4" points="0,120 100,110 200,118 300,95 400,88 500,72 600,60"/>
+          <!-- 策略权益填充 -->
+          <path d="M0,128 L80,118 L150,122 L250,88 L320,104 L400,66 L480,52 L600,24 L600,150 L0,150 Z" fill="url(#eqfill)"/>
+          <!-- 策略权益线 -->
+          <polyline fill="none" stroke="#20B26C" stroke-width="2" points="0,128 80,118 150,122 250,88 320,104 400,66 480,52 600,24"/>
+          <circle cx="600" cy="24" r="3.5" fill="#20B26C"/>
+        </svg>
+      </div>
+      <div class="metric-grid" style="margin-top:16px;">
+        <div class="metric"><div class="ml" data-zh="累计收益" data-en="Total return">累计收益</div><div class="mv up">+38.2%</div></div>
+        <div class="metric"><div class="ml" data-zh="最大回撤" data-en="Max drawdown">最大回撤</div><div class="mv down">-9.4%</div></div>
+        <div class="metric"><div class="ml">Sharpe</div><div class="mv">1.94</div></div>
+        <div class="metric"><div class="ml" data-zh="胜率" data-en="Win rate">胜率</div><div class="mv up">63%</div></div>
+      </div>
+      <div class="metric-grid" style="margin-top:12px;">
+        <div class="metric"><div class="ml" data-zh="盈亏比" data-en="Profit factor">盈亏比</div><div class="mv">2.1</div></div>
+        <div class="metric"><div class="ml" data-zh="交易数" data-en="Trades">交易数</div><div class="mv">148</div></div>
+        <div class="metric"><div class="ml" data-zh="已成交" data-en="Filled">已成交</div><div class="mv">142</div></div>
+        <div class="metric"><div class="ml" data-zh="时长" data-en="Duration">时长</div><div class="mv" style="font-size:15px">102d</div></div>
+      </div>
+      <div class="term-h" style="margin-top:20px;">
+        <span class="tl" data-zh="交易列表 · 近 4 笔" data-en="Trade list · last 4">交易列表 · 近 4 笔</span>
+        <span class="tr muted">1-4 / 148</span>
+      </div>
+      <table class="data">
+        <thead><tr><th data-zh="标的" data-en="Pair">标的</th><th data-zh="方向" data-en="Side">方向</th><th data-zh="开仓" data-en="Open">开仓</th><th data-zh="平仓" data-en="Close">平仓</th><th data-zh="收益" data-en="Profit">收益</th><th data-zh="时长" data-en="Dur">时长</th><th data-zh="退出原因" data-en="Exit">退出原因</th></tr></thead>
+        <tbody>
+          <tr><td><span class="side-rail" style="background:var(--bullish)"></span><span class="sym">BTC/USDT</span></td><td class="up dir-tag">LONG</td><td>61,240</td><td>63,980</td><td class="up">+4.47%</td><td>18h</td><td class="up" data-zh="止盈" data-en="ROI">止盈</td></tr>
+          <tr><td><span class="side-rail" style="background:var(--bullish)"></span><span class="sym">SOL/USDT</span></td><td class="up dir-tag">LONG</td><td>142.60</td><td>151.30</td><td class="up">+6.10%</td><td>2d 4h</td><td class="up" data-zh="止盈" data-en="ROI">止盈</td></tr>
+          <tr><td><span class="side-rail" style="background:var(--bullish)"></span><span class="sym">ARB/USDT</span></td><td class="up dir-tag">LONG</td><td>1.184</td><td>1.142</td><td class="down">-3.55%</td><td>9h</td><td class="down" data-zh="止损" data-en="Stop">止损</td></tr>
+          <tr><td><span class="side-rail" style="background:var(--bullish)"></span><span class="sym">LINK/USDT</span></td><td class="up dir-tag">LONG</td><td>14.82</td><td>15.96</td><td class="up">+7.69%</td><td>3d 1h</td><td class="up" data-zh="止盈" data-en="ROI">止盈</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ---- ⑦ 策略工作台 ---- -->
+  <div class="mock-caption reveal">
+    <span class="num">07</span>
+    <h3 data-zh="策略工作台" data-en="Strategy Workspace">策略工作台</h3>
+    <span class="rt mono">/api/v2/strategies</span>
+  </div>
+  <p class="mock-desc reveal" data-zh="三栏 launch console：左列策略清单，中列规则 DSL 预览与关联指标，右列生命周期推进轨（draft → validated → backtested → dry-run → live_small）。AI 只产 DSL，不写 Python。" data-en="Three-column launch console: strategy list on the left, rule-DSL preview and linked metrics in the center, lifecycle rail on the right (draft → validated → backtested → dry-run → live_small). AI emits DSL only, never Python.">三栏 launch console：左列策略清单，中列规则 DSL 预览与关联指标，右列生命周期推进轨（draft → validated → backtested → dry-run → live_small）。AI 只产 DSL，不写 Python。</p>
+  <div class="app-window reveal">
+    <div class="aw-bar">
+      <span class="d r"></span><span class="d y"></span><span class="d g"></span>
+      <span class="path">pulsedesk · strategy / workspace</span>
+      <span class="route-pill up">● 3 live · 2 dry-run</span>
+    </div>
+    <div class="console-3">
+      <div class="col left">
+        <div class="col-title" data-zh="策略清单" data-en="Strategies">策略清单</div>
+        <div class="strat-item on">
+          <div class="sn" data-zh="底部横盘突破" data-en="Base Breakout">底部横盘突破</div>
+          <div class="sm"><span class="strat-stat" style="background:rgba(32,178,108,.14);color:var(--bullish)">LIVE-SMALL</span><span class="ver">v3 · rag</span></div>
+        </div>
+        <div class="strat-item">
+          <div class="sn" data-zh="前低突破分批建仓" data-en="Prior-Low Ladder">前低突破分批建仓</div>
+          <div class="sm"><span class="strat-stat" style="background:rgba(23,192,201,.14);color:var(--cyan)">DRY-RUN</span><span class="ver">v2 · signal</span></div>
+        </div>
+        <div class="strat-item">
+          <div class="sn" data-zh="操纵规避猎币" data-en="Manip-Aware Hunt">操纵规避猎币</div>
+          <div class="sm"><span class="strat-stat" style="background:rgba(240,160,32,.14);color:var(--amber)">BACKTESTED</span><span class="ver">v1 · manual</span></div>
+        </div>
+        <div class="strat-item">
+          <div class="sn" data-zh="滚动低点反转" data-en="Rolling-Low Reversal">滚动低点反转</div>
+          <div class="sm"><span class="strat-stat" style="background:var(--surface-hi);color:var(--text-3)">DRAFT</span><span class="ver">v1 · growth</span></div>
+        </div>
+      </div>
+      <div class="col center">
+        <div class="col-title" data-zh="规则 DSL 预览 · Base Breakout v3" data-en="Rule DSL · Base Breakout v3">规则 DSL 预览 · Base Breakout v3</div>
+        <div class="dsl-preview"><span class="c"># StrategyRuleDSL · 只读预览</span><br>{<br>&nbsp;&nbsp;<span class="k">"entry"</span>: {<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="k">"type"</span>: <span class="s">"base_breakout"</span>,<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="k">"base_days"</span>: <span class="n">32</span>,<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="k">"volume_confirm"</span>: <span class="n">true</span><br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;<span class="k">"sizing"</span>: { <span class="k">"mode"</span>: <span class="s">"laddered"</span>, <span class="k">"steps"</span>: <span class="n">4</span> },<br>&nbsp;&nbsp;<span class="k">"risk"</span>: { <span class="k">"stop_loss"</span>: <span class="n">-0.04</span>, <span class="k">"manip_filter"</span>: <span class="n">true</span> }<br>}</div>
+        <div class="center-cards">
+          <div class="sc-card"><div class="scl" data-zh="关联 Signal" data-en="Linked signals">关联 Signal</div><div class="scv">6</div></div>
+          <div class="sc-card"><div class="scl" data-zh="回测记录" data-en="Backtests">回测记录</div><div class="scv">12</div></div>
+          <div class="sc-card"><div class="scl" data-zh="Validator" data-en="Validator">Validator</div><div class="scv up" style="font-size:13px">✓ PASS</div></div>
+          <div class="sc-card"><div class="scl" data-zh="Freqtrade run" data-en="Freqtrade run">Freqtrade run</div><div class="scv up" style="font-size:13px">healthy</div></div>
+        </div>
+      </div>
+      <div class="col right">
+        <div class="col-title" data-zh="生命周期" data-en="Lifecycle">生命周期</div>
+        <div class="lifecycle-rail">
+          <div class="lr-node done"><span class="rd">✓</span><span>draft</span></div>
+          <div class="lr-line"></div>
+          <div class="lr-node done"><span class="rd">✓</span><span>validated</span></div>
+          <div class="lr-line"></div>
+          <div class="lr-node done"><span class="rd">✓</span><span>backtested</span></div>
+          <div class="lr-line"></div>
+          <div class="lr-node done"><span class="rd">✓</span><span>dry_running</span></div>
+          <div class="lr-line"></div>
+          <div class="lr-node done"><span class="rd">✓</span><span>paper_passed</span></div>
+          <div class="lr-line"></div>
+          <div class="lr-node cur"><span class="rd">●</span><span>live_small</span></div>
+          <div class="lr-line"></div>
+          <div class="lr-node"><span class="rd">5</span><span data-zh="需人工确认 + 独立资金池" data-en="manual + isolated pool">需人工确认</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---- ⑧ AI 投研室 ---- -->
+  <div class="mock-caption reveal">
+    <span class="num">08</span>
+    <h3 data-zh="AI 投研室" data-en="AI Research Room">AI 投研室</h3>
+    <span class="rt mono">/api/v2/research/runs</span>
+  </div>
+  <p class="mock-desc reveal" data-zh="TradingAgents 式多智能体投研：多头、空头、技术、情绪、链上、风控各持观点辩论，汇成最终评级与交易建议，可一键发布为 Signal 或创建 StrategyDraft。" data-en="TradingAgents-style multi-agent research: bull, bear, technical, sentiment, on-chain and risk agents debate into a final rating and trade suggestion, publishable as a Signal or a StrategyDraft in one tap.">TradingAgents 式多智能体投研：多头、空头、技术、情绪、链上、风控各持观点辩论，汇成最终评级与交易建议，可一键发布为 Signal 或创建 StrategyDraft。</p>
+  <div class="app-window reveal">
+    <div class="aw-bar">
+      <span class="d r"></span><span class="d y"></span><span class="d g"></span>
+      <span class="path">pulsedesk · ai-research / room</span>
+      <span class="route-pill">BTC/USDT · <span data-zh="深度" data-en="Deep">深度</span> · 6 agents</span>
+    </div>
+    <div class="aw-main">
+      <div class="debate">
+        <div class="agent-msg">
+          <div class="agent-av" style="background:rgba(32,178,108,.14)"><i class="ph ph-trend-up up"></i></div>
+          <div class="agent-body">
+            <div class="agent-head"><span class="agent-name" data-zh="多头研究员" data-en="Bull Analyst">多头研究员</span><span class="agent-role" style="background:rgba(32,178,108,.14);color:var(--bullish)">BULL</span><span class="agent-verdict up" data-zh="看多" data-en="Long">看多</span></div>
+            <div class="agent-text" data-zh="32 天底部横盘后放量突破颈线，MVRV 处于低位区间，链上长期持有者持续增持，风险回报比 3.2:1。" data-en="Volume breakout above neckline after a 32-day base, MVRV in the low band, long-term holders accumulating, R/R 3.2:1.">32 天底部横盘后放量突破颈线，MVRV 处于低位区间，链上长期持有者持续增持，风险回报比 3.2:1。</div>
+          </div>
+        </div>
+        <div class="agent-msg">
+          <div class="agent-av" style="background:rgba(239,69,74,.14)"><i class="ph ph-trend-down down"></i></div>
+          <div class="agent-body">
+            <div class="agent-head"><span class="agent-name" data-zh="空头研究员" data-en="Bear Analyst">空头研究员</span><span class="agent-role" style="background:rgba(239,69,74,.14);color:var(--bearish)">BEAR</span><span class="agent-verdict amb" data-zh="谨慎" data-en="Caution">谨慎</span></div>
+            <div class="agent-text" data-zh="资金费率偏高，若突破为假，上方套牢盘密集。建议减半仓位并等待回踩颈线确认。" data-en="Funding is elevated; if the breakout is fake, heavy overhead supply looms. Halve size and wait for a neckline retest.">资金费率偏高，若突破为假，上方套牢盘密集。建议减半仓位并等待回踩颈线确认。</div>
+          </div>
+        </div>
+        <div class="agent-msg">
+          <div class="agent-av" style="background:rgba(240,160,32,.14)"><i class="ph ph-shield-warning amb"></i></div>
+          <div class="agent-body">
+            <div class="agent-head"><span class="agent-name" data-zh="风控观点" data-en="Risk Agent">风控观点</span><span class="agent-role" style="background:rgba(240,160,32,.14);color:var(--amber)">RISK</span><span class="agent-verdict amb" data-zh="中等风险" data-en="Medium">中等风险</span></div>
+            <div class="agent-text" data-zh="操纵雷达该标的 0.18 低分，无高集中度信号。批准入场，但 can_live_trade=false，须人工确认。" data-en="Surveillance score 0.18 (low), no concentration flags. Entry approved, but can_live_trade=false pending manual review.">操纵雷达该标的 0.18 低分，无高集中度信号。批准入场，但 can_live_trade=false，须人工确认。</div>
+          </div>
+        </div>
+        <div class="final-rating">
+          <div class="fr-ring"><span>78</span></div>
+          <div>
+            <div class="fr-t" data-zh="最终评级 · 偏多 · 中等风险" data-en="Final rating · Bullish · Medium risk">最终评级 · 偏多 · 中等风险</div>
+            <div class="fr-d" data-zh="建议：分批建仓 60% 目标仓位，止损 -4%，回踩颈线加仓。" data-en="Suggestion: ladder to 60% target size, stop -4%, add on neckline retest.">建议：分批建仓 60% 目标仓位，止损 -4%，回踩颈线加仓。</div>
+          </div>
+          <div class="fr-act"><button class="btn-accent"><i class="ph ph-broadcast"></i> <span data-zh="发布为 Signal" data-en="Publish Signal">发布为 Signal</span></button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---- ⑨ 执行中心 ---- -->
+  <div class="mock-caption reveal">
+    <span class="num">09</span>
+    <h3 data-zh="执行中心" data-en="Execution Center">执行中心</h3>
+    <span class="rt mono">/api/execution/*</span>
+  </div>
+  <p class="mock-desc reveal" data-zh="执行命令中心：顶部紧急停止条 + LiveWire 模式指示，订单表带单笔取消与批量取消全部，每条记录可回溯来源 Signal / Agent / 策略。" data-en="Execution command center: emergency-stop bar plus a LiveWire mode strip, an order table with single and batch cancel, and full traceability back to the source Signal, agent and strategy.">执行命令中心：顶部紧急停止条 + LiveWire 模式指示，订单表带单笔取消与批量取消全部，每条记录可回溯来源 Signal / Agent / 策略。</p>
+  <div class="app-window reveal">
+    <div class="aw-bar">
+      <span class="d r"></span><span class="d y"></span><span class="d g"></span>
+      <span class="path">pulsedesk · execution / center</span>
+      <span class="route-pill up">● LIVE-SMALL · isolated pool</span>
+    </div>
+    <div class="aw-main">
+      <div class="exec-toolbar">
+        <span class="btn-mini danger"><i class="ph ph-stop-circle"></i> <span data-zh="紧急停止" data-en="Emergency stop">紧急停止</span></span>
+        <span class="btn-mini"><i class="ph ph-x-circle"></i> <span data-zh="取消全部" data-en="Cancel all">取消全部</span></span>
+        <span class="btn-mini"><i class="ph ph-arrows-in"></i> <span data-zh="全部平仓" data-en="Close all">全部平仓</span></span>
+        <span class="tr muted mono" style="margin-left:auto;font-size:11px">reconciliation ✓ · 0 drift</span>
+      </div>
+      <div class="term-h"><span class="tl" data-zh="活跃订单" data-en="Active orders">活跃订单</span><span class="tr muted">4 open</span></div>
+      <table class="data">
+        <thead><tr><th data-zh="标的" data-en="Pair">标的</th><th data-zh="类型" data-en="Type">类型</th><th data-zh="方向" data-en="Side">方向</th><th data-zh="数量" data-en="Amount">数量</th><th data-zh="价格" data-en="Price">价格</th><th data-zh="来源" data-en="Source">来源</th><th data-zh="状态" data-en="Status">状态</th><th></th></tr></thead>
+        <tbody>
+          <tr><td><span class="side-rail" style="background:var(--bullish)"></span><span class="sym">BTC/USDT</span></td><td class="muted">LIMIT</td><td class="up dir-tag">BUY</td><td>0.15</td><td>61,050</td><td class="muted" style="font-size:10px">sig · AI研究</td><td><span class="ostatus amb" style="background:rgba(240,160,32,.14);color:var(--amber)">PENDING</span></td><td><span class="btn-mini" style="padding:4px 8px"><i class="ph ph-x"></i></span></td></tr>
+          <tr><td><span class="side-rail" style="background:var(--bullish)"></span><span class="sym">SOL/USDT</span></td><td class="muted">MARKET</td><td class="up dir-tag">BUY</td><td>12.0</td><td class="muted">mkt</td><td class="muted" style="font-size:10px">strat · v3</td><td><span class="ostatus up" style="background:rgba(32,178,108,.14);color:var(--bullish)">FILLED</span></td><td></td></tr>
+          <tr><td><span class="side-rail" style="background:var(--bearish)"></span><span class="sym">DOGE/USDT</span></td><td class="muted">LIMIT</td><td class="down dir-tag">SELL</td><td>4200</td><td>0.1720</td><td class="muted" style="font-size:10px">sig · TA</td><td><span class="ostatus amb" style="background:rgba(240,160,32,.14);color:var(--amber)">PENDING</span></td><td><span class="btn-mini" style="padding:4px 8px"><i class="ph ph-x"></i></span></td></tr>
+          <tr><td><span class="side-rail" style="background:var(--bullish)"></span><span class="sym">ARB/USDT</span></td><td class="muted">LIMIT</td><td class="up dir-tag">BUY</td><td>800</td><td>1.150</td><td class="muted" style="font-size:10px">canvas</td><td><span class="ostatus" style="background:var(--surface-hi);color:var(--text-3)">CANCELLED</span></td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ---- ⑩ 市场结构 ---- -->
+  <div class="mock-caption reveal">
+    <span class="num">10</span>
+    <h3 data-zh="市场结构" data-en="Market Structure">市场结构</h3>
+    <span class="rt mono">/api/structure/*</span>
+  </div>
+  <p class="mock-desc reveal" data-zh="相关性矩阵热力图 + 结构状态条：一屏看清标的间相关性与各自的结构阶段（横盘 / 突破 / 派发），高相关暴露会喂给风控的组合相关性守卫。" data-en="Correlation heatmap plus a structure-status strip: cross-asset correlation and each symbol's structural phase (base / breakout / distribution) at a glance. High-correlation exposure feeds the portfolio-correlation guard.">相关性矩阵热力图 + 结构状态条：一屏看清标的间相关性与各自的结构阶段（横盘 / 突破 / 派发），高相关暴露会喂给风控的组合相关性守卫。</p>
+  <div class="app-window reveal">
+    <div class="aw-bar">
+      <span class="d r"></span><span class="d y"></span><span class="d g"></span>
+      <span class="path">pulsedesk · market / structure</span>
+      <span class="route-pill">6 symbols · 1h</span>
+    </div>
+    <div class="aw-main">
+      <div class="term-h"><span class="tl" data-zh="相关性矩阵" data-en="Correlation matrix">相关性矩阵</span><span class="tr muted">Pearson · 30d</span></div>
+      <div class="matrix">
+        <div class="matrix-row"><span></span><span class="matrix-head">BTC</span><span class="matrix-head">ETH</span><span class="matrix-head">SOL</span><span class="matrix-head">DOGE</span><span class="matrix-head">ARB</span><span class="matrix-head">LINK</span></div>
+        <div class="matrix-row"><span class="matrix-lab">BTC</span><span class="mcell" style="background:rgba(32,178,108,.55)">1.0</span><span class="mcell" style="background:rgba(32,178,108,.42)">.82</span><span class="mcell" style="background:rgba(32,178,108,.34)">.71</span><span class="mcell" style="background:rgba(240,160,32,.28)">.44</span><span class="mcell" style="background:rgba(32,178,108,.3)">.66</span><span class="mcell" style="background:rgba(32,178,108,.32)">.69</span></div>
+        <div class="matrix-row"><span class="matrix-lab">ETH</span><span class="mcell" style="background:rgba(32,178,108,.42)">.82</span><span class="mcell" style="background:rgba(32,178,108,.55)">1.0</span><span class="mcell" style="background:rgba(32,178,108,.4)">.78</span><span class="mcell" style="background:rgba(240,160,32,.24)">.39</span><span class="mcell" style="background:rgba(32,178,108,.36)">.73</span><span class="mcell" style="background:rgba(32,178,108,.38)">.75</span></div>
+        <div class="matrix-row"><span class="matrix-lab">SOL</span><span class="mcell" style="background:rgba(32,178,108,.34)">.71</span><span class="mcell" style="background:rgba(32,178,108,.4)">.78</span><span class="mcell" style="background:rgba(32,178,108,.55)">1.0</span><span class="mcell" style="background:rgba(240,160,32,.22)">.36</span><span class="mcell" style="background:rgba(32,178,108,.3)">.68</span><span class="mcell" style="background:rgba(32,178,108,.28)">.64</span></div>
+        <div class="matrix-row"><span class="matrix-lab">DOGE</span><span class="mcell" style="background:rgba(240,160,32,.28)">.44</span><span class="mcell" style="background:rgba(240,160,32,.24)">.39</span><span class="mcell" style="background:rgba(240,160,32,.22)">.36</span><span class="mcell" style="background:rgba(32,178,108,.55)">1.0</span><span class="mcell" style="background:rgba(240,160,32,.2)">.31</span><span class="mcell" style="background:rgba(240,160,32,.18)">.28</span></div>
+        <div class="matrix-row"><span class="matrix-lab">ARB</span><span class="mcell" style="background:rgba(32,178,108,.3)">.66</span><span class="mcell" style="background:rgba(32,178,108,.36)">.73</span><span class="mcell" style="background:rgba(32,178,108,.3)">.68</span><span class="mcell" style="background:rgba(240,160,32,.2)">.31</span><span class="mcell" style="background:rgba(32,178,108,.55)">1.0</span><span class="mcell" style="background:rgba(32,178,108,.34)">.71</span></div>
+        <div class="matrix-row"><span class="matrix-lab">LINK</span><span class="mcell" style="background:rgba(32,178,108,.32)">.69</span><span class="mcell" style="background:rgba(32,178,108,.38)">.75</span><span class="mcell" style="background:rgba(32,178,108,.28)">.64</span><span class="mcell" style="background:rgba(240,160,32,.18)">.28</span><span class="mcell" style="background:rgba(32,178,108,.34)">.71</span><span class="mcell" style="background:rgba(32,178,108,.55)">1.0</span></div>
+      </div>
+      <div class="term-h" style="margin-top:20px;"><span class="tl" data-zh="结构阶段" data-en="Structure phase">结构阶段</span></div>
+      <div class="struct-bar">
+        <div class="struct-cell"><div class="ssym">BTC</div><div class="ss up" data-zh="突破" data-en="Breakout">突破</div></div>
+        <div class="struct-cell"><div class="ssym">ETH</div><div class="ss amb" data-zh="横盘" data-en="Range">横盘</div></div>
+        <div class="struct-cell"><div class="ssym">SOL</div><div class="ss up" data-zh="上升" data-en="Markup">上升</div></div>
+        <div class="struct-cell"><div class="ssym">DOGE</div><div class="ss down" data-zh="派发" data-en="Distrib">派发</div></div>
+        <div class="struct-cell"><div class="ssym">ARB</div><div class="ss amb" data-zh="横盘" data-en="Range">横盘</div></div>
+        <div class="struct-cell"><div class="ssym">LINK</div><div class="ss up" data-zh="上升" data-en="Markup">上升</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---- ⑪ Agent 平台 ---- -->
+  <div class="mock-caption reveal">
+    <span class="num">11</span>
+    <h3 data-zh="Agent 平台" data-en="Agent Platform">Agent 平台</h3>
+    <span class="rt mono">/api/v2/agents</span>
+  </div>
+  <p class="mock-desc reveal" data-zh="管理长期运行的 AI-Trader 式 Agent：权限、胜率、平均收益、权重与降权。表现差的自动降权，全部只能发布 Signal，不能直接下单。" data-en="Manage long-running AI-Trader-style agents: permissions, win rate, average return, weight and demotion. Underperformers are auto-demoted; all can only publish Signals, never place orders.">管理长期运行的 AI-Trader 式 Agent：权限、胜率、平均收益、权重与降权。表现差的自动降权，全部只能发布 Signal，不能直接下单。</p>
+  <div class="app-window reveal">
+    <div class="aw-bar">
+      <span class="d r"></span><span class="d y"></span><span class="d g"></span>
+      <span class="path">pulsedesk · ai-research / agents</span>
+      <span class="route-pill">5 agents · signal-only</span>
+    </div>
+    <div class="aw-main">
+      <div class="agent-grid">
+        <div class="agent-card">
+          <div class="ah">
+            <div class="aic" style="background:rgba(32,178,108,.14)"><i class="ph ph-chart-line-up up"></i></div>
+            <div><div class="an" data-zh="趋势跟随者" data-en="Trend Follower">趋势跟随者</div><span class="aperm" style="background:rgba(32,178,108,.14);color:var(--bullish)">SIGNAL + PAPER</span></div>
+            <span class="astate up"><b style="background:var(--bullish)"></b>ACTIVE</span>
+          </div>
+          <div class="agent-stats">
+            <div class="as"><div class="asv up">68%</div><div class="asl" data-zh="胜率" data-en="Win">胜率</div></div>
+            <div class="as"><div class="asv up">+2.4%</div><div class="asl" data-zh="均收益" data-en="Avg">均收益</div></div>
+            <div class="as"><div class="asv">214</div><div class="asl" data-zh="信号数" data-en="Signals">信号数</div></div>
+          </div>
+          <div class="weight-row"><span class="weight-val" data-zh="权重" data-en="Weight">权重</span><div class="weight-track"><b class="up" style="width:82%;background:var(--bullish)"></b></div><span class="weight-val">0.82</span></div>
+        </div>
+        <div class="agent-card">
+          <div class="ah">
+            <div class="aic" style="background:rgba(23,192,201,.14)"><i class="ph ph-arrows-clockwise" style="color:var(--cyan)"></i></div>
+            <div><div class="an" data-zh="均值回归者" data-en="Mean Reverter">均值回归者</div><span class="aperm" style="background:rgba(23,192,201,.14);color:var(--cyan)">SIGNAL ONLY</span></div>
+            <span class="astate up"><b style="background:var(--bullish)"></b>ACTIVE</span>
+          </div>
+          <div class="agent-stats">
+            <div class="as"><div class="asv up">61%</div><div class="asl" data-zh="胜率" data-en="Win">胜率</div></div>
+            <div class="as"><div class="asv up">+1.1%</div><div class="asl" data-zh="均收益" data-en="Avg">均收益</div></div>
+            <div class="as"><div class="asv">156</div><div class="asl" data-zh="信号数" data-en="Signals">信号数</div></div>
+          </div>
+          <div class="weight-row"><span class="weight-val" data-zh="权重" data-en="Weight">权重</span><div class="weight-track"><b style="width:54%;background:var(--cyan)"></b></div><span class="weight-val">0.54</span></div>
+        </div>
+        <div class="agent-card">
+          <div class="ah">
+            <div class="aic" style="background:rgba(239,69,74,.14)"><i class="ph ph-trend-down down"></i></div>
+            <div><div class="an" data-zh="动量猎手" data-en="Momentum Hunter">动量猎手</div><span class="aperm" style="background:rgba(239,69,74,.14);color:var(--bearish)" data-zh="已降权" data-en="DEMOTED">已降权</span></div>
+            <span class="astate amb"><b style="background:var(--amber)"></b>THROTTLED</span>
+          </div>
+          <div class="agent-stats">
+            <div class="as"><div class="asv down">43%</div><div class="asl" data-zh="胜率" data-en="Win">胜率</div></div>
+            <div class="as"><div class="asv down">-0.8%</div><div class="asl" data-zh="均收益" data-en="Avg">均收益</div></div>
+            <div class="as"><div class="asv">98</div><div class="asl" data-zh="信号数" data-en="Signals">信号数</div></div>
+          </div>
+          <div class="weight-row"><span class="weight-val" data-zh="权重" data-en="Weight">权重</span><div class="weight-track"><b style="width:18%;background:var(--bearish)"></b></div><span class="weight-val">0.18</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<section id="signal" class="wrap">
+  <div class="reveal">
+    <div class="eyebrow"><span class="tick"></span><span data-zh="系统中枢契约" data-en="The core contract">系统中枢契约</span></div>
+    <h2 class="section-title" data-zh="Signal 不是 UI 卡片，是模块间传递观点的基础对象" data-en="A Signal isn't a UI card. It's the object modules speak in.">Signal 不是 UI 卡片，是模块间传递观点的基础对象</h2>
+    <p class="section-lead" data-zh="每条 Signal 都要回答八个问题：谁产生、看什么标的、什么方向、多可信、为什么、何时有效、能做什么、处于什么生命周期。" data-en="Every Signal answers eight questions: who, which symbol, what direction, how confident, why, when valid, what it may do, and its lifecycle stage.">每条 Signal 都要回答八个问题：谁产生、看什么标的、什么方向、多可信、为什么、何时有效、能做什么、处于什么生命周期。</p>
+  </div>
+  <div class="signal-layout">
+    <div class="lifecycle reveal">
+      <div class="lc-node"><span class="num">1</span><div><div class="lc-t">draft</div><div class="lc-d" data-zh="草稿生成" data-en="Draft created">草稿生成</div></div></div>
+      <div class="lc-line"></div>
+      <div class="lc-node"><span class="num">2</span><div><div class="lc-t">pending</div><div class="lc-d" data-zh="待确认入库" data-en="Queued for review">待确认入库</div></div></div>
+      <div class="lc-line"></div>
+      <div class="lc-node on"><span class="num">3</span><div><div class="lc-t">active</div><div class="lc-d" data-zh="生效，可被策略引用" data-en="Active, usable by strategies">生效，可被策略引用</div></div></div>
+      <div class="lc-line"></div>
+      <div class="lc-node"><span class="num">4</span><div><div class="lc-t">used / observed / rejected / expired</div><div class="lc-d" data-zh="进入策略 / 纸面观察 / 被拒 / 过期" data-en="In strategy / paper / rejected / expired">进入策略 / 纸面观察 / 被拒 / 过期</div></div></div>
+      <div class="lc-line"></div>
+      <div class="lc-node"><span class="num">5</span><div><div class="lc-t">executed / archived</div><div class="lc-d" data-zh="已执行 / 归档" data-en="Executed / archived">已执行 / 归档</div></div></div>
+    </div>
+    <div class="fields reveal">
+      <div class="fhead"><span data-zh="最小字段表（节选）" data-en="Minimal field set (excerpt)">最小字段表（节选）</span><span>required</span></div>
+      <div class="frow"><span class="fn">source_type</span><span class="ft">enum</span><span class="req">req</span></div>
+      <div class="frow"><span class="fn">symbol</span><span class="ft">string</span><span class="req">req</span></div>
+      <div class="frow"><span class="fn">direction</span><span class="ft">long/short/hold/risk</span><span class="req">req</span></div>
+      <div class="frow"><span class="fn">confidence</span><span class="ft">float 0-1</span><span class="req">req</span></div>
+      <div class="frow"><span class="fn">risk_level</span><span class="ft">low→extreme</span><span class="req">req</span></div>
+      <div class="frow"><span class="fn">reasoning</span><span class="ft">string</span><span class="req">req</span></div>
+      <div class="frow"><span class="fn">expires_at</span><span class="ft">datetime</span><span class="req">req</span></div>
+      <div class="frow"><span class="fn">permission</span><span class="ft">object · can_live=false</span><span class="req">req</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 技术底座 ===== -->
+<section id="stack" class="wrap">
+  <div class="reveal">
+    <h2 class="section-title" data-zh="Freqtrade 执行底座，双层风控兜底" data-en="Freqtrade execution base, dual-layer risk fallback">Freqtrade 执行底座，双层风控兜底</h2>
+    <p class="section-lead" data-zh="PulseDesk 不直接连交易所下单。执行走 Freqtrade 官方镜像 + REST/WebSocket + CCXT；AI 只允许生成规则 DSL，Freqtrade 加载固定模板。" data-en="PulseDesk never places orders directly. Execution runs through the official Freqtrade image, REST/WebSocket and CCXT. AI may only produce a rule DSL; Freqtrade loads a fixed template.">PulseDesk 不直接连交易所下单。执行走 Freqtrade 官方镜像 + REST/WebSocket + CCXT；AI 只允许生成规则 DSL，Freqtrade 加载固定模板。</p>
+  </div>
+  <div class="stack-row reveal">
+    <div class="stack-card"><i class="ph ph-cube big"></i><h4>Freqtrade</h4><p data-zh="官方 Docker 镜像，回测 / dry-run / live_small，原生止损兜底。" data-en="Official Docker image. Backtest / dry-run / live_small with native stop-loss fallback.">官方 Docker 镜像，回测 / dry-run / live_small，原生止损兜底。</p></div>
+    <div class="stack-card"><i class="ph ph-plugs-connected big"></i><h4>CCXT · REST/WS</h4><p data-zh="订单与控制走 REST，历史交易直读 SQLite，双通道不混用。" data-en="Orders and control over REST, trade history read directly from SQLite. Two channels, never conflated.">订单与控制走 REST，历史交易直读 SQLite，双通道不混用。</p></div>
+    <div class="stack-card"><i class="ph ph-brackets-curly big"></i><h4>StrategyRuleDSL</h4><p data-zh="AI 只产 JSON 规则，经 Validator 校验发布 RulePackage，不生成 Python。" data-en="AI emits JSON rules only, validated into a RulePackage. No Python generation.">AI 只产 JSON 规则，经 Validator 校验发布 RulePackage，不生成 Python。</p></div>
+    <div class="stack-card"><i class="ph ph-plug big"></i><h4>MCP · 只读</h4><p data-zh="外部 AI 客户端可读信号与持仓，v1 不允许下单或关闭风控。" data-en="External AI clients read signals and positions. v1 forbids ordering or disabling risk.">外部 AI 客户端可读信号与持仓，v1 不允许下单或关闭风控。</p></div>
+  </div>
+  <div class="guard-strip reveal">
+    <i class="ph-fill ph-shield-slash"></i>
+    <div>
+      <div class="gt" data-zh="失联即降级：freqtrade_native_guard_only" data-en="On disconnect it degrades: freqtrade_native_guard_only">失联即降级：freqtrade_native_guard_only</div>
+      <div class="gd" data-zh="PulseDesk 失联时禁止升级策略、禁止提高仓位、禁止启动新的 live_small，Freqtrade 仍独立执行基础止损与仓位限制。" data-en="When PulseDesk drops, no strategy upgrades, no larger positions, no new live_small. Freqtrade still enforces base stop-loss and position limits on its own.">PulseDesk 失联时禁止升级策略、禁止提高仓位、禁止启动新的 live_small，Freqtrade 仍独立执行基础止损与仓位限制。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== CTA ===== -->
+<section class="wrap">
+  <div class="cta-box reveal">
+    <h2 data-zh="一个人的量化工作台，强风控优先" data-en="A one-person quant desk, risk-first">一个人的量化工作台，强风控优先</h2>
+    <p data-zh="不做多用户、不做 SaaS、不做无人工确认的实盘。每天打开，先知道该做什么、不该做什么。" data-en="No multi-user, no SaaS, no unattended live trading. Open it daily and know what to do and what to avoid.">不做多用户、不做 SaaS、不做无人工确认的实盘。每天打开，先知道该做什么、不该做什么。</p>
+    <button class="btn-accent lg"><i class="ph ph-arrow-right"></i><span data-zh="进入工作台" data-en="Open the Desk">进入工作台</span></button>
+  </div>
+</section>
+
+<footer class="wrap">
+  <div class="foot-inner">
+    <div class="brand">
+      <div class="logo"><i class="ph-fill ph-pulse"></i></div>
+      <span>PulseDesk</span>
+    </div>
+    <div class="fl">AlphaLoop · PulseDesk v2.5 · <span data-zh="个人专用 AI 量化交易工作台" data-en="Personal AI quant trading desk">个人专用 AI 量化交易工作台</span></div>
+  </div>
+  <div class="foot-note" data-zh="本页为产品全景预览，界面数值为示例数据，不构成任何投资建议。" data-en="This page is a product overview preview. Displayed figures are sample data and are not investment advice.">本页为产品全景预览，界面数值为示例数据，不构成任何投资建议。</div>
+</footer>
+
+<script>
+  // 中英切换
+  (function () {
+    var btn = document.getElementById('langBtn');
+    var html = document.documentElement;
+    btn.addEventListener('click', function () {
+      var en = html.getAttribute('lang') === 'en-US';
+      html.setAttribute('lang', en ? 'zh-CN' : 'en-US');
+      btn.textContent = en ? '中 / EN' : 'EN / 中';
+    });
+  })();
+
+  // scroll reveal
+  (function () {
+    var els = document.querySelectorAll('.reveal');
+    if (!('IntersectionObserver' in window)) { els.forEach(function (e) { e.classList.add('in'); }); return; }
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
+      });
+    }, { threshold: .15, rootMargin: '0px 0px -8% 0px' });
+    els.forEach(function (e) { io.observe(e); });
+  })();
+
+  // tab 组切换（同组内互斥高亮）
+  (function () {
+    document.querySelectorAll('.tabbar').forEach(function (bar) {
+      bar.querySelectorAll('.tab').forEach(function (tab) {
+        tab.style.cursor = 'pointer';
+        tab.addEventListener('click', function () {
+          bar.querySelectorAll('.tab').forEach(function (t) { t.classList.remove('on'); });
+          tab.classList.add('on');
+        });
+      });
+    });
+  })();
+
+  // 策略清单项选中
+  (function () {
+    var items = document.querySelectorAll('.strat-item');
+    items.forEach(function (it) {
+      it.style.cursor = 'pointer';
+      it.addEventListener('click', function () {
+        items.forEach(function (x) { x.classList.remove('on'); });
+        it.classList.add('on');
+      });
+    });
+  })();
+</script>
+</body>
+</html>

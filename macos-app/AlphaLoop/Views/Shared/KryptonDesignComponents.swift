@@ -34,9 +34,9 @@ struct KryptonRiskBadge: View {
         var color: Color {
             switch self {
             case .low: return KryptonColor.green
-            case .medium: return Color(hex: "#f7a600")
+            case .medium: return KryptonColor.amber
             case .high: return KryptonColor.red
-            case .critical: return Color(hex: "#ff4500")
+            case .critical: return KryptonColor.orangeRed
             }
         }
 
@@ -89,7 +89,7 @@ struct KryptonSignalTag: View {
             switch self {
             case .long: return KryptonColor.green
             case .short: return KryptonColor.red
-            case .neutral: return Color(hex: "#f7a600")
+            case .neutral: return KryptonColor.amber
             }
         }
 
@@ -228,9 +228,9 @@ struct KryptonErrorBanner: View {
         var color: Color {
             switch self {
             case .info: return KryptonColor.green
-            case .warning: return Color(hex: "#f7a600")
+            case .warning: return KryptonColor.amber
             case .error: return KryptonColor.red
-            case .critical: return Color(hex: "#ff4500")
+            case .critical: return KryptonColor.orangeRed
             }
         }
 
@@ -294,7 +294,7 @@ struct KryptonSectionHeader: View {
     var body: some View {
         HStack(spacing: 6) {
             RoundedRectangle(cornerRadius: 1)
-                .fill(Color(hex: "#f7a600"))
+                .fill(KryptonColor.amber)
                 .frame(width: 2, height: 14)
 
             Text(title)
@@ -322,7 +322,7 @@ struct KryptonDesignComponents_Previews: PreviewProvider {
             KryptonSectionHeader(title: "Active Positions")
         }
         .padding()
-        .background(Color(hex: "#12151f"))
+        .background(KryptonColor.background)
         .environment(PulseColors(themeManager: ThemeManager()))
     }
 }

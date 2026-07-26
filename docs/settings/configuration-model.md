@@ -231,3 +231,34 @@ Seeded rows (4): `general.default_language=zh-CN`, `risk.max_single_loss=5.0`, `
 - Spec: `docs/superpowers/specs/2026-06-16-provider-adapter-foundation-design.md` §6
 - API contracts: `docs/backend/api-contracts.md`
 - Database notes: `docs/database/schema-notes.md`
+
+## UI Settings Endpoints (2026-07-10 update)
+
+The macOS settings page now connects to these real backend endpoints:
+
+| Endpoint | Purpose |
+|---|---|
+| `GET /auth/settings` | User-level settings (language, exchange, risk tolerance, notifications) |
+| `PUT /auth/settings` | Update user-level settings |
+| `GET /api/admin/system-settings` | List all system settings (optional `?category=` filter) |
+| `GET /api/admin/system-settings/{key}` | Get a single system setting |
+| `PUT /api/admin/system-settings/{key}` | Upsert a system setting |
+| `DELETE /api/admin/system-settings/{key}` | Delete a system setting |
+| `GET /api/admin/providers?category=llm` | List LLM provider configs (for LLM settings tab) |
+| `POST /api/admin/providers/{id}/test` | Test LLM provider connection |
+| `POST /api/admin/providers/{id}/enable` | Enable LLM provider |
+| `POST /api/admin/providers/{id}/disable` | Disable LLM provider |
+| `GET /api/system/services` | Service health status (for service management page) |
+
+### Settings Page Tabs
+
+| Tab | Sections | Backend Source |
+|---|---|---|
+| General | Language, Timezone, Default mode, Appearance, Profile | `/auth/settings` |
+| Trading | Exchange config, Risk parameters, Capital defaults | `/auth/settings` + `/api/admin/system-settings?category=risk` |
+| Data Sources | Provider configs (onchain/news/social/whale) | `/api/admin/providers` |
+| LLM Providers | Provider config, model, timeout, max tokens, temperature, test call | `/api/admin/providers?category=llm` |
+| Notifications | Telegram config, event subscriptions, severity threshold, test notification | `/auth/settings` + `/api/admin/providers?category=notification` |
+| Security | API key encryption status, audit log, sensitive info policy | `/api/admin/providers/{id}/audit-log` |
+| Advanced | Data cleanup, backup/export, danger zone | `/api/admin/system-settings?category=retention` |
+

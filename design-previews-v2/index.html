@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PulseDesk · 4×6 设计矩阵 · 页面 × 风格</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0A0B0D; --panel:#0E1013; --ink:#EAECEE; --dim:#8A9199; --faint:#565C64; --line:rgba(255,255,255,0.09);
+    --sans:'Space Grotesk',-apple-system,system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --c1:#2FBF71; --c2:#F5A623; --c3:#3D5AFE; --c4:#5CE6A8; --c5:#E5FF00; --c6:#C9A86A;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:var(--sans); background:var(--bg); color:var(--ink); min-height:100dvh; -webkit-font-smoothing:antialiased; }
+  a { color:inherit; }
+  .wrap { max-width:1400px; margin:0 auto; padding:52px 30px 90px; }
+  .kicker { font-family:var(--mono); font-size:12px; color:var(--faint); letter-spacing:0.14em; text-transform:uppercase; margin-bottom:16px; }
+  h1 { font-size:clamp(28px,4.5vw,42px); font-weight:700; letter-spacing:-0.03em; line-height:1.06; margin-bottom:16px; }
+  .lead { font-size:15px; color:var(--dim); line-height:1.75; max-width:76ch; }
+  .lead b { color:var(--ink); font-weight:500; }
+
+  /* 风格图例 */
+  .legend { display:flex; flex-wrap:wrap; gap:10px; margin:28px 0 8px; }
+  .lg { display:flex; align-items:center; gap:8px; font-family:var(--mono); font-size:12px; color:var(--dim); padding:6px 12px; border:1px solid var(--line); border-radius:8px; }
+  .dot { width:10px; height:10px; border-radius:50%; }
+
+  /* 矩阵 */
+  .matrix { margin-top:34px; overflow-x:auto; }
+  table { border-collapse:separate; border-spacing:10px; min-width:1040px; }
+  th.corner { text-align:left; vertical-align:bottom; padding:8px; width:150px; }
+  th.style-h { padding:10px 8px; text-align:center; vertical-align:bottom; width:150px; }
+  th.style-h .nm { font-size:13px; font-weight:600; }
+  th.style-h .sub { font-family:var(--mono); font-size:10px; color:var(--faint); margin-top:3px; letter-spacing:0.02em; }
+  th.style-h .bar { height:3px; border-radius:2px; margin-top:8px; }
+  td.row-h { font-size:13.5px; font-weight:600; vertical-align:middle; padding:0 8px; }
+  td.row-h .prd { display:block; font-family:var(--mono); font-size:10px; color:var(--faint); margin-top:3px; font-weight:400; }
+  td.row-h .fit { display:block; font-size:11px; color:var(--dim); margin-top:6px; font-weight:400; line-height:1.4; }
+
+  .cell { display:block; height:96px; border:1px solid var(--line); border-radius:10px; overflow:hidden; position:relative;
+    text-decoration:none; transition:transform .18s cubic-bezier(.16,1,.3,1),border-color .18s; }
+  .cell:hover { transform:translateY(-3px); border-color:rgba(255,255,255,0.3); }
+  .cell:focus-visible { outline:2px solid var(--c4); outline-offset:2px; }
+  .cell .thumb { position:absolute; inset:0; }
+  .cell .cap { position:absolute; left:0; right:0; bottom:0; padding:6px 8px; font-family:var(--mono); font-size:10px;
+    background:linear-gradient(0deg,rgba(0,0,0,0.75),transparent); color:#fff; letter-spacing:0.02em; }
+  .cell.rec::after { content:'★ 推荐'; position:absolute; top:6px; right:6px; font-family:var(--mono); font-size:9px;
+    background:var(--c4); color:#04120b; padding:2px 6px; border-radius:4px; font-weight:600; }
+  /* 缩略背景（区分风格） */
+  .t1 { background:#0D0F0E; background-image:radial-gradient(rgba(47,191,113,0.13) 1px,transparent 1px); background-size:11px 11px; }
+  .t2 { background:#080807; background-image:repeating-linear-gradient(0deg,transparent 0 3px,rgba(245,166,35,0.05) 3px 4px); }
+  .t3 { background:#F6F7FB; }
+  .t4 { background:#070B0C; background-image:radial-gradient(rgba(92,230,168,0.12) 1px,transparent 1px); background-size:13px 13px; }
+  .t5 { background:#0A0A0A; }
+  .t6 { background:#0B1310; }
+  .t3 .cap { background:linear-gradient(0deg,rgba(15,21,36,0.6),transparent); }
+  .tlabel { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-weight:700; opacity:0.5; }
+
+  /* 分析区 */
+  .analysis { margin-top:60px; }
+  .analysis h2 { font-size:24px; font-weight:700; letter-spacing:-0.02em; margin-bottom:8px; }
+  .analysis .sub { font-size:14px; color:var(--dim); margin-bottom:28px; }
+  .verdict { border:1px solid var(--line); border-radius:14px; padding:22px 26px; margin-bottom:16px; background:var(--panel); }
+  .verdict h3 { font-size:17px; font-weight:600; margin-bottom:4px; display:flex; align-items:center; gap:10px; }
+  .verdict h3 .prd { font-family:var(--mono); font-size:11px; color:var(--faint); font-weight:400; }
+  .verdict .win { font-family:var(--mono); font-size:12.5px; margin:12px 0 10px; padding:8px 12px; border-radius:8px; background:rgba(92,230,168,0.08); border:1px solid rgba(92,230,168,0.22); color:var(--c4); }
+  .verdict p { font-size:13.5px; color:var(--dim); line-height:1.7; margin-bottom:8px; }
+  .verdict p b { color:var(--ink); font-weight:500; }
+  .verdict .risk { font-size:12.5px; color:#E5A34D; }
+  .rec-final { border:1px solid rgba(92,230,168,0.3); background:rgba(92,230,168,0.05); border-radius:14px; padding:24px 28px; margin-top:24px; }
+  .rec-final h3 { font-size:18px; font-weight:700; margin-bottom:12px; color:var(--c4); }
+  .rec-final p { font-size:14px; color:var(--dim); line-height:1.8; margin-bottom:10px; }
+  .rec-final b { color:var(--ink); font-weight:600; }
+  .rec-final code { font-family:var(--mono); font-size:12.5px; color:var(--c4); }
+
+  .note { margin-top:36px; padding:20px 24px; border:1px solid var(--line); border-radius:12px; background:rgba(255,255,255,0.02); font-size:13px; color:var(--dim); line-height:1.75; }
+  .note b { color:var(--ink); }
+  @media (max-width:820px){ .wrap{padding:32px 18px 70px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="kicker">PulseDesk · Design Matrix · Page × Style</div>
+  <h1>4 个核心页面 × 6 套风格 = 24 格</h1>
+  <p class="lead">按最新 <b>PulseDesk PRD</b> 铺开：从「总控台」这一个页面，扩展到 PRD 里形态最不同的三个核心页——<b>Signal Center 信号中枢</b>(数据密集)、<b>AI 投研室</b>(多 Agent 辩论叙事)、<b>风控中心</b>(门禁状态机)。每格都能点进去全屏交互。下方是我的<b>风格适配分析</b>：哪个页面该用哪套、哪套会翻车。</p>
+
+  <div class="legend">
+    <span class="lg"><span class="dot" style="background:var(--c1)"></span>① LEDGER 链上账本</span>
+    <span class="lg"><span class="dot" style="background:var(--c2)"></span>② DEPTH 深度驾驶舱</span>
+    <span class="lg"><span class="dot" style="background:var(--c3)"></span>③ PROTOCOL 机构DeFi</span>
+    <span class="lg"><span class="dot" style="background:var(--c4)"></span>④ SPATIAL 策略星图</span>
+    <span class="lg"><span class="dot" style="background:var(--c5)"></span>⑤ BRUTALIST 生猛Degen</span>
+    <span class="lg"><span class="dot" style="background:var(--c6)"></span>⑥ RWA 机构衬线</span>
+  </div>
+
+  <div class="matrix">
+  <table>
+    <thead>
+      <tr>
+        <th class="corner"><span style="font-family:var(--mono);font-size:11px;color:var(--faint)">页面 ↓ / 风格 →</span></th>
+        <th class="style-h"><div class="nm">① LEDGER</div><div class="sub">Etherscan</div><div class="bar" style="background:var(--c1)"></div></th>
+        <th class="style-h"><div class="nm">② DEPTH</div><div class="sub">Bloomberg</div><div class="bar" style="background:var(--c2)"></div></th>
+        <th class="style-h"><div class="nm">③ PROTOCOL</div><div class="sub">Uniswap</div><div class="bar" style="background:var(--c3)"></div></th>
+        <th class="style-h"><div class="nm">④ SPATIAL</div><div class="sub">节点图谱</div><div class="bar" style="background:var(--c4)"></div></th>
+        <th class="style-h"><div class="nm">⑤ BRUTALIST</div><div class="sub">Blur/Blast</div><div class="bar" style="background:var(--c5)"></div></th>
+        <th class="style-h"><div class="nm">⑥ RWA</div><div class="sub">Ondo</div><div class="bar" style="background:var(--c6)"></div></th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Dashboard -->
+      <tr>
+        <td class="row-h">总控台<span class="prd">PRD 7.1</span><span class="fit">综合概览 / bento</span></td>
+        <td><a class="cell" href="01-ledger.html"><div class="thumb t1"><span class="tlabel" style="color:var(--c1)">▪▪▪</span></div><span class="cap">总控台 · LEDGER</span></a></td>
+        <td><a class="cell" href="02-depth.html"><div class="thumb t2"><span class="tlabel" style="color:var(--c2)">▤▤</span></div><span class="cap">总控台 · DEPTH</span></a></td>
+        <td><a class="cell" href="03-protocol.html"><div class="thumb t3"><span class="tlabel" style="color:var(--c3)">◲◲</span></div><span class="cap">总控台 · PROTOCOL</span></a></td>
+        <td><a class="cell" href="04-spatial.html"><div class="thumb t4"><span class="tlabel" style="color:var(--c4)">◉─◉</span></div><span class="cap">总控台 · SPATIAL</span></a></td>
+        <td><a class="cell" href="05-brutalist.html"><div class="thumb t5"><span class="tlabel" style="color:var(--c5)">■■</span></div><span class="cap">总控台 · BRUTALIST</span></a></td>
+        <td><a class="cell" href="06-rwa.html"><div class="thumb t6"><span class="tlabel" style="color:var(--c6)">§§</span></div><span class="cap">总控台 · RWA</span></a></td>
+      </tr>
+      <!-- Signal Center -->
+      <tr>
+        <td class="row-h">信号中枢<span class="prd">PRD 7.4</span><span class="fit">数据密集列表 · 冲突检测</span></td>
+        <td><a class="cell rec" href="signal-01-ledger.html"><div class="thumb t1"><span class="tlabel" style="color:var(--c1)">≣</span></div><span class="cap">信号中枢 · LEDGER</span></a></td>
+        <td><a class="cell rec" href="signal-02-depth.html"><div class="thumb t2"><span class="tlabel" style="color:var(--c2)">≣</span></div><span class="cap">信号中枢 · DEPTH</span></a></td>
+        <td><a class="cell" href="signal-03-protocol.html"><div class="thumb t3"><span class="tlabel" style="color:var(--c3)">≣</span></div><span class="cap">信号中枢 · PROTOCOL</span></a></td>
+        <td><a class="cell" href="signal-04-spatial.html"><div class="thumb t4"><span class="tlabel" style="color:var(--c4)">◉</span></div><span class="cap">信号中枢 · SPATIAL</span></a></td>
+        <td><a class="cell" href="signal-05-brutalist.html"><div class="thumb t5"><span class="tlabel" style="color:var(--c5)">≣</span></div><span class="cap">信号中枢 · BRUTALIST</span></a></td>
+        <td><a class="cell" href="signal-06-rwa.html"><div class="thumb t6"><span class="tlabel" style="color:var(--c6)">≣</span></div><span class="cap">信号中枢 · RWA</span></a></td>
+      </tr>
+      <!-- Research -->
+      <tr>
+        <td class="row-h">AI 投研室<span class="prd">PRD 7.2</span><span class="fit">多 Agent 辩论叙事</span></td>
+        <td><a class="cell" href="research-01-ledger.html"><div class="thumb t1"><span class="tlabel" style="color:var(--c1)">⇄</span></div><span class="cap">投研室 · LEDGER</span></a></td>
+        <td><a class="cell" href="research-02-depth.html"><div class="thumb t2"><span class="tlabel" style="color:var(--c2)">⇄</span></div><span class="cap">投研室 · DEPTH</span></a></td>
+        <td><a class="cell rec" href="research-03-protocol.html"><div class="thumb t3"><span class="tlabel" style="color:var(--c3)">⇄</span></div><span class="cap">投研室 · PROTOCOL</span></a></td>
+        <td><a class="cell rec" href="research-04-spatial.html"><div class="thumb t4"><span class="tlabel" style="color:var(--c4)">◉◄►◉</span></div><span class="cap">投研室 · SPATIAL</span></a></td>
+        <td><a class="cell" href="research-05-brutalist.html"><div class="thumb t5"><span class="tlabel" style="color:var(--c5)">⇄</span></div><span class="cap">投研室 · BRUTALIST</span></a></td>
+        <td><a class="cell rec" href="research-06-rwa.html"><div class="thumb t6"><span class="tlabel" style="color:var(--c6)">⇄</span></div><span class="cap">投研室 · RWA</span></a></td>
+      </tr>
+      <!-- Risk -->
+      <tr>
+        <td class="row-h">风控中心<span class="prd">PRD 7.9</span><span class="fit">门禁 · 状态机 · 警示</span></td>
+        <td><a class="cell" href="risk-01-ledger.html"><div class="thumb t1"><span class="tlabel" style="color:var(--c1)">⊘</span></div><span class="cap">风控 · LEDGER</span></a></td>
+        <td><a class="cell rec" href="risk-02-depth.html"><div class="thumb t2"><span class="tlabel" style="color:var(--c2)">⊘</span></div><span class="cap">风控 · DEPTH</span></a></td>
+        <td><a class="cell" href="risk-03-protocol.html"><div class="thumb t3"><span class="tlabel" style="color:var(--c3)">⊘</span></div><span class="cap">风控 · PROTOCOL</span></a></td>
+        <td><a class="cell rec" href="risk-04-spatial.html"><div class="thumb t4"><span class="tlabel" style="color:var(--c4)">◉!◉</span></div><span class="cap">风控 · SPATIAL</span></a></td>
+        <td><a class="cell rec" href="risk-05-brutalist.html"><div class="thumb t5"><span class="tlabel" style="color:var(--c5)">⊘</span></div><span class="cap">风控 · BRUTALIST</span></a></td>
+        <td><a class="cell" href="risk-06-rwa.html"><div class="thumb t6"><span class="tlabel" style="color:var(--c6)">⊘</span></div><span class="cap">风控 · RWA</span></a></td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <!-- 分析 -->
+  <div class="analysis">
+    <h2>风格适配分析</h2>
+    <p class="sub">逐页判断：哪套最扛得住、为什么，哪套会翻车。★ 是矩阵里我标的推荐格。</p>
+
+    <div class="verdict">
+      <h3>总控台 <span class="prd">PRD 7.1 · 综合概览</span></h3>
+      <div class="win">最佳：④ SPATIAL / ⑥ RWA　·　次：② DEPTH</div>
+      <p><b>SPATIAL</b> 把"策略节点+资金脉冲"当首屏，一眼看清全局拓扑，最贴合"打开就知道系统在干什么"。<b>RWA</b> 的财报式大数字最有"资产可信感"，适合你每天看权益。<b>DEPTH</b> 信息密度高但首屏略吵。</p>
+      <p class="risk">⚠ 翻车：⑤ BRUTALIST 做概览太吵、层级弱；③ PROTOCOL 浅色在长时间盯盘场景刺眼。</p>
+    </div>
+
+    <div class="verdict">
+      <h3>信号中枢 <span class="prd">PRD 7.4 · 数据密集列表</span></h3>
+      <div class="win">最佳：① LEDGER / ② DEPTH　·　次：④ SPATIAL</div>
+      <p>中枢的本质是<b>大量 Signal 的密集流 + 生命周期状态 + 冲突</b>。<b>LEDGER</b> 的账本流天生就是为"逐条带状态的记录"设计的，Signal 当"区块"完美贴合；<b>DEPTH</b> 的终端密集窗格能塞下最多信息、扫读最快，是专业操盘手最熟的形态。<b>SPATIAL</b> 把冲突做成"碰撞连线"很惊艳，但信号一多画布会乱。</p>
+      <p class="risk">⚠ 翻车：⑤ BRUTALIST 大字风格塞不下密集数据；⑥ RWA 衬线在高频扫读时不如等宽利落。</p>
+    </div>
+
+    <div class="verdict">
+      <h3>AI 投研室 <span class="prd">PRD 7.2 · 多 Agent 辩论叙事</span></h3>
+      <div class="win">最佳：④ SPATIAL / ③ PROTOCOL　·　次：⑥ RWA</div>
+      <p>这页是"辩论"，重叙事与关系。<b>SPATIAL</b> 把 6 个 Agent 做成围绕标的的节点、观点连线汇聚到中心评级——把"多方辩论"可视化到了极致，是全矩阵最惊艳的一格。<b>PROTOCOL</b> 干净浅色对话流最易读，像读一份现代研报。<b>RWA</b> 做成"机构投研纪要"(衬线+编号章节)也很有说服力。</p>
+      <p class="risk">⚠ 翻车：② DEPTH 密集终端不适合读长文辩论；① LEDGER 账本流表达不了"往复辩论"的关系。</p>
+    </div>
+
+    <div class="verdict">
+      <h3>风控中心 <span class="prd">PRD 7.9 · 门禁状态机 · 警示</span></h3>
+      <div class="win">最佳：⑤ BRUTALIST / ② DEPTH　·　次：④ SPATIAL</div>
+      <p>风控要的是<b>警示的冲击力 + 状态一目了然</b>。<b>BRUTALIST</b> 的黑黄红硬核警告 + 巨大紧急停止块，天生就是为"拦截/危险/别乱动"设计的，紧急停止这种场景它无可替代。<b>DEPTH</b> 的终端告警面板 + 琥珀高亮，专业感强、状态机清晰。<b>SPATIAL</b> 把触发的风险维度做成红色呼吸节点也很直观。</p>
+      <p class="risk">⚠ 翻车：③ PROTOCOL 柔和浅色削弱了警示的紧迫感；⑥ RWA 太庄重，紧急场景不够"跳"。</p>
+    </div>
+
+    <div class="rec-final">
+      <h3>我的收敛建议</h3>
+      <p>没有一套通吃四页——这正是这轮铺开要证明的事。数据浮现出一个清晰的<b>混合方案</b>：</p>
+      <p>· <b>主视觉基底</b>：<code>② DEPTH</code>（唯一在四页都进前二的风格，密度与专业感是量化台的底色）<br>
+      · <b>中枢/记录类</b>（信号中枢、执行记录、复盘）：主用 <code>① LEDGER</code> 账本流<br>
+      · <b>叙事/研究类</b>（AI 投研室、操控雷达）：主用 <code>④ SPATIAL</code> 节点图谱<br>
+      · <b>风控/警示类</b>：借用 <code>⑤ BRUTALIST</code> 的警告冲击力（局部，不必全站丑核）<br>
+      · <b>对外/资产展示</b>（如需给人看的权益报告）：<code>⑥ RWA</code> 备选</p>
+      <p>换句话说：<b>以 DEPTH 的密度骨架为地基，LEDGER 管记录、SPATIAL 管关系、BRUTALIST 管警示</b>——四套各司其职，共用一套克制的深色 token，不会打架。</p>
+      <p>你逐格看完后告诉我：认同这个混合逻辑，还是想<b>钦定一套通铺全站</b>？定了我就产出那套融合风格的 token + 1-2 张定稿页。</p>
+    </div>
+  </div>
+
+  <div class="note">
+    <b>关于每格：</b>四页共用同一份真实数据（来自 PRD 7.1/7.4/7.2/7.9 + Signal §4.5 契约），只有视觉语言不同，方便你横向对比纯风格。每格可点、有 hover/展开/CountUp 等真交互，全部支持 reduced-motion 降级与键盘 focus。<br>
+    <b>关于调研：</b>本环境联网搜索被安全策略拦截，六套风格锚定的是真实产品流派（Etherscan / Bloomberg / Uniswap / 节点图谱 / Blur / Ondo），非凭空生成。
+  </div>
+</div>
+</body>
+</html>

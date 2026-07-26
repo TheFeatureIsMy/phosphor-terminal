@@ -11,7 +11,7 @@ struct DrawerContainer<Content: View>: View {
     var body: some View {
         ZStack(alignment: .trailing) {
             if isPresented {
-                Color.black.opacity(0.4)
+                PulseGlass.modalBackdrop
                     .ignoresSafeArea()
                     .onTapGesture { isPresented = false }
                     .transition(.opacity)

@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AlphaLoop · 策略星图</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#070B0C;
+    --grid:rgba(120,180,170,0.06);
+    --node:#0F1614;
+    --node-border:#22403A;
+    --txt:#CFE0DA;
+    --txt-dim:#6C8079;
+    --lime:#5CE6A8;      /* 主强调 · 资金流 / 活跃 */
+    --blue:#3FA9E0;      /* 次强调 · 信号流 */
+    --up:#5CE6A8;
+    --down:#F0645B;
+    --warn:#E8B84B;
+    --panel:rgba(11,18,17,0.72);
+    --panel-border:rgba(92,230,168,0.14);
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:var(--bg);
+    color:var(--txt);
+    font-family:'IBM Plex Mono',ui-monospace,monospace;
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.display{font-family:'Space Grotesk',sans-serif}
+
+  /* ===== 空间画布 ===== */
+  .stage{
+    position:relative;
+    width:100vw;height:100vh;
+    background:
+      radial-gradient(1200px 800px at 62% 42%, rgba(92,230,168,0.05), transparent 60%),
+      radial-gradient(900px 700px at 20% 90%, rgba(63,169,224,0.045), transparent 55%),
+      var(--bg);
+  }
+  /* 点阵坐标背景 */
+  .stage::before{
+    content:"";
+    position:absolute;inset:0;
+    background-image:
+      radial-gradient(circle, var(--grid) 1px, transparent 1px);
+    background-size:34px 34px;
+    background-position:center;
+    pointer-events:none;
+  }
+  /* 极淡网格线 */
+  .stage::after{
+    content:"";
+    position:absolute;inset:0;
+    background-image:
+      linear-gradient(rgba(120,180,170,0.028) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(120,180,170,0.028) 1px, transparent 1px);
+    background-size:170px 170px;
+    pointer-events:none;
+  }
+
+  /* 顶栏坐标标注 */
+  .topbar{
+    position:absolute;top:0;left:0;right:0;height:52px;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 22px;
+    z-index:40;
+    pointer-events:none;
+  }
+  .brand{display:flex;align-items:center;gap:12px}
+  .brand .mark{width:26px;height:26px}
+  .brand .name{font-family:'Space Grotesk';font-weight:600;font-size:15px;letter-spacing:1px;color:var(--txt)}
+  .brand .tag{font-size:11px;color:var(--txt-dim);letter-spacing:2px;text-transform:uppercase}
+  .coord{font-size:11px;color:var(--txt-dim);letter-spacing:1.5px}
+  .coord b{color:var(--lime);font-weight:500}
+
+  /* ===== 图谱 SVG ===== */
+  .graph-wrap{position:absolute;inset:0;z-index:5}
+  svg.graph{width:100%;height:100%;display:block}
+
+  .edge{fill:none;stroke-linecap:round}
+  .edge-capital{stroke:rgba(92,230,168,0.20);stroke-width:1.4}
+  .edge-signal{stroke:rgba(63,169,224,0.20);stroke-width:1.4;stroke-dasharray:5 6}
+
+  .pulse-capital{fill:var(--lime)}
+  .pulse-signal{fill:var(--blue)}
+
+  /* 节点 */
+  .node{cursor:pointer}
+  .node .body{fill:var(--node);stroke:var(--node-border);stroke-width:1.4;transition:stroke .2s, filter .2s}
+  .node .glyph{fill:none;stroke:var(--txt-dim);stroke-width:1.4;transition:stroke .2s}
+  .node .ttl{font-family:'Space Grotesk';font-weight:600;font-size:14px;fill:var(--txt)}
+  .node .sub{font-family:'IBM Plex Mono';font-size:10.5px;fill:var(--txt-dim);letter-spacing:1px}
+  .node.active .body{stroke:var(--lime)}
+  .node.active .glyph{stroke:var(--lime)}
+  .node.hub .body{stroke:var(--lime)}
+  .node.hub .glyph{stroke:var(--lime)}
+  .node.source .glyph{stroke:var(--blue)}
+  .node.source .body{stroke:rgba(63,169,224,0.55)}
+  .node.caution .body{stroke:var(--warn)}
+  .node.caution .glyph{stroke:var(--warn)}
+
+  .node:hover .body{stroke:#EAF6F1}
+  .node:focus{outline:none}
+  .node:focus .body{stroke:#EAF6F1;filter:drop-shadow(0 0 6px rgba(234,246,241,.7))}
+
+  /* 呼吸光晕：活跃 & hub 节点 */
+  .node.active .halo,
+  .node.hub .halo{
+    fill:none;stroke:var(--lime);stroke-width:1;opacity:.5;
+    transform-box:fill-box;transform-origin:center;
+    animation:breathe 3.2s ease-in-out infinite;
+  }
+  .node.caution .halo{
+    fill:none;stroke:var(--warn);stroke-width:1;opacity:.45;
+    transform-box:fill-box;transform-origin:center;
+    animation:breathe 2.4s ease-in-out infinite;
+  }
+  @keyframes breathe{
+    0%,100%{opacity:.12;transform:scale(1)}
+    50%{opacity:.55;transform:scale(1.14)}
+  }
+
+  /* ===== 悬浮 HUD 面板 ===== */
+  .hud{
+    position:absolute;
+    backdrop-filter:blur(9px);
+    -webkit-backdrop-filter:blur(9px);
+    background:var(--panel);
+    border:1px solid var(--panel-border);
+    border-radius:12px;
+    z-index:30;
+  }
+  .hud-head{
+    display:flex;align-items:center;gap:8px;
+    font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--txt-dim);
+    margin-bottom:8px;
+  }
+  .hud-head .dot{width:6px;height:6px;border-radius:50%;background:var(--lime);box-shadow:0 0 8px var(--lime)}
+
+  /* 权益 HUD 右上 */
+  .hud-equity{top:66px;right:22px;width:296px;padding:16px 18px}
+  .hud-equity .label{font-size:11px;color:var(--txt-dim);letter-spacing:1px}
+  .hud-equity .eq{
+    font-family:'Space Grotesk';font-weight:600;
+    font-size:34px;line-height:1.1;color:var(--txt);margin-top:4px;
+    font-variant-numeric:tabular-nums;
+  }
+  .hud-equity .unit{font-size:13px;color:var(--txt-dim);font-family:'IBM Plex Mono'}
+  .hud-equity .pnl{
+    margin-top:10px;display:inline-flex;align-items:center;gap:8px;
+    font-size:13px;color:var(--up);
+    background:rgba(92,230,168,0.08);border:1px solid rgba(92,230,168,0.22);
+    padding:5px 10px;border-radius:8px;font-variant-numeric:tabular-nums;
+  }
+  .hud-equity .pnl .arrow{font-size:11px}
+  .spark{margin-top:12px;width:100%;height:40px;display:block}
+
+  /* 边缘 mini chip 面板 */
+  .chip{
+    position:absolute;z-index:30;
+    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+    background:var(--panel);border:1px solid var(--panel-border);
+    border-radius:10px;padding:11px 13px;width:210px;
+  }
+  .chip .ch-head{font-size:9.5px;letter-spacing:2px;text-transform:uppercase;color:var(--txt-dim);margin-bottom:8px;display:flex;justify-content:space-between}
+  .chip .row{display:flex;justify-content:space-between;align-items:baseline;font-size:11px;margin:3px 0}
+  .chip .row .k{color:var(--txt-dim)}
+  .chip .row .v{color:var(--txt);font-variant-numeric:tabular-nums}
+  .chip .v.good{color:var(--up)} .chip .v.bad{color:var(--down)} .chip .v.warn{color:var(--warn)}
+  .chip-runtime{top:66px;left:22px}
+  .chip-ready{top:220px;left:22px}
+  .chip-risk{bottom:150px;left:22px}
+
+  /* 就绪度环 */
+  .ready-ring{display:flex;align-items:center;gap:12px;margin-top:2px}
+  .ready-ring svg{flex:none}
+  .ready-ring .pct{font-family:'Space Grotesk';font-weight:600;font-size:20px;color:var(--lime);font-variant-numeric:tabular-nums}
+  .ready-ring .meta{font-size:10px;color:var(--txt-dim);line-height:1.5}
+
+  /* ===== 侧边 log 面板 ===== */
+  .logpanel{
+    position:absolute;top:340px;right:22px;width:296px;max-height:calc(100vh - 500px);
+    z-index:30;
+    backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);
+    background:var(--panel);border:1px solid var(--panel-border);
+    border-radius:12px;padding:14px;display:flex;flex-direction:column;
+  }
+  .logtabs{display:flex;gap:6px;margin-bottom:10px}
+  .logtab{
+    flex:1;font-family:'IBM Plex Mono';font-size:10.5px;letter-spacing:1px;
+    color:var(--txt-dim);background:transparent;border:1px solid var(--node-border);
+    border-radius:7px;padding:6px 4px;cursor:pointer;transition:.18s;
+  }
+  .logtab[aria-selected="true"]{color:var(--bg);background:var(--lime);border-color:var(--lime);font-weight:600}
+  .logtab:focus-visible{outline:2px solid #EAF6F1;outline-offset:2px}
+  .logfeed{overflow-y:auto;padding-right:4px;display:flex;flex-direction:column;gap:9px}
+  .logfeed::-webkit-scrollbar{width:5px}
+  .logfeed::-webkit-scrollbar-thumb{background:var(--node-border);border-radius:3px}
+  .logitem{border-left:2px solid var(--node-border);padding:2px 0 2px 10px}
+  .logitem.d{border-color:var(--blue)}
+  .logitem.a{border-color:var(--warn)}
+  .logitem.ok{border-color:var(--lime)}
+  .logitem .lt{font-size:11.5px;color:var(--txt);line-height:1.45}
+  .logitem .lm{font-size:10px;color:var(--txt-dim);margin-top:3px;letter-spacing:.5px}
+  .logitem .lm b{color:var(--lime);font-weight:500}
+  .hidden{display:none}
+
+  /* ===== 底部悬浮 dock ===== */
+  .dock{
+    position:absolute;left:50%;bottom:20px;transform:translateX(-50%);
+    z-index:35;
+    display:flex;align-items:stretch;gap:0;
+    backdrop-filter:blur(11px);-webkit-backdrop-filter:blur(11px);
+    background:rgba(9,15,14,0.82);border:1px solid var(--panel-border);
+    border-radius:14px;
+    box-shadow:0 8px 40px rgba(0,0,0,.5);
+    max-width:min(92vw,960px);
+  }
+  .dock-lbl{
+    display:flex;flex-direction:column;justify-content:center;
+    padding:0 16px;border-right:1px solid var(--node-border);
+  }
+  .dock-lbl .t{font-size:9.5px;letter-spacing:2px;text-transform:uppercase;color:var(--txt-dim)}
+  .dock-lbl .n{font-family:'Space Grotesk';font-weight:600;font-size:16px;color:var(--txt);margin-top:2px}
+  .dock-pos{display:flex;align-items:center;gap:8px;padding:12px 14px;overflow-x:auto}
+  .pos{
+    flex:none;background:var(--node);border:1px solid var(--node-border);
+    border-radius:9px;padding:8px 11px;min-width:118px;
+  }
+  .pos .p1{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--txt)}
+  .pos .side{font-size:8.5px;letter-spacing:1px;padding:1px 5px;border-radius:4px}
+  .pos .side.l{color:var(--up);background:rgba(92,230,168,0.1);border:1px solid rgba(92,230,168,0.3)}
+  .pos .side.s{color:var(--down);background:rgba(240,100,91,0.1);border:1px solid rgba(240,100,91,0.3)}
+  .pos .p2{font-family:'IBM Plex Mono';font-size:13px;margin-top:4px;font-variant-numeric:tabular-nums}
+  .pos .p2.up{color:var(--up)} .pos .p2.down{color:var(--down)}
+  .dock-stop{display:flex;align-items:center;padding:0 16px;border-left:1px solid var(--node-border)}
+  .estop{
+    font-family:'Space Grotesk';font-weight:600;font-size:12px;letter-spacing:1px;
+    color:#FCE9E7;background:rgba(240,100,91,0.14);border:1px solid rgba(240,100,91,0.5);
+    border-radius:9px;padding:11px 16px;cursor:pointer;
+    display:flex;align-items:center;gap:8px;transition:.18s;white-space:nowrap;
+  }
+  .estop:hover{background:rgba(240,100,91,0.24)}
+  .estop:focus-visible{outline:2px solid var(--down);outline-offset:2px}
+  .estop .ico{width:14px;height:14px}
+
+  /* ===== tooltip ===== */
+  .tooltip{
+    position:fixed;z-index:60;pointer-events:none;
+    background:rgba(9,15,14,0.94);border:1px solid var(--lime);
+    border-radius:9px;padding:9px 12px;min-width:150px;
+    opacity:0;transform:translateY(4px);transition:opacity .14s,transform .14s;
+  }
+  .tooltip.on{opacity:1;transform:translateY(0)}
+  .tooltip .tt{font-family:'Space Grotesk';font-weight:600;font-size:13px;color:var(--txt)}
+  .tooltip .ts{font-size:10px;color:var(--txt-dim);margin-top:3px;letter-spacing:.5px}
+  .tooltip .tp{font-size:11px;color:var(--lime);margin-top:6px;font-variant-numeric:tabular-nums}
+  .tooltip .st{display:inline-block;margin-top:5px;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--txt-dim)}
+
+  /* ===== 移动降级 ===== */
+  .mobile-list{display:none}
+  @media (max-width:768px){
+    body{overflow-y:auto}
+    .stage{height:auto;min-height:100vh;padding-bottom:40px}
+    .graph-wrap{display:none}
+    .chip,.logpanel,.dock,.hud-equity{position:static}
+    .topbar{position:static;height:auto;padding:14px 16px;flex-direction:column;gap:8px;align-items:flex-start}
+    .hud-equity,.chip,.logpanel{width:auto;margin:12px 16px}
+    .logpanel{max-height:none}
+    .dock{transform:none;left:auto;margin:12px 16px;flex-direction:column;max-width:none}
+    .dock-lbl,.dock-stop{border:none;border-bottom:1px solid var(--node-border);padding:12px 14px}
+    .dock-stop{border-bottom:none}
+    .estop{width:100%;justify-content:center}
+    .mobile-list{display:block;margin:12px 16px}
+    .mobile-list h3{font-size:13px;color:var(--txt-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px}
+    .mnode{background:var(--node);border:1px solid var(--node-border);border-radius:10px;padding:11px 13px;margin-bottom:8px;border-left-width:3px}
+    .mnode.active{border-left-color:var(--lime)} .mnode.source{border-left-color:var(--blue)}
+    .mnode.caution{border-left-color:var(--warn)} .mnode.hub{border-left-color:var(--lime)}
+    .mnode .mn{font-family:'Space Grotesk';font-weight:600;font-size:14px;color:var(--txt)}
+    .mnode .ms{font-size:10.5px;color:var(--txt-dim);margin-top:3px;letter-spacing:1px}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    .pulse-capital,.pulse-signal{display:none!important}
+    .node .halo{animation:none!important;opacity:.35!important}
+    .edge-signal{stroke-dasharray:none}
+    .spark .sweep{animation:none!important}
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+  <!-- 顶栏 -->
+  <div class="topbar">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <polygon points="12,2 21,7 21,17 12,22 3,17 3,7" stroke="#5CE6A8" stroke-width="1.4"/>
+        <circle cx="12" cy="12" r="3.2" fill="#5CE6A8"/>
+      </svg>
+      <div>
+        <div class="name">AlphaLoop</div>
+      </div>
+      <span class="tag">STRATEGY STARMAP</span>
+    </div>
+    <div class="coord">
+      NODES <b>6</b> · EDGES <b>7</b> · FLOW <b>LIVE</b> · UPTIME <b>14d 06:22</b>
+    </div>
+  </div>
+
+  <!-- 图谱 -->
+  <div class="graph-wrap">
+    <svg class="graph" viewBox="0 0 1200 720" preserveAspectRatio="xMidYMid meet" aria-label="策略拓扑星图">
+      <g id="edges"></g>
+      <g id="pulses"></g>
+      <g id="nodes"></g>
+    </svg>
+  </div>
+
+  <!-- 权益 HUD -->
+  <div class="hud hud-equity">
+    <div class="hud-head"><span class="dot"></span>ACCOUNT EQUITY</div>
+    <div class="label">账户总权益</div>
+    <div class="eq"><span id="equity">0.00</span> <span class="unit">USDT</span></div>
+    <div class="pnl"><span class="arrow">▲</span> 今日 +18,432.10 · +1.46%</div>
+    <svg class="spark" viewBox="0 0 260 40" preserveAspectRatio="none" aria-hidden="true">
+      <defs>
+        <linearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#5CE6A8" stop-opacity="0.28"/>
+          <stop offset="1" stop-color="#5CE6A8" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <path d="M0,30 L26,28 52,31 78,22 104,25 130,16 156,19 182,11 208,14 234,7 260,4 L260,40 L0,40 Z" fill="url(#sparkFill)"/>
+      <path d="M0,30 L26,28 52,31 78,22 104,25 130,16 156,19 182,11 208,14 234,7 260,4" fill="none" stroke="#5CE6A8" stroke-width="1.6"/>
+    </svg>
+  </div>
+
+  <!-- mini chip: 运行时 -->
+  <div class="chip chip-runtime">
+    <div class="ch-head"><span>RUNTIME</span><span>运行时</span></div>
+    <div class="row"><span class="k">活跃策略</span><span class="v good">7 / 12</span></div>
+    <div class="row"><span class="k">开放持仓</span><span class="v">9</span></div>
+    <div class="row"><span class="k">今日成交</span><span class="v">142</span></div>
+    <div class="row"><span class="k">运行时长</span><span class="v">14d 06:22</span></div>
+  </div>
+
+  <!-- mini chip: 就绪度 -->
+  <div class="chip chip-ready">
+    <div class="ch-head"><span>LIVE READINESS</span><span>就绪度</span></div>
+    <div class="ready-ring">
+      <svg width="52" height="52" viewBox="0 0 52 52" aria-hidden="true">
+        <circle cx="26" cy="26" r="22" fill="none" stroke="#22403A" stroke-width="4"/>
+        <circle cx="26" cy="26" r="22" fill="none" stroke="#5CE6A8" stroke-width="4"
+                stroke-linecap="round" stroke-dasharray="138.2" stroke-dashoffset="11"
+                transform="rotate(-90 26 26)"/>
+      </svg>
+      <div>
+        <div class="pct">92%</div>
+        <div class="meta">7/8 检查通过<br>API 正常 · 守卫 1 待确认</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- mini chip: 风险 -->
+  <div class="chip chip-risk">
+    <div class="ch-head"><span>GLOBAL RISK</span><span>全局风险</span></div>
+    <div class="row"><span class="k">当前回撤</span><span class="v bad">-4.82%</span></div>
+    <div class="row"><span class="k">保证金率</span><span class="v">18.4%</span></div>
+    <div class="row"><span class="k">敞口占比</span><span class="v warn">62%</span></div>
+    <div class="row"><span class="k">熔断未决</span><span class="v good">0</span></div>
+  </div>
+
+  <!-- 侧边 log 面板 -->
+  <div class="logpanel">
+    <div class="logtabs" role="tablist">
+      <button class="logtab" role="tab" aria-selected="true" id="tab-d" onclick="switchTab('d')">决策流 · 4</button>
+      <button class="logtab" role="tab" aria-selected="false" id="tab-a" onclick="switchTab('a')">风险告警 · 4</button>
+    </div>
+    <div class="logfeed" id="feed-d">
+      <div class="logitem d"><div class="lt">BTC 结构突破 · 建议加仓</div><div class="lm">评分 <b>0.82</b> · breakout_v3 · 12s 前</div></div>
+      <div class="logitem d"><div class="lt">ETH 网格再平衡 · 重置 8 档</div><div class="lm">grid_eth · 1m 前</div></div>
+      <div class="logitem d"><div class="lt">SOL 止盈 40% · 目标 172.4</div><div class="lm">sol_short · 3m 前</div></div>
+      <div class="logitem d"><div class="lt">情绪更新 · FinBERT 中性偏多</div><div class="lm">权重 <b>-0.1</b> · sentiment · 6m 前</div></div>
+    </div>
+    <div class="logfeed hidden" id="feed-a">
+      <div class="logitem a"><div class="lt">SOL 空头浮亏接近阈值 -1.8%</div><div class="lm">距止损 <b>0.6%</b> · 2m 前</div></div>
+      <div class="logitem a"><div class="lt">风控守卫待确认 · MTF CAUTION</div><div class="lm">risk_guard · 8m 前</div></div>
+      <div class="logitem ok"><div class="lt">对账通过 · 142 笔匹配</div><div class="lm">reconciliation · 14m 前</div></div>
+      <div class="logitem ok"><div class="lt">操纵雷达无异常 · 扫描 38 标的</div><div class="lm">manipulation · 20m 前</div></div>
+    </div>
+  </div>
+
+  <!-- 底部 dock -->
+  <div class="dock">
+    <div class="dock-lbl">
+      <div class="t">POSITIONS</div>
+      <div class="n">9 开放</div>
+    </div>
+    <div class="dock-pos">
+      <div class="pos"><div class="p1">BTC/USDT <span class="side l">LONG</span></div><div class="p2 up">+$2,476</div></div>
+      <div class="pos"><div class="p1">ETH/USDT <span class="side l">LONG</span></div><div class="p2 up">+$2,008</div></div>
+      <div class="pos"><div class="p1">SOL/USDT <span class="side s">SHORT</span></div><div class="p2 down">-$756</div></div>
+      <div class="pos"><div class="p1">AVAX/USDT <span class="side l">LONG</span></div><div class="p2 up">+$588</div></div>
+      <div class="pos"><div class="p1">LINK/USDT <span class="side s">SHORT</span></div><div class="p2 up">+$384</div></div>
+    </div>
+    <div class="dock-stop">
+      <button class="estop" aria-label="紧急停止全部策略">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <rect x="7" y="7" width="10" height="10" rx="1.5" fill="#F0645B"/>
+          <circle cx="12" cy="12" r="9.5" stroke="#F0645B" stroke-width="1.5"/>
+        </svg>
+        紧急停止
+      </button>
+    </div>
+  </div>
+
+  <!-- 移动降级列表 -->
+  <div class="mobile-list" id="mobileList">
+    <h3>策略节点 · Nodes</h3>
+  </div>
+</div>
+
+<div class="tooltip" id="tooltip" role="status" aria-live="polite">
+  <div class="tt" id="tt-t"></div>
+  <div class="ts" id="tt-s"></div>
+  <div class="tp" id="tt-p"></div>
+  <div class="st" id="tt-st"></div>
+</div>
+
+<script>
+"use strict";
+
+/* ===== 节点 & 边数据 ===== */
+const NODES = [
+  {id:'account',    x:600, y:380, shape:'hex',     r:52, ttl:'资金池', sub:'ACCOUNT · HUB',      kind:'hub',
+     tip:{name:'资金池 · Account Hub', status:'汇聚中心 · 资金调度', pos:'总权益 1,284,736.52 USDT'}},
+  {id:'breakout_v3',x:290, y:180, shape:'circle',  r:38, ttl:'breakout_v3', sub:'BTC · 活跃',     kind:'active',
+     tip:{name:'breakout_v3', status:'ACTIVE · 结构突破', pos:'BTC/USDT LONG · +$2,476'}},
+  {id:'grid_eth',   x:290, y:560, shape:'circle',  r:38, ttl:'grid_eth', sub:'ETH · 活跃',        kind:'active',
+     tip:{name:'grid_eth', status:'ACTIVE · 网格', pos:'ETH/USDT LONG · +$2,008'}},
+  {id:'sol_short',  x:910, y:180, shape:'circle',  r:38, ttl:'sol_short', sub:'SOL · 空 · 活跃',  kind:'active',
+     tip:{name:'sol_short', status:'ACTIVE · 做空', pos:'SOL/USDT SHORT · -$756'}},
+  {id:'sentiment',  x:620, y:88,  shape:'diamond', r:34, ttl:'sentiment', sub:'情绪源 · 信号',    kind:'source',
+     tip:{name:'sentiment', status:'SOURCE · FinBERT', pos:'情绪权重 -0.1 · 中性偏多'}},
+  {id:'risk_guard', x:910, y:560, shape:'diamond', r:36, ttl:'risk_guard', sub:'风控守卫 · CAUTION', kind:'caution',
+     tip:{name:'risk_guard', status:'CAUTION · MTF 守卫', pos:'1 待确认 · 距止损 0.6%'}},
+];
+
+const EDGES = [
+  {from:'account', to:'breakout_v3', type:'capital', curve:-40, dir:1},
+  {from:'account', to:'grid_eth',    type:'capital', curve: 40, dir:1},
+  {from:'account', to:'sol_short',   type:'capital', curve:-40, dir:1},
+  {from:'sentiment', to:'account',   type:'signal',  curve: 30, dir:1},
+  {from:'sentiment', to:'breakout_v3',type:'signal', curve: 30, dir:1},
+  {from:'risk_guard', to:'account',  type:'signal',  curve:-30, dir:1},
+  {from:'sol_short', to:'risk_guard',type:'signal',  curve: 45, dir:1},
+];
+
+const SVGNS = 'http://www.w3.org/2000/svg';
+const byId = id => NODES.find(n => n.id === id);
+const el = (tag, attrs) => {
+  const e = document.createElementNS(SVGNS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  return e;
+};
+
+function pathD(a, b, curve){
+  const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+  const dx = b.x - a.x, dy = b.y - a.y;
+  const len = Math.hypot(dx, dy) || 1;
+  const nx = -dy / len, ny = dx / len;
+  const cx = mx + nx * curve, cy = my + ny * curve;
+  return `M${a.x},${a.y} Q${cx},${cy} ${b.x},${b.y}`;
+}
+
+/* ===== 渲染边 + 脉冲 ===== */
+const gEdges = document.getElementById('edges');
+const gPulses = document.getElementById('pulses');
+const reduce = window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+
+EDGES.forEach((edge, i) => {
+  const a = byId(edge.from), b = byId(edge.to);
+  const d = pathD(a, b, edge.curve);
+  const pid = `edge-path-${i}`;
+
+  const p = el('path', {d, id:pid, class:`edge edge-${edge.type}`});
+  gEdges.appendChild(p);
+
+  if (!reduce){
+    // 每条边 2-3 个脉冲光点
+    const count = edge.type === 'capital' ? 3 : 2;
+    for (let k = 0; k < count; k++){
+      const dot = el('circle', {r: edge.type === 'capital' ? 3 : 2.4, class:`pulse-${edge.type}`});
+      const anim = el('animateMotion', {
+        dur: `${edge.type === 'capital' ? 3.4 : 4.2}s`,
+        repeatCount:'indefinite',
+        begin: `${(k * (edge.type==='capital'?3.4:4.2)/count).toFixed(2)}s`,
+        rotate:'auto',
+        keyPoints: edge.dir === 1 ? '0;1' : '1;0',
+        keyTimes:'0;1',
+        calcMode:'linear'
+      });
+      const mp = el('mpath', {});
+      mp.setAttributeNS('http://www.w3.org/1999/xlink', 'href', `#${pid}`);
+      mp.setAttribute('href', `#${pid}`);
+      anim.appendChild(mp);
+      dot.appendChild(anim);
+      gPulses.appendChild(dot);
+    }
+  }
+});
+
+/* ===== 渲染节点 ===== */
+const gNodes = document.getElementById('nodes');
+
+function nodeShape(n){
+  if (n.shape === 'circle') return el('circle', {cx:n.x, cy:n.y, r:n.r, class:'body'});
+  if (n.shape === 'hex'){
+    const pts = hexPts(n.x, n.y, n.r);
+    return el('polygon', {points:pts, class:'body'});
+  }
+  if (n.shape === 'diamond'){
+    const r = n.r;
+    const pts = `${n.x},${n.y-r} ${n.x+r},${n.y} ${n.x},${n.y+r} ${n.x-r},${n.y}`;
+    return el('polygon', {points:pts, class:'body'});
+  }
+}
+function hexPts(cx, cy, r){
+  let pts = [];
+  for (let i = 0; i < 6; i++){
+    const ang = Math.PI/180 * (60*i - 30);
+    pts.push(`${(cx + r*Math.cos(ang)).toFixed(1)},${(cy + r*Math.sin(ang)).toFixed(1)}`);
+  }
+  return pts.join(' ');
+}
+function glyph(n){
+  // 几何内符号
+  const g = el('g', {class:'glyph'});
+  const s = n.r * 0.42;
+  if (n.kind === 'hub'){
+    g.appendChild(el('circle',{cx:n.x,cy:n.y,r:s*0.5,fill:'#5CE6A8',stroke:'none'}));
+    for(let i=0;i<4;i++){
+      const ang=Math.PI/2*i;
+      g.appendChild(el('line',{x1:n.x+Math.cos(ang)*s*0.7,y1:n.y+Math.sin(ang)*s*0.7,
+        x2:n.x+Math.cos(ang)*s*1.3,y2:n.y+Math.sin(ang)*s*1.3}));
+    }
+  } else if (n.shape === 'diamond'){
+    g.appendChild(el('polygon',{points:`${n.x},${n.y-s} ${n.x+s},${n.y} ${n.x},${n.y+s} ${n.x-s},${n.y}`}));
+  } else {
+    g.appendChild(el('circle',{cx:n.x,cy:n.y,r:s}));
+    g.appendChild(el('circle',{cx:n.x,cy:n.y,r:s*0.42,fill:n.kind==='active'?'#5CE6A8':'none',stroke:'none'}));
+  }
+  return g;
+}
+
+NODES.forEach(n => {
+  const g = el('g', {class:`node ${n.kind}`, tabindex:'0', role:'button',
+                     'aria-label':`${n.ttl} ${n.sub}`});
+  // 呼吸光晕
+  if (n.kind === 'active' || n.kind === 'hub' || n.kind === 'caution'){
+    const halo = (n.shape === 'circle' || n.shape === 'hex')
+      ? el('circle', {cx:n.x, cy:n.y, r:n.r + 8, class:'halo'})
+      : el('circle', {cx:n.x, cy:n.y, r:n.r + 8, class:'halo'});
+    g.appendChild(halo);
+  }
+  g.appendChild(nodeShape(n));
+  g.appendChild(glyph(n));
+
+  const ttl = el('text', {x:n.x, y:n.y + n.r + 20, 'text-anchor':'middle', class:'ttl'});
+  ttl.textContent = n.ttl;
+  const sub = el('text', {x:n.x, y:n.y + n.r + 35, 'text-anchor':'middle', class:'sub'});
+  sub.textContent = n.sub;
+  g.appendChild(ttl);
+  g.appendChild(sub);
+
+  // tooltip 事件
+  const show = (ev) => showTip(n, ev);
+  g.addEventListener('mouseenter', show);
+  g.addEventListener('mousemove', show);
+  g.addEventListener('mouseleave', hideTip);
+  g.addEventListener('focus', () => showTipAt(n, g));
+  g.addEventListener('blur', hideTip);
+
+  gNodes.appendChild(g);
+});
+
+/* ===== tooltip 逻辑 ===== */
+const tip = document.getElementById('tooltip');
+function fillTip(n){
+  document.getElementById('tt-t').textContent = n.tip.name;
+  document.getElementById('tt-s').textContent = n.tip.status;
+  document.getElementById('tt-p').textContent = n.tip.pos;
+  document.getElementById('tt-st').textContent = n.id;
+}
+function showTip(n, ev){
+  fillTip(n);
+  tip.classList.add('on');
+  let x = ev.clientX + 16, y = ev.clientY + 16;
+  if (x + 190 > window.innerWidth) x = ev.clientX - 190;
+  if (y + 110 > window.innerHeight) y = ev.clientY - 110;
+  tip.style.left = x + 'px';
+  tip.style.top = y + 'px';
+}
+function showTipAt(n, g){
+  fillTip(n);
+  tip.classList.add('on');
+  const rect = g.getBoundingClientRect();
+  let x = rect.right + 10, y = rect.top;
+  if (x + 190 > window.innerWidth) x = rect.left - 190;
+  tip.style.left = x + 'px';
+  tip.style.top = y + 'px';
+}
+function hideTip(){ tip.classList.remove('on'); }
+
+/* ===== log tab 切换 ===== */
+function switchTab(which){
+  const isD = which === 'd';
+  document.getElementById('tab-d').setAttribute('aria-selected', isD);
+  document.getElementById('tab-a').setAttribute('aria-selected', !isD);
+  document.getElementById('feed-d').classList.toggle('hidden', !isD);
+  document.getElementById('feed-a').classList.toggle('hidden', isD);
+}
+window.switchTab = switchTab;
+
+/* ===== 权益 CountUp ===== */
+(function(){
+  const target = 1284736.52;
+  const node = document.getElementById('equity');
+  if (reduce){ node.textContent = target.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); return; }
+  const dur = 1400, start = performance.now();
+  function frame(now){
+    const t = Math.min(1, (now - start) / dur);
+    const ease = 1 - Math.pow(1 - t, 3);
+    const val = target * ease;
+    node.textContent = val.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+    if (t < 1) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+
+/* ===== 移动降级列表 ===== */
+(function(){
+  const list = document.getElementById('mobileList');
+  NODES.forEach(n => {
+    const d = document.createElement('div');
+    d.className = `mnode ${n.kind}`;
+    d.innerHTML = `<div class="mn">${n.ttl}</div><div class="ms">${n.tip.status} · ${n.tip.pos}</div>`;
+    list.appendChild(d);
+  });
+})();
+</script>
+</body>
+</html>

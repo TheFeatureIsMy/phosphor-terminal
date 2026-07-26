@@ -20,6 +20,7 @@ struct AlertTimeline: View {
                         title: L10n.Dashboard.alertTimeline,
                         description: ""
                     )
+                    .frame(maxWidth: .infinity, minHeight: 240)
                 } else {
                     ScrollView {
                         VStack(spacing: 0) {
@@ -28,7 +29,7 @@ struct AlertTimeline: View {
                             }
                         }
                     }
-                    .frame(maxHeight: 280)
+                    .frame(height: 240)
                 }
             }
         }

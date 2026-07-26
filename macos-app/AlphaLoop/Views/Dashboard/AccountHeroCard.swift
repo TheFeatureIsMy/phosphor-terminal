@@ -86,11 +86,11 @@ struct AccountHeroCard: View {
                 let isPositive = todayPnlPct >= 0
                 Image(systemName: isPositive ? "arrow.up.right" : "arrow.down.right")
                     .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(isPositive ? PulseColors.accent : PulseColors.danger)
+                    .foregroundStyle(isPositive ? PulseColors.bullish : PulseColors.bearish)
 
                 Text(String(format: "%+.2f%%", todayPnlPct * 100))
                     .font(PulseFonts.captionMedium)
-                    .foregroundStyle(isPositive ? PulseColors.accent : PulseColors.danger)
+                    .foregroundStyle(isPositive ? PulseColors.bullish : PulseColors.bearish)
 
                 Text("24h")
                     .font(PulseFonts.micro)
@@ -98,12 +98,12 @@ struct AccountHeroCard: View {
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
                     .background(
-                        RoundedRectangle(cornerRadius: PulseRadii.xs)
-                            .fill((isPositive ? PulseColors.accent : PulseColors.danger).opacity(0.10))
+                        RoundedRectangle(cornerRadius: PulseRadii.badge)
+                            .fill((isPositive ? PulseColors.bullish : PulseColors.bearish).opacity(0.10))
                     )
                     .overlay(
-                        RoundedRectangle(cornerRadius: PulseRadii.xs)
-                            .stroke((isPositive ? PulseColors.accent : PulseColors.danger).opacity(0.20), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: PulseRadii.badge)
+                            .stroke((isPositive ? PulseColors.bullish : PulseColors.bearish).opacity(0.20), lineWidth: 1)
                     )
             }
 
@@ -126,21 +126,21 @@ struct AccountHeroCard: View {
             metricColumn(
                 label: L10n.Dashboard.todayPnl,
                 value: formatPct(todayPnlPct),
-                color: todayPnlPct >= 0 ? PulseColors.accent : PulseColors.danger,
+                color: todayPnlPct >= 0 ? PulseColors.bullish : PulseColors.bearish,
                 absolute: ""
             )
             thinDivider
             metricColumn(
                 label: L10n.Dashboard.weekPnl,
                 value: formatPct(account?.weekPnlPct ?? 0),
-                color: (account?.weekPnlPct ?? 0) >= 0 ? PulseColors.accent : PulseColors.danger,
+                color: (account?.weekPnlPct ?? 0) >= 0 ? PulseColors.bullish : PulseColors.bearish,
                 absolute: ""
             )
             thinDivider
             metricColumn(
                 label: L10n.Dashboard.totalPnl,
                 value: formatMoney(kpis?.totalPnl ?? 0),
-                color: (kpis?.totalPnl ?? 0) >= 0 ? PulseColors.accent : PulseColors.danger,
+                color: (kpis?.totalPnl ?? 0) >= 0 ? PulseColors.bullish : PulseColors.bearish,
                 absolute: ""
             )
             thinDivider

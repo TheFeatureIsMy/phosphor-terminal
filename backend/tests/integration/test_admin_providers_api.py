@@ -29,6 +29,14 @@ import app.main as _main_mod
 _db_mod.init_db = lambda: None  # type: ignore[method-assign]
 _main_mod.init_db = lambda: None  # type: ignore[method-assign]
 
+# Rebuild engine + SessionLocal with the file-based SQLite URL we set above.
+# (conftest may have already created them with an in-memory SQLite.)
+from sqlalchemy import create_engine as _ce
+from sqlalchemy.orm import sessionmaker as _sm
+_new_engine = _ce(f"sqlite:///{_tmp_db.name}?check_same_thread=False")
+_db_mod.engine = _new_engine
+_db_mod.SessionLocal = _sm(autocommit=False, autoflush=False, bind=_new_engine)
+
 # Populate the provider registry so /categories and /create work.
 from app.services.providers.categories import register_all
 

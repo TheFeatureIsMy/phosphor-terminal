@@ -54,3 +54,6 @@ canvas-web/dist/
 .agents/
 skills/
 .claude/worktrees/
+
+# Local proxy override (VPN) — not for commit
+docker-compose.override.yml

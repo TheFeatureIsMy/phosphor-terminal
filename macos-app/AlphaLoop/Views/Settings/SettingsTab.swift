@@ -1,15 +1,15 @@
-// SettingsTab.swift — 设置页 Tab 枚举
+// SettingsTab.swift - 设置页 Tab 枚举
 
 import Foundation
 
 enum SettingsTab: String, CaseIterable, Identifiable {
-    case general       // 通用 (language + profile)
-    case trading       // 交易 (exchange + risk)
-    case notifications // 通知
-    case api           // API
-    case services      // 服务 (MCP)
-    case data          // 数据 (vacuum)
-    case advanced      // 高级 (danger zone)
+    case general        // 基础偏好 (language, timezone, appearance, default mode)
+    case trading        // 交易所 + 行情 + 风控 + 资金
+    case dataProviders  // 链上/新闻/巨鲸/社交数据源
+    case llm            // LLM 供应商 + 模型 + prompt registry
+    case notifications  // 通知管理
+    case security       // 安全 / 审计 / 网络
+    case advanced       // 高级 (备份/导出/danger zone)
 
     var id: String { rawValue }
 
@@ -17,10 +17,10 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         switch self {
         case .general: return "gearshape"
         case .trading: return "chart.bar"
+        case .dataProviders: return "externaldrive.connected.to.line.below"
+        case .llm: return "brain"
         case .notifications: return "bell"
-        case .api: return "key"
-        case .services: return "server.rack"
-        case .data: return "externaldrive.fill"
+        case .security: return "lock.shield"
         case .advanced: return "exclamationmark.triangle"
         }
     }
@@ -29,10 +29,10 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         switch self {
         case .general: return L10n.Settings.tabGeneral
         case .trading: return L10n.Settings.tabTrading
+        case .dataProviders: return L10n.Settings.tabDataProviders
+        case .llm: return L10n.Settings.tabLLM
         case .notifications: return L10n.Settings.tabNotifications
-        case .api: return L10n.Settings.tabAPI
-        case .services: return L10n.Settings.tabServices
-        case .data: return L10n.Settings.tabData
+        case .security: return L10n.Settings.tabSecurity
         case .advanced: return L10n.Settings.tabAdvanced
         }
     }

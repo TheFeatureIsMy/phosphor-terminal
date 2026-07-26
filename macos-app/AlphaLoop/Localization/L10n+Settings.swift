@@ -7,10 +7,10 @@ extension L10n {
         // Tabs
         static var tabGeneral: String { zh("通用", en: "General") }
         static var tabTrading: String { zh("交易", en: "Trading") }
+        static var tabDataProviders: String { zh("数据源", en: "Data Sources") }
+        static var tabLLM: String { zh("LLM 供应商", en: "LLM Providers") }
         static var tabNotifications: String { zh("通知", en: "Notifications") }
-        static var tabAPI: String { zh("API", en: "API") }
-        static var tabServices: String { zh("服务", en: "Services") }
-        static var tabData: String { zh("数据", en: "Data") }
+        static var tabSecurity: String { zh("安全", en: "Security") }
         static var tabAdvanced: String { zh("高级", en: "Advanced") }
 
         // General

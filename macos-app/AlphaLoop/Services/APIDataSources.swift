@@ -51,29 +51,23 @@ struct APIDataSources {
 
     /// GET /api/admin/providers → convert to DataSourceManagementBFFResponse
     func getAll() async throws -> DataSourceManagementBFFResponse {
-        let providers: [ProviderConfigView] = try await client.get("/api/admin/providers", mock: MockDataSources.allProviderConfigs)
+        let providers: [ProviderConfigView] = try await client.get("/api/admin/providers")
         return Self.convert(providers)
     }
 
     /// POST /api/admin/providers/{id}/test
     func testConnection(_ sourceId: String) async throws -> [String: String] {
-        try await client.post("/api/admin/providers/\(sourceId)/test", body: nil as String?) {
-            ["status": "ok", "latency_ms": "42"]
-        }
+        try await client.post("/api/admin/providers/\(sourceId)/test", body: nil)
     }
 
     /// POST /api/admin/providers/{id}/enable
     func enable(_ sourceId: String) async throws -> [String: String] {
-        try await client.post("/api/admin/providers/\(sourceId)/enable", body: nil as String?) {
-            ["status": "enabled"]
-        }
+        try await client.post("/api/admin/providers/\(sourceId)/enable", body: nil)
     }
 
     /// POST /api/admin/providers/{id}/disable
     func disable(_ sourceId: String) async throws -> [String: String] {
-        try await client.post("/api/admin/providers/\(sourceId)/disable", body: nil as String?) {
-            ["status": "disabled"]
-        }
+        try await client.post("/api/admin/providers/\(sourceId)/disable", body: nil)
     }
 
     // MARK: - Conversion
@@ -142,31 +136,6 @@ struct APIDataSources {
         )
     }
 }
-
-// MARK: - Mock
-
-enum MockDataSources {
-    static func allProviderConfigs() -> [ProviderConfigView] {
-        let now = Date()
-        return [
-            ProviderConfigView(id: 1, category: "cex", providerName: "binance", instanceName: nil, enabled: true, isActive: true, priority: 0, status: "active", credentialStatus: "configured", credentialsFields: ["api_key", "api_secret"], lastSyncAt: now, lastError: nil, latencyMs: 45, rateLimitRemaining: 1000, rateLimitResetAt: now.addingTimeInterval(60), config: [:], updatedAt: now),
-            ProviderConfigView(id: 2, category: "cex", providerName: "coinglass", instanceName: nil, enabled: true, isActive: true, priority: 1, status: "active", credentialStatus: "configured", credentialsFields: ["api_key"], lastSyncAt: now, lastError: nil, latencyMs: 320, rateLimitRemaining: 500, rateLimitResetAt: now.addingTimeInterval(300), config: [:], updatedAt: now),
-            ProviderConfigView(id: 3, category: "market_data", providerName: "cryptocompare_news", instanceName: nil, enabled: true, isActive: false, priority: 0, status: "error", credentialStatus: "invalid", credentialsFields: ["api_key"], lastSyncAt: now.addingTimeInterval(-3600 * 3), lastError: "API key expired", latencyMs: nil, rateLimitRemaining: nil, rateLimitResetAt: nil, config: [:], updatedAt: now),
-            ProviderConfigView(id: 4, category: "onchain", providerName: "whale_alert", instanceName: nil, enabled: true, isActive: true, priority: 0, status: "active", credentialStatus: "configured", credentialsFields: ["api_key"], lastSyncAt: now.addingTimeInterval(-600), lastError: nil, latencyMs: 200, rateLimitRemaining: 300, rateLimitResetAt: now.addingTimeInterval(3600), config: [:], updatedAt: now),
-            ProviderConfigView(id: 5, category: "onchain", providerName: "glassnode", instanceName: nil, enabled: false, isActive: false, priority: 1, status: "unknown", credentialStatus: "missing", credentialsFields: ["api_key"], lastSyncAt: nil, lastError: nil, latencyMs: nil, rateLimitRemaining: nil, rateLimitResetAt: nil, config: [:], updatedAt: now),
-            ProviderConfigView(id: 6, category: "social", providerName: "cryptocompare_social", instanceName: nil, enabled: true, isActive: true, priority: 0, status: "active", credentialStatus: "configured", credentialsFields: ["api_key"], lastSyncAt: now.addingTimeInterval(-900), lastError: nil, latencyMs: 150, rateLimitRemaining: 800, rateLimitResetAt: now.addingTimeInterval(120), config: [:], updatedAt: now),
-        ]
-    }
-
-    static func all() -> DataSourceManagementBFFResponse {
-        convert(allProviderConfigs())
-    }
-
-    static func convert(_ providers: [ProviderConfigView]) -> DataSourceManagementBFFResponse {
-        APIDataSources.convert(providers)
-    }
-}
-
 // MARK: - Real-time WebSocket streams
 
 struct ProviderHealthMessage: Codable {

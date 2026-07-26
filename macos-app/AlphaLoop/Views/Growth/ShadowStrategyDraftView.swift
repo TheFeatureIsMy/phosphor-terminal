@@ -69,7 +69,7 @@ struct ShadowStrategyDraftView: View {
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
                             .background(
-                                RoundedRectangle(cornerRadius: PulseRadii.xs)
+                                RoundedRectangle(cornerRadius: PulseRadii.badge)
                                     .fill(PulseColors.amber.opacity(0.1))
                             )
                     }
@@ -148,7 +148,7 @@ struct ShadowStrategyDraftView: View {
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
             .background(
-                RoundedRectangle(cornerRadius: PulseRadii.xs)
+                RoundedRectangle(cornerRadius: PulseRadii.badge)
                     .fill(statusColor(status).opacity(0.12))
             )
     }

@@ -160,7 +160,7 @@ struct SetupWizardView: View {
 
         return HStack {
             Image(systemName: isAvailable ? "checkmark.circle.fill" : "xmark.circle")
-                .foregroundStyle(isAvailable ? PulseColors.accent : PulseColors.danger)
+                .foregroundStyle(isAvailable ? PulseColors.success : PulseColors.danger)
 
             VStack(alignment: .leading) {
                 Text(name)

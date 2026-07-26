@@ -1,7 +1,33 @@
 # Remaining Production Blockers
 
-> 最后更新：2026-06-17
+> 最后更新：2026-07-10
 > 关联：[mock-removal-report.md](./mock-removal-report.md) · [production-readiness/status.md](./production-readiness/status.md) · [ui/page-acceptance.md](./ui/page-acceptance.md)
+
+
+---
+
+## 2026-07-10 更新 - 增长/系统/设置模块 mock 清除
+
+以下 macOS API 层 mock fallback 已全部移除，改为连接真实后端 API：
+
+| 模块 | 涉及文件 | 状态 |
+|---|---|---|
+| Growth API | APIGrowth, APIFailureClustering, APIFailureClusters, APIAttribution | mock 移除 |
+| Growth ViewModel | GrowthViewModel (SHAP/signal-validity fallback) | hardcoded fallback 移除 |
+| Growth View | GrowthView (summary stats hardcoded) | hardcoded 数据移除 |
+| Data Sources API | APIDataSources (MockDataSources) | mock 移除 |
+| AI Providers API | APIAIProviders (MockAIProviders) | mock 移除 |
+| Settings API | APISettings (mockSettings + mock update) | mock 移除 |
+| Service Management | APIServiceManagement (new), ServiceManagementView (new) | 新建, 无 mock |
+| Settings Page | SettingsView, LLMProviderSettingsView (new) | 重构, 连接真实 API |
+
+### 仍存在的 mock（非本轮任务范围）
+
+以下 API service 仍保留 mock fallback（不在增长/系统/设置三个任务范围内）：
+APIOverview, APIExecutionBFF, APIStrategiesV2, APIStrategies, APIResearch,
+APISentiment, APIDashboard, APIStrategyRuns, APIMcp, APIMarketStructure.
+
+这些 mock 在后端不可达时作为降级方案，不阻断核心功能。后续可逐个移除。
 
 本文件列出**未修复的投产阻断项**，按优先级排序。每项含：文件:行、根因、修复策略、预估工时、依赖。
 

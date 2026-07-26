@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlphaLoop · 机构月报</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B1310;
+    --panel:#101B16;
+    --hairline:#22322B;
+    --ink:#E8E4D6;
+    --ink-2:#8A9188;
+    --gold:#C9A86A;
+    --green-accent:#2E7D5B;
+    --up:#3E9B6E;
+    --down:#B54A45;
+    --warn:#C9922A;
+    --serif:'Cormorant Garamond', Georgia, serif;
+    --sans:'Inter', -apple-system, system-ui, sans-serif;
+    --mono:'IBM Plex Mono', ui-monospace, monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:15px;
+    line-height:1.5;
+    letter-spacing:.01em;
+    padding-bottom:96px;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:0 40px}
+
+  /* ---------- hairline draw-in ---------- */
+  .hair{height:1px;background:var(--hairline);transform:scaleX(0);transform-origin:left center;animation:draw .9s cubic-bezier(.22,.61,.36,1) forwards}
+  .fade{opacity:0;animation:fade 1s ease forwards}
+  .d1{animation-delay:.05s}.d2{animation-delay:.15s}.d3{animation-delay:.28s}
+  .d4{animation-delay:.42s}.d5{animation-delay:.56s}.d6{animation-delay:.7s}
+  @keyframes draw{to{transform:scaleX(1)}}
+  @keyframes fade{to{opacity:1}}
+
+  /* ---------- header ---------- */
+  header{padding:26px 0 20px}
+  .topbar{display:flex;align-items:baseline;justify-content:space-between;gap:24px;flex-wrap:wrap}
+  .brand{display:flex;align-items:baseline;gap:14px}
+  .brand .mark{font-family:var(--serif);font-weight:700;font-size:30px;letter-spacing:.02em;color:var(--ink)}
+  .brand .mark em{color:var(--gold);font-style:normal}
+  .brand .sub{font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--ink-2)}
+  .header-meta{font-size:12px;color:var(--ink-2);letter-spacing:.06em;text-align:right;line-height:1.7}
+  .header-meta b{color:var(--ink);font-weight:500}
+
+  .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}
+  .btn{
+    font-family:var(--sans);font-size:12.5px;font-weight:500;letter-spacing:.04em;
+    color:var(--ink);background:transparent;
+    border:1px solid var(--hairline);
+    padding:9px 16px;cursor:pointer;
+    transition:border-color .2s,color .2s,background .2s;
+  }
+  .btn:hover{border-color:var(--gold);color:var(--gold)}
+  .btn:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .btn.primary{border-color:var(--gold);color:var(--gold)}
+  .btn.primary:hover{background:rgba(201,168,106,.08)}
+  .btn.danger{border-color:#3a2321;color:#c98a86}
+  .btn.danger:hover{border-color:var(--down);color:var(--down)}
+
+  /* ---------- section labels ---------- */
+  .kicker{font-size:10.5px;letter-spacing:.3em;text-transform:uppercase;color:var(--ink-2);margin-bottom:14px}
+
+  /* ---------- equity hero ---------- */
+  .hero{padding:40px 0 34px}
+  .hero-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:48px;align-items:end}
+  .equity-label{font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--ink-2)}
+  .equity-num{font-family:var(--serif);font-weight:600;font-size:74px;line-height:.98;letter-spacing:-.01em;color:var(--ink);font-variant-numeric:tabular-nums;margin:8px 0 6px}
+  .equity-unit{font-family:var(--serif);font-size:30px;color:var(--gold);font-weight:600;margin-left:6px}
+  .equity-stamp{font-size:12px;color:var(--ink-2);letter-spacing:.08em}
+  .pnl-block{text-align:right}
+  .pnl-block .plabel{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-2)}
+  .pnl-num{font-family:var(--serif);font-weight:600;font-size:40px;color:var(--up);font-variant-numeric:tabular-nums;margin-top:4px}
+  .pnl-pct{font-family:var(--mono);font-size:14px;color:var(--up);margin-top:2px;letter-spacing:.02em}
+
+  /* ---------- factsheet metric grid ---------- */
+  .factsheet{padding:34px 0}
+  .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-top:1px solid var(--hairline);border-bottom:1px solid var(--hairline)}
+  .metric{padding:22px 22px 22px 0;border-right:1px solid var(--hairline)}
+  .metric:nth-child(4n){border-right:none;padding-right:0}
+  .metric:nth-child(n+5){border-top:1px solid var(--hairline)}
+  .metric .m-label{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-2);margin-bottom:10px}
+  .metric .m-num{font-family:var(--serif);font-weight:600;font-size:34px;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums}
+  .metric .m-num .m-unit{font-family:var(--sans);font-size:12px;font-weight:400;color:var(--ink-2);letter-spacing:.04em;margin-left:5px}
+  .metric .m-sub{font-size:11.5px;color:var(--ink-2);margin-top:8px;letter-spacing:.03em}
+  .metric .m-num.gold{color:var(--gold)}
+  .dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:6px;vertical-align:middle}
+  .dot.ok{background:var(--up)}.dot.warn{background:var(--warn)}.dot.neut{background:var(--green-accent)}
+
+  /* ---------- two-col report body ---------- */
+  .report{display:grid;grid-template-columns:1.35fr 1fr;gap:48px;padding:38px 0}
+  .panel-title{font-family:var(--serif);font-weight:600;font-size:23px;color:var(--ink);margin-bottom:4px;letter-spacing:.01em}
+  .panel-note{font-size:11px;color:var(--ink-2);letter-spacing:.05em;margin-bottom:18px}
+
+  /* ---------- holdings table ---------- */
+  table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+  thead th{
+    font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2);
+    font-weight:500;padding:0 0 12px;text-align:right;border-bottom:1px solid var(--hairline);
+  }
+  thead th:first-child{text-align:left}
+  tbody td{padding:14px 0;border-bottom:1px solid var(--hairline);font-size:14px;text-align:right;font-family:var(--mono);color:var(--ink)}
+  tbody td:first-child{text-align:left;font-family:var(--sans);font-weight:500;letter-spacing:.02em}
+  tbody tr:last-child td{border-bottom:none}
+  .side{font-family:var(--mono);font-size:11px;letter-spacing:.08em;padding:2px 7px;border:1px solid var(--hairline);color:var(--ink-2)}
+  .side.long{color:var(--up);border-color:rgba(62,155,110,.35)}
+  .side.short{color:var(--down);border-color:rgba(181,74,69,.35)}
+  .pos-up{color:var(--up)}
+  .pos-down{color:var(--down)}
+  .sym{display:flex;align-items:center;gap:9px}
+  .sym .side{flex:none}
+
+  /* ---------- feeds ---------- */
+  .feed-block{margin-bottom:34px}
+  .feed-item{display:grid;grid-template-columns:1fr auto;gap:12px;padding:15px 0;border-bottom:1px solid var(--hairline)}
+  .feed-item:last-child{border-bottom:none}
+  .feed-main{font-size:13.5px;color:var(--ink);line-height:1.45}
+  .feed-main .fi-tag{display:block;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2);margin-bottom:4px}
+  .feed-main .fi-meta{font-family:var(--mono);font-size:11px;color:var(--ink-2);margin-top:5px;letter-spacing:.02em}
+  .feed-time{font-family:var(--mono);font-size:11px;color:var(--ink-2);white-space:nowrap;padding-top:2px}
+  .sev{border-left:2px solid transparent;padding-left:14px}
+  .sev.warn{border-left-color:var(--warn)}
+  .sev.down{border-left-color:var(--down)}
+  .sev.ok{border-left-color:var(--green-accent)}
+  .sev.gold{border-left-color:var(--gold)}
+
+  /* ---------- emergency footer ---------- */
+  .estop{position:fixed;bottom:0;left:0;right:0;background:#0d1712;border-top:1px solid #2a3630;z-index:50}
+  .estop-inner{max-width:1180px;margin:0 auto;padding:14px 40px;display:flex;align-items:center;justify-content:space-between;gap:20px}
+  .estop-txt{font-size:12px;color:var(--ink-2);letter-spacing:.05em}
+  .estop-txt b{color:var(--warn);font-weight:600;letter-spacing:.08em}
+  .estop-btn{
+    font-family:var(--sans);font-size:12.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+    color:#d9a6a2;background:transparent;border:1px solid #4a2b28;padding:11px 26px;cursor:pointer;
+    transition:all .2s;
+  }
+  .estop-btn:hover{background:rgba(181,74,69,.12);border-color:var(--down);color:#e6b8b4}
+  .estop-btn:focus-visible{outline:2px solid var(--down);outline-offset:2px}
+
+  footer.colophon{padding:30px 0 10px;font-size:11px;color:var(--ink-2);letter-spacing:.08em;display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+
+  @media (max-width:768px){
+    .wrap{padding:0 22px}
+    .estop-inner{padding:12px 22px;flex-direction:column;align-items:stretch;text-align:center}
+    .hero-grid{grid-template-columns:1fr;gap:26px;align-items:start}
+    .pnl-block{text-align:left}
+    .equity-num{font-size:52px}
+    .metrics{grid-template-columns:repeat(2,1fr)}
+    .metric{border-right:1px solid var(--hairline);padding-right:22px}
+    .metric:nth-child(2n){border-right:none;padding-right:0}
+    .metric:nth-child(n+3){border-top:1px solid var(--hairline)}
+    .report{grid-template-columns:1fr;gap:36px}
+    table{font-size:12px}
+    tbody td{font-size:12px}
+    .header-meta{text-align:left}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    .hair{animation:none;transform:scaleX(1)}
+    .fade{animation:none;opacity:1}
+    *{animation-duration:0s !important;transition:none !important}
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <!-- HEADER -->
+  <header>
+    <div class="topbar fade d1">
+      <div class="brand">
+        <span class="mark">Alpha<em>Loop</em></span>
+        <span class="sub">Institutional Report</span>
+      </div>
+      <div class="header-meta">
+        <div><b>月度总览</b> · Monthly Overview</div>
+        <div>截至 2026-07-14 · UTC+8</div>
+      </div>
+    </div>
+    <div class="hair d1" style="margin-top:20px"></div>
+    <div class="actions fade d2">
+      <button class="btn primary">启动策略</button>
+      <button class="btn">回测</button>
+      <button class="btn">同步 Freqtrade</button>
+      <button class="btn danger">紧急停止</button>
+    </div>
+  </header>
+
+  <!-- EQUITY HERO -->
+  <section class="hero">
+    <div class="hero-grid">
+      <div class="fade d2">
+        <div class="equity-label">账户总权益 · Net Asset Value</div>
+        <div class="equity-num"><span id="equity">0.00</span><span class="equity-unit">USDT</span></div>
+        <div class="equity-stamp">截至 2026-07-14 · 每日结算 · 币本位以 USDT 计价</div>
+      </div>
+      <div class="pnl-block fade d3">
+        <div class="plabel">今日盈亏 · Daily P&amp;L</div>
+        <div class="pnl-num">+18,432.10</div>
+        <div class="pnl-pct">+1.46 % · vs. 前一结算日</div>
+      </div>
+    </div>
+    <div class="hair d3" style="margin-top:34px"></div>
+  </section>
+
+  <!-- FACTSHEET METRICS -->
+  <section class="factsheet fade d3">
+    <div class="kicker">Key Figures · 关键指标</div>
+    <div class="metrics">
+      <div class="metric">
+        <div class="m-label">活跃策略</div>
+        <div class="m-num">7<span class="m-unit">/ 12</span></div>
+        <div class="m-sub">运行时长 14d 06:22</div>
+      </div>
+      <div class="metric">
+        <div class="m-label">开放持仓</div>
+        <div class="m-num">9</div>
+        <div class="m-sub">今日成交 142 笔</div>
+      </div>
+      <div class="metric">
+        <div class="m-label">实盘就绪度</div>
+        <div class="m-num gold">92<span class="m-unit">%</span></div>
+        <div class="m-sub"><span class="dot ok"></span>7 / 8 检查通过</div>
+      </div>
+      <div class="metric">
+        <div class="m-label">风控守卫</div>
+        <div class="m-num">1</div>
+        <div class="m-sub"><span class="dot warn"></span>待确认 · API 连接正常</div>
+      </div>
+      <div class="metric">
+        <div class="m-label">当前回撤</div>
+        <div class="m-num pos-down" style="color:var(--down)">-4.82<span class="m-unit">%</span></div>
+        <div class="m-sub">峰值以来 · 未触发熔断</div>
+      </div>
+      <div class="metric">
+        <div class="m-label">保证金率</div>
+        <div class="m-num">18.4<span class="m-unit">%</span></div>
+        <div class="m-sub">健康区间</div>
+      </div>
+      <div class="metric">
+        <div class="m-label">敞口占比</div>
+        <div class="m-num">62<span class="m-unit">%</span></div>
+        <div class="m-sub">占总权益</div>
+      </div>
+      <div class="metric">
+        <div class="m-label">熔断事件</div>
+        <div class="m-num">0</div>
+        <div class="m-sub"><span class="dot neut"></span>未决 · 全域稳定</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- REPORT BODY -->
+  <section class="report">
+    <!-- HOLDINGS -->
+    <div class="fade d4">
+      <div class="panel-title">持仓明细</div>
+      <div class="panel-note">Open Positions · 共 5 项 · 未实现盈亏以标记价计</div>
+      <table>
+        <thead>
+          <tr>
+            <th>标的 / 方向</th>
+            <th>数量</th>
+            <th>开仓</th>
+            <th>标记</th>
+            <th>未实现盈亏</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><div class="sym"><span class="side long">LONG</span>BTC/USDT</div></td>
+            <td>0.842</td><td>61,240</td><td>64,180</td>
+            <td class="pos-up">+$2,476</td>
+          </tr>
+          <tr>
+            <td><div class="sym"><span class="side long">LONG</span>ETH/USDT</div></td>
+            <td>12.4</td><td>3,180</td><td>3,342</td>
+            <td class="pos-up">+$2,008</td>
+          </tr>
+          <tr>
+            <td><div class="sym"><span class="side short">SHORT</span>SOL/USDT</div></td>
+            <td>180</td><td>168.2</td><td>172.4</td>
+            <td class="pos-down">-$756</td>
+          </tr>
+          <tr>
+            <td><div class="sym"><span class="side long">LONG</span>AVAX/USDT</div></td>
+            <td>420</td><td>28.4</td><td>29.8</td>
+            <td class="pos-up">+$588</td>
+          </tr>
+          <tr>
+            <td><div class="sym"><span class="side short">SHORT</span>LINK/USDT</div></td>
+            <td>640</td><td>14.2</td><td>13.6</td>
+            <td class="pos-up">+$384</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- FEEDS -->
+    <div class="fade d5">
+      <div class="feed-block">
+        <div class="panel-title">AI 决策流</div>
+        <div class="panel-note">Model Decisions · 近 6 分钟</div>
+
+        <div class="feed-item sev gold">
+          <div class="feed-main">
+            <span class="fi-tag">BTC · 结构突破</span>
+            建议加仓
+            <span class="fi-meta">评分 0.82 · breakout_v3</span>
+          </div>
+          <div class="feed-time">12s</div>
+        </div>
+        <div class="feed-item sev ok">
+          <div class="feed-main">
+            <span class="fi-tag">ETH · 网格再平衡</span>
+            重置 8 档
+            <span class="fi-meta">grid_rebalance</span>
+          </div>
+          <div class="feed-time">1m</div>
+        </div>
+        <div class="feed-item sev ok">
+          <div class="feed-main">
+            <span class="fi-tag">SOL · 止盈</span>
+            止盈 40%
+            <span class="fi-meta">目标 172.4</span>
+          </div>
+          <div class="feed-time">3m</div>
+        </div>
+        <div class="feed-item sev ok">
+          <div class="feed-main">
+            <span class="fi-tag">情绪更新</span>
+            FinBERT 中性偏多
+            <span class="fi-meta">权重 -0.1</span>
+          </div>
+          <div class="feed-time">6m</div>
+        </div>
+      </div>
+
+      <div class="feed-block">
+        <div class="panel-title">风险告警</div>
+        <div class="panel-note">Risk Alerts · 近 20 分钟</div>
+
+        <div class="feed-item sev down">
+          <div class="feed-main">
+            <span class="fi-tag">SOL 空头 · 浮亏</span>
+            接近止损阈值
+            <span class="fi-meta">-1.8% · 距止损 0.6%</span>
+          </div>
+          <div class="feed-time">2m</div>
+        </div>
+        <div class="feed-item sev warn">
+          <div class="feed-main">
+            <span class="fi-tag">风控守卫</span>
+            待确认
+            <span class="fi-meta">MTF CAUTION</span>
+          </div>
+          <div class="feed-time">8m</div>
+        </div>
+        <div class="feed-item sev ok">
+          <div class="feed-main">
+            <span class="fi-tag">对账</span>
+            全部通过
+            <span class="fi-meta">142 笔匹配</span>
+          </div>
+          <div class="feed-time">14m</div>
+        </div>
+        <div class="feed-item sev neut">
+          <div class="feed-main">
+            <span class="fi-tag">操纵雷达</span>
+            无异常
+            <span class="fi-meta">扫描 38 标的</span>
+          </div>
+          <div class="feed-time">20m</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="hair d6"></div>
+
+  <footer class="colophon fade d6">
+    <span>AlphaLoop · AI-Driven Quantitative Trading Desk</span>
+    <span>本报告仅供内部风控参考 · Not for public distribution</span>
+  </footer>
+
+</div>
+
+<!-- EMERGENCY STOP FOOTER -->
+<div class="estop">
+  <div class="estop-inner">
+    <div class="estop-txt">紧急停止总控 · <b>EMERGENCY STOP</b> · 立即撤销全部挂单并平仓所有持仓，操作不可逆。</div>
+    <button class="estop-btn">紧急停止</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+  var target = 1284736.52;
+  var el = document.getElementById('equity');
+  function fmt(n){ return n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+  if(reduce){ el.textContent = fmt(target); return; }
+  var dur = 1600, start = null;
+  function ease(t){ return 1 - Math.pow(1 - t, 3); } // easeOutCubic, calm
+  function step(ts){
+    if(!start) start = ts;
+    var p = Math.min((ts - start) / dur, 1);
+    el.textContent = fmt(target * ease(p));
+    if(p < 1) requestAnimationFrame(step);
+    else el.textContent = fmt(target);
+  }
+  requestAnimationFrame(step);
+})();
+</script>
+
+</body>
+</html>

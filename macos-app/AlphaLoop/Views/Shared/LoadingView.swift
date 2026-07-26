@@ -62,19 +62,19 @@ struct LoadingView: View {
 
     private var listRowSkeleton: some View {
         HStack(spacing: PulseSpacing.sm) {
-            RoundedRectangle(cornerRadius: PulseRadii.xs)
+            RoundedRectangle(cornerRadius: PulseRadii.badge)
                 .fill(colors.surface).frame(width: 24, height: 24)
                 .shimmerWithDelay(phase: 0)
             VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
-                RoundedRectangle(cornerRadius: PulseRadii.xs)
+                RoundedRectangle(cornerRadius: PulseRadii.badge)
                     .fill(colors.surface).frame(width: 120, height: 14)
                     .shimmerWithDelay(phase: 0.05)
-                RoundedRectangle(cornerRadius: PulseRadii.xs)
+                RoundedRectangle(cornerRadius: PulseRadii.badge)
                     .fill(colors.surface).frame(width: 80, height: 10)
                     .shimmerWithDelay(phase: 0.1)
             }
             Spacer()
-            RoundedRectangle(cornerRadius: PulseRadii.xs)
+            RoundedRectangle(cornerRadius: PulseRadii.badge)
                 .fill(colors.surface).frame(width: 60, height: 14)
                 .shimmerWithDelay(phase: 0.15)
         }
@@ -86,20 +86,20 @@ struct LoadingView: View {
 
     private var detailSkeleton: some View {
         VStack(alignment: .leading, spacing: PulseSpacing.md) {
-            RoundedRectangle(cornerRadius: PulseRadii.xs)
+            RoundedRectangle(cornerRadius: PulseRadii.badge)
                 .fill(colors.surface).frame(width: 200, height: 24)
                 .shimmerWithDelay(phase: 0)
-            RoundedRectangle(cornerRadius: PulseRadii.xs)
+            RoundedRectangle(cornerRadius: PulseRadii.badge)
                 .fill(colors.surface).frame(height: 120)
                 .shimmerWithDelay(phase: 0.1)
             VStack(spacing: PulseSpacing.sm) {
                 ForEach(0..<4, id: \.self) { i in
                     HStack {
-                        RoundedRectangle(cornerRadius: PulseRadii.xs)
+                        RoundedRectangle(cornerRadius: PulseRadii.badge)
                             .fill(colors.surface).frame(width: 100, height: 14)
                             .shimmerWithDelay(phase: Double(i) * 0.1)
                         Spacer()
-                        RoundedRectangle(cornerRadius: PulseRadii.xs)
+                        RoundedRectangle(cornerRadius: PulseRadii.badge)
                             .fill(colors.surface).frame(width: 140, height: 14)
                             .shimmerWithDelay(phase: Double(i) * 0.1 + 0.05)
                     }

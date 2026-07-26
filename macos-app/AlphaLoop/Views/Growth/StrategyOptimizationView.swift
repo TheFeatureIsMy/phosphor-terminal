@@ -42,19 +42,12 @@ struct StrategyOptimizationView: View {
     // MARK: - Header
 
     private var pageHeader: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
-                Text(L10n.zh("策略优化", en: "Strategy Optimization"))
-                    .font(PulseFonts.displayHeading)
-                    .foregroundStyle(colors.textPrimary)
-                HStack(spacing: PulseSpacing.xxs) {
-                    StatusDot(status: .online)
-                    Text(L10n.zh("AI 驱动的策略改进建议", en: "AI-powered strategy improvement recommendations"))
-                        .font(PulseFonts.caption)
-                        .foregroundStyle(colors.textMuted)
-                }
-            }
-            Spacer()
+        QuantPageHeader(
+            eyebrow: "GROWTH",
+            title: L10n.zh("策略优化", en: "Strategy Optimization"),
+            subtitle: L10n.zh("AI 驱动的策略改进建议", en: "AI-powered strategy improvement recommendations")
+        ) {
+            StatusDot(status: .online)
         }
     }
 
@@ -144,37 +137,26 @@ struct StrategyOptimizationView: View {
     // MARK: - Summary Cards
 
     private func summaryCards(vm: StrategyOptimizationViewModel) -> some View {
-        HStack(spacing: PulseSpacing.sm) {
-            summaryCard(
-                label: L10n.zh("待审核", en: "Pending Review"),
-                value: "\(vm.pendingCandidates.count)",
-                color: PulseColors.warning
-            )
-            summaryCard(
-                label: L10n.zh("已确认", en: "Confirmed"),
-                value: "\(vm.confirmedCandidates.count)",
-                color: PulseColors.success
-            )
-            summaryCard(
-                label: L10n.zh("已拒绝", en: "Rejected"),
-                value: "\(vm.rejectedCandidates.count)",
-                color: PulseColors.danger
-            )
-        }
-    }
-
-    private func summaryCard(label: String, value: String, color: Color) -> some View {
-        KryptonCard(emphasis: .subtle) {
-            VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
-                Text(label)
-                    .font(PulseFonts.micro)
-                    .foregroundStyle(colors.textMuted)
-                    .textCase(.uppercase)
-                Text(value)
-                    .font(PulseFonts.tabularLarge)
-                    .foregroundStyle(color)
-            }
-        }
+        MetricTileGrid(
+            tiles: [
+                MetricTileData(
+                    label: L10n.zh("待审核", en: "Pending Review"),
+                    value: "\(vm.pendingCandidates.count)",
+                    valueColor: PulseColors.warning
+                ),
+                MetricTileData(
+                    label: L10n.zh("已确认", en: "Confirmed"),
+                    value: "\(vm.confirmedCandidates.count)",
+                    valueColor: PulseColors.success
+                ),
+                MetricTileData(
+                    label: L10n.zh("已拒绝", en: "Rejected"),
+                    value: "\(vm.rejectedCandidates.count)",
+                    valueColor: PulseColors.danger
+                ),
+            ],
+            columns: 3
+        )
     }
 
     // MARK: - Tab Selector
@@ -287,16 +269,14 @@ struct StrategyOptimizationView: View {
                 }
 
                 // Metrics row
-                HStack(spacing: PulseSpacing.lg) {
-                    // Confidence
-                    if let confidence = candidate.confidence {
-                        metricPill(
-                            label: L10n.zh("置信度", en: "Confidence"),
-                            value: String(format: "%.0f%%", confidence * 100),
-                            color: confidenceColor(confidence)
-                        )
-                    }
-                    // Source type
+               HStack(spacing: PulseSpacing.lg) {
+                    // DSL validity
+                    metricPill(
+                        label: L10n.zh("DSL", en: "DSL"),
+                        value: (candidate.dslValid ?? false) ? L10n.zh("有效", en: "Valid") : L10n.zh("无效", en: "Invalid"),
+                        color: (candidate.dslValid ?? false) ? PulseColors.success : PulseColors.danger
+                    )
+                   // Source type
                     if let sourceType = extractDslString(candidate.dsl, key: "source_type") {
                         metricPill(
                             label: L10n.zh("来源", en: "Source"),
@@ -384,17 +364,12 @@ struct StrategyOptimizationView: View {
     private func statusInfo(_ status: String) -> (Color, String) {
         switch status {
         case "pending_review": return (PulseColors.warning, L10n.zh("待审核", en: "Pending Review"))
-        case "confirmed": return (PulseColors.success, L10n.zh("已确认", en: "Confirmed"))
+        case "draft": return (PulseColors.warning, L10n.zh("待审核", en: "Pending Review"))
+       case "confirmed": return (PulseColors.success, L10n.zh("已确认", en: "Confirmed"))
         case "rejected": return (PulseColors.danger, L10n.zh("已拒绝", en: "Rejected"))
         case "backtesting": return (PulseColors.info, L10n.zh("回测中", en: "Backtesting"))
         default: return (PulseColors.StateColors.gray, status)
         }
-    }
-
-    private func confidenceColor(_ value: Double) -> Color {
-        if value > 0.7 { return PulseColors.success }
-        if value > 0.5 { return PulseColors.warning }
-        return PulseColors.danger
     }
 
     private func sourceTypeLabel(_ type: String) -> String {

@@ -50,7 +50,10 @@ def decode_token(token: str) -> Optional[dict]:
 
 
 def authenticate_user(db: Session, username: str, password: str) -> Optional[User]:
-    user = db.query(User).filter(User.username == username).first()
+    # Support login by username or email
+    user = db.query(User).filter(
+        (User.username == username) | (User.email == username)
+    ).first()
     if not user or not verify_password(password, user.hashed_password):
         return None
     return user

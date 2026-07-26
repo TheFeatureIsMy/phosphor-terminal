@@ -29,11 +29,10 @@ struct GlobalStatusBar: View {
         }
         .background(
             Rectangle()
-                .fill(colors.surface.opacity(0.5))
-                .overlay(.ultraThinMaterial)
+                .fill(colors.cardBackground)
         )
         .overlay(alignment: .bottom) {
-            Rectangle().fill(Color.white.opacity(0.05)).frame(height: 0.5)
+            Rectangle().fill(colors.border).frame(height: 1)
         }
         .task {
             if notificationViewModel == nil {
@@ -51,14 +50,11 @@ struct GlobalStatusBar: View {
             // Left: breadcrumb (only for non-Dashboard routes)
             if appState.selectedRoute != .dashboard {
                 HStack(spacing: PulseSpacing.xxs) {
-                    Text("//")
-                        .font(PulseFonts.monoLabel)
-                        .foregroundStyle(PulseColors.accent)
                     Text(appState.selectedRoute.label)
-                        .font(PulseFonts.monoLabel)
-                        .foregroundStyle(colors.textMuted)
+                        .font(PulseFonts.body(12, .semibold))
+                        .foregroundStyle(PulseColors.accent)
                         .textCase(.uppercase)
-                        .tracking(1.5)
+                        .tracking(0.6)
                 }
                 .id(settingsState.language)
             } else {

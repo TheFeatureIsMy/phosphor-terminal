@@ -141,6 +141,6 @@ struct TradeSourceTraceView: View {
 
     private func executionColor(_ pnl: Double?) -> Color {
         guard let pnl else { return colors.textMuted }
-        return pnl >= 0 ? PulseColors.accent : PulseColors.danger
+        return pnl >= 0 ? PulseColors.bullish : PulseColors.bearish
     }
 }

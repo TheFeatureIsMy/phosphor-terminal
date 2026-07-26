@@ -62,13 +62,66 @@ class LLMService:
 
     def select_provider(self, db, instance_name: str | None = None) -> ProviderConfig | None:
         rows = self._config_service.list(db, category=ProviderCategory.LLM.value, enabled_only=True)
-        candidates = [r for r in rows if r.is_active and r.credential_status == "configured"]
+        candidates = [r for r in rows if r.enabled and r.credential_status == "configured"]
         if instance_name:
             candidates = [r for r in candidates if r.instance_name == instance_name]
         if not candidates:
             return None
         candidates.sort(key=lambda r: r.priority)
         return candidates[0]
+
+    async def chat(
+        self,
+        messages: list[dict[str, str]],
+        temperature: float = 0.3,
+        max_tokens: int = 4096,
+        instance_name: str | None = None,
+    ) -> LLMResponse:
+        """Send chat messages to the selected LLM provider and return response.
+
+        Selects the highest-priority enabled+configured LLM provider from DB.
+        Falls back to a degraded response if no provider is available.
+        """
+        import json as _json
+        import time as _time
+        from app.database import SessionLocal
+
+        with SessionLocal() as db:
+            provider_config = self.select_provider(db, instance_name=instance_name)
+
+        if provider_config is None:
+            raise RuntimeError("No LLM provider configured. Add one via Settings > LLM Providers.")
+
+        # Get the adapter from registry
+        adapter = registry.get(ProviderCategory.LLM, provider_config.provider_name)
+        if adapter is None or not hasattr(adapter, "chat"):
+            raise RuntimeError(f"Provider {provider_config.provider_name} does not support chat")
+
+        # Decrypt credentials
+        from app.services.crypto_service import crypto_service
+        try:
+            creds_json = crypto_service.decrypt(provider_config.credentials_ct)
+            credentials = _json.loads(creds_json) if creds_json else {}
+        except Exception:
+            credentials = {}
+
+        config = provider_config.config or {}
+
+        result = await adapter.chat(
+            messages=messages,
+            credentials=credentials,
+            config=config,
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
+
+        return LLMResponse(
+            content=result["content"],
+            model=result.get("model", ""),
+            provider=provider_config.provider_name,
+            tokens_used=result.get("tokens_used", 0),
+            latency_ms=result.get("latency_ms", 0),
+        )
 
     def providers(self) -> list[Any]:
         return [

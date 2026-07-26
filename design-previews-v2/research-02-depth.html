@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlphaLoop · AI 投研室 · DEPTH</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#080807;--panel:#0E0D0B;--panel2:#0B0A09;--line:#211F1A;--line2:#2C2920;
+    --txt:#D6CBB0;--txt2:#7A7159;--txt3:#565044;
+    --amber:#F5A623;--green:#3FB950;--red:#E5484D;
+    --green-fill:rgba(63,185,80,0.14);--red-fill:rgba(229,72,77,0.14);--amber-fill:rgba(245,166,35,0.10);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--txt);font-family:'JetBrains Mono',ui-monospace,'SF Mono',monospace;font-size:12px;line-height:1.35;-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+  .up{color:var(--green)} .dn{color:var(--red)} .am{color:var(--amber)} .mut{color:var(--txt2)}
+  .lbl{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--txt2)}
+  .num{font-variant-numeric:tabular-nums}
+  button{font-family:inherit}
+
+  /* tape */
+  .tape{height:24px;border-bottom:1px solid var(--line);background:#0A0908;display:flex;align-items:center;overflow:hidden;position:relative;white-space:nowrap}
+  .tape .track{display:inline-flex;align-items:center;animation:scroll 42s linear infinite;will-change:transform}
+  .tape:hover .track{animation-play-state:paused}
+  .tape .tk{display:inline-flex;align-items:center;gap:5px;padding:0 14px;border-right:1px solid var(--line);font-size:11px}
+  .tape .sym{color:var(--txt2);letter-spacing:.06em}
+  @keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+  /* topbar */
+  .topbar{display:flex;align-items:center;justify-content:space-between;height:34px;padding:0 10px;border-bottom:1px solid var(--line);background:var(--panel2);flex-wrap:wrap;gap:6px}
+  .brand{display:flex;align-items:center;gap:8px}
+  .brand .mark{color:var(--amber);font-weight:700;letter-spacing:.10em;font-size:13px}
+  .brand .tag{font-size:9px;letter-spacing:.20em;color:var(--txt2);text-transform:uppercase}
+  .brand .dot{color:var(--green);font-size:8px}
+  .subj{font-size:10.5px;color:var(--txt2);letter-spacing:.04em}
+  .subj b{color:var(--txt);font-weight:500}
+  .subj .px{color:var(--amber)}
+  .tools{display:flex;align-items:center;gap:8px;margin-left:auto}
+  .seg{display:inline-flex;border:1px solid var(--line2)}
+  .seg button{background:var(--panel);border:none;border-right:1px solid var(--line2);color:var(--txt2);font-size:9.5px;letter-spacing:.10em;text-transform:uppercase;padding:4px 9px;cursor:pointer}
+  .seg button:last-child{border-right:none}
+  .seg button[aria-pressed="true"]{background:var(--amber);color:#0A0908;font-weight:700}
+  .seg button:hover:not([aria-pressed="true"]){color:var(--amber)}
+  .seg button:focus-visible{outline:2px solid var(--amber);outline-offset:1px}
+  .status{font-size:9.5px;color:var(--txt2);letter-spacing:.06em}
+  .status b{color:var(--green)}
+  .back{font-size:9.5px;color:var(--txt2);text-decoration:none;letter-spacing:.06em}
+  .back:hover{color:var(--amber)}
+
+  .ph{display:flex;align-items:center;justify-content:space-between;height:22px;padding:0 8px;border-bottom:1px solid var(--line);background:var(--panel2)}
+  .ph .t{font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber)}
+  .ph .r{font-size:9.5px;color:var(--txt2);letter-spacing:.06em}
+  .panel{background:var(--panel);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+
+  /* subject strip */
+  .subjbar{display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:var(--line);border-bottom:1px solid var(--line)}
+  .sb{background:var(--panel);padding:6px 9px}
+  .sb .k{font-size:9px;letter-spacing:.10em;text-transform:uppercase;color:var(--txt2)}
+  .sb .v{font-size:15px;font-weight:500;color:var(--txt);margin-top:2px}
+
+  /* main agent grid */
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);padding:1px 0}
+  .agrid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line)}
+  .acell{background:var(--panel);padding:0;cursor:default;transition:background .12s}
+  .acell:hover{background:#100E0A}
+  .ahead{display:flex;align-items:center;gap:6px;padding:6px 9px;border-bottom:1px solid var(--line)}
+  .aname{font-size:11px;font-weight:700;color:var(--txt)}
+  .stance{font-size:8.5px;letter-spacing:.08em;padding:1px 5px;border:1px solid var(--line2);text-transform:uppercase}
+  .stance.bull{color:var(--green);border-color:rgba(63,185,80,.4)}
+  .stance.bear{color:var(--red);border-color:rgba(229,72,77,.4)}
+  .stance.neu{color:var(--amber);border-color:rgba(245,166,35,.4)}
+  .stance.risk{color:var(--txt);border-color:var(--line2)}
+  .aconf{margin-left:auto;font-size:9.5px;color:var(--txt2)}
+  .aconf b{color:var(--amber);font-weight:700}
+  .abody{padding:8px 9px}
+  .aview{font-size:10.5px;color:var(--txt);line-height:1.5;margin-bottom:7px}
+  .aconfbar{height:4px;background:#161410;border:1px solid var(--line2);margin-bottom:7px;position:relative}
+  .aconfbar i{position:absolute;left:0;top:0;bottom:0}
+  .aconfbar i.bull{background:var(--green)} .aconfbar i.bear{background:var(--red)}
+  .aconfbar i.neu{background:var(--amber)}
+  .evid{font-size:9.5px;color:var(--txt2);line-height:1.7}
+  .evid span{display:block}
+  .evid span::before{content:"› ";color:var(--amber)}
+
+  /* debate faceoff */
+  .faceoff{display:grid;grid-template-columns:1fr 60px 1fr;gap:0;background:var(--panel)}
+  .fo-side{padding:0}
+  .fo-h{display:flex;align-items:center;justify-content:space-between;padding:5px 9px;border-bottom:1px solid var(--line);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase}
+  .fo-h.bull{color:var(--green)} .fo-h.bear{color:var(--red)}
+  .fo-center{border-left:1px solid var(--line);border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;background:var(--panel2)}
+  .fo-round{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-bottom:1px solid var(--line);width:100%;padding:6px 0;position:relative}
+  .fo-round:last-child{border-bottom:none}
+  .fo-round .rn{font-size:9px;color:var(--amber);font-weight:700;letter-spacing:.1em}
+  .fo-round .rt{font-size:8px;color:var(--txt3);margin-top:1px}
+  .fo-msg{padding:8px 9px;border-bottom:1px solid var(--line);font-size:10.5px;line-height:1.5;min-height:56px;cursor:pointer;transition:background .12s}
+  .fo-msg:hover{background:#100E0A}
+  .fo-msg b{color:var(--txt);font-weight:700}
+  .fo-msg.bull{color:var(--txt);border-left:2px solid var(--green)}
+  .fo-msg.bear{color:var(--txt);border-left:2px solid var(--red)}
+  .fo-msg.tech{color:var(--txt);border-left:2px solid var(--amber)}
+  .fo-msg.empty{background:repeating-linear-gradient(45deg,transparent 0 6px,rgba(255,255,255,.012) 6px 12px);cursor:default}
+  .fo-who{font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--txt2);margin-bottom:3px}
+  .fo-full{border-top:1px solid var(--line);grid-column:1/-1;padding:9px 12px;font-size:10.5px;line-height:1.55;color:var(--txt);border-left:2px solid var(--amber);display:flex;gap:10px;align-items:flex-start}
+  .fo-full .who{font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);white-space:nowrap;padding-top:1px}
+  .fo-full b{color:var(--txt);font-weight:700}
+  .fo-msg.collapsed{color:var(--txt3)}
+  .fo-msg.collapsed .fo-txt{opacity:.25}
+
+  /* ruling + verdict grid */
+  .rv-grid{display:grid;grid-template-columns:340px 1fr;gap:1px;background:var(--line);border-top:1px solid var(--line)}
+  .heat{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--line)}
+  .hc{background:var(--panel);padding:8px 9px;position:relative}
+  .hc .k{font-size:9px;letter-spacing:.10em;text-transform:uppercase;color:var(--txt2)}
+  .hc .v{font-size:18px;font-weight:700;margin-top:3px}
+  .hc.ok .v{color:var(--green)} .hc.warn .v{color:var(--amber)} .hc.bad .v{color:var(--red)}
+  .hc .b{position:absolute;left:0;bottom:0;height:2px}
+  .hc.ok .b{background:var(--green)} .hc.warn .b{background:var(--amber)} .hc.bad .b{background:var(--red)}
+  .ruleline{padding:7px 9px;border-top:1px solid var(--line);font-size:10px;color:var(--txt2);display:flex;gap:7px;align-items:center}
+  .pill{border:1px solid var(--amber);color:var(--amber);padding:1px 6px;font-size:8.5px;letter-spacing:.10em;text-transform:uppercase}
+  .pill.ok{border-color:var(--green);color:var(--green)}
+
+  /* verdict */
+  .verdict{background:var(--panel);padding:10px 12px}
+  .vgrade{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+  .vbadge{font-size:26px;font-weight:700;color:var(--amber);letter-spacing:.02em}
+  .vdir{font-size:9px;letter-spacing:.14em;color:var(--green);border:1px solid rgba(63,185,80,.4);padding:2px 8px;text-transform:uppercase}
+  .vconf{font-size:11px;color:var(--txt2)}
+  .vconf b{color:var(--txt);font-weight:700}
+  .vgridrow{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border-top:1px solid var(--line);margin-top:6px}
+  .vg{background:var(--panel);padding:6px 8px}
+  .vg .k{font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--txt2)}
+  .vg .v{font-size:13px;font-weight:500;color:var(--txt);margin-top:2px}
+  .perm{margin-top:6px;font-size:9.5px;color:var(--txt2);display:flex;gap:12px;flex-wrap:wrap;align-items:center;padding-top:6px;border-top:1px solid var(--line)}
+  .perm .ok{color:var(--green)} .perm .no{color:var(--red)}
+
+  /* outputs bar */
+  .outs{display:flex;gap:6px;flex-wrap:wrap;padding:8px 10px;background:var(--panel2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .obtn{background:var(--panel);border:1px solid var(--line2);color:var(--txt);font-size:10px;letter-spacing:.06em;text-transform:uppercase;padding:6px 12px;cursor:pointer}
+  .obtn:hover{border-color:var(--amber);color:var(--amber)}
+  .obtn.pri{border-color:var(--amber);color:var(--amber)}
+  .obtn.no{color:var(--txt3);border-color:var(--line)}
+  .obtn:focus-visible{outline:2px solid var(--amber);outline-offset:1px}
+
+  .footnote{padding:6px 10px;font-size:9px;color:var(--txt3);letter-spacing:.06em;border-top:1px solid var(--line);text-align:center}
+
+  @media (max-width:768px){
+    .subjbar{grid-template-columns:1fr 1fr 1fr}
+    .agrid{grid-template-columns:1fr}
+    .faceoff{grid-template-columns:1fr}
+    .fo-center{flex-direction:row;border:none;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+    .fo-round{border-bottom:none;border-right:1px solid var(--line)}
+    .rv-grid{grid-template-columns:1fr}
+    .heat{grid-template-columns:1fr 1fr}
+    .vgridrow{grid-template-columns:1fr 1fr}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .tape .track{animation:none}
+    *{transition:none!important}
+  }
+</style>
+</head>
+<body>
+
+<div class="tape" aria-label="实时报价走马灯"><div class="track" id="track"></div></div>
+
+<div class="topbar">
+  <div class="brand"><span class="mark">ALPHALOOP</span><span class="tag">RESEARCH DESK</span><span class="dot">●</span><span class="mut" style="font-size:10px">研究中</span></div>
+  <span class="subj">标的 <b>BTC/USDT</b> · 现价 <b class="px">64,180</b> · 24h <b class="up">+1.46%</b> · 触发 <b>结构突破 #1</b> 深度复核</span>
+  <div class="tools">
+    <a class="back" href="index.html">← 矩阵</a>
+    <span class="lbl">深度</span>
+    <div class="seg" role="group" aria-label="研究深度">
+      <button type="button" aria-pressed="false">快速</button>
+      <button type="button" aria-pressed="false">标准</button>
+      <button type="button" aria-pressed="true">深度</button>
+    </div>
+    <span class="status"><b>6/6</b> 已发言 · 42s</span>
+  </div>
+</div>
+
+<!-- subject strip -->
+<div class="subjbar">
+  <div class="sb"><div class="k">标的</div><div class="v">BTC/USDT</div></div>
+  <div class="sb"><div class="k">现价</div><div class="v am num" id="px">0</div></div>
+  <div class="sb"><div class="k">24h 涨幅</div><div class="v up num">+1.46%</div></div>
+  <div class="sb"><div class="k">资金费率</div><div class="v am num">0.043%</div></div>
+  <div class="sb"><div class="k">阻力墙</div><div class="v dn num">65,200</div></div>
+  <div class="sb"><div class="k">HTF 守卫</div><div class="v up">PASS</div></div>
+</div>
+
+<!-- AGENT OPINIONS -->
+<div class="panel">
+  <div class="ph"><span class="t">■ 多 Agent 观点 · 6 席</span><span class="r">并陈 · hover 展开证据</span></div>
+  <div class="agrid">
+    <div class="acell">
+      <div class="ahead"><span class="aname">多头 Bull</span><span class="stance bull">看多</span><span class="aconf">CONF <b>0.78</b></span></div>
+      <div class="abody">
+        <div class="aview">日线结构突破颈线 64k，量能放大确认，回踩不破即二次上车。趋势级别信号。</div>
+        <div class="aconfbar"><i class="bull" style="width:78%"></i></div>
+        <div class="evid"><span>突破成交量 +142%</span><span>OBV 创新高</span><span>HTF 守卫 PASS</span></div>
+      </div>
+    </div>
+    <div class="acell">
+      <div class="ahead"><span class="aname">空头 Bear</span><span class="stance bear">看空</span><span class="aconf">CONF <b>0.64</b></span></div>
+      <div class="abody">
+        <div class="aview">上方 65.2k 有密集套牢盘，RSI 顶背离，谨防假突破诱多。追高风险回报比不佳。</div>
+        <div class="aconfbar"><i class="bear" style="width:64%"></i></div>
+        <div class="evid"><span>RSI 顶背离</span><span>65.2k 挂单墙</span><span>资金费率偏高 0.043%</span></div>
+      </div>
+    </div>
+    <div class="acell">
+      <div class="ahead"><span class="aname">技术面 Tech</span><span class="stance bull">偏多</span><span class="aconf">CONF <b>0.71</b></span></div>
+      <div class="abody">
+        <div class="aview">多周期共振向上，15m/1h/4h 均线多头排列，MACD 金叉。动能结构健康。</div>
+        <div class="aconfbar"><i class="bull" style="width:71%"></i></div>
+        <div class="evid"><span>均线多头排列</span><span>MACD 金叉</span><span>ATR 扩张</span></div>
+      </div>
+    </div>
+    <div class="acell">
+      <div class="ahead"><span class="aname">情绪面 Sent</span><span class="stance neu">中性偏多</span><span class="aconf">CONF <b>0.60</b></span></div>
+      <div class="abody">
+        <div class="aview">FinBERT 新闻情绪 +0.34 中性偏多，社媒热度回升但未过热。情绪支撑温和。</div>
+        <div class="aconfbar"><i class="neu" style="width:60%"></i></div>
+        <div class="evid"><span>新闻情绪 +0.34</span><span>社媒提及 +28%</span><span>恐贪指数 62</span></div>
+      </div>
+    </div>
+    <div class="acell">
+      <div class="ahead"><span class="aname">链上 On-chain</span><span class="stance neu">谨慎</span><span class="aconf">CONF <b>0.55</b></span></div>
+      <div class="abody">
+        <div class="aview">交易所净流出放缓，巨鲸地址近 24h 小幅增持但不显著。链上信号中性。</div>
+        <div class="aconfbar"><i class="neu" style="width:55%"></i></div>
+        <div class="evid"><span>净流出放缓</span><span>巨鲸 +0.8%</span><span>稳定币储备平</span></div>
+      </div>
+    </div>
+    <div class="acell">
+      <div class="ahead"><span class="aname">风控 Risk</span><span class="stance risk">放行(约束)</span><span class="aconf">CONF <b>—</b></span></div>
+      <div class="abody">
+        <div class="aview">允许进入 dry-run，但因资金费率偏高与 65.2k 阻力，限仓位 ≤10% 并强制止损。</div>
+        <div class="aconfbar"><i class="neu" style="width:100%;background:var(--txt3)"></i></div>
+        <div class="evid"><span>仓位≤10%</span><span>止损 62.4k</span><span>独立资金池</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DEBATE FACEOFF -->
+<div class="panel" style="margin-top:1px">
+  <div class="ph"><span class="t">■ 多空辩论对峙 · DEBATE FACEOFF</span><span class="r">5 轮往复 · 点击消息折叠/展开</span></div>
+  <div class="faceoff" id="faceoff">
+    <div class="fo-side">
+      <div class="fo-h bull">▲ 多头 BULL</div>
+      <div class="fo-msg bull" data-turn="1"><div class="fo-who">R1 · 14:22:44</div><div class="fo-txt">突破量能 <b>+142%</b>，配合 OBV 创新高——这是真突破，不是诱多。回踩确认即二次上车。</div></div>
+      <div class="fo-msg empty"></div>
+      <div class="fo-msg bull" data-turn="3"><div class="fo-who">R3 · 14:22:52</div><div class="fo-txt">挂单墙已在过去 2h 被吃掉 <b>40%</b>，厚度缩减。RSI 背离在强趋势中常失效。</div></div>
+      <div class="fo-msg empty"></div>
+    </div>
+    <div class="fo-center">
+      <div class="fo-round"><span class="rn">R1</span><span class="rt">▲</span></div>
+      <div class="fo-round"><span class="rn">R2</span><span class="rt">▼</span></div>
+      <div class="fo-round"><span class="rn">R3</span><span class="rt">▲</span></div>
+      <div class="fo-round"><span class="rn">R4</span><span class="rt">▼</span></div>
+    </div>
+    <div class="fo-side">
+      <div class="fo-h bear">▼ 空头 BEAR</div>
+      <div class="fo-msg empty"></div>
+      <div class="fo-msg bear" data-turn="2"><div class="fo-who">R2 · 14:22:48</div><div class="fo-txt">65.2k 挂单墙 <b>3,200 万</b>未消化，RSI 顶背离先兆。量能大不等于能吃掉厚墙。</div></div>
+      <div class="fo-msg empty"></div>
+      <div class="fo-msg bear" data-turn="4"><div class="fo-who">R4 · 14:22:56</div><div class="fo-txt">风险回报比不佳，资金费率 <b>0.043%</b> 多头拥挤。追高不如等回踩 <b>63.5k</b>。</div></div>
+    </div>
+    <div class="fo-full" data-turn="5">
+      <span class="who">R5 · TECH 裁量 · 14:23:01</span>
+      <div><b>4h 未破位</b>前，回踩 <b>63.5–64k</b> 确为更优入场区。方向偏多成立，但入场点应等回踩确认，而非追高。</div>
+    </div>
+  </div>
+</div>
+
+<!-- RULING + VERDICT -->
+<div class="rv-grid">
+  <div class="panel" style="border:none">
+    <div class="ph"><span class="t">■ 风控裁定 · RISK OPINION</span><span class="r">放行 · 有约束</span></div>
+    <div class="heat">
+      <div class="hc warn"><div class="k">仓位上限</div><div class="v num">≤10%</div><div class="b" style="width:100%"></div></div>
+      <div class="hc bad"><div class="k">强制止损</div><div class="v num">62,400</div><div class="b" style="width:100%"></div></div>
+      <div class="hc ok"><div class="k">风险等级</div><div class="v">中</div><div class="b" style="width:60%"></div></div>
+    </div>
+    <div class="ruleline"><span class="pill ok">CLEARED</span><span>允许进入 dry-run · 须绑定独立资金池</span></div>
+    <div class="ruleline" style="border-top:1px solid var(--line)"><span class="pill">CONSTRAINT</span><span>资金费率偏高 + 65.2k 阻力 → 限仓 + 强制止损</span></div>
+  </div>
+
+  <div class="panel" style="border:none">
+    <div class="ph"><span class="t">■ 最终评级 · FINAL VERDICT</span><span class="r">6 Agent 共识</span></div>
+    <div class="verdict">
+      <div class="vgrade"><span class="vbadge">偏多 B+</span><span class="vdir">LONG</span><span class="vconf">综合置信度 <b>0.74</b></span></div>
+      <div class="vgridrow">
+        <div class="vg"><div class="k">目标价</div><div class="v up num">66,800</div></div>
+        <div class="vg"><div class="k">止损</div><div class="v dn num">62,400</div></div>
+        <div class="vg"><div class="k">止盈(分批)</div><div class="v num">65.2k/66.8k</div></div>
+        <div class="vg"><div class="k">建议仓位</div><div class="v am num">≤10%</div></div>
+      </div>
+      <div class="perm"><span class="lbl">SIGNAL 权限</span><span class="ok">回测 ✓</span><span class="ok">模拟 ✓</span><span class="no">实盘 ✗ 需人工确认</span><span class="mut" style="margin-left:auto">can_live_trade=<span class="dn">false</span></span></div>
+    </div>
+  </div>
+</div>
+
+<!-- OUTPUTS -->
+<div class="outs">
+  <button class="obtn pri">发布为 Signal</button>
+  <button class="obtn">创建 StrategyDraft</button>
+  <button class="obtn">存为 ResearchReport</button>
+  <button class="obtn">加入观察</button>
+  <span class="status" style="margin-left:auto;align-self:center">provider OpenAI GPT + DeepSeek 混合 · prompt v3 · 42s</span>
+</div>
+
+<div class="footnote">// AlphaLoop Research Desk · DEPTH Cockpit · 6/6 Agent · Not Financial Advice //</div>
+
+<script>
+(function(){
+  var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+  var quotes=[['BTC','64,180','▲','up'],['ETH','3,342','▲','up'],['SOL','172.4','▼','dn'],['FUND','0.043%','▲','am'],['WALL','65,200','▼','dn'],['SENT','+0.34','▲','up'],['F&G','62','▲','up'],['OBV','ATH','▲','up'],['RSI','背离','▼','dn'],['NETFLOW','放缓','●','am'],['WHALE','+0.8%','▲','up'],['MACD','金叉','▲','up']];
+  var track=document.getElementById('track');
+  var html='';for(var r=0;r<2;r++){quotes.forEach(function(q){html+='<span class="tk"><span class="sym">'+q[0]+'</span><span class="num '+q[3]+'">'+q[1]+'</span><span class="'+q[3]+'">'+q[2]+'</span></span>';});}
+  track.innerHTML=html;
+
+  // countup px
+  var target=64180,el=document.getElementById('px');
+  function fmt(n){return n.toLocaleString('en-US');}
+  if(reduce){el.textContent=fmt(target);}else{var s=null,dur=1100;function step(ts){if(!s)s=ts;var p=Math.min((ts-s)/dur,1);el.textContent=fmt(Math.round(target*(1-Math.pow(1-p,3))));if(p<1)requestAnimationFrame(step);else el.textContent=fmt(target);}requestAnimationFrame(step);}
+
+  // segmented
+  var seg=document.querySelectorAll('.seg button');
+  seg.forEach(function(b){b.addEventListener('click',function(){seg.forEach(function(x){x.setAttribute('aria-pressed','false');});b.setAttribute('aria-pressed','true');});});
+
+  // faceoff msg collapse
+  document.querySelectorAll('.fo-msg:not(.empty)').forEach(function(m){
+    m.addEventListener('click',function(){m.classList.toggle('collapsed');});
+  });
+})();
+</script>
+</body>
+</html>

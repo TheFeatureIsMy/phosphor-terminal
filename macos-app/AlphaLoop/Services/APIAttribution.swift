@@ -1,8 +1,6 @@
-// APIAttribution.swift — 归因分析 API
+// APIAttribution.swift - 归因分析 API
 
 import Foundation
-
-// MARK: - Response Models
 
 struct FeatureImportanceResponse: Decodable {
     let features: [String]
@@ -61,8 +59,6 @@ struct AttributionReportItem: Decodable, Identifiable {
     }
 }
 
-// MARK: - Attribution API
-
 struct APIAttribution {
     let client: any NetworkClientProtocol
 
@@ -72,41 +68,15 @@ struct APIAttribution {
             let values: [Double]
             let strategy_type: String
         }
-        return try await client.post("/attribution/feature-importance", body: Body(features: features, values: values, strategy_type: "ma_cross"),
-            mock: MockAttribution.featureImportance)
+        return try await client.post("/attribution/feature-importance", body: Body(features: features, values: values, strategy_type: "ma_cross"))
     }
 
     func getSlippage() async throws -> [SlippageItem] {
-        try await client.get("/attribution/slippage", mock: MockAttribution.slippage)
+        try await client.get("/attribution/slippage")
     }
 
     func getReports(strategyId: Int? = nil) async throws -> [AttributionReportItem] {
         let endpoint = strategyId != nil ? "/attribution/reports?strategy_id=\(strategyId!)" : "/attribution/reports"
-        return try await client.get(endpoint, mock: MockAttribution.reports)
+        return try await client.get(endpoint)
     }
-}
-
-enum MockAttribution {
-    static func featureImportance() -> FeatureImportanceResponse {
-        FeatureImportanceResponse(
-            features: ["RSI", "MACD", "Volume", "BB_Upper", "EMA_20"],
-            importances: [0.35, 0.28, 0.18, 0.12, 0.07],
-            baseValue: 0.05
-        )
-    }
-
-    static func slippage() -> [SlippageItem] {
-        [
-            SlippageItem(
-                id: 1, tradeId: 101,
-                signalPrice: 67500.0, filledPrice: 67532.5,
-                executionSlippage: 32.5, spreadCost: 12.0, marketImpact: 8.5, latencyCost: 12.0,
-                slippagePct: 0.048,
-                diagnosis: "spread_cost占比较高，建议使用限价单",
-                createdAt: "2026-05-31T10:00:00Z"
-            ),
-        ]
-    }
-
-    static func reports() -> [AttributionReportItem] { [] }
 }

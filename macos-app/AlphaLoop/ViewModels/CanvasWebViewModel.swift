@@ -32,10 +32,12 @@ final class CanvasWebViewModel {
     var errorHandler: ErrorHandler?
 
     private let api: APIStrategiesV2
-    let strategyId: String
+    /// nil when the workbench opens with no strategy selected — the canvas still
+    /// renders an empty graph you can build on; saving requires a strategy.
+    let strategyId: String?
     private var pendingDSL: [String: Any]?
 
-    init(strategyId: String, client: NetworkClientProtocol) {
+    init(strategyId: String?, client: NetworkClientProtocol) {
         self.strategyId = strategyId
         self.api = APIStrategiesV2(client: client)
     }
@@ -121,6 +123,10 @@ final class CanvasWebViewModel {
     }
 
     func saveVersion(dsl: [String: Any]) async {
+        guard let strategyId else {
+            error = L10n.zh("请先选择一个策略再保存", en: "Select a strategy before saving")
+            return
+        }
         isSaving = true
         saveSuccess = false
         defer { isSaving = false }

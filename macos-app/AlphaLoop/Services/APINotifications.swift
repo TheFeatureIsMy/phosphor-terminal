@@ -69,28 +69,22 @@ struct APINotifications {
     let client: NetworkClientProtocol
 
     func fetchNotifications(limit: Int = 20) async throws -> [AppNotification] {
-        let response: NotificationsResponse = try await client.get(
-            "/api/notifications?limit=\(limit)",
-            mock: { NotificationsResponse(notifications: [], unread: MockData.mockNotifications().filter { !$0.isRead }.count) }
-        )
+        let response: NotificationsResponse = try await client.get("/notifications?limit=\(limit)")
         return response.notifications.map { $0.toAppNotification() }
     }
 
     @discardableResult
     func markAsRead(id: UUID) async throws -> AckResponse {
-        try await client.put("/api/notifications/\(id.uuidString)/read", body: nil as String?, mock: { AckResponse(ok: true) })
+        try await client.put("/notifications/\(id.uuidString)/read", body: nil as String?)
     }
 
     @discardableResult
     func markAllAsRead() async throws -> AckResponse {
-        try await client.put("/api/notifications/read-all", body: nil as String?, mock: { AckResponse(ok: true) })
+        try await client.put("/notifications/read-all", body: nil as String?)
     }
 
     func getUnreadCount() async throws -> Int {
-        let response: NotificationsResponse = try await client.get(
-            "/api/notifications?limit=1",
-            mock: { NotificationsResponse(notifications: [], unread: MockData.mockNotifications().filter { !$0.isRead }.count) }
-        )
+        let response: NotificationsResponse = try await client.get("/notifications?limit=1")
         return response.unread
     }
 
@@ -112,8 +106,6 @@ struct APINotifications {
             providerName: "telegram",
             credentials: ["bot_token": botToken, "chat_id": chatId],
             config: ["dry_run": dryRun]
-        ), mock: {
-            HealthCheckResult(success: true, status: "active", latencyMs: 120, error: nil)
-        })
+        ))
     }
 }

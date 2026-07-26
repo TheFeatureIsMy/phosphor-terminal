@@ -58,7 +58,7 @@ struct BacktestLabView: View {
                     }
                 }
                 .padding(PulseSpacing.lg)
-                .frame(maxWidth: 1280, alignment: .leading)
+                .frame(maxWidth: PulseSpacing.contentMaxWidth, alignment: .leading)
                 .frame(maxWidth: .infinity, alignment: .center)
             }
         }

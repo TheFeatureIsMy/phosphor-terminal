@@ -222,3 +222,33 @@
 - P1-2: 后端 OverviewAggregator.dashboard() 仍返回 0 占位（等待真实 freqtrade DB + Redis cache 接入）
 - P2-1: AI 模型服务未启用 GPU 实测
 - P2-2: `services/live_readiness_service.py` 仍有部分 `_check_*` 用 `healthy` 默认（M3+ 才接真实 health probe）
+
+---
+
+## 8. 2026-07-10 - 增长/系统/设置模块 macOS mock 清除
+
+### 8.1 已移除的 macOS mock
+
+| Service File | Removed Mock | API Endpoints Now Real |
+|---|---|---|
+| APIGrowth.swift | MockGrowth (dailyReview, reports, candidates, confirmed, shapFeatures, signalValidity) | /api/growth/* |
+| APIFailureClustering.swift | MockFailureClustering (summary, labels) | /api/growth/failure-summary, /failure-clusters, /labels |
+| APIFailureClusters.swift | MockFailureClusters (response) | /api/growth/failure-clusters?strategy_uuid= |
+| APIAttribution.swift | MockAttribution (featureImportance, slippage, reports) | /attribution/* |
+| APIDataSources.swift | MockDataSources (allProviderConfigs) | /api/admin/providers |
+| APIAIProviders.swift | MockAIProviders (providers, config, healthCheck, testProvider, modelStatus, routingRules, privacyRules, modelRuntime) | /api/admin/providers?category=llm, /api/ai/* |
+| APISettings.swift | mockSettings + mock update response | /auth/settings |
+
+### 8.2 Hardcoded fallback data removed
+
+- GrowthViewModel: SHAP features and signal-validity no longer fall back to hardcoded arrays
+- GrowthView: Summary stats ("156", "63.2%", "AI Research", "KOL") replaced with real computed values
+- NetworkClientProtocol: Added mock-free overloads that throw on MockNetworkClient (no silent mock data)
+
+### 8.3 New real-data connections
+
+- ServiceManagementView -> /api/system/services (new endpoint)
+- LLMProviderSettingsView -> /api/admin/providers?category=llm
+- APISettings -> /api/admin/system-settings (CRUD)
+- DataSourcesView -> /api/admin/providers (already proxied, mock removed)
+

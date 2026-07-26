@@ -1,4 +1,4 @@
-// GrowthViewModel.swift — 增长引擎视图模型
+// GrowthViewModel.swift - 增长引擎视图模型
 // 管理报告列表、候选策略列表、日报触发、候选确认
 
 import SwiftUI
@@ -14,7 +14,9 @@ final class GrowthViewModel {
     var errorHandler: ErrorHandler?
 
     var shapFeatures: [(name: String, value: Double)] = []
+    var shapState: String = "healthy"
     var signalSources: [(name: String, accuracy: Double, total: Int)] = []
+    var signalState: String = "healthy"
 
     private let api: APIGrowth
 
@@ -22,7 +24,6 @@ final class GrowthViewModel {
         self.api = APIGrowth(client: client)
     }
 
-    /// 加载报告和候选策略
     func load() async {
         isLoading = true
         error = nil
@@ -32,65 +33,57 @@ final class GrowthViewModel {
             reports = try await reportsTask
             candidates = try await candidatesTask
         } catch {
-            errorHandler?.handle(error, context: "加载增长引擎数据")
+            errorHandler?.handle(error, context: L10n.zh("加载增长引擎数据", en: "Loading growth data"))
             self.error = error.localizedDescription
         }
         isLoading = false
     }
 
-    /// 触发日报分析
     func runDailyReview() async {
         do {
-            let report = try await api.runDailyReview(["trigger": "manual"])
+            let report = try await api.runDailyReview(days: 1)
             reports.insert(report, at: 0)
         } catch {
-            errorHandler?.handle(error, context: "运行日报分析")
+            errorHandler?.handle(error, context: L10n.zh("运行日报分析", en: "Running daily review"))
         }
     }
 
-    /// 确认候选策略
     func confirmCandidate(_ id: String) async {
         do {
-            let updated = try await api.confirmCandidate(id)
-            if let index = candidates.firstIndex(where: { $0.id == id }) {
-                candidates[index] = updated
-            }
+            _ = try await api.confirmCandidate(id)
+            await load()
         } catch {
-            errorHandler?.handle(error, context: "确认候选策略")
+            errorHandler?.handle(error, context: L10n.zh("确认候选策略", en: "Confirming candidate"))
         }
     }
 
-    /// 加载 SHAP 特征重要性
     func loadShapFeatures() async {
         do {
             let response: ShapFeaturesResponse = try await api.getShapFeatures()
             shapFeatures = response.features.map { (name: $0.name, value: $0.value) }
+            shapState = response.state
         } catch {
-            // Fallback to defaults if API fails
-            shapFeatures = [
-                (name: "RSI_14", value: 0.312), (name: "MACD_hist", value: 0.248),
-                (name: "Vol_24h", value: 0.201), (name: "BB_width", value: 0.178),
-                (name: "EMA_cross", value: 0.156), (name: "ATR_14", value: 0.123),
-                (name: "OBV_slope", value: 0.098), (name: "ADX_14", value: 0.087),
-                (name: "Funding_rate", value: 0.065), (name: "Sentiment", value: 0.042),
-            ]
+            shapFeatures = []
+            shapState = "data_source_unavailable"
         }
     }
 
-    /// 加载 Signal 有效性
     func loadSignalValidity() async {
         do {
             let response: SignalValidityResponse = try await api.getSignalValidity()
             signalSources = response.sources.map { (name: $0.name, accuracy: $0.accuracy, total: $0.total) }
+            signalState = response.state
         } catch {
-            // Fallback to defaults if API fails
-            signalSources = [
-                (name: "AI Research", accuracy: 0.72, total: 45),
-                (name: "TradingAgents", accuracy: 0.68, total: 38),
-                (name: "Manual", accuracy: 0.61, total: 25),
-                (name: "Sentiment", accuracy: 0.55, total: 28),
-                (name: "KOL", accuracy: 0.42, total: 20),
-            ]
+            signalSources = []
+            signalState = "data_source_unavailable"
         }
     }
+
+    var totalSignals: Int { signalSources.reduce(0) { $0 + $1.total } }
+    var avgAccuracy: Double {
+        guard !signalSources.isEmpty else { return 0 }
+        return signalSources.reduce(0.0) { $0 + $1.accuracy } / Double(signalSources.count)
+    }
+    var bestSource: String { signalSources.max(by: { $0.accuracy < $1.accuracy })?.name ?? "-" }
+    var worstSource: String { signalSources.min(by: { $0.accuracy < $1.accuracy })?.name ?? "-" }
 }

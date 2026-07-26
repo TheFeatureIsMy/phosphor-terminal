@@ -89,47 +89,22 @@ private struct FreqAITrainBody: Encodable {
 
 extension NetworkClientProtocol {
     func ragGenerate(prompt: String, riskLevel: String, market: String) async throws -> RAGGenerateResponse {
-        try await post("/rag/generate", body: RAGGenerateBody(prompt: prompt, risk_level: riskLevel, market: market)) {
-            RAGGenerateResponse(
-                id: 1,
-                code: "# Mock generated strategy\nfrom freqtrade.strategy import IStrategy\nfrom pandas import DataFrame\nimport talib.abstract as ta\n\nclass MockStrategy(IStrategy):\n    timeframe = '1h'\n    minimal_roi = {\"0\": 0.15}\n    stoploss = -0.08",
-                safetyStatus: "safe",
-                strategyName: "MockStrategy"
-            )
-        }
+        try await post("/rag/generate", body: RAGGenerateBody(prompt: prompt, risk_level: riskLevel, market: market))
     }
 
     func createForecast(symbol: String, model: String, horizon: String) async throws -> ForecastResponse {
-        try await post("/api/ai/forecast", body: ForecastBody(symbol: symbol, model: model, horizon: horizon)) {
-            ForecastResponse(
-                id: 1, symbol: symbol, model: model, horizon: horizon,
-                status: "completed", points: [], confidence: 0.85
-            )
-        }
+        try await post("/api/ai/forecast", body: ForecastBody(symbol: symbol, model: model, horizon: horizon))
     }
 
     func createFactorResearch(market: String, universe: [String], factorName: String) async throws -> FactorResearchResponse {
-        try await post("/api/ai/factors/research", body: FactorResearchBody(market: market, universe: universe, factor_name: factorName)) {
-            FactorResearchResponse(
-                id: 1, market: market, factorName: factorName,
-                status: "completed",
-                metrics: ["ic": 0.034, "rank_ic": 0.029, "turnover": 45.2]
-            )
-        }
+        try await post("/api/ai/factors/research", body: FactorResearchBody(market: market, universe: universe, factor_name: factorName))
     }
 
     func submitFreqAITraining(modelName: String, strategyId: Int?) async throws -> FreqAITrainingResponse {
-        try await post("/api/ai/freqai/train", body: FreqAITrainBody(model_name: modelName, strategy_id: strategyId)) {
-            FreqAITrainingResponse(
-                id: 1, modelName: modelName, status: "queued",
-                startedAt: nil, completedAt: nil
-            )
-        }
+        try await post("/api/ai/freqai/train", body: FreqAITrainBody(model_name: modelName, strategy_id: strategyId))
     }
 
     func listFreqAIRuns() async throws -> FreqAIRunsListResponse {
-        try await get("/api/ai/freqai/runs") {
-            FreqAIRunsListResponse(runs: [], total: 0)
-        }
+        try await get("/api/ai/freqai/runs")
     }
 }

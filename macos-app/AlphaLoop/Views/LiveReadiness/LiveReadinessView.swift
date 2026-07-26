@@ -57,24 +57,15 @@ struct LiveReadinessView: View {
     // MARK: - Page Header
 
     private var pageHeader: some View {
-        HStack(alignment: .center, spacing: PulseSpacing.sm) {
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: PulseSpacing.xs) {
-                    Text("//")
-                        .font(PulseFonts.monoLabel)
-                        .foregroundStyle(PulseColors.accent)
-                    Text(L10n.LiveReadiness.pageHeader)
-                        .font(.system(size: 22, weight: .bold, design: .monospaced))
-                        .foregroundStyle(colors.textPrimary)
-                        .tracking(0.5)
-                    grandStatusBadge
-                }
-                Text(L10n.LiveReadiness.pageSubtitle)
-                    .font(PulseFonts.caption)
-                    .foregroundStyle(colors.textMuted)
+        QuantPageHeader(
+            eyebrow: "OVERVIEW",
+            title: L10n.LiveReadiness.pageHeader,
+            subtitle: L10n.LiveReadiness.pageSubtitle
+        ) {
+            HStack(spacing: PulseSpacing.sm) {
+                grandStatusBadge
+                recheckButton
             }
-            Spacer()
-            recheckButton
         }
     }
 
@@ -423,7 +414,7 @@ struct LiveReadinessView: View {
         .padding(.horizontal, 6)
         .padding(.vertical, 4)
         .background(
-            RoundedRectangle(cornerRadius: PulseRadii.xs)
+            RoundedRectangle(cornerRadius: PulseRadii.badge)
                 .fill(colors.surface.opacity(0.3))
         )
     }
@@ -458,7 +449,7 @@ struct LiveReadinessView: View {
     }
 
     private var emergencyStopChip: some View {
-        let color: Color = viewModel.emergencyStopAvailable ? PulseColors.accent : PulseColors.danger
+        let color: Color = viewModel.emergencyStopAvailable ? PulseColors.success : PulseColors.danger
         return HStack(spacing: 5) {
             Image(systemName: viewModel.emergencyStopAvailable ? "checkmark.shield" : "exclamationmark.triangle")
                 .font(.system(size: 9, weight: .bold))
@@ -475,7 +466,7 @@ struct LiveReadinessView: View {
         .padding(.horizontal, 6)
         .padding(.vertical, 4)
         .background(
-            RoundedRectangle(cornerRadius: PulseRadii.xs)
+            RoundedRectangle(cornerRadius: PulseRadii.badge)
                 .fill(color.opacity(0.08))
         )
     }

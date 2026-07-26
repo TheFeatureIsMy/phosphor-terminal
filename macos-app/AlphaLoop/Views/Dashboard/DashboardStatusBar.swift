@@ -49,11 +49,11 @@ struct DashboardStatusBar: View {
         .padding(.horizontal, PulseSpacing.lg)
         .padding(.vertical, PulseSpacing.xs)
         .background(
-            RoundedRectangle(cornerRadius: PulseRadii.md)
+            RoundedRectangle(cornerRadius: PulseRadii.card)
                 .fill(colors.cardBackground)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: PulseRadii.md)
+            RoundedRectangle(cornerRadius: PulseRadii.card)
                 .stroke(colors.border, lineWidth: 0.5)
         )
         .id(settingsState.language)
@@ -87,11 +87,11 @@ struct DashboardStatusBar: View {
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
             .background(
-                RoundedRectangle(cornerRadius: PulseRadii.xs)
+                RoundedRectangle(cornerRadius: PulseRadii.badge)
                     .fill(PulseColors.cyan.opacity(0.06))
             )
             .overlay(
-                RoundedRectangle(cornerRadius: PulseRadii.xs)
+                RoundedRectangle(cornerRadius: PulseRadii.badge)
                     .stroke(PulseColors.cyan.opacity(0.20), lineWidth: 0.5)
             )
     }

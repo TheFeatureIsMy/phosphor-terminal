@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlphaLoop · 投研纪要</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B1310;--panel:#101B16;--hairline:#22322B;--ink:#E8E4D6;--ink-2:#8A9188;
+    --gold:#C9A86A;--green-accent:#2E7D5B;--up:#3E9B6E;--down:#B54A45;--warn:#C9922A;
+    --serif:'Cormorant Garamond',Georgia,serif;--sans:'Inter',-apple-system,system-ui,sans-serif;--mono:'IBM Plex Mono',ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5;letter-spacing:.01em;padding-bottom:96px}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 40px}
+  button{font-family:var(--sans)}
+
+  .hair{height:1px;background:var(--hairline);transform:scaleX(0);transform-origin:left center;animation:draw .9s cubic-bezier(.22,.61,.36,1) forwards}
+  .fade{opacity:0;animation:fade 1s ease forwards}
+  .d1{animation-delay:.05s}.d2{animation-delay:.15s}.d3{animation-delay:.28s}.d4{animation-delay:.42s}.d5{animation-delay:.56s}.d6{animation-delay:.7s}.d7{animation-delay:.84s}
+  @keyframes draw{to{transform:scaleX(1)}}
+  @keyframes fade{to{opacity:1}}
+
+  /* header */
+  header{padding:26px 0 20px}
+  .topbar{display:flex;align-items:baseline;justify-content:space-between;gap:24px;flex-wrap:wrap}
+  .brand{display:flex;align-items:baseline;gap:14px}
+  .brand .mark{font-family:var(--serif);font-weight:700;font-size:30px;letter-spacing:.02em;color:var(--ink)}
+  .brand .mark em{color:var(--gold);font-style:normal}
+  .brand .sub{font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--ink-2)}
+  .header-meta{font-size:12px;color:var(--ink-2);letter-spacing:.06em;text-align:right;line-height:1.7}
+  .header-meta b{color:var(--ink);font-weight:500}
+  .back{color:var(--ink-2);text-decoration:none}
+  .back:hover{color:var(--gold)}
+
+  .ctrl-row{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-top:22px}
+  .seg-wrap{display:flex;align-items:center;gap:12px}
+  .seg-lbl{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-2)}
+  .seg{display:inline-flex;border:1px solid var(--hairline)}
+  .seg button{background:transparent;border:none;border-right:1px solid var(--hairline);color:var(--ink-2);font-family:var(--sans);font-size:12.5px;font-weight:500;letter-spacing:.04em;padding:8px 18px;cursor:pointer;transition:.2s}
+  .seg button:last-child{border-right:none}
+  .seg button[aria-pressed="true"]{background:rgba(201,168,106,.1);color:var(--gold)}
+  .seg button:hover:not([aria-pressed="true"]){color:var(--ink)}
+  .seg button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .runstat{font-family:var(--mono);font-size:12px;color:var(--ink-2);letter-spacing:.04em}
+  .runstat b{color:var(--gold)}
+
+  .kicker{font-size:10.5px;letter-spacing:.3em;text-transform:uppercase;color:var(--ink-2);margin-bottom:14px}
+  .section-no{font-family:var(--mono);font-size:12px;color:var(--gold);letter-spacing:.1em;margin-right:10px}
+
+  /* subject hero */
+  .hero{padding:38px 0 30px}
+  .hero-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:48px;align-items:end}
+  .subj-label{font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--ink-2)}
+  .subj-sym{font-family:var(--serif);font-weight:600;font-size:64px;line-height:.98;letter-spacing:-.01em;color:var(--ink);margin:8px 0 6px}
+  .subj-px{font-family:var(--mono);font-size:14px;color:var(--ink-2);letter-spacing:.04em}
+  .subj-px b{color:var(--ink)} .subj-px .up{color:var(--up)}
+  .subj-reason-box{text-align:right}
+  .srb-label{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-2)}
+  .srb-title{font-family:var(--serif);font-weight:600;font-size:30px;color:var(--gold);margin-top:6px;line-height:1.1}
+  .srb-note{font-size:12.5px;color:var(--ink-2);margin-top:8px;line-height:1.5}
+
+  /* agents section: factsheet-like */
+  .factsheet{padding:32px 0}
+  .agent-table{border-top:1px solid var(--hairline)}
+  .agent-row{display:grid;grid-template-columns:180px 120px 1fr;gap:32px;padding:22px 0;border-bottom:1px solid var(--hairline);align-items:start}
+  .ar-name{font-family:var(--serif);font-weight:600;font-size:22px;color:var(--ink);line-height:1.1}
+  .ar-name .en{display:block;font-family:var(--sans);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2);margin-top:4px}
+  .ar-stance{display:flex;flex-direction:column;gap:8px}
+  .stance-tag{font-size:11px;letter-spacing:.1em;text-transform:uppercase;padding:3px 9px;border:1px solid var(--hairline);align-self:start;color:var(--ink-2)}
+  .stance-tag.bull{color:var(--up);border-color:rgba(62,155,110,.4)}
+  .stance-tag.bear{color:var(--down);border-color:rgba(181,74,69,.4)}
+  .stance-tag.neu{color:var(--warn);border-color:rgba(201,146,42,.4)}
+  .stance-tag.risk{color:var(--gold);border-color:rgba(201,168,106,.4)}
+  .ar-conf{font-family:var(--serif);font-weight:600;font-size:34px;color:var(--gold);line-height:1;font-variant-numeric:tabular-nums}
+  .ar-conf small{font-family:var(--sans);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2);display:block;font-weight:400}
+  .ar-view{font-size:14px;color:var(--ink);line-height:1.6}
+  .ar-evid{font-family:var(--mono);font-size:11.5px;color:var(--ink-2);margin-top:10px;letter-spacing:.02em;line-height:1.9}
+  .ar-evid span{margin-right:18px;white-space:nowrap}
+  .ar-evid span::before{content:"— "}
+
+  /* debate minutes */
+  .minutes{padding:34px 0}
+  .min-intro{font-size:13.5px;color:var(--ink-2);line-height:1.6;margin-bottom:22px;max-width:70ch}
+  .min-list{border-top:1px solid var(--hairline)}
+  .min-item{display:grid;grid-template-columns:64px 130px 1fr;gap:24px;padding:20px 0;border-bottom:1px solid var(--hairline);align-items:baseline;transition:opacity .5s}
+  .min-no{font-family:var(--serif);font-weight:600;font-size:30px;color:var(--gold);line-height:1}
+  .min-who{font-family:var(--sans);font-weight:600;font-size:14px}
+  .min-who.bull{color:var(--up)} .min-who.bear{color:var(--down)} .min-who.tech{color:var(--gold)}
+  .min-who .ts{display:block;font-family:var(--mono);font-size:10.5px;color:var(--ink-2);font-weight:400;letter-spacing:.04em;margin-top:4px}
+  .min-txt{font-size:14.5px;color:var(--ink);line-height:1.65}
+  .min-txt b{color:var(--gold);font-weight:500}
+  .min-item.hidden{opacity:0;transform:translateY(10px)}
+  .min-foot{margin-top:22px;display:flex;gap:12px}
+  .min-btn{font-family:var(--sans);font-size:12.5px;font-weight:500;letter-spacing:.06em;color:var(--ink);background:transparent;border:1px solid var(--hairline);padding:10px 20px;cursor:pointer;transition:.2s}
+  .min-btn:hover{border-color:var(--gold);color:var(--gold)}
+  .min-btn:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
+  /* ruling + verdict two-col */
+  .report{display:grid;grid-template-columns:1fr 1.25fr;gap:48px;padding:34px 0}
+  .panel-title{font-family:var(--serif);font-weight:600;font-size:23px;color:var(--ink);margin-bottom:4px;letter-spacing:.01em}
+  .panel-note{font-size:11px;color:var(--ink-2);letter-spacing:.05em;margin-bottom:20px}
+  .cst-list{border-top:1px solid var(--hairline)}
+  .cst-item{display:flex;align-items:baseline;justify-content:space-between;padding:16px 0;border-bottom:1px solid var(--hairline)}
+  .cst-item .k{font-size:13px;color:var(--ink-2)}
+  .cst-item .v{font-family:var(--serif);font-weight:600;font-size:24px;color:var(--ink);font-variant-numeric:tabular-nums}
+  .cst-item .v.down{color:var(--down)} .cst-item .v.up{color:var(--up)} .cst-item .v.gold{color:var(--gold)}
+  .ruling-verdict{margin-top:18px;font-size:13px;color:var(--ink-2);line-height:1.6}
+  .ruling-verdict b{color:var(--up);font-weight:500}
+
+  /* final verdict */
+  .verdict-head{display:flex;align-items:baseline;gap:20px;flex-wrap:wrap;margin-bottom:4px}
+  .vbadge{font-family:var(--serif);font-weight:700;font-size:56px;color:var(--gold);line-height:.9}
+  .vmeta{font-family:var(--mono);font-size:12px;color:var(--ink-2);letter-spacing:.04em;line-height:1.8}
+  .vmeta b{color:var(--ink)} .vmeta .up{color:var(--up)}
+  .vstamp{font-size:12px;color:var(--ink-2);letter-spacing:.06em;margin-bottom:20px}
+  .vgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-top:1px solid var(--hairline);border-bottom:1px solid var(--hairline)}
+  .vg{padding:18px 18px 18px 0;border-right:1px solid var(--hairline)}
+  .vg:last-child{border-right:none;padding-right:0}
+  .vg .k{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2);margin-bottom:10px}
+  .vg .num{font-family:var(--serif);font-weight:600;font-size:28px;color:var(--ink);font-variant-numeric:tabular-nums;line-height:1}
+  .vg .num.up{color:var(--up)} .vg .num.down{color:var(--down)} .vg .num.gold{color:var(--gold)}
+  .perm{margin-top:22px;display:flex;gap:24px;flex-wrap:wrap;align-items:center;font-size:12.5px;color:var(--ink-2)}
+  .perm .p{display:inline-flex;align-items:center;gap:7px}
+  .perm .ok{color:var(--up)} .perm .no{color:var(--down)}
+  .perm .code{font-family:var(--mono);font-size:11.5px;margin-left:auto;color:var(--ink-2)}
+  .perm .code b{color:var(--down)}
+
+  /* outputs */
+  .outs{display:flex;gap:12px;flex-wrap:wrap;padding:8px 0 6px}
+  .obtn{font-family:var(--sans);font-size:13px;font-weight:500;letter-spacing:.04em;color:var(--ink);background:transparent;border:1px solid var(--hairline);padding:12px 22px;cursor:pointer;transition:border-color .2s,color .2s,background .2s}
+  .obtn:hover{border-color:var(--gold);color:var(--gold)}
+  .obtn.pri{border-color:var(--gold);color:var(--gold)}
+  .obtn.pri:hover{background:rgba(201,168,106,.08)}
+  .obtn:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
+  footer.colophon{padding:30px 0 10px;font-size:11px;color:var(--ink-2);letter-spacing:.06em;display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+
+  /* action footer */
+  .estop{position:fixed;bottom:0;left:0;right:0;background:#0d1712;border-top:1px solid #2a3630;z-index:50}
+  .estop-inner{max-width:1180px;margin:0 auto;padding:14px 40px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
+  .estop-txt{font-size:12px;color:var(--ink-2);letter-spacing:.04em}
+  .estop-txt b{color:var(--gold);font-weight:600}
+  .estop-btn{font-family:var(--sans);font-size:12.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);background:transparent;border:1px solid var(--gold);padding:11px 26px;cursor:pointer;transition:all .2s}
+  .estop-btn:hover{background:rgba(201,168,106,.1)}
+  .estop-btn:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
+  @media (max-width:768px){
+    .wrap{padding:0 22px}
+    .hero-grid{grid-template-columns:1fr;gap:26px;align-items:start}
+    .subj-reason-box{text-align:left}
+    .subj-sym{font-size:46px}
+    .agent-row{grid-template-columns:1fr;gap:12px}
+    .min-item{grid-template-columns:44px 1fr;gap:14px}
+    .min-who{grid-column:2}
+    .min-txt{grid-column:1/-1}
+    .report{grid-template-columns:1fr;gap:34px}
+    .vgrid{grid-template-columns:1fr 1fr}
+    .vg{border-right:1px solid var(--hairline);padding-right:18px}
+    .vg:nth-child(2n){border-right:none}
+    .vg:nth-child(n+3){border-top:1px solid var(--hairline)}
+    .header-meta{text-align:left}
+    .estop-inner{padding:12px 22px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .hair{animation:none;transform:scaleX(1)}
+    .fade{animation:none;opacity:1}
+    .min-item.hidden{opacity:1;transform:none}
+    *{animation-duration:0s!important;transition:none!important}
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header>
+    <div class="topbar fade d1">
+      <div class="brand">
+        <span class="mark">Alpha<em>Loop</em></span>
+        <span class="sub">Research Memorandum</span>
+      </div>
+      <div class="header-meta">
+        <div><b>AI 投研纪要</b> · Multi-Agent Research</div>
+        <div>标的 BTC/USDT · 截至 2026-07-14 14:23 · UTC+8</div>
+        <div><a class="back" href="index.html">← 返回矩阵</a></div>
+      </div>
+    </div>
+    <div class="hair d1" style="margin-top:20px"></div>
+    <div class="ctrl-row fade d2">
+      <div class="seg-wrap">
+        <span class="seg-lbl">研究深度</span>
+        <div class="seg" role="group" aria-label="研究深度">
+          <button type="button" aria-pressed="false">快速</button>
+          <button type="button" aria-pressed="false">标准</button>
+          <button type="button" aria-pressed="true">深度</button>
+        </div>
+      </div>
+      <span class="runstat">研究中 · <b>6/6</b> Agent 已发言 · 本次用时 <b>42s</b></span>
+    </div>
+  </header>
+
+  <!-- SUBJECT HERO -->
+  <section class="hero">
+    <div class="hero-grid">
+      <div class="fade d2">
+        <div class="subj-label">研究标的 · Research Subject</div>
+        <div class="subj-sym">BTC / USDT</div>
+        <div class="subj-px">现价 <b>64,180</b> · 24h <span class="up">+1.46%</span> · 永续合约 · 以 USDT 计价</div>
+      </div>
+      <div class="subj-reason-box fade d3">
+        <div class="srb-label">触发原因 · Trigger</div>
+        <div class="srb-title">结构突破信号 #1</div>
+        <div class="srb-note">请求深度复核 · 日线突破颈线 64k · 派发 6 位分析 Agent</div>
+      </div>
+    </div>
+    <div class="hair d3" style="margin-top:34px"></div>
+  </section>
+
+  <!-- §1 AGENTS -->
+  <section class="factsheet fade d3">
+    <div class="kicker"><span class="section-no">§ 01</span>多 Agent 观点 · Analyst Opinions</div>
+    <div class="agent-table">
+      <div class="agent-row">
+        <div class="ar-name">多头分析师<span class="en">Bull Analyst</span></div>
+        <div class="ar-stance"><span class="stance-tag bull">看多</span><div class="ar-conf">0.78<small>置信度</small></div></div>
+        <div><div class="ar-view">日线结构突破颈线 64k，量能放大确认，回踩不破即二次上车。趋势级别信号，非日内噪声。</div><div class="ar-evid"><span>突破成交量 +142%</span><span>OBV 创新高</span><span>HTF 守卫 PASS</span></div></div>
+      </div>
+      <div class="agent-row">
+        <div class="ar-name">空头分析师<span class="en">Bear Analyst</span></div>
+        <div class="ar-stance"><span class="stance-tag bear">看空</span><div class="ar-conf">0.64<small>置信度</small></div></div>
+        <div><div class="ar-view">上方 65.2k 有密集套牢盘，RSI 顶背离，谨防假突破诱多。追高的风险回报比不划算。</div><div class="ar-evid"><span>RSI 顶背离</span><span>65.2k 挂单墙</span><span>资金费率偏高 0.043%</span></div></div>
+      </div>
+      <div class="agent-row">
+        <div class="ar-name">技术面<span class="en">Technical</span></div>
+        <div class="ar-stance"><span class="stance-tag bull">偏多</span><div class="ar-conf">0.71<small>置信度</small></div></div>
+        <div><div class="ar-view">多周期共振向上，15m/1h/4h 均线多头排列，MACD 金叉。动能结构健康，尚无顶部背离。</div><div class="ar-evid"><span>均线多头排列</span><span>MACD 金叉</span><span>ATR 扩张</span></div></div>
+      </div>
+      <div class="agent-row">
+        <div class="ar-name">情绪面<span class="en">Sentiment</span></div>
+        <div class="ar-stance"><span class="stance-tag neu">中性偏多</span><div class="ar-conf">0.60<small>置信度</small></div></div>
+        <div><div class="ar-view">FinBERT 新闻情绪 +0.34 中性偏多，社媒热度回升但未过热。情绪面支撑温和，无过热风险。</div><div class="ar-evid"><span>新闻情绪 +0.34</span><span>社媒提及 +28%</span><span>恐贪指数 62</span></div></div>
+      </div>
+      <div class="agent-row">
+        <div class="ar-name">链上<span class="en">On-chain</span></div>
+        <div class="ar-stance"><span class="stance-tag neu">谨慎</span><div class="ar-conf">0.55<small>置信度</small></div></div>
+        <div><div class="ar-view">交易所净流出放缓，巨鲸地址近 24h 小幅增持但不显著。链上信号中性，未提供强方向依据。</div><div class="ar-evid"><span>净流出放缓</span><span>巨鲸 +0.8%</span><span>稳定币储备平</span></div></div>
+      </div>
+      <div class="agent-row">
+        <div class="ar-name">风控<span class="en">Risk Control</span></div>
+        <div class="ar-stance"><span class="stance-tag risk">放行(约束)</span><div class="ar-conf" style="font-size:22px">CLEARED<small>有条件</small></div></div>
+        <div><div class="ar-view">允许进入 dry-run，但因资金费率偏高与 65.2k 阻力，限仓位 ≤10% 并强制止损，须绑定独立资金池。</div><div class="ar-evid"><span>约束 仓位≤10%</span><span>止损 62.4k</span><span>独立资金池</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- §2 DEBATE MINUTES -->
+  <section class="minutes fade d4">
+    <div class="kicker"><span class="section-no">§ 02</span>多空辩论纪要 · Debate Minutes</div>
+    <div class="min-intro">下列为多头与空头分析师就本次突破信号的往复辩论纪要，共 5 轮，按发言时序编号。技术面于第五轮提出折中裁量，作为入场时点的补充意见。</div>
+    <div class="min-list" id="debate">
+      <div class="min-item">
+        <div class="min-no">01</div>
+        <div class="min-who bull">多头 Bull<span class="ts">14:22:44</span></div>
+        <div class="min-txt">突破量能 <b>+142%</b>，配合 OBV 创新高——这是真突破，不是诱多。日线级别站稳颈线，回踩确认即可二次上车。</div>
+      </div>
+      <div class="min-item hidden">
+        <div class="min-no">02</div>
+        <div class="min-who bear">空头 Bear<span class="ts">14:22:48</span></div>
+        <div class="min-txt">然而 65.2k 挂单墙 <b>3,200 万</b>尚未消化，且 RSI 已现顶背离先兆。量能大不等于能一口气吃掉厚墙，须防冲高回落。</div>
+      </div>
+      <div class="min-item hidden">
+        <div class="min-no">03</div>
+        <div class="min-who bull">多头 Bull<span class="ts">14:22:52</span></div>
+        <div class="min-txt">挂单墙已在过去 2h 被吃掉 <b>40%</b>，剩余厚度正在缩减。而 RSI 背离在强趋势中常失效——趋势未破前，背离仅为噪声。</div>
+      </div>
+      <div class="min-item hidden">
+        <div class="min-no">04</div>
+        <div class="min-who bear">空头 Bear<span class="ts">14:22:56</span></div>
+        <div class="min-txt">即便上攻，此位置风险回报比不佳。资金费率 <b>0.043%</b> 偏高，多头拥挤。追高不如等回踩 <b>63.5k</b> 再行介入。</div>
+      </div>
+      <div class="min-item hidden">
+        <div class="min-no">05</div>
+        <div class="min-who tech">技术面 Tech · 裁量<span class="ts">14:23:01</span></div>
+        <div class="min-txt">折中裁量：<b>4h 未破位</b>前，回踩 <b>63.5–64k</b> 确为更优入场区。方向偏多成立，但入场点应等回踩确认，而非追高。</div>
+      </div>
+    </div>
+    <div class="min-foot">
+      <button class="min-btn" id="stepBtn">展开下一轮 →</button>
+      <button class="min-btn" id="allBtn">展开全部纪要</button>
+    </div>
+  </section>
+
+  <div class="hair d4"></div>
+
+  <!-- §3 RULING + VERDICT -->
+  <section class="report">
+    <div class="fade d5">
+      <div class="kicker"><span class="section-no">§ 03</span>风控裁定 · Risk Opinion</div>
+      <div class="panel-title">放行（有约束）</div>
+      <div class="panel-note">Cleared with Constraints · 风险等级 中</div>
+      <div class="cst-list">
+        <div class="cst-item"><span class="k">仓位上限</span><span class="v up">≤ 10%</span></div>
+        <div class="cst-item"><span class="k">强制止损</span><span class="v down">62,400</span></div>
+        <div class="cst-item"><span class="k">资金隔离</span><span class="v gold" style="font-size:20px">独立资金池</span></div>
+      </div>
+      <div class="ruling-verdict">允许进入 dry-run 阶段，因资金费率偏高与 65.2k 阻力附加上述约束。<b>放行不等于实盘许可</b>，须经人工确认。</div>
+    </div>
+
+    <div class="fade d6">
+      <div class="kicker"><span class="section-no">§ 04</span>最终评级 · Final Verdict</div>
+      <div class="verdict-head">
+        <span class="vbadge">偏多 B+</span>
+        <div class="vmeta">方向 <b>LONG</b><br>综合置信度 <b>0.74</b><br>6 Agent 共识 · <span class="up">偏多</span></div>
+      </div>
+      <div class="vstamp">截至 2026-07-14 14:23 · 六位分析师加权裁定</div>
+      <div class="vgrid">
+        <div class="vg"><div class="k">目标价</div><div class="num up">66,800</div></div>
+        <div class="vg"><div class="k">止损</div><div class="num down">62,400</div></div>
+        <div class="vg"><div class="k">止盈(分批)</div><div class="num" style="font-size:20px">65.2k / 66.8k</div></div>
+        <div class="vg"><div class="k">建议仓位</div><div class="num gold">≤10%</div></div>
+      </div>
+      <div class="perm">
+        <span class="p ok">✓ 可回测</span>
+        <span class="p ok">✓ 可模拟</span>
+        <span class="p no">✗ 可实盘 · 需人工确认</span>
+        <span class="code">can_live_trade = <b>false</b></span>
+      </div>
+      <div class="outs" style="margin-top:24px">
+        <button class="obtn pri">发布为 Signal</button>
+        <button class="obtn">创建 StrategyDraft</button>
+        <button class="obtn">存为 ResearchReport</button>
+        <button class="obtn">加入观察</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="hair d7"></div>
+
+  <footer class="colophon fade d7">
+    <span>AlphaLoop · AI-Driven Quantitative Research Desk</span>
+    <span>provider OpenAI GPT + DeepSeek · prompt_version v3 · model_version 已记录 · 本报告仅供内部研究参考</span>
+  </footer>
+
+</div>
+
+<!-- ACTION FOOTER -->
+<div class="estop">
+  <div class="estop-inner">
+    <div class="estop-txt">本 ResearchReport 产出的 Signal <b>can_live_trade = false</b> · 可回测 / 可模拟 / 实盘需人工确认。</div>
+    <button class="estop-btn">发布为 Signal</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+  var seg=document.querySelectorAll('.seg button');
+  seg.forEach(function(b){b.addEventListener('click',function(){seg.forEach(function(x){x.setAttribute('aria-pressed','false');});b.setAttribute('aria-pressed','true');});});
+
+  var items=Array.prototype.slice.call(document.querySelectorAll('.min-item'));
+  var shown=reduce?items.length:1;
+  function render(){items.forEach(function(it,i){it.classList.toggle('hidden',i>=shown);});var b=document.getElementById('stepBtn');if(shown>=items.length){b.textContent='纪要已完整';b.disabled=true;b.style.opacity=.5;b.style.cursor='default';}}
+  document.getElementById('stepBtn').addEventListener('click',function(){if(shown<items.length){shown++;render();if(!reduce)items[shown-1].scrollIntoView({behavior:'smooth',block:'center'});}});
+  document.getElementById('allBtn').addEventListener('click',function(){shown=items.length;render();});
+  render();
+})();
+</script>
+</body>
+</html>

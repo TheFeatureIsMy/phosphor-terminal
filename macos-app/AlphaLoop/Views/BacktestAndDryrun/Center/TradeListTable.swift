@@ -83,10 +83,10 @@ struct TradeListTable: View {
         HStack(spacing: 0) {
             cell("\(idx)", width: 40)
             cell(t.openTime.prefix(16).description, width: 120)
-            cell(t.side.uppercased(), width: 60, color: t.side.uppercased() == "LONG" ? PulseColors.accent : PulseColors.danger)
+            cell(t.side.uppercased(), width: 60, color: t.side.uppercased() == "LONG" ? PulseColors.bullish : PulseColors.bearish)
             cell(String(format: "%.2f", t.openPrice), width: 90)
             cell(String(format: "%.2f", t.closePrice), width: 90)
-            cell(String(format: "%+.2f", t.profit), width: 80, color: t.profit >= 0 ? PulseColors.accent : PulseColors.danger)
+            cell(String(format: "%+.2f", t.profit), width: 80, color: t.profit >= 0 ? PulseColors.bullish : PulseColors.bearish)
             cell(t.duration)
             Spacer()
         }

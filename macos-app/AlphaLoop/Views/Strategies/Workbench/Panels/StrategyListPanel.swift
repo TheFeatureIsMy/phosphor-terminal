@@ -59,7 +59,7 @@ struct StrategyListPanel: View {
             Text(f.label)
                 .font(PulseFonts.micro)
                 .tracking(0.8)
-                .foregroundStyle(active ? .black : colors.textSecondary)
+                .foregroundStyle(active ? PulseColors.onAccent : colors.textSecondary)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
                 .background(active ? PulseColors.accent : colors.surface)
@@ -145,7 +145,7 @@ struct StrategyListPanel: View {
                 Text(L10n.Workbench.newDraft).font(PulseFonts.captionMedium)
                 Spacer()
             }
-            .foregroundStyle(.black)
+            .foregroundStyle(PulseColors.onAccent)
             .padding(.horizontal, 12)
             .padding(.vertical, 9)
             .background(

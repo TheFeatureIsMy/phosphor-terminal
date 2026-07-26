@@ -1,5 +1,5 @@
-// APIFailureClustersTests.swift — Tests for failure-clusters API service
-// Verifies mock mode returns empty array (no fake history per spec)
+// APIFailureClustersTests.swift - Tests for failure-clusters API service
+// Disabled: API no longer uses mock fallback; requires live backend.
 
 import Testing
 import Foundation
@@ -10,7 +10,8 @@ struct APIFailureClustersTests {
 
     let client = MockNetworkClient()
 
-    @Test func getFailureClustersMockReturnsEmpty() async throws {
+    @Test(.disabled("Requires live backend - failure clusters API no longer uses mock fallback"))
+    func getFailureClustersReturnsData() async throws {
         let clusters = try await client.getFailureClusters(strategyUuid: UUID())
         #expect(clusters.isEmpty)
     }

@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AlphaLoop · AI 投研星图</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#070B0C;--grid:rgba(120,180,170,0.06);--node:#0F1614;--node-border:#22403A;
+    --txt:#CFE0DA;--txt-dim:#6C8079;
+    --lime:#5CE6A8;--blue:#3FA9E0;--up:#5CE6A8;--down:#F0645B;--warn:#E8B84B;
+    --panel:rgba(11,18,17,0.72);--panel-border:rgba(92,230,168,0.14);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--txt);font-family:'IBM Plex Mono',ui-monospace,monospace;overflow:hidden;-webkit-font-smoothing:antialiased}
+  h1,h2,h3,.display{font-family:'Space Grotesk',sans-serif}
+  button{font-family:inherit}
+
+  .stage{position:relative;width:100vw;height:100vh;background:radial-gradient(1200px 800px at 50% 46%,rgba(92,230,168,0.05),transparent 60%),radial-gradient(900px 700px at 18% 88%,rgba(63,169,224,0.045),transparent 55%),var(--bg)}
+  .stage::before{content:"";position:absolute;inset:0;background-image:radial-gradient(circle,var(--grid) 1px,transparent 1px);background-size:34px 34px;background-position:center;pointer-events:none}
+  .stage::after{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(120,180,170,0.028) 1px,transparent 1px),linear-gradient(90deg,rgba(120,180,170,0.028) 1px,transparent 1px);background-size:170px 170px;pointer-events:none}
+
+  /* topbar */
+  .topbar{position:absolute;top:0;left:0;right:0;height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;z-index:40}
+  .brand{display:flex;align-items:center;gap:12px;pointer-events:auto}
+  .brand .mark{width:26px;height:26px}
+  .brand .name{font-family:'Space Grotesk';font-weight:600;font-size:15px;letter-spacing:1px;color:var(--txt)}
+  .brand .tag{font-size:11px;color:var(--txt-dim);letter-spacing:2px;text-transform:uppercase}
+  .back{font-size:11px;color:var(--txt-dim);text-decoration:none;letter-spacing:1px;margin-left:6px}
+  .back:hover{color:var(--lime)}
+  .top-right{display:flex;align-items:center;gap:16px;pointer-events:auto}
+  .seg{display:inline-flex;background:var(--panel);border:1px solid var(--panel-border);border-radius:9px;overflow:hidden;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+  .seg button{background:none;border:none;border-right:1px solid var(--node-border);color:var(--txt-dim);font-family:'IBM Plex Mono';font-size:10.5px;letter-spacing:1px;padding:6px 12px;cursor:pointer;transition:.16s}
+  .seg button:last-child{border-right:none}
+  .seg button[aria-selected="true"]{background:var(--lime);color:var(--bg);font-weight:600}
+  .seg button:hover:not([aria-selected="true"]){color:var(--lime)}
+  .seg button:focus-visible{outline:2px solid #EAF6F1;outline-offset:2px}
+  .coord{font-size:11px;color:var(--txt-dim);letter-spacing:1.5px}
+  .coord b{color:var(--lime);font-weight:500}
+
+  .graph-wrap{position:absolute;inset:0;z-index:5}
+  svg.graph{width:100%;height:100%;display:block}
+  .edge{fill:none;stroke-linecap:round}
+  .edge-bull{stroke:rgba(92,230,168,0.22);stroke-width:1.6}
+  .edge-bear{stroke:rgba(240,100,91,0.22);stroke-width:1.6;stroke-dasharray:5 6}
+  .edge-neu{stroke:rgba(232,184,75,0.20);stroke-width:1.4;stroke-dasharray:2 5}
+  .edge-risk{stroke:rgba(63,169,224,0.22);stroke-width:1.6}
+
+  .node{cursor:pointer}
+  .node .body{fill:var(--node);stroke:var(--node-border);stroke-width:1.4;transition:stroke .2s,filter .2s}
+  .node .ttl{font-family:'Space Grotesk';font-weight:600;font-size:13px;fill:var(--txt)}
+  .node .sub{font-family:'IBM Plex Mono';font-size:10px;fill:var(--txt-dim);letter-spacing:.5px}
+  .node .cf{font-family:'IBM Plex Mono';font-size:11px;font-weight:600}
+  .node.bull .body{stroke:var(--lime)} .node.bull .cf{fill:var(--lime)}
+  .node.bear .body{stroke:var(--down)} .node.bear .cf{fill:var(--down)}
+  .node.neu .body{stroke:var(--warn)} .node.neu .cf{fill:var(--warn)}
+  .node.risk .body{stroke:var(--blue)} .node.risk .cf{fill:var(--blue)}
+  .node.hub .body{stroke:var(--lime);stroke-width:2}
+  .node:hover .body{stroke:#EAF6F1;filter:drop-shadow(0 0 8px rgba(234,246,241,.5))}
+  .node:focus{outline:none}
+  .node:focus .body{stroke:#EAF6F1;filter:drop-shadow(0 0 8px rgba(234,246,241,.7))}
+  .node .halo{fill:none;stroke-width:1;opacity:.5;transform-box:fill-box;transform-origin:center;animation:breathe 3.2s ease-in-out infinite}
+  .node.hub .halo{stroke:var(--lime)}
+  @keyframes breathe{0%,100%{opacity:.12;transform:scale(1)}50%{opacity:.5;transform:scale(1.12)}}
+  .pulse-bull{fill:var(--lime)} .pulse-bear{fill:var(--down)} .pulse-neu{fill:var(--warn)} .pulse-risk{fill:var(--blue)}
+
+  /* hub center content */
+  .hub-grade{font-family:'Space Grotesk';font-weight:700;font-size:26px;fill:var(--lime)}
+  .hub-conf{font-family:'IBM Plex Mono';font-size:12px;fill:var(--txt)}
+  .hub-lbl{font-family:'IBM Plex Mono';font-size:9px;fill:var(--txt-dim);letter-spacing:2px}
+
+  /* HUD panels */
+  .hud{position:absolute;backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);background:var(--panel);border:1px solid var(--panel-border);border-radius:12px;z-index:30}
+  .hud-head{display:flex;align-items:center;gap:8px;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--txt-dim);margin-bottom:8px}
+  .hud-head .dot{width:6px;height:6px;border-radius:50%;background:var(--lime);box-shadow:0 0 8px var(--lime)}
+
+  /* subject HUD top-left */
+  .hud-subject{top:66px;left:22px;width:250px;padding:15px 17px}
+  .hud-subject .sym{font-family:'Space Grotesk';font-weight:600;font-size:20px;color:var(--txt)}
+  .hud-subject .px{font-size:13px;color:var(--txt);margin-top:6px;font-variant-numeric:tabular-nums}
+  .hud-subject .px b{color:var(--lime)}
+  .hud-subject .chg{color:var(--up);font-size:12px}
+  .hud-subject .reason{font-size:10.5px;color:var(--txt-dim);margin-top:10px;line-height:1.55;border-top:1px solid var(--node-border);padding-top:9px}
+  .hud-subject .reason b{color:var(--warn)}
+
+  /* verdict HUD right */
+  .hud-verdict{top:66px;right:22px;width:262px;padding:16px 18px}
+  .hud-verdict .grade{font-family:'Space Grotesk';font-weight:700;font-size:30px;color:var(--lime);line-height:1}
+  .hud-verdict .dir{display:inline-block;font-size:10px;letter-spacing:1.5px;color:var(--lime);border:1px solid rgba(92,230,168,.4);border-radius:6px;padding:2px 8px;margin-top:8px}
+  .hud-verdict .conf{font-size:12px;color:var(--txt-dim);margin-top:8px}
+  .hud-verdict .conf b{color:var(--txt)}
+  .vrow{display:flex;justify-content:space-between;font-size:11px;margin:5px 0;padding-top:5px;border-top:1px solid var(--node-border)}
+  .vrow:first-of-type{margin-top:12px}
+  .vrow .k{color:var(--txt-dim)} .vrow .v{color:var(--txt);font-variant-numeric:tabular-nums}
+  .vrow .v.up{color:var(--up)} .vrow .v.down{color:var(--down)} .vrow .v.warn{color:var(--warn)}
+  .perm{margin-top:12px;padding-top:10px;border-top:1px solid var(--node-border);font-size:10px;color:var(--txt-dim);line-height:1.8}
+  .perm .ok{color:var(--up)} .perm .no{color:var(--down)}
+
+  /* risk ruling HUD bottom-left */
+  .hud-risk{bottom:96px;left:22px;width:250px;padding:14px 16px}
+  .hud-risk .verdict-txt{font-size:12px;color:var(--blue);font-weight:500;margin-bottom:8px}
+  .crow{display:flex;justify-content:space-between;font-size:11px;margin:4px 0}
+  .crow .k{color:var(--txt-dim)} .crow .v{color:var(--txt)} .crow .v.warn{color:var(--warn)} .crow .v.down{color:var(--down)}
+
+  /* debate log HUD right-bottom */
+  .hud-debate{bottom:96px;right:22px;width:300px;max-height:calc(100vh - 420px);padding:14px 16px;display:flex;flex-direction:column}
+  .debate-scroll{overflow-y:auto;padding-right:4px;display:flex;flex-direction:column;gap:0}
+  .debate-scroll::-webkit-scrollbar{width:5px}
+  .debate-scroll::-webkit-scrollbar-thumb{background:var(--node-border);border-radius:3px}
+  .dturn{border-left:2px solid var(--node-border);padding:6px 0 8px 11px;position:relative;cursor:pointer;transition:.16s;opacity:.35}
+  .dturn.on{opacity:1}
+  .dturn.bull{border-color:var(--lime)} .dturn.bear{border-color:var(--down)} .dturn.tech{border-color:var(--warn)}
+  .dturn .dwho{font-size:9.5px;letter-spacing:1px;text-transform:uppercase;color:var(--txt-dim);margin-bottom:3px}
+  .dturn.bull .dwho{color:var(--lime)} .dturn.bear .dwho{color:var(--down)} .dturn.tech .dwho{color:var(--warn)}
+  .dturn .dtxt{font-size:11px;color:var(--txt);line-height:1.5}
+  .dturn .dtxt b{color:#EAF6F1}
+  .dturn.hidden{display:none}
+  .debate-ctrl{display:flex;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--node-border)}
+  .dbtn{flex:1;font-family:'IBM Plex Mono';font-size:10px;letter-spacing:.5px;color:var(--txt-dim);background:transparent;border:1px solid var(--node-border);border-radius:7px;padding:6px 4px;cursor:pointer;transition:.16s}
+  .dbtn:hover{color:var(--lime);border-color:var(--lime)}
+  .dbtn:focus-visible{outline:2px solid #EAF6F1;outline-offset:2px}
+
+  /* bottom dock: outputs */
+  .dock{position:absolute;left:50%;bottom:20px;transform:translateX(-50%);z-index:35;display:flex;align-items:center;gap:0;backdrop-filter:blur(11px);-webkit-backdrop-filter:blur(11px);background:rgba(9,15,14,0.82);border:1px solid var(--panel-border);border-radius:14px;box-shadow:0 8px 40px rgba(0,0,0,.5)}
+  .dock-lbl{display:flex;flex-direction:column;justify-content:center;padding:0 16px;border-right:1px solid var(--node-border)}
+  .dock-lbl .t{font-size:9.5px;letter-spacing:2px;text-transform:uppercase;color:var(--txt-dim)}
+  .dock-lbl .n{font-family:'Space Grotesk';font-weight:600;font-size:14px;color:var(--txt);margin-top:2px}
+  .dock-btns{display:flex;gap:8px;padding:12px 14px}
+  .obtn{font-family:'IBM Plex Mono';font-size:11px;letter-spacing:.5px;color:var(--txt);background:var(--node);border:1px solid var(--node-border);border-radius:9px;padding:9px 13px;cursor:pointer;transition:.16s;white-space:nowrap}
+  .obtn:hover{border-color:var(--lime);color:var(--lime)}
+  .obtn.pri{border-color:rgba(92,230,168,.5);color:var(--lime)}
+  .obtn:focus-visible{outline:2px solid #EAF6F1;outline-offset:2px}
+  .dock-stop{display:flex;align-items:center;padding:0 14px;border-left:1px solid var(--node-border);font-size:9.5px;color:var(--txt-dim);letter-spacing:1px}
+
+  /* tooltip */
+  .tooltip{position:fixed;z-index:60;pointer-events:none;background:rgba(9,15,14,0.94);border:1px solid var(--lime);border-radius:9px;padding:10px 13px;min-width:180px;max-width:260px;opacity:0;transform:translateY(4px);transition:opacity .14s,transform .14s}
+  .tooltip.on{opacity:1;transform:translateY(0)}
+  .tooltip .tt{font-family:'Space Grotesk';font-weight:600;font-size:13px;color:var(--txt)}
+  .tooltip .ts{font-size:10px;color:var(--txt-dim);margin-top:3px;letter-spacing:.5px}
+  .tooltip .tv{font-size:11px;color:var(--txt);margin-top:7px;line-height:1.5}
+  .tooltip .te{font-size:10px;color:var(--lime);margin-top:6px;line-height:1.6}
+
+  /* mobile */
+  .mobile-list{display:none}
+  @media (max-width:768px){
+    body{overflow-y:auto}
+    .stage{height:auto;min-height:100vh;padding-bottom:40px}
+    .graph-wrap{display:none}
+    .topbar{position:static;height:auto;padding:14px 16px;flex-direction:column;gap:10px;align-items:flex-start}
+    .hud{position:static;width:auto!important;margin:12px 16px;max-height:none!important}
+    .dock{position:static;transform:none;left:auto;margin:12px 16px;flex-direction:column;align-items:stretch}
+    .dock-lbl,.dock-stop{border:none;border-bottom:1px solid var(--node-border);padding:12px 14px}
+    .dock-btns{flex-wrap:wrap}
+    .mobile-list{display:block;margin:12px 16px}
+    .mobile-list h3{font-size:12px;color:var(--txt-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px}
+    .mnode{background:var(--node);border:1px solid var(--node-border);border-radius:10px;padding:11px 13px;margin-bottom:8px;border-left-width:3px}
+    .mnode.bull{border-left-color:var(--lime)} .mnode.bear{border-left-color:var(--down)}
+    .mnode.neu{border-left-color:var(--warn)} .mnode.risk{border-left-color:var(--blue)}
+    .mnode .mn{font-family:'Space Grotesk';font-weight:600;font-size:14px;color:var(--txt)}
+    .mnode .ms{font-size:10.5px;color:var(--txt-dim);margin-top:4px;letter-spacing:.5px;line-height:1.5}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .pulse-bull,.pulse-bear,.pulse-neu,.pulse-risk{display:none!important}
+    .node .halo{animation:none!important;opacity:.35!important}
+    .edge-bear,.edge-neu{stroke-dasharray:none}
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="topbar">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 24 24" fill="none" aria-hidden="true"><polygon points="12,2 21,7 21,17 12,22 3,17 3,7" stroke="#5CE6A8" stroke-width="1.4"/><circle cx="12" cy="12" r="3.2" fill="#5CE6A8"/></svg>
+      <div class="name">AlphaLoop</div>
+      <span class="tag">RESEARCH STARMAP</span>
+      <a class="back" href="index.html">← 矩阵</a>
+    </div>
+    <div class="top-right">
+      <div class="seg" role="group" aria-label="研究深度">
+        <button type="button" aria-selected="false">快速</button>
+        <button type="button" aria-selected="false">标准</button>
+        <button type="button" aria-selected="true">深度</button>
+      </div>
+      <div class="coord">AGENTS <b>6/6</b> · 标的 <b>BTC/USDT</b> · 用时 <b>42s</b></div>
+    </div>
+  </div>
+
+  <div class="graph-wrap">
+    <svg class="graph" viewBox="0 0 1200 720" preserveAspectRatio="xMidYMid meet" aria-label="AI 投研观点星图">
+      <g id="edges"></g>
+      <g id="pulses"></g>
+      <g id="nodes"></g>
+    </svg>
+  </div>
+
+  <!-- subject HUD -->
+  <div class="hud hud-subject">
+    <div class="hud-head"><span class="dot"></span>RESEARCH SUBJECT</div>
+    <div class="sym">BTC/USDT</div>
+    <div class="px">现价 <b id="px">64,180</b> <span class="chg">24h +1.46%</span></div>
+    <div class="reason">触发原因 · <b>结构突破信号 #1</b> 请求深度复核 · 日线突破颈线 64k</div>
+  </div>
+
+  <!-- verdict HUD -->
+  <div class="hud hud-verdict">
+    <div class="hud-head"><span class="dot"></span>FINAL VERDICT · 观点汇聚</div>
+    <div class="grade">偏多 B+</div>
+    <span class="dir">方向 LONG</span>
+    <div class="conf">综合置信度 <b>0.74</b> · 6 Agent 共识</div>
+    <div class="vrow"><span class="k">目标价</span><span class="v up">66,800</span></div>
+    <div class="vrow"><span class="k">止损</span><span class="v down">62,400</span></div>
+    <div class="vrow"><span class="k">止盈(分批)</span><span class="v">65.2k / 66.8k</span></div>
+    <div class="vrow"><span class="k">建议仓位</span><span class="v warn">≤10%</span></div>
+    <div class="perm">SIGNAL 权限 · <span class="ok">回测✓</span> <span class="ok">模拟✓</span> <span class="no">实盘✗ 需人工确认</span><br>can_live_trade = <span class="no">false</span></div>
+  </div>
+
+  <!-- risk ruling HUD -->
+  <div class="hud hud-risk">
+    <div class="hud-head"><span class="dot" style="background:var(--blue);box-shadow:0 0 8px var(--blue)"></span>RISK OPINION · 风控裁定</div>
+    <div class="verdict-txt">◆ 放行（有约束）· 允许 dry-run</div>
+    <div class="crow"><span class="k">风险等级</span><span class="v warn">中</span></div>
+    <div class="crow"><span class="k">仓位上限</span><span class="v warn">≤10%</span></div>
+    <div class="crow"><span class="k">强制止损</span><span class="v down">62,400</span></div>
+    <div class="crow"><span class="k">资金隔离</span><span class="v">独立资金池</span></div>
+  </div>
+
+  <!-- debate log HUD -->
+  <div class="hud hud-debate">
+    <div class="hud-head"><span class="dot"></span>多空辩论时间线 · 5 轮</div>
+    <div class="debate-scroll" id="debate">
+      <div class="dturn bull on" data-turn="1"><div class="dwho">R1 · Bull · 14:22:44</div><div class="dtxt">突破量能 <b>+142%</b>，OBV 创新高——真突破非诱多，回踩确认即二次上车。</div></div>
+      <div class="dturn bear" data-turn="2"><div class="dwho">R2 · Bear · 14:22:48</div><div class="dtxt">65.2k 挂单墙 <b>3,200 万</b>未消化，RSI 顶背离先兆，量能大不代表能吃掉厚墙。</div></div>
+      <div class="dturn bull" data-turn="3"><div class="dwho">R3 · Bull · 14:22:52</div><div class="dtxt">挂单墙已被吃掉 <b>40%</b>，厚度缩减；RSI 背离在强趋势中常失效。</div></div>
+      <div class="dturn bear" data-turn="4"><div class="dwho">R4 · Bear · 14:22:56</div><div class="dtxt">风险回报比不佳，资金费率 <b>0.043%</b> 多头拥挤，追高不如等回踩 <b>63.5k</b>。</div></div>
+      <div class="dturn tech" data-turn="5"><div class="dwho">R5 · Tech 裁量 · 14:23:01</div><div class="dtxt"><b>4h 未破位</b>前，回踩 <b>63.5–64k</b> 为更优入场区。偏多成立，入场等回踩。</div></div>
+    </div>
+    <div class="debate-ctrl">
+      <button class="dbtn" id="stepBtn">▸ 逐轮回放</button>
+      <button class="dbtn" id="allBtn">▸ 全部展开</button>
+    </div>
+  </div>
+
+  <!-- dock outputs -->
+  <div class="dock">
+    <div class="dock-lbl"><div class="t">OUTPUT · 产出</div><div class="n">ResearchReport</div></div>
+    <div class="dock-btns">
+      <button class="obtn pri">✦ 发布为 Signal</button>
+      <button class="obtn">◆ 创建 StrategyDraft</button>
+      <button class="obtn">▣ 存为 Report</button>
+      <button class="obtn">◇ 加入观察</button>
+    </div>
+    <div class="dock-stop">provider<br>GPT + DeepSeek</div>
+  </div>
+
+  <!-- mobile fallback -->
+  <div class="mobile-list" id="mobileList"><h3>Agent 观点节点 · 6</h3></div>
+</div>
+
+<div class="tooltip" id="tooltip" role="status" aria-live="polite">
+  <div class="tt" id="tt-t"></div>
+  <div class="ts" id="tt-s"></div>
+  <div class="tv" id="tt-v"></div>
+  <div class="te" id="tt-e"></div>
+</div>
+
+<script>
+"use strict";
+var reduce=window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+
+/* nodes: hub center + 6 agents around */
+var HUB={x:600,y:360};
+var NODES=[
+  {id:'hub',x:600,y:360,shape:'hex',r:74,kind:'hub',ttl:'',sub:''},
+  {id:'bull', x:280,y:150,r:52,kind:'bull',ttl:'多头 Bull',sub:'看多 · 0.78',cf:'0.78',
+     tip:{s:'看多 LONG · 置信度 0.78',v:'日线结构突破颈线 64k，量能放大确认，回踩不破即二次上车。',e:'▸ 突破量能 +142% ▸ OBV 创新高 ▸ HTF 守卫 PASS'}},
+  {id:'bear', x:920,y:150,r:52,kind:'bear',ttl:'空头 Bear',sub:'看空 · 0.64',cf:'0.64',
+     tip:{s:'看空 SHORT · 置信度 0.64',v:'上方 65.2k 密集套牢盘，RSI 顶背离，谨防假突破诱多。',e:'▸ RSI 顶背离 ▸ 65.2k 挂单墙 ▸ 资金费率 0.043%'}},
+  {id:'tech', x:170,y:400,r:46,kind:'bull',ttl:'技术面 Tech',sub:'偏多 · 0.71',cf:'0.71',
+     tip:{s:'偏多 · 置信度 0.71',v:'多周期共振向上，15m/1h/4h 均线多头排列，MACD 金叉。',e:'▸ 均线多头排列 ▸ MACD 金叉 ▸ ATR 扩张'}},
+  {id:'sent', x:1030,y:400,r:46,kind:'neu',ttl:'情绪面 Sentiment',sub:'中性偏多 · 0.60',cf:'0.60',
+     tip:{s:'中性偏多 · 置信度 0.60',v:'FinBERT 新闻情绪 +0.34，社媒热度回升但未过热。',e:'▸ 新闻情绪 +0.34 ▸ 社媒提及 +28% ▸ 恐贪指数 62'}},
+  {id:'chain',x:340,y:620,r:46,kind:'neu',ttl:'链上 On-chain',sub:'谨慎 · 0.55',cf:'0.55',
+     tip:{s:'谨慎 · 置信度 0.55',v:'交易所净流出放缓，巨鲸地址近 24h 小幅增持但不显著。',e:'▸ 净流出放缓 ▸ 巨鲸 +0.8% ▸ 稳定币储备平'}},
+  {id:'risk', x:860,y:620,r:48,kind:'risk',ttl:'风控 Risk',sub:'放行(约束)',cf:'CLR',
+     tip:{s:'放行（有约束）· 风控裁定',v:'允许 dry-run，因资金费率偏高与 65.2k 阻力，限仓位 ≤10% 并强制止损。',e:'▸ 仓位≤10% ▸ 止损 62.4k ▸ 独立资金池'}},
+];
+var EDGES=[
+  {from:'bull',type:'bull'},{from:'bear',type:'bear'},{from:'tech',type:'bull'},
+  {from:'sent',type:'neu'},{from:'chain',type:'neu'},{from:'risk',type:'risk'},
+];
+var SVGNS='http://www.w3.org/2000/svg';
+var byId=function(id){return NODES.find(function(n){return n.id===id;});};
+var el=function(tag,attrs){var e=document.createElementNS(SVGNS,tag);for(var k in attrs)e.setAttribute(k,attrs[k]);return e;};
+function hexPts(cx,cy,r){var p=[];for(var i=0;i<6;i++){var a=Math.PI/180*(60*i-30);p.push((cx+r*Math.cos(a)).toFixed(1)+','+(cy+r*Math.sin(a)).toFixed(1));}return p.join(' ');}
+function pathD(a,b,curve){var mx=(a.x+b.x)/2,my=(a.y+b.y)/2,dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy)||1,nx=-dy/len,ny=dx/len;return 'M'+a.x+','+a.y+' Q'+(mx+nx*curve)+','+(my+ny*curve)+' '+b.x+','+b.y;}
+
+var gEdges=document.getElementById('edges'),gPulses=document.getElementById('pulses'),gNodes=document.getElementById('nodes');
+
+/* edges: each agent -> hub, opinion converging */
+EDGES.forEach(function(edge,i){
+  var a=byId(edge.from),b=HUB;
+  var curve=(i%2===0?28:-28);
+  var d=pathD(a,b,curve);var pid='ep'+i;
+  gEdges.appendChild(el('path',{d:d,id:pid,class:'edge edge-'+edge.type}));
+  if(!reduce){
+    var count=2;
+    for(var k=0;k<count;k++){
+      var dot=el('circle',{r:edge.type==='bull'||edge.type==='risk'?3:2.4,class:'pulse-'+edge.type});
+      var anim=el('animateMotion',{dur:'3.6s',repeatCount:'indefinite',begin:(k*1.8).toFixed(2)+'s',keyPoints:'0;1',keyTimes:'0;1',calcMode:'linear'});
+      var mp=el('mpath',{});mp.setAttributeNS('http://www.w3.org/1999/xlink','href','#'+pid);mp.setAttribute('href','#'+pid);
+      anim.appendChild(mp);dot.appendChild(anim);gPulses.appendChild(dot);
+    }
+  }
+});
+
+/* nodes */
+NODES.forEach(function(n){
+  var g=el('g',{class:'node '+n.kind,tabindex:n.id==='hub'?'-1':'0',role:'button','aria-label':n.ttl+' '+n.sub});
+  if(n.kind==='hub'){
+    g.appendChild(el('circle',{cx:n.x,cy:n.y,r:n.r+10,class:'halo'}));
+    g.appendChild(el('polygon',{points:hexPts(n.x,n.y,n.r),class:'body'}));
+    var t1=el('text',{x:n.x,y:n.y-30,'text-anchor':'middle',class:'hub-lbl'});t1.textContent='FINAL VERDICT';
+    var t2=el('text',{x:n.x,y:n.y+2,'text-anchor':'middle',class:'hub-grade'});t2.textContent='偏多 B+';
+    var t3=el('text',{x:n.x,y:n.y+26,'text-anchor':'middle',class:'hub-conf'});t3.textContent='置信度 0.74';
+    var t4=el('text',{x:n.x,y:n.y+44,'text-anchor':'middle',class:'hub-lbl'});t4.textContent='LONG · ≤10%';
+    g.appendChild(t1);g.appendChild(t2);g.appendChild(t3);g.appendChild(t4);
+  }else{
+    g.appendChild(el('circle',{cx:n.x,cy:n.y,r:n.r,class:'body'}));
+    var cf=el('text',{x:n.x,y:n.y+5,'text-anchor':'middle',class:'cf'});cf.textContent=n.cf;
+    g.appendChild(cf);
+    var ttl=el('text',{x:n.x,y:n.y+n.r+18,'text-anchor':'middle',class:'ttl'});ttl.textContent=n.ttl;
+    var sub=el('text',{x:n.x,y:n.y+n.r+33,'text-anchor':'middle',class:'sub'});sub.textContent=n.sub;
+    g.appendChild(ttl);g.appendChild(sub);
+    g.addEventListener('mouseenter',function(ev){showTip(n,ev);});
+    g.addEventListener('mousemove',function(ev){showTip(n,ev);});
+    g.addEventListener('mouseleave',hideTip);
+    g.addEventListener('focus',function(){showTipAt(n,g);});
+    g.addEventListener('blur',hideTip);
+  }
+  gNodes.appendChild(g);
+});
+
+/* tooltip */
+var tip=document.getElementById('tooltip');
+function fillTip(n){document.getElementById('tt-t').textContent=n.ttl;document.getElementById('tt-s').textContent=n.tip.s;document.getElementById('tt-v').textContent=n.tip.v;document.getElementById('tt-e').textContent=n.tip.e;}
+function showTip(n,ev){fillTip(n);tip.classList.add('on');var x=ev.clientX+16,y=ev.clientY+16;if(x+270>window.innerWidth)x=ev.clientX-270;if(y+140>window.innerHeight)y=ev.clientY-140;tip.style.left=x+'px';tip.style.top=y+'px';}
+function showTipAt(n,g){fillTip(n);tip.classList.add('on');var r=g.getBoundingClientRect();var x=r.right+10,y=r.top;if(x+270>window.innerWidth)x=r.left-270;tip.style.left=x+'px';tip.style.top=y+'px';}
+function hideTip(){tip.classList.remove('on');}
+
+/* segmented */
+var seg=document.querySelectorAll('.seg button');
+seg.forEach(function(b){b.addEventListener('click',function(){seg.forEach(function(x){x.setAttribute('aria-selected','false');});b.setAttribute('aria-selected','true');});});
+
+/* debate step */
+var turns=Array.prototype.slice.call(document.querySelectorAll('.dturn'));
+var shown=reduce?turns.length:1;
+function render(){turns.forEach(function(t,i){t.classList.toggle('on',i<shown);});}
+document.getElementById('stepBtn').addEventListener('click',function(){shown=shown>=turns.length?1:shown+1;render();if(shown>0)turns[shown-1].scrollIntoView({behavior:reduce?'auto':'smooth',block:'nearest'});});
+document.getElementById('allBtn').addEventListener('click',function(){shown=turns.length;render();});
+render();
+
+/* countup px */
+(function(){var t=64180,node=document.getElementById('px');function f(n){return n.toLocaleString('en-US');}if(reduce){node.textContent=f(t);return;}var s=performance.now(),dur=1300;function fr(now){var p=Math.min(1,(now-s)/dur);node.textContent=f(Math.round(t*(1-Math.pow(1-p,3))));if(p<1)requestAnimationFrame(fr);else node.textContent=f(t);}requestAnimationFrame(fr);})();
+
+/* mobile list */
+(function(){var list=document.getElementById('mobileList');NODES.filter(function(n){return n.id!=='hub';}).forEach(function(n){var d=document.createElement('div');d.className='mnode '+n.kind;d.innerHTML='<div class="mn">'+n.ttl+' · '+n.sub+'</div><div class="ms">'+n.tip.v+'<br>'+n.tip.e+'</div>';list.appendChild(d);});})();
+</script>
+</body>
+</html>

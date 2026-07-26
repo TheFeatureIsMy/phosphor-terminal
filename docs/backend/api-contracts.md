@@ -381,3 +381,61 @@ Returns the latest cached ticker data from `app.services.providers.realtime.tick
 
 **Response (200):** `{"last": 50000.0, "bid": ..., "ask": ..., "volume": ..., "ts": ...}`
 **Errors:** 404 `not_found` (no recent data; TTL 60s).
+
+---
+
+## 2026-07-10 Additions
+
+### `GET /api/system/services` (new)
+
+Unified service health overview for the Service Management page.
+
+**Response (200):**
+```json
+{
+  "state": "healthy",
+  "services": {
+    "backend": {"status": "connected", "detail": "API responding"},
+    "database": {"status": "connected"},
+    "redis": {"status": "connected", "version": "7.0.0", "used_memory_mb": 12.3, "connected_clients": 5},
+    "freqtrade": {"status": "connected", "open_positions": 3},
+    "ollama": {"status": "connected", "url": "http://localhost:11434", "models": ["llama3"]},
+    "openai": {"status": "configured", "source": "db", "is_active": true},
+    "anthropic": {"status": "configured", "source": "db"},
+    "deepseek": {"status": "not_configured", "source": "db"},
+    "telegram": {"status": "configured"}
+  },
+  "checked_at": "2026-07-10T12:00:00Z"
+}
+```
+
+State derivation: `healthy` if all services ok; `warning` if some not configured; `degraded` if any disconnected/error.
+
+### `POST /api/growth/reports/daily-review` (corrected URL)
+
+The macOS app now calls `/api/growth/reports/daily-review` (not `/api/v2/growth/daily-review`).
+
+**Request body:** `{"days": 1}`
+
+### `POST /api/growth/candidates/{id}/confirm` (corrected return type)
+
+Returns `ConfirmCandidateResponse` (not `StrategyCandidate`):
+```json
+{
+  "strategy_id": "uuid",
+  "version_id": "uuid",
+  "version_no": 2,
+  "status": "draft"
+}
+```
+
+### `GrowthReportResponse` schema additions
+
+- `suggestions: list[str]` - actionable improvement recommendations
+- `strategy_run_id`, `strategy_version_id`, `period_start`, `period_end` - already existed, now consumed by macOS
+
+### `StrategyCandidateResponse` schema additions
+
+- `confirmed_strategy_id: uuid | null` - FK to strategies_v2
+- `confirmed_version_no: int | null` - version number after confirmation
+

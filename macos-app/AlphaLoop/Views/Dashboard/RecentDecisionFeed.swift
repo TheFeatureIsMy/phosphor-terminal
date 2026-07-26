@@ -22,6 +22,7 @@ struct RecentDecisionFeed: View {
                         title: L10n.Dashboard.recentDecisions,
                         description: ""
                     )
+                    .frame(maxWidth: .infinity, minHeight: 240)
                 } else {
                     ScrollView {
                         VStack(spacing: PulseSpacing.xxs) {
@@ -30,7 +31,7 @@ struct RecentDecisionFeed: View {
                             }
                         }
                     }
-                    .frame(maxHeight: 280)
+                    .frame(height: 240)
                 }
             }
         }
@@ -59,7 +60,7 @@ struct RecentDecisionFeed: View {
                         .padding(.horizontal, 5)
                         .padding(.vertical, 1)
                         .background(
-                            RoundedRectangle(cornerRadius: PulseRadii.xs)
+                            RoundedRectangle(cornerRadius: PulseRadii.badge)
                                 .fill(decisionColor(decision.decision).opacity(0.10))
                         )
                 }
@@ -74,7 +75,7 @@ struct RecentDecisionFeed: View {
                                 .padding(.horizontal, 5)
                                 .padding(.vertical, 1)
                                 .background(
-                                    RoundedRectangle(cornerRadius: PulseRadii.xs)
+                                    RoundedRectangle(cornerRadius: PulseRadii.badge)
                                         .fill(colors.surface)
                                 )
                         }
@@ -87,7 +88,7 @@ struct RecentDecisionFeed: View {
         .padding(.horizontal, PulseSpacing.xs)
         .padding(.vertical, PulseSpacing.xs)
         .background(
-            RoundedRectangle(cornerRadius: PulseRadii.sm)
+            RoundedRectangle(cornerRadius: PulseRadii.badge)
                 .fill(hoveredIndex == index ? colors.surfaceHover : Color.clear)
         )
         .onHover { isHovering in

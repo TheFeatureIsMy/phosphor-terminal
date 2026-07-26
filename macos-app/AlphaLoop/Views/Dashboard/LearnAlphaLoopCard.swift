@@ -46,7 +46,7 @@ struct LearnAlphaLoopCard: View {
                         .font(.system(size: 10, weight: .medium))
                         .foregroundStyle(colors.textMuted)
                         .frame(width: 22, height: 22)
-                        .hoverGlassStyle(cornerRadius: PulseRadii.sm)
+                        .hoverGlassStyle(cornerRadius: PulseRadii.button)
                 }
                 .buttonStyle(.plain)
                 .help(L10n.Guide.dismissCard)

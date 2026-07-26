@@ -197,7 +197,7 @@ struct NewRunDrawer: View {
             .frame(maxWidth: .infinity)
             .padding(.vertical, 10)
             .background(canRun ? PulseColors.accent : colors.surfaceHover.opacity(0.4))
-            .foregroundStyle(canRun ? .white : colors.textMuted)
+            .foregroundStyle(canRun ? PulseColors.onAccent : colors.textMuted)
             .clipShape(RoundedRectangle(cornerRadius: PulseRadii.button))
         }
         .buttonStyle(.plain)

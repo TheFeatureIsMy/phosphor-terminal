@@ -44,13 +44,6 @@ struct CircuitBreakersView: View {
     var body: some View {
         VStack(spacing: 0) {
             LiveWireStrip(mode: resolvedMode)
-            EmergencyStopBar(
-                mode: resolvedMode,
-                affectedRuns: affectedRunCount,
-                emergencyLocked: viewModel?.circuitBreakers?.state == "emergency_locked",
-                onStop: { await viewModel?.emergencyStop() },
-                onResume: { await viewModel?.emergencyResume() }
-            )
 
             if let vm = viewModel {
                 if vm.isLoading && vm.circuitBreakers == nil {
@@ -136,39 +129,40 @@ struct CircuitBreakersView: View {
 
     private func headerSection(_ vm: RiskCenterViewModel, data: CircuitBreakersBFFResponse) -> some View {
         VStack(spacing: PulseSpacing.sm) {
-            HStack {
-                TerminalLabel(text: L10n.zh("熔断记录", en: "CIRCUIT BREAKERS"))
-
-                // Total count badge
-                HStack(spacing: 3) {
-                    Image(systemName: "bolt.fill")
-                        .font(.system(size: 8))
-                    Text("\(data.totalCount)")
-                        .font(.system(size: 11, weight: .bold, design: .monospaced))
-                }
-                .foregroundStyle(data.totalCount > 0 ? PulseColors.StateColors.orange : colors.textMuted)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 3)
-                .background(
-                    (data.totalCount > 0 ? PulseColors.StateColors.orange : colors.surface).opacity(0.12)
-                )
-                .clipShape(Capsule())
-
-                Spacer()
-
-                Button {
-                    Task { await vm.loadCircuitBreakers() }
-                } label: {
-                    HStack(spacing: PulseSpacing.xxs) {
-                        Image(systemName: "arrow.clockwise")
-                            .font(.system(size: 11))
-                        Text(L10n.Risk.cbRefresh)
-                            .font(PulseFonts.monoLabel)
+            QuantPageHeader(
+                eyebrow: "RISK",
+                title: L10n.zh("熔断记录", en: "Circuit Breakers")
+            ) {
+                HStack(spacing: PulseSpacing.sm) {
+                    // Total count badge
+                    HStack(spacing: 3) {
+                        Image(systemName: "bolt.fill")
+                            .font(.system(size: 8))
+                        Text("\(data.totalCount)")
+                            .font(.system(size: 11, weight: .bold, design: .monospaced))
                     }
-                    .foregroundStyle(PulseColors.accent)
+                    .foregroundStyle(data.totalCount > 0 ? PulseColors.StateColors.orange : colors.textMuted)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(
+                        (data.totalCount > 0 ? PulseColors.StateColors.orange : colors.surface).opacity(0.12)
+                    )
+                    .clipShape(Capsule())
+
+                    Button {
+                        Task { await vm.loadCircuitBreakers() }
+                    } label: {
+                        HStack(spacing: PulseSpacing.xxs) {
+                            Image(systemName: "arrow.clockwise")
+                                .font(.system(size: 11))
+                            Text(L10n.Risk.cbRefresh)
+                                .font(PulseFonts.monoLabel)
+                        }
+                        .foregroundStyle(PulseColors.accent)
+                    }
+                    .buttonStyle(.plain)
+                    .controlSize(.small)
                 }
-                .buttonStyle(.plain)
-                .controlSize(.small)
             }
 
             // Filter chips

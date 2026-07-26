@@ -18,12 +18,14 @@ struct AIStudioView: View {
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: PulseSpacing.lg) {
-                // 标题
-                headerSection
+            VStack(spacing: 18) {
+                // Hero(标题 + 深度控制)
+                heroSection
+                    .staggeredAppearance(index: 0)
 
-                // 输入区
-                researchInputSection
+                // 标的卡
+                subjectCard
+                    .staggeredAppearance(index: 1)
 
                 // 错误提示
                 if let error {
@@ -37,208 +39,227 @@ struct AIStudioView: View {
 
                 // 结果（研究完成后显示）
                 if let result {
-                    perspectivePanels(result)
-                    finalRatingPanel(result)
+                    agentGrid(result)
+                        .staggeredAppearance(index: 2)
+                    verdictCard(result)
+                        .staggeredAppearance(index: 3)
                     actionButtons(result)
                 }
             }
-            .padding(PulseSpacing.lg)
+            .padding(.horizontal, 28)
+            .padding(.top, 28)
+            .padding(.bottom, 40)
+            .frame(maxWidth: PulseSpacing.contentMaxWidth)
+            .frame(maxWidth: .infinity)
         }
         .scrollEdgeEffectStyle(.soft, for: .vertical)
+        .background(colors.background)
         .id(settingsState.language)
     }
 
-    // MARK: - 标题区
+    // MARK: - Hero(标题 + 深度控制)
 
-    private var headerSection: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
-                TerminalLabel(text: L10n.AIStudio.title)
-                Text(L10n.AIStudio.subtitle)
-                    .font(PulseFonts.caption)
-                    .foregroundStyle(colors.textMuted)
+    private var heroSection: some View {
+        HStack(alignment: .top) {
+            VStack(alignment: .leading, spacing: 10) {
+                Text(L10n.AIStudio.protoEyebrow)
+                    .font(PulseFonts.body(13, .semibold)).foregroundStyle(PulseColors.accent)
+                    .textCase(.uppercase).tracking(0.6)
+                Text(L10n.AIStudio.protoTitle)
+                    .font(PulseFonts.display(30, .bold)).foregroundStyle(colors.textPrimary)
+                Text(L10n.AIStudio.protoSubtitle(symbol))
+                    .font(PulseFonts.body(14)).foregroundStyle(colors.textSecondary)
+                    .frame(maxWidth: 560, alignment: .leading)
             }
             Spacer()
+            // 深度分段控制
+            HStack(spacing: 4) {
+                ForEach(ResearchDepth.allCases, id: \.self) { d in
+                    let on = depth == d
+                    Text(d.label)
+                        .font(PulseFonts.body(13.5, on ? .semibold : .regular))
+                        .foregroundStyle(on ? PulseColors.accent : colors.textSecondary)
+                        .padding(.horizontal, 14).padding(.vertical, 8)
+                        .background(RoundedRectangle(cornerRadius: 10).fill(on ? PulseColors.accentSoft : Color.clear))
+                        .onTapGesture { withAnimation(PulseAnimation.easeOutFast) { depth = d } }
+                }
+            }
+            .padding(3)
+            .background(RoundedRectangle(cornerRadius: 12).fill(colors.cardBackground))
+            .overlay(RoundedRectangle(cornerRadius: 12).stroke(colors.border, lineWidth: 1))
         }
     }
 
-    // MARK: - 研究输入区
+    // MARK: - 标的卡(研究输入)
 
-    private var researchInputSection: some View {
-        KryptonCard(emphasis: .balanced) {
-            VStack(spacing: PulseSpacing.md) {
-                HStack(spacing: PulseSpacing.md) {
-                    // 标的选择
-                    VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
-                        Text(L10n.AIStudio.researchTarget)
-                            .font(PulseFonts.monoLabel)
-                            .foregroundStyle(colors.textMuted)
-                            .textCase(.uppercase)
+    private var subjectCard: some View {
+        HStack(spacing: 16) {
+            // 标的图标
+            RoundedRectangle(cornerRadius: 12)
+                .fill(signalSymbolColor(symbol))
+                .frame(width: 48, height: 48)
+                .overlay(Text(signalSymbolInitials(symbol))
+                    .font(PulseFonts.display(16, .bold)).foregroundStyle(.white))
 
-                        HStack(spacing: PulseSpacing.xs) {
-                            Image(systemName: "magnifyingglass")
-                                .font(.system(size: 11))
-                                .foregroundStyle(colors.textMuted)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(symbol).font(PulseFonts.body(16, .bold)).foregroundStyle(colors.textPrimary)
+                Text(L10n.AIStudio.perpSuffix.dropFirst())
+                    .font(PulseFonts.body(12)).foregroundStyle(colors.textSecondary)
+            }
 
-                            TextField(L10n.AIStudio.enterSymbol, text: $symbol)
-                                .font(PulseFonts.body)
-                                .foregroundStyle(colors.textPrimary)
-                                .textFieldStyle(.plain)
-                        }
-                        .padding(.horizontal, PulseSpacing.sm)
-                        .padding(.vertical, PulseSpacing.xs)
-                        .background(colors.surface)
-                        .clipShape(RoundedRectangle(cornerRadius: PulseRadii.sm))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: PulseRadii.sm)
-                                .stroke(colors.border, lineWidth: 1)
-                        )
-                    }
-                    .frame(maxWidth: .infinity)
+            Spacer()
 
-                    // 研究深度
-                    VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
-                        Text(L10n.AIStudio.researchDepth)
-                            .font(PulseFonts.monoLabel)
-                            .foregroundStyle(colors.textMuted)
-                            .textCase(.uppercase)
-
-                        HStack(spacing: 0) {
-                            ForEach(ResearchDepth.allCases, id: \.self) { d in
-                                Button {
-                                    withAnimation(PulseAnimation.easeOutFast) { depth = d }
-                                } label: {
-                                    Text(d.label)
-                                        .font(PulseFonts.captionMedium)
-                                        .foregroundStyle(depth == d ? colors.textPrimary : colors.textMuted)
-                                        .padding(.horizontal, PulseSpacing.sm)
-                                        .padding(.vertical, PulseSpacing.xs)
-                                        .background(
-                                            depth == d ? PulseColors.accent.opacity(0.12) : Color.clear
-                                        )
-                                        .clipShape(RoundedRectangle(cornerRadius: PulseRadii.xs))
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        }
-                        .padding(2)
-                        .background(colors.surface)
-                        .clipShape(RoundedRectangle(cornerRadius: PulseRadii.sm))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: PulseRadii.sm)
-                                .stroke(colors.border, lineWidth: 1)
-                        )
-                    }
-                }
-
-                // 快捷标的
-                HStack(spacing: PulseSpacing.xs) {
-                    Text(L10n.AIStudio.popular)
-                        .font(PulseFonts.micro)
-                        .foregroundStyle(colors.textMuted)
-
-                    ForEach(["BTC/USDT", "ETH/USDT", "SOL/USDT", "NVDA", "AAPL"], id: \.self) { s in
-                        Button {
-                            symbol = s
-                        } label: {
-                            Text(s)
-                                .font(PulseFonts.micro)
-                                .foregroundStyle(symbol == s ? PulseColors.accent : colors.textSecondary)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(
-                                    symbol == s ? PulseColors.accent.opacity(0.08) : colors.surface
-                                )
-                                .clipShape(RoundedRectangle(cornerRadius: PulseRadii.badge))
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-
-                // 开始研究按钮
-                HStack {
-                    Spacer()
-
-                    KryptonButton(
-                        title: L10n.AIStudio.startResearch,
-                        action: { Task { await startResearch() } },
-                        style: .primary
-                    )
-                    .opacity(isResearching ? 0.5 : 1.0)
-                    .allowsHitTesting(!isResearching)
+            // 快捷标的
+            HStack(spacing: 6) {
+                ForEach(["BTC/USDT", "ETH/USDT", "SOL/USDT"], id: \.self) { s in
+                    let on = symbol == s
+                    Text(s)
+                        .font(PulseFonts.body(12, on ? .semibold : .regular))
+                        .foregroundStyle(on ? PulseColors.accent : colors.textSecondary)
+                        .padding(.horizontal, 10).padding(.vertical, 5)
+                        .background(RoundedRectangle(cornerRadius: 8).fill(on ? PulseColors.accentSoft : colors.surface))
+                        .onTapGesture { symbol = s }
                 }
             }
+
+            // 开始研究按钮
+            Text(isResearching ? L10n.AIStudio.analyzing : L10n.AIStudio.startResearch)
+                .font(PulseFonts.body(14, .semibold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 18).padding(.vertical, 10)
+                .background(RoundedRectangle(cornerRadius: 11).fill(PulseColors.accent))
+                .opacity(isResearching ? 0.5 : 1.0)
+                .onTapGesture { if !isResearching { Task { await startResearch() } } }
         }
+        .padding(18)
+        .background(RoundedRectangle(cornerRadius: PulseRadii.card).fill(colors.cardBackground))
+        .overlay(RoundedRectangle(cornerRadius: PulseRadii.card).stroke(colors.border, lineWidth: 1))
     }
 
     // MARK: - 研究中指示器
 
     private var researchingIndicator: some View {
-        KryptonCard(emphasis: .subtle) {
-            HStack(spacing: PulseSpacing.sm) {
-                ProgressView()
-                    .controlSize(.small)
-                    .tint(PulseColors.accent)
+        HStack(spacing: PulseSpacing.sm) {
+            ProgressView()
+                .controlSize(.small)
+                .tint(PulseColors.accent)
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(L10n.AIStudio.analyzing)
-                        .font(PulseFonts.bodyMedium)
-                        .foregroundStyle(colors.textPrimary)
-                    Text(L10n.AIStudio.analyzingDesc)
-                        .font(PulseFonts.caption)
-                        .foregroundStyle(colors.textMuted)
-                }
-
-                Spacer()
-
-                Text(depth.estimatedTime)
-                    .font(PulseFonts.monoLabel)
-                    .foregroundStyle(PulseColors.accent)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(L10n.AIStudio.analyzing)
+                    .font(PulseFonts.bodyMedium)
+                    .foregroundStyle(colors.textPrimary)
+                Text(L10n.AIStudio.analyzingDesc)
+                    .font(PulseFonts.caption)
+                    .foregroundStyle(colors.textMuted)
             }
+
+            Spacer()
+
+            Text(depth.estimatedTime)
+                .font(PulseFonts.body(12, .semibold))
+                .foregroundStyle(PulseColors.accent)
         }
+        .padding(18)
+        .background(RoundedRectangle(cornerRadius: PulseRadii.card).fill(colors.cardBackground))
+        .overlay(RoundedRectangle(cornerRadius: PulseRadii.card).stroke(colors.border, lineWidth: 1))
     }
 
-    // MARK: - 视角面板
+    // MARK: - 多 Agent 观点网格
 
-    private func perspectivePanels(_ result: ResearchResult) -> some View {
-        VStack(spacing: PulseSpacing.sm) {
-            TerminalLabel(text: L10n.AIStudio.multiPerspective)
-                .frame(maxWidth: .infinity, alignment: .leading)
+    private func agentGrid(_ result: ResearchResult) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 10) {
+                Image(systemName: "person.3").foregroundStyle(PulseColors.accent)
+                Text(L10n.AIStudio.agentsTitle)
+                    .font(PulseFonts.body(16, .semibold)).foregroundStyle(colors.textPrimary)
+                Text("\(result.perspectives.count) " + L10n.AIStudio.agentsCount)
+                    .font(PulseFonts.body(12, .medium)).foregroundStyle(colors.textSecondary)
+                    .padding(.horizontal, 9).padding(.vertical, 3)
+                    .background(Capsule().fill(colors.surface))
+            }
 
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 300))], spacing: PulseSpacing.sm) {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 300), spacing: 16)], spacing: 16) {
                 ForEach(Array(result.perspectives.enumerated()), id: \.element.id) { index, perspective in
-                    perspectiveCard(perspective)
+                    agentCard(perspective)
                         .staggeredAppearance(index: index, baseDelay: 0.05)
                 }
             }
         }
     }
 
-    private func perspectiveCard(_ perspective: ResearchPerspective) -> some View {
-        KryptonCard(emphasis: .subtle) {
-            VStack(alignment: .leading, spacing: PulseSpacing.sm) {
-                // 标题行
-                HStack {
-                    Text(perspective.icon)
-                        .font(.system(size: 16))
-
-                    Text(perspective.title)
-                        .font(PulseFonts.bodyMedium)
-                        .foregroundStyle(colors.textPrimary)
-
-                    Spacer()
-
-                    // 置信度指示器
-                    confidenceIndicator(perspective.confidence)
-                }
-
-                // 分析内容
-                Text(perspective.content)
-                    .font(PulseFonts.caption)
-                    .foregroundStyle(colors.textSecondary)
-                    .lineLimit(6)
-                    .fixedSize(horizontal: false, vertical: true)
+    private func agentCard(_ perspective: ResearchPerspective) -> some View {
+        let stance = stanceFor(perspective.role)
+        let avatarColor = stanceColor(stance)
+        return VStack(alignment: .leading, spacing: 12) {
+            // 头像 + 名称 + 立场
+            HStack(spacing: 10) {
+                RoundedRectangle(cornerRadius: 9).fill(avatarColor)
+                    .frame(width: 34, height: 34)
+                    .overlay(Text(String(perspective.title.prefix(1)))
+                        .font(PulseFonts.display(14, .bold)).foregroundStyle(.white))
+                Text(perspective.title)
+                    .font(PulseFonts.body(14.5, .semibold)).foregroundStyle(colors.textPrimary)
+                Spacer()
+                Text(stanceLabel(stance))
+                    .font(PulseFonts.body(11.5, .semibold)).foregroundStyle(avatarColor)
+                    .padding(.horizontal, 8).padding(.vertical, 3)
+                    .background(Capsule().fill(avatarColor.opacity(0.14)))
             }
+
+            // 置信度条
+            HStack(spacing: 8) {
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        Capsule().fill(colors.surface).frame(height: 6)
+                        Capsule().fill(avatarColor)
+                            .frame(width: geo.size.width * min(max(perspective.confidence, 0), 1), height: 6)
+                    }
+                }
+                .frame(height: 6)
+                Text(String(format: "%.2f", perspective.confidence))
+                    .font(PulseFonts.body(12.5, .semibold)).foregroundStyle(avatarColor).monospacedDigit()
+            }
+
+            // 观点内容
+            Text(perspective.content)
+                .font(PulseFonts.body(13))
+                .foregroundStyle(colors.textSecondary)
+                .lineLimit(6)
+                .fixedSize(horizontal: false, vertical: true)
+
+            // 置信度为估算标注(数据求真)
+            Text("· " + L10n.AIStudio.estimatedNote)
+                .font(PulseFonts.body(11)).foregroundStyle(colors.textMuted)
+        }
+        .padding(18)
+        .background(RoundedRectangle(cornerRadius: PulseRadii.card).fill(colors.cardBackground))
+        .overlay(RoundedRectangle(cornerRadius: PulseRadii.card).stroke(colors.border, lineWidth: 1))
+        .applyShadow(PulseShadow.card(colors))
+    }
+
+    private enum AgentStance { case bull, bear, neutral, risk }
+    private func stanceFor(_ role: String) -> AgentStance {
+        switch role {
+        case "technical": return .bull
+        case "sentiment", "news": return .neutral
+        case "fundamentals": return .bull
+        default: return .neutral
+        }
+    }
+    private func stanceLabel(_ s: AgentStance) -> String {
+        switch s {
+        case .bull: return L10n.AIStudio.stanceBull
+        case .bear: return L10n.AIStudio.stanceBear
+        case .risk: return L10n.AIStudio.stanceRisk
+        default: return L10n.AIStudio.stanceNeutral
+        }
+    }
+    private func stanceColor(_ s: AgentStance) -> Color {
+        switch s {
+        case .bull: return PulseColors.bullish
+        case .bear: return PulseColors.bearish
+        case .risk: return PulseColors.accent
+        default: return PulseColors.warning
         }
     }
 
@@ -269,70 +290,49 @@ struct AIStudioView: View {
         return PulseColors.danger
     }
 
-    // MARK: - 最终评级面板
+    // MARK: - 综合裁定卡
 
     @ViewBuilder
-    private func finalRatingPanel(_ result: ResearchResult) -> some View {
+    private func verdictCard(_ result: ResearchResult) -> some View {
         if let rating = result.finalRating {
-            VStack(spacing: PulseSpacing.sm) {
-                TerminalLabel(text: L10n.AIStudio.finalRating)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                KryptonCard(emphasis: .bold) {
-                    VStack(spacing: PulseSpacing.md) {
-                        HStack(spacing: PulseSpacing.lg) {
-                            // 方向
-                            VStack(spacing: PulseSpacing.xxs) {
-                                Text(L10n.AIStudio.direction)
-                                    .font(PulseFonts.monoLabel)
-                                    .foregroundStyle(colors.textMuted)
-                                    .textCase(.uppercase)
-                                Text(rating.direction)
-                                    .font(PulseFonts.monoLarge)
-                                    .foregroundStyle(directionColor(rating.direction))
-                            }
-
-                            // 置信度
-                            VStack(spacing: PulseSpacing.xxs) {
-                                Text(L10n.AIStudio.confidence)
-                                    .font(PulseFonts.monoLabel)
-                                    .foregroundStyle(colors.textMuted)
-                                    .textCase(.uppercase)
-                                Text("\(Int(rating.confidence * 100))%")
-                                    .font(PulseFonts.monoLarge)
-                                    .foregroundStyle(PulseColors.accent)
-                            }
-
-                            // 风险等级
-                            VStack(spacing: PulseSpacing.xxs) {
-                                Text(L10n.AIStudio.riskLevel)
-                                    .font(PulseFonts.monoLabel)
-                                    .foregroundStyle(colors.textMuted)
-                                    .textCase(.uppercase)
-                                BadgeDot(
-                                    color: riskColor(rating.riskLevel),
-                                    label: rating.riskLevel,
-                                    size: .medium
-                                )
-                            }
-
-                            Spacer()
-                        }
-
-                        // 建议
-                        VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
-                            Text(L10n.AIStudio.recommendation)
-                                .font(PulseFonts.monoLabel)
-                                .foregroundStyle(colors.textMuted)
-                                .textCase(.uppercase)
-                            Text(rating.recommendation)
-                                .font(PulseFonts.body)
-                                .foregroundStyle(colors.textPrimary)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    }
+            VStack(alignment: .leading, spacing: 16) {
+                HStack(spacing: 9) {
+                    Image(systemName: "checkmark.shield").foregroundStyle(PulseColors.accent)
+                    Text(L10n.AIStudio.verdictTitle)
+                        .font(PulseFonts.body(16, .semibold)).foregroundStyle(colors.textPrimary)
                 }
+
+                // 评级行
+                HStack(spacing: 12) {
+                    Text(rating.direction)
+                        .font(PulseFonts.display(22, .bold)).foregroundStyle(directionColor(rating.direction))
+                    Text(String(format: L10n.zh("置信度 %.2f", en: "confidence %.2f"), rating.confidence))
+                        .font(PulseFonts.body(14, .semibold)).foregroundStyle(colors.textSecondary)
+                    Text(L10n.AIStudio.riskLevel + " · " + rating.riskLevel)
+                        .font(PulseFonts.body(12, .semibold)).foregroundStyle(riskColor(rating.riskLevel))
+                        .padding(.horizontal, 9).padding(.vertical, 4)
+                        .background(Capsule().fill(riskColor(rating.riskLevel).opacity(0.14)))
+                    Spacer()
+                }
+
+                // 共识建议
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(L10n.AIStudio.verdictConsensus)
+                        .font(PulseFonts.body(12.5, .semibold)).foregroundStyle(colors.textSecondary)
+                    Text(rating.recommendation)
+                        .font(PulseFonts.body(14)).foregroundStyle(colors.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                // 免责
+                Text(L10n.AIStudio.noFakeInsight)
+                    .font(PulseFonts.body(11.5)).foregroundStyle(colors.textMuted)
             }
+            .padding(22)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(RoundedRectangle(cornerRadius: PulseRadii.card).fill(colors.cardBackground))
+            .overlay(RoundedRectangle(cornerRadius: PulseRadii.card).stroke(PulseColors.accent.opacity(0.3), lineWidth: 1))
+            .applyShadow(PulseShadow.card(colors))
         }
     }
 
@@ -342,18 +342,26 @@ struct AIStudioView: View {
         HStack(spacing: PulseSpacing.md) {
             Spacer()
 
-            KryptonButton(title: creatingDraft ? L10n.AIStudio.generatingDraft : L10n.AIStudio.generateDraft, action: {
+            actionBtn(creatingDraft ? L10n.AIStudio.generatingDraft : L10n.AIStudio.generateDraft, primary: false) {
                 Task { await createStrategyDraft(result) }
-            }, style: .ghost)
+            }
             .opacity(creatingDraft ? 0.5 : 1)
-            .disabled(creatingDraft)
 
-            KryptonButton(title: publishingSignal ? L10n.AIStudio.publishing : L10n.AIStudio.publishAsSignal, action: {
+            actionBtn(publishingSignal ? L10n.AIStudio.publishing : L10n.AIStudio.publishAsSignal, primary: true) {
                 Task { await publishAsSignal(result) }
-            }, style: .primary)
+            }
             .opacity(publishingSignal ? 0.5 : 1)
-            .disabled(publishingSignal)
         }
+    }
+
+    private func actionBtn(_ label: String, primary: Bool, action: @escaping () -> Void) -> some View {
+        Text(label)
+            .font(PulseFonts.body(14, .semibold))
+            .foregroundStyle(primary ? .white : colors.textPrimary)
+            .padding(.horizontal, 18).padding(.vertical, 11)
+            .background(RoundedRectangle(cornerRadius: 11).fill(primary ? PulseColors.accent : colors.cardBackground))
+            .overlay(RoundedRectangle(cornerRadius: 11).stroke(primary ? Color.clear : colors.border, lineWidth: 1))
+            .onTapGesture(perform: action)
     }
 
     // MARK: - 研究逻辑

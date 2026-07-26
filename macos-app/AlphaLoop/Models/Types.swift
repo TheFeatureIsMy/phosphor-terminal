@@ -8,41 +8,33 @@ import Foundation
 // telegramId / role / updatedAt 在 /auth/me 响应中可能不存在，设为可选
 struct User: Codable, Identifiable, Hashable {
     let id: Int
-    let name: String
-    let email: String?
-    let telegramId: String?
-    let role: String
-    let createdAt: String
-    let updatedAt: String
+    var name: String
+    var email: String?
+    var isActive: Bool?
+    var avatarUrl: String?
+    var telegramId: String?
+    var role: String?
+    var createdAt: String?
 
     enum CodingKeys: String, CodingKey {
         case id, email, role
         case name = "username"
+        case isActive = "is_active"
+        case avatarUrl = "avatar_url"
         case telegramId = "telegram_id"
         case createdAt = "created_at"
-        case updatedAt = "updated_at"
     }
 
     // 自定义解码：role / telegramId / updatedAt 可能缺失，给默认值
-    init(id: Int, name: String, email: String?, telegramId: String?, role: String, createdAt: String, updatedAt: String) {
+    init(id: Int, name: String, email: String? = nil, isActive: Bool? = nil, avatarUrl: String? = nil, telegramId: String? = nil, role: String? = nil, createdAt: String? = nil) {
         self.id = id
         self.name = name
         self.email = email
+        self.isActive = isActive
+        self.avatarUrl = avatarUrl
         self.telegramId = telegramId
         self.role = role
         self.createdAt = createdAt
-        self.updatedAt = updatedAt
-    }
-
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        id = try container.decode(Int.self, forKey: .id)
-        name = try container.decode(String.self, forKey: .name)
-        email = try container.decodeIfPresent(String.self, forKey: .email)
-        telegramId = try container.decodeIfPresent(String.self, forKey: .telegramId)
-        role = (try? container.decode(String.self, forKey: .role)) ?? "trader"
-        createdAt = try container.decode(String.self, forKey: .createdAt)
-        updatedAt = (try? container.decode(String.self, forKey: .updatedAt)) ?? createdAt
     }
 }
 
@@ -687,13 +679,22 @@ struct RuntimeStateInfo: Codable {
 struct GrowthReport: Codable, Identifiable, Hashable {
     let id: String
     let reportType: String
-    let status: String
-    let summary: AnyCodable?
+    let strategyRunId: String?
+    let strategyVersionId: String?
+    let periodStart: String?
+    let periodEnd: String?
+    let metrics: AnyCodable?
+    let findings: AnyCodable?
+    let suggestions: [String]?
     let createdAt: String
 
     enum CodingKeys: String, CodingKey {
-        case id, status, summary
+        case id, metrics, findings, suggestions
         case reportType = "report_type"
+        case strategyRunId = "strategy_run_id"
+        case strategyVersionId = "strategy_version_id"
+        case periodStart = "period_start"
+        case periodEnd = "period_end"
         case createdAt = "created_at"
     }
 }
@@ -701,12 +702,28 @@ struct GrowthReport: Codable, Identifiable, Hashable {
 struct StrategyCandidate: Codable, Identifiable, Hashable {
     let id: String
     let status: String
-    let confidence: Double?
+    let sourceGrowthReportId: String?
+    let sourceStrategyVersionId: String?
+    let candidateDslHash: String?
+    let rationale: String?
+    let dslValid: Bool?
+    let dslErrors: [AnyCodable]?
+    let autoExecute: Bool?
+    let confirmedStrategyId: String?
+    let confirmedVersionNo: Int?
     let createdAt: String
     var dsl: AnyCodable?
 
     enum CodingKeys: String, CodingKey {
-        case id, status, confidence, dsl
+        case id, status, dsl
+        case sourceGrowthReportId = "source_growth_report_id"
+        case sourceStrategyVersionId = "source_strategy_version_id"
+        case candidateDslHash = "candidate_dsl_hash"
+        case rationale, dslValid = "dsl_valid"
+        case dslErrors = "dsl_errors"
+        case autoExecute = "auto_execute"
+        case confirmedStrategyId = "confirmed_strategy_id"
+        case confirmedVersionNo = "confirmed_version_no"
         case createdAt = "created_at"
     }
 }

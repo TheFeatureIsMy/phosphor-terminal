@@ -419,3 +419,36 @@ GET /api/overview/live-readiness?mode=paper&strategy_id=s1&capital_pool_id=cp1&e
 | iOS VM | `macos-app/AlphaLoop/ViewModels/LiveReadinessViewModel.swift` |
 | iOS 视图 | `macos-app/AlphaLoop/Views/LiveReadiness/LiveReadinessView.swift` |
 | iOS i18n | `macos-app/AlphaLoop/Localization/L10n+LiveReadiness.swift` |
+
+---
+
+## 2026-07-10 更新 - 增长/系统/设置页面验收
+
+### Growth Module (3 pages)
+
+| Page | Real Data | Evidence Source | Version Tracking | Mock Removed |
+|---|---|---|---|---|
+| GrowthView (Reports) | metrics/findings/suggestions from /api/growth/reports | strategy_version_id shown on card | Yes | Yes |
+| GrowthView (Candidates) | rationale/dsl_valid/source_report_id from /api/growth/candidates | source_growth_report_id + source_strategy_version_id | confirmed_strategy_id + confirmed_version_no | Yes |
+| StrategyOptimizationView | candidates from /api/growth/candidates | DSL validity + rationale | confirm creates new StrategyVersion | Yes |
+| FailureClusteringView | clusters from /api/growth/failure-summary | example_trade_ids + suggested_fix | N/A | Yes |
+
+### System Module (2 pages)
+
+| Page | Real Data | No Fake Buttons | Mock Removed |
+|---|---|---|---|
+| ServiceManagementView | /api/system/services (backend/database/redis/freqtrade/ollama/llm/telegram) | No start/stop/restart buttons | Yes |
+| DataSourcesView | /api/admin/providers (real provider configs) | test/enable/disable connect to real API | Yes |
+
+### Settings Module (7 tabs)
+
+| Tab | Real Data | No Plaintext Secrets | Mock Removed |
+|---|---|---|---|
+| General | /auth/settings (language/timezone/mode) | N/A | Yes |
+| Trading | /auth/settings + /api/admin/system-settings | API key/secret via SecureField | Yes |
+| Data Sources | /api/admin/providers | credential_status shown, not values | Yes |
+| LLM Providers | /api/admin/providers?category=llm | credentials_fields listed, not values | Yes |
+| Notifications | /auth/settings + provider config | bot token via SecureField | Yes |
+| Security | /api/admin/providers/{id}/audit-log | hashes only, no plaintext | Yes |
+| Advanced | /api/admin/system-settings?category=retention | N/A | Yes |
+

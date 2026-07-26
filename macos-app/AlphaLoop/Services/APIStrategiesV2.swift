@@ -1,4 +1,4 @@
-// APIStrategiesV2.swift — v2.5 Strategy API (CRUD + versions + DSL validation + backtest)
+// APIStrategiesV2.swift - v2.5 Strategy API (CRUD + versions + DSL validation + backtest)
 
 import Foundation
 
@@ -9,14 +9,12 @@ final class APIStrategiesV2: @unchecked Sendable {
         self.client = client
     }
 
-    // MARK: - Strategy CRUD
-
     func list() async throws -> [StrategyV2] {
-        try await client.get("/api/v2/strategies", mock: { MockDataV2.strategies() })
+        try await client.get("/api/v2/strategies")
     }
 
     func get(id: String) async throws -> StrategyV2 {
-        try await client.get("/api/v2/strategies/\(id)", mock: { MockDataV2.strategies().first! })
+        try await client.get("/api/v2/strategies/\(id)")
     }
 
     func create(name: String, strategyType: String = "rule_dsl", sourceType: String = "manual") async throws -> StrategyV2 {
@@ -24,106 +22,33 @@ final class APIStrategiesV2: @unchecked Sendable {
             "name": name,
             "strategy_type": strategyType,
             "source_type": sourceType,
-        ], mock: {
-            StrategyV2(
-                id: UUID().uuidString,
-                name: name,
-                description: nil,
-                strategyType: strategyType,
-                sourceType: sourceType,
-                status: "draft",
-                createdAt: ISO8601DateFormatter().string(from: Date()),
-                updatedAt: ISO8601DateFormatter().string(from: Date())
-            )
-        })
+        ])
     }
 
     func deleteStrategy(id: String) async throws {
-        try await client.delete("/api/v2/strategies/\(id)", mock: { })
+        try await client.delete("/api/v2/strategies/\(id)")
     }
 
     func updateStrategy(id: String, name: String) async throws -> StrategyV2 {
-        try await client.patch("/api/v2/strategies/\(id)", body: ["name": name], mock: {
-            StrategyV2(
-                id: id,
-                name: name,
-                description: nil,
-                strategyType: "rule_dsl",
-                sourceType: "manual",
-                status: "draft",
-                createdAt: ISO8601DateFormatter().string(from: Date()),
-                updatedAt: ISO8601DateFormatter().string(from: Date())
-            )
-        })
+        try await client.patch("/api/v2/strategies/\(id)", body: ["name": name])
     }
 
-    // MARK: - Versions
-
     func listVersions(strategyId: String) async throws -> [StrategyVersionV2] {
-        try await client.get("/api/v2/strategies/\(strategyId)/versions", mock: { MockDataV2.versions(strategyId: strategyId) })
+        try await client.get("/api/v2/strategies/\(strategyId)/versions")
     }
 
     func createVersion(strategyId: String, ruleDsl: [String: Any]) async throws -> StrategyVersionV2 {
-        try await client.post(
-            "/api/v2/strategies/\(strategyId)/versions",
-            body: AnyEncodable(["rule_dsl": ruleDsl]),
-            mock: {
-                StrategyVersionV2(
-                    id: UUID().uuidString,
-                    strategyId: strategyId,
-                    versionNo: 1,
-                    status: "draft",
-                    dslVersion: "2.5",
-                    ruleDsl: [:],
-                    dslHash: "mock",
-                    createdBy: "user",
-                    createdAt: ISO8601DateFormatter().string(from: Date())
-                )
-            }
-        )
+        try await client.post("/api/v2/strategies/\(strategyId)/versions", body: AnyEncodable(["rule_dsl": ruleDsl]))
     }
 
-    /// PATCH /api/v2/strategies/{sid}/versions/{vid}/status — drives backend lifecycle state machine.
-    /// Throws on disallowed/system-only transition (409/403 from server).
     func transitionVersionStatus(strategyId: String, versionId: String, toStatus: String) async throws -> StrategyVersionV2 {
-        try await client.patch(
-            "/api/v2/strategies/\(strategyId)/versions/\(versionId)/status",
-            body: ["to_status": toStatus],
-            mock: {
-                StrategyVersionV2(
-                    id: versionId,
-                    strategyId: strategyId,
-                    versionNo: 1,
-                    status: toStatus,
-                    dslVersion: "2.5",
-                    ruleDsl: [:],
-                    dslHash: "mock",
-                    createdBy: "user",
-                    createdAt: ISO8601DateFormatter().string(from: Date())
-                )
-            }
-        )
+        try await client.patch("/api/v2/strategies/\(strategyId)/versions/\(versionId)/status", body: ["to_status": toStatus])
     }
-
-    // MARK: - DSL Validation
 
     func validateDSL(_ dsl: [String: Any]) async throws -> DSLValidationReport {
-        try await client.post(
-            "/api/v2/strategies/validate-dsl",
-            body: AnyEncodable(["dsl": dsl]),
-            mock: {
-                DSLValidationReport(
-                    valid: true, errorCount: 0, warningCount: 0,
-                    safeHoldRequired: false, safeHoldReasons: [],
-                    errors: [], warnings: []
-                )
-            }
-        )
+        try await client.post("/api/v2/strategies/validate-dsl", body: AnyEncodable(["dsl": dsl]))
     }
 
-    // MARK: - Backtest (Command Bus)
-
-    @available(*, deprecated, message: "Use startBacktestV2 on NetworkClientProtocol (APIBacktestV2.swift)")
     func startBacktest(
         dsl: [String: Any],
         timerange: String,
@@ -148,69 +73,17 @@ final class APIStrategiesV2: @unchecked Sendable {
         if let svid = strategyVersionId {
             body["strategy_version_id"] = svid
         }
-        return try await client.post(
-            "/api/v2/backtest",
-            body: AnyEncodable(body),
-            mock: {
-                BacktestCommandResponse(
-                    commandId: UUID().uuidString,
-                    status: "pending",
-                    message: "backtest command enqueued",
-                    idempotencyKey: "mock"
-                )
-            }
-        )
+        return try await client.post("/api/v2/backtest", body: AnyEncodable(body))
     }
 
-    @available(*, deprecated, message: "Use backtestStatusV2 on NetworkClientProtocol (APIBacktestV2.swift)")
     func backtestStatus(commandId: String) async throws -> BacktestStatusV2 {
-        try await client.get("/api/v2/backtest/status/\(commandId)", mock: {
-            BacktestStatusV2Mock.completed()
-        })
+        try await client.get("/api/v2/backtest/status/\(commandId)")
     }
 
-    @available(*, deprecated, message: "Use listBacktestsV2 on NetworkClientProtocol (APIBacktestV2.swift)")
     func listBacktests(strategyId: Int? = nil, strategyUuid: String? = nil, limit: Int = 20) async throws -> [BacktestRunV2] {
         var path = "/api/v2/backtest?limit=\(limit)"
         if let sid = strategyId { path += "&strategy_id=\(sid)" }
         if let uuid = strategyUuid { path += "&strategy_uuid=\(uuid)" }
-        return try await client.get(path, mock: { [] })
-    }
-}
-
-// MARK: - Mock data for v2.5
-
-enum MockDataV2 {
-    static func strategies() -> [StrategyV2] {
-        [
-            StrategyV2(id: UUID().uuidString, name: "RSI 均值回归", description: "RSI < 30 入场", strategyType: "rule_dsl", sourceType: "manual", status: "draft", createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z"),
-        ]
-    }
-
-    static func versions(strategyId: String) -> [StrategyVersionV2] {
-        [
-            StrategyVersionV2(
-                id: UUID().uuidString,
-                strategyId: strategyId,
-                versionNo: 1,
-                status: "published",
-                dslVersion: "2.5",
-                ruleDsl: ["entry": AnyCodable(["type": "rsi", "condition": "lt", "value": 30])],
-                dslHash: "mock-hash",
-                createdBy: "user",
-                createdAt: "2026-06-01T00:00:00Z"
-            ),
-        ]
-    }
-}
-
-enum BacktestStatusV2Mock {
-    static func completed() -> BacktestStatusV2 {
-        // Provide a simple mock for offline/mock mode
-        let decoder = JSONDecoder()
-        let json = """
-        {"command_id":"00000000-0000-0000-0000-000000000000","command_status":"completed","backtest_run":null,"error_code":null,"error_message":null}
-        """.data(using: .utf8)!
-        return try! decoder.decode(BacktestStatusV2.self, from: json)
+        return try await client.get(path)
     }
 }

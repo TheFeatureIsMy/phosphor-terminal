@@ -20,7 +20,7 @@ struct DashboardStatusStrip: View {
         HStack(spacing: PulseSpacing.xs) {
             chip(
                 label: L10n.Dashboard.providers,
-                value: providerHealth.map { "\($0.healthy)/\($0.total)" } ?? "—",
+                value: providerHealth.map { "\($0.totalActive)/\($0.total)" } ?? "—",
                 tone: providerTone
             )
             chip(
@@ -59,11 +59,11 @@ struct DashboardStatusStrip: View {
         .padding(.horizontal, PulseSpacing.lg)
         .padding(.vertical, 6)
         .background(
-            RoundedRectangle(cornerRadius: PulseRadii.sm)
+            RoundedRectangle(cornerRadius: PulseRadii.badge)
                 .fill(colors.surface.opacity(0.4))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: PulseRadii.sm)
+            RoundedRectangle(cornerRadius: PulseRadii.badge)
                 .stroke(colors.border.opacity(0.6), lineWidth: 0.5)
         )
         .id(settingsState.language)
@@ -118,8 +118,8 @@ struct DashboardStatusStrip: View {
 
     private var providerTone: ChipTone {
         guard let p = providerHealth, p.total > 0 else { return .neutral }
-        if p.error > 0 { return .error }
-        if p.warning > 0 { return .warn }
+        if p.totalError > 0 { return .error }
+        if p.totalError > 0 { return .warn }
         return .live
     }
 

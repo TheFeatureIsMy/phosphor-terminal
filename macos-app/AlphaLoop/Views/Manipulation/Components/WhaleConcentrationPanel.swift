@@ -19,7 +19,7 @@ struct PercentileBar: View {
                 ZStack(alignment: .leading) {
                     RoundedRectangle(cornerRadius: 2).fill(colors.border).frame(height: 6)
                     RoundedRectangle(cornerRadius: 2)
-                        .fill(LinearGradient(colors: [PulseColors.accent, PulseColors.danger], startPoint: .leading, endPoint: .trailing))
+                        .fill(LinearGradient(colors: [PulseColors.success, PulseColors.danger], startPoint: .leading, endPoint: .trailing))
                         .frame(width: max(2, geo.size.width * percentile), height: 6)
                     Circle().fill(Color.white).frame(width: 8, height: 8)
                         .offset(x: max(0, geo.size.width * percentile - 4))

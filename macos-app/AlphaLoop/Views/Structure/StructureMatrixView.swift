@@ -93,7 +93,7 @@ private struct StructureMatrixContentView: View {
                 }
                 .padding(.horizontal, PulseSpacing.xl)
                 .padding(.vertical, PulseSpacing.lg)
-                .frame(maxWidth: 1280, alignment: .leading)
+                .frame(maxWidth: PulseSpacing.contentMaxWidth, alignment: .leading)
                 .frame(maxWidth: .infinity, alignment: .center)
             }
 
@@ -1058,7 +1058,7 @@ private struct StructureDetailDrawer: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            Color.black.opacity(0.35)
+            PulseGlass.modalBackdrop
                 .onTapGesture { onClose() }
             VStack(alignment: .leading, spacing: PulseSpacing.md) {
                 HStack {
@@ -1147,7 +1147,7 @@ private struct SymbolPickerOverlay: View {
 
     var body: some View {
         ZStack(alignment: .top) {
-            Color.black.opacity(0.4)
+            PulseGlass.modalBackdrop
                 .ignoresSafeArea()
                 .onTapGesture { isOpen = false }
 

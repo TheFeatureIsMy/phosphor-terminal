@@ -66,7 +66,7 @@ struct HistoryDrawer: View {
                 Spacer()
                 Text(String(format: "%+.1f%%", run.totalReturn * 100))
                     .font(PulseFonts.tabular)
-                    .foregroundStyle(run.totalReturn >= 0 ? PulseColors.accent : PulseColors.danger)
+                    .foregroundStyle(run.totalReturn >= 0 ? PulseColors.bullish : PulseColors.bearish)
             }
             .padding(PulseSpacing.sm)
             .background(RoundedRectangle(cornerRadius: PulseRadii.sm).fill(colors.surfaceHover.opacity(0.3)))

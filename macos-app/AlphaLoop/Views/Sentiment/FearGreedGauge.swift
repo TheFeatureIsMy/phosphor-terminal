@@ -48,15 +48,15 @@ struct FearGreedGauge: View {
 
             // Scale labels
             HStack {
-                Text("恐惧")
+                Text(L10n.zh("恐惧", en: "Fear"))
                     .font(PulseFonts.micro)
                     .foregroundStyle(PulseColors.danger)
                 Spacer()
-                Text("中性")
+                Text(L10n.zh("中性", en: "Neutral"))
                     .font(PulseFonts.micro)
                     .foregroundStyle(colors.textMuted)
                 Spacer()
-                Text("贪婪")
+                Text(L10n.zh("贪婪", en: "Greed"))
                     .font(PulseFonts.micro)
                     .foregroundStyle(PulseColors.success)
             }

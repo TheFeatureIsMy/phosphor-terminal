@@ -25,14 +25,14 @@ struct SignalsFeedCard: View {
                         title: L10n.Dashboard.dataSourceUnavailable,
                         description: ""
                     )
-                    .frame(minHeight: 120)
+                    .frame(maxWidth: .infinity, minHeight: 260)
                 } else if signals.isEmpty {
                     EmptyStateView(
                         icon: "waveform.path.ecg",
                         title: L10n.Dashboard.noSignals,
                         description: ""
                     )
-                    .frame(minHeight: 120)
+                    .frame(maxWidth: .infinity, minHeight: 260)
                 } else {
                     ScrollView {
                         VStack(spacing: PulseSpacing.xxs) {
@@ -41,7 +41,7 @@ struct SignalsFeedCard: View {
                             }
                         }
                     }
-                    .frame(maxHeight: 320)
+                    .frame(height: 260)
                 }
             }
         }
@@ -77,7 +77,7 @@ struct SignalsFeedCard: View {
                         .padding(.horizontal, 5)
                         .padding(.vertical, 1)
                         .background(
-                            RoundedRectangle(cornerRadius: PulseRadii.xs)
+                            RoundedRectangle(cornerRadius: PulseRadii.badge)
                                 .fill(colors.surface)
                         )
                 }
@@ -99,7 +99,7 @@ struct SignalsFeedCard: View {
         .padding(.horizontal, PulseSpacing.xs)
         .padding(.vertical, PulseSpacing.xs)
         .background(
-            RoundedRectangle(cornerRadius: PulseRadii.sm)
+            RoundedRectangle(cornerRadius: PulseRadii.badge)
                 .fill(hoveredIndex == index ? colors.surface.opacity(0.5) : Color.clear)
         )
         .onHover { hovering in
@@ -156,11 +156,11 @@ struct SignalsFeedCard: View {
         .padding(.horizontal, 5)
         .padding(.vertical, 1)
         .background(
-            RoundedRectangle(cornerRadius: PulseRadii.xs)
+            RoundedRectangle(cornerRadius: PulseRadii.badge)
                 .fill((hasValue ? PulseColors.cyan : colors.textMuted).opacity(0.08))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: PulseRadii.xs)
+            RoundedRectangle(cornerRadius: PulseRadii.badge)
                 .stroke((hasValue ? PulseColors.cyan : colors.textMuted).opacity(0.20), lineWidth: 0.5)
         )
     }
@@ -172,7 +172,7 @@ struct SignalsFeedCard: View {
         let color: Color
         let text: String
         switch lower {
-        case "long", "buy": (color, text) = (PulseColors.accent, L10n.Dashboard.long)
+        case "long", "buy": (color, text) = (PulseColors.bullish, L10n.Dashboard.long)
         case "short", "sell": (color, text) = (PulseColors.danger, L10n.Dashboard.short)
         default: (color, text) = (colors.textMuted, "—")
         }
@@ -183,7 +183,7 @@ struct SignalsFeedCard: View {
             .padding(.horizontal, 5)
             .padding(.vertical, 1)
             .background(
-                RoundedRectangle(cornerRadius: PulseRadii.xs)
+                RoundedRectangle(cornerRadius: PulseRadii.badge)
                     .fill(color.opacity(0.10))
             )
     }

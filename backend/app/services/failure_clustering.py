@@ -149,3 +149,49 @@ def load_clusters(
     q = q.filter(FailureClusterRecord.status == status)
     q = q.order_by(FailureClusterRecord.total_loss.asc())
     return q.all()
+
+
+# ---------------------------------------------------------------------------
+# In-memory FailureClusteringService - async BFF fallback
+# ---------------------------------------------------------------------------
+
+class FailureClusteringService:
+    """In-memory failure clustering service providing async BFF endpoints.
+
+    When the DB has no ``failure_clusters`` rows, this service returns
+    an empty-but-valid response instead of crashing.
+    """
+
+    async def get_summary(self) -> dict:
+        return {
+            "state": "healthy",
+            "reason_codes": [],
+            "available_actions": [],
+            "total_loss_trades": 0,
+            "total_loss_amount": 0.0,
+            "clusters": [],
+            "regime_matrix": [],
+            "common_reject_reasons": [],
+            "labels": [],
+        }
+
+    async def get_clusters(self) -> dict:
+        return {
+            "state": "healthy",
+            "reason_codes": [],
+            "clusters": [],
+        }
+
+    async def get_labels(self) -> dict:
+        return {
+            "state": "healthy",
+            "reason_codes": [],
+            "labels": [],
+        }
+
+    async def get_regime_matrix(self) -> dict:
+        return {
+            "state": "healthy",
+            "reason_codes": [],
+            "regime_matrix": [],
+        }

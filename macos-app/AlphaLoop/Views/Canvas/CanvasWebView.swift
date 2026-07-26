@@ -12,7 +12,20 @@ struct CanvasWebView: NSViewRepresentable {
         contentController.add(context.coordinator, name: "canvas")
 
         let prefs = config.defaultWebpagePreferences
-        prefs!.allowsContentJavaScript = true
+        prefs?.allowsContentJavaScript = true
+
+        // Primary fix: canvas-web is built as a SINGLE self-contained index.html
+        // (vite-plugin-singlefile inlines all JS/CSS). A single file emits no
+        // sub-resource requests, so file:// CORS can no longer block the module
+        // from loading — this is what actually cures the white screen.
+        //
+        // The two keys below are a harmless belt-and-suspenders: they grant a
+        // file:// page cross-origin read access, in case any asset is ever
+        // externalized again. They live on DIFFERENT objects — file-access on
+        // WKPreferences, universal-access on WKWebViewConfiguration; the wrong
+        // owner throws at runtime.
+        config.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
+        config.setValue(true, forKey: "allowUniversalAccessFromFileURLs")
 
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.navigationDelegate = context.coordinator

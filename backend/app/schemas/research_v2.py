@@ -34,11 +34,18 @@ class ResearchReportData(BaseModel):
     rating: str  # Buy | Overweight | Hold | Underweight | Sell
     direction: SignalDirection
     confidence: float = Field(ge=0, le=1)
+    uncertainty: float = Field(ge=0, le=1, default=0.5)
     risk_level: SignalRiskLevel
     agent_opinions: dict[str, AgentOpinion] = {}
     summary: str = ""
+    facts: list[str] = []
+    model_interpretation: str = ""
+    trading_implication: str = ""
+    risk_warning: str = ""
+    strategy_impact: str = ""
     evidence: list[str] = []
     provider_trace_id: Optional[uuid.UUID] = None
+    prompt_version: str = "2.5.1"
     created_at: Optional[datetime] = None
 
 
@@ -51,11 +58,18 @@ class ResearchReportResponse(BaseModel):
     rating: str
     direction: str
     confidence: float
+    uncertainty: float = 0.5
     risk_level: str
     agent_opinions: dict[str, Any] = {}
-    summary: str
+    summary: str = ""
+    facts: list[str] = []
+    model_interpretation: str = ""
+    trading_implication: str = ""
+    risk_warning: str = ""
+    strategy_impact: str = ""
     evidence: list[str] = []
     provider_trace_id: Optional[uuid.UUID] = None
+    prompt_version: str = "2.5.1"
     created_at: Optional[datetime] = None
 
     model_config = {"from_attributes": True}

@@ -129,11 +129,10 @@ struct CommandPaletteView: View {
             .background(
                 RoundedRectangle(cornerRadius: PulseRadii.lg)
                     .fill(colors.cardBackground)
-                    .background(RoundedRectangle(cornerRadius: PulseRadii.lg).fill(.ultraThinMaterial))
             )
             .clipShape(RoundedRectangle(cornerRadius: PulseRadii.lg))
             .overlay(RoundedRectangle(cornerRadius: PulseRadii.lg).stroke(colors.border, lineWidth: 1))
-            .shadow(color: .black.opacity(0.4), radius: 20, y: 8)
+            .applyShadow(PulseShadow.elevated(colors))
         }
         .onAppear { isSearchFocused = true }
         .onKeyPress(.escape) { dismiss(); return .handled }

@@ -106,9 +106,11 @@ struct StrategyCanvasWorkspaceView: View {
     // MARK: - Canvas lifecycle
 
     private func ensureCanvasLoaded(_ vm: StrategyWorkspaceViewModel) {
-        guard let id = vm.selectedStrategyId else { return }
-        if canvasVM?.strategyId != id {
-            let model = CanvasWebViewModel(strategyId: id, client: networkClient)
+        // Create the canvas WebView unconditionally — it renders an empty graph
+        // even before a strategy is chosen, so the workbench never shows a blank
+        // pane. It is rebuilt only when the selected strategy actually changes.
+        if canvasVM == nil || canvasVM?.strategyId != vm.selectedStrategyId {
+            let model = CanvasWebViewModel(strategyId: vm.selectedStrategyId, client: networkClient)
             // Wire bridge → workbench VM
             model.onSelectionChanged = { selection in
                 vm.selectedCanvasNodeId = selection?.id

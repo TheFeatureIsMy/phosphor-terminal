@@ -12,17 +12,11 @@ struct TerminalLabel: View {
     let text: String
 
     var body: some View {
-        HStack(spacing: PulseSpacing.xxs) {
-            Text("//")
-                .font(PulseFonts.monoLabel)
-                .foregroundStyle(PulseColors.accent)
-
-            Text(text)
-                .font(PulseFonts.monoLabel)
-                .foregroundStyle(colors.textMuted)
-                .textCase(.uppercase)
-                .tracking(1.5)
-        }
+        Text(text)
+            .font(PulseFonts.body(13, .semibold))
+            .foregroundStyle(colors.textSecondary)
+            .textCase(.uppercase)
+            .tracking(0.6)
     }
 }
 
@@ -179,9 +173,8 @@ struct KryptonButton: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(PulseFonts.monoLabel)
-                .textCase(.uppercase)
-                .tracking(0.8)
+                .font(PulseFonts.body(14, .semibold))
+                .tracking(0.3)
                 .foregroundStyle(foregroundColor)
                 .padding(.horizontal, 20)
                 .padding(.vertical, 10)
@@ -211,7 +204,7 @@ struct KryptonButton: View {
 
     private var foregroundColor: Color {
         switch style {
-        case .primary: return colors.background
+        case .primary: return PulseColors.onAccent
         case .ghost: return isHovered ? PulseColors.accent : colors.textSecondary
         }
     }
@@ -249,57 +242,20 @@ struct KryptonCard<Content: View>: View {
     let content: () -> Content
 
     @State private var isHovering = false
-    @State private var rotateX: Double = 0
-    @State private var rotateY: Double = 0
-    @State private var hoverPoint: CGPoint = .zero
-    @State private var viewSize: CGSize = .zero
     @State private var isPressed = false
-
-    private let maxRotation: Double = 3.5
 
     var body: some View {
         content()
             .padding(cardPadding)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(cardBackground)
-            .clipShape(RoundedRectangle(cornerRadius: PulseRadii.card))
             .overlay(cardBorder)
-            .overlay(topHighlightLine)
-            .overlay(spotlightOverlay)
-            .overlay(hoverBorderOverlay)
-            .applyShadow(PulseShadow.card(colors))
+            .applyShadow(isHovering ? PulseShadow.elevated(colors) : PulseShadow.card(colors))
+            .offset(y: isHovering ? -3 : 0)
             .scaleEffect(isPressed ? 0.98 : 1.0)
-            .brightness(isPressed ? 0.05 : 0)
             .animation(PulseAnimation.easeOutFast, value: isPressed)
-            .background(geometryReader)
-            .rotation3DEffect(
-                emphasis == .bold ? .degrees(rotateX) : .degrees(0),
-                axis: (x: 1, y: 0, z: 0), perspective: 0.5
-            )
-            .rotation3DEffect(
-                emphasis == .bold ? .degrees(rotateY) : .degrees(0),
-                axis: (x: 0, y: 1, z: 0), perspective: 0.5
-            )
-            .animation(PulseAnimation.easeOutFast, value: isHovering)
-            .onContinuousHover { phase in
-                switch phase {
-                case .active(let point):
-                    isHovering = true
-                    hoverPoint = point
-                    if emphasis == .bold {
-                        let w = max(viewSize.width, 1)
-                        let h = max(viewSize.height, 1)
-                        let normalizedX = point.x / w - 0.5
-                        let normalizedY = point.y / h - 0.5
-                        rotateY = normalizedX * maxRotation * 2
-                        rotateX = -normalizedY * maxRotation * 2
-                    }
-                case .ended:
-                    isHovering = false
-                    rotateX = 0
-                    rotateY = 0
-                }
-            }
+            .animation(PulseAnimation.hoverLift, value: isHovering)
+            .onHover { hovering in isHovering = hovering }
             .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity,
                 pressing: { pressing in
                     withAnimation(PulseAnimation.easeOutFast) { isPressed = pressing }
@@ -338,10 +294,6 @@ struct KryptonCard<Content: View>: View {
     private var cardBackground: some View {
         RoundedRectangle(cornerRadius: PulseRadii.card)
             .fill(colors.cardBackground)
-            .background(
-                RoundedRectangle(cornerRadius: PulseRadii.card)
-                    .fill(.ultraThinMaterial)
-            )
     }
 
     // Default border (subtle gets subtle white, bold gets accent; empty gets dashed)
@@ -364,64 +316,6 @@ struct KryptonCard<Content: View>: View {
         }
     }
 
-    // Top highlight line (balanced and bold only)
-    @ViewBuilder
-    private var topHighlightLine: some View {
-        if emphasis != .subtle {
-            VStack {
-                LinearGradient(
-                    colors: [.clear, PulseColors.accent.opacity(emphasis == .bold ? 0.35 : 0.2), .clear],
-                    startPoint: .leading,
-                    endPoint: .trailing
-                )
-                .frame(height: 1)
-                Spacer()
-            }
-            .clipShape(RoundedRectangle(cornerRadius: PulseRadii.card))
-        }
-    }
-
-    // Spotlight overlay (balanced and bold only, follows cursor)
-    private var spotlightOverlay: some View {
-        RoundedRectangle(cornerRadius: PulseRadii.card)
-            .fill(
-                RadialGradient(
-                    colors: [
-                        PulseColors.accent.opacity(emphasis == .bold ? 0.10 : 0.06),
-                        .clear
-                    ],
-                    center: emphasis != .subtle && viewSize.width > 0
-                        ? UnitPoint(
-                            x: hoverPoint.x / viewSize.width,
-                            y: hoverPoint.y / viewSize.height
-                          )
-                        : UnitPoint(x: 0.5, y: 0.5),
-                    startRadius: 0,
-                    endRadius: 180
-                )
-            )
-            .opacity(isHovering && emphasis != .subtle ? 1 : 0)
-            .allowsHitTesting(false)
-    }
-
-    // Hover border glow (balanced and bold only)
-    private var hoverBorderOverlay: some View {
-        RoundedRectangle(cornerRadius: PulseRadii.card)
-            .stroke(
-                isHovering && emphasis != .subtle
-                    ? PulseGlass.accentBorderHover
-                    : Color.clear,
-                lineWidth: 1
-            )
-    }
-
-    // GeometryReader for per-card coordinates
-    private var geometryReader: some View {
-        GeometryReader { geo in
-            Color.clear.onAppear { viewSize = geo.size }
-                .onChange(of: geo.size) { _, newSize in viewSize = newSize }
-        }
-    }
 }
 
 // MARK: - AlphaLoopLogoView — α + Dual Orbital Rings

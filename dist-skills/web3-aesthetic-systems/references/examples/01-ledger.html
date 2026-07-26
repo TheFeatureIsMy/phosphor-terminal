@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>αLOOP · Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0D0F0E;
+    --row:#111413;
+    --hair:#1E2422;
+    --txt:#C8D0CC;
+    --dim:#6B7671;
+    --num:#E8EEEB;
+    --em:#2FBF71;
+    --loss:#D9544D;
+    --amber:#C9A227;
+    --gutter:90px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--bg);
+    color:var(--txt);
+    font-family:'IBM Plex Mono',ui-monospace,'SF Mono',monospace;
+    font-size:13px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+    letter-spacing:.01em;
+  }
+  .num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1;color:var(--num)}
+  .em{color:var(--em)}
+  .loss{color:var(--loss)}
+  .amber{color:var(--amber)}
+  .dim{color:var(--dim)}
+  a{color:var(--em);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  /* ---------- Header bar ---------- */
+  header{
+    position:sticky;top:0;z-index:30;
+    height:44px;
+    display:flex;align-items:center;
+    background:var(--bg);
+    border-bottom:1px solid var(--hair);
+    padding:0 20px;
+    gap:18px;
+  }
+  .brand{font-weight:600;font-size:14px;color:var(--num);letter-spacing:.02em}
+  .brand .a{color:var(--em)}
+  .sync{
+    display:flex;align-items:center;gap:7px;
+    font-size:12px;color:var(--dim);
+  }
+  .sync .blk{color:var(--num)}
+  .sync .dot{color:var(--em)}
+  .pulse{animation:pulse 2.4s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  .header-actions{margin-left:auto;display:flex;gap:0}
+  .hbtn{
+    background:none;border:1px solid var(--hair);border-right:none;
+    color:var(--txt);font-family:inherit;font-size:12px;
+    padding:6px 13px;cursor:pointer;
+    transition:background .15s,color .15s;
+  }
+  .hbtn:last-child{border-right:1px solid var(--hair)}
+  .hbtn:hover{background:var(--row);color:var(--num)}
+  .hbtn.danger{color:var(--loss)}
+  .hbtn.danger:hover{background:rgba(217,84,77,.12)}
+  .hbtn:focus-visible{outline:2px solid var(--em);outline-offset:-1px;z-index:1;position:relative}
+
+  /* ---------- Layout ---------- */
+  .wrap{max-width:1160px;margin:0 auto}
+  .ledger{position:relative}
+  .entry{
+    display:grid;
+    grid-template-columns:var(--gutter) 1fr;
+    border-bottom:1px solid var(--hair);
+  }
+  .gutter{
+    border-right:1px solid var(--hair);
+    padding:14px 12px 14px 0;
+    text-align:right;
+    display:flex;flex-direction:column;gap:2px;
+    align-items:flex-end;
+  }
+  .gh{color:var(--num);font-size:12px;font-weight:500}
+  .gt{color:var(--dim);font-size:11px}
+  .gtag{color:var(--dim);font-size:10px;letter-spacing:.06em;margin-top:4px}
+  .body{padding:14px 20px}
+
+  /* section label rows */
+  .section-label{
+    grid-template-columns:var(--gutter) 1fr;
+  }
+  .section-label .body{
+    padding:10px 20px;
+    font-size:11px;letter-spacing:.14em;color:var(--dim);
+    text-transform:uppercase;
+    display:flex;align-items:center;gap:10px;
+  }
+  .section-label .body .ln{flex:1;height:1px;background:var(--hair)}
+
+  /* ---------- Genesis / equity block ---------- */
+  .genesis .body{padding:22px 20px}
+  .equity-label{font-size:11px;letter-spacing:.12em;color:var(--dim);text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+  .equity-val{font-size:34px;font-weight:600;color:var(--num);letter-spacing:.01em;line-height:1.1}
+  .equity-val .unit{font-size:16px;color:var(--dim);font-weight:400;margin-left:6px}
+  .equity-pnl{font-size:14px;margin-top:6px}
+  .stat-grid{
+    display:grid;grid-template-columns:repeat(4,1fr);
+    margin-top:20px;border-top:1px solid var(--hair);
+  }
+  .stat{padding:12px 14px 12px 0;border-right:1px solid var(--hair)}
+  .stat:last-child{border-right:none}
+  .stat .k{font-size:10px;letter-spacing:.08em;color:var(--dim);text-transform:uppercase;margin-bottom:5px}
+  .stat .v{font-size:15px;font-weight:500}
+  .stat .sub{font-size:11px;color:var(--dim);margin-top:2px}
+
+  /* readiness + risk strip */
+  .metastrip{display:grid;grid-template-columns:1fr 1fr;gap:0;margin-top:16px;border:1px solid var(--hair)}
+  .metastrip > div{padding:12px 14px}
+  .metastrip > div:first-child{border-right:1px solid var(--hair)}
+  .ms-title{font-size:10px;letter-spacing:.1em;color:var(--dim);text-transform:uppercase;margin-bottom:8px}
+  .ms-line{display:flex;justify-content:space-between;font-size:12px;padding:3px 0}
+  .ms-line span:last-child{color:var(--num);font-variant-numeric:tabular-nums}
+
+  /* ---------- Position block ---------- */
+  .pos-head{display:flex;align-items:baseline;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+  .pos-sym{font-size:15px;font-weight:600;color:var(--num)}
+  .side{font-size:10px;letter-spacing:.08em;padding:2px 7px;border:1px solid var(--hair)}
+  .side.long{color:var(--em);border-color:rgba(47,191,113,.4)}
+  .side.short{color:var(--amber);border-color:rgba(201,162,39,.4)}
+  .hash{font-size:12px;color:var(--em);letter-spacing:.02em}
+  .verify{color:var(--em);font-size:12px}
+  .pos-pnl{margin-left:auto;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums}
+  .pos-detail{
+    display:grid;grid-template-columns:repeat(4,auto);gap:0 28px;
+    font-size:12px;color:var(--dim);margin-bottom:11px;
+  }
+  .pos-detail b{color:var(--num);font-weight:500;font-variant-numeric:tabular-nums}
+  .confirm{display:flex;align-items:center;gap:10px;font-size:11px;color:var(--dim)}
+  .confbar{letter-spacing:1px;font-size:11px;color:var(--em)}
+  .confbar .empty{color:var(--hair)}
+
+  /* ---------- feed rows (decisions / alerts) ---------- */
+  .feed-body{padding:13px 20px;display:flex;gap:12px;align-items:flex-start}
+  .glyph{color:var(--dim);font-size:13px;line-height:1.5;flex-shrink:0;width:14px;text-align:center}
+  .feed-main{flex:1;min-width:0}
+  .feed-title{font-size:13px;color:var(--txt);margin-bottom:3px}
+  .feed-title b{color:var(--num);font-weight:600}
+  .feed-meta{font-size:11px;color:var(--dim)}
+  .feed-meta .tk{color:var(--txt)}
+  .feed-ago{font-size:11px;color:var(--dim);flex-shrink:0;font-variant-numeric:tabular-nums}
+  .g-em{color:var(--em)}
+  .g-amber{color:var(--amber)}
+  .g-loss{color:var(--loss)}
+
+  /* entry enter animation */
+  .anim{opacity:0;transform:translateY(-8px)}
+  .anim.in{opacity:1;transform:none;transition:opacity .5s ease,transform .5s cubic-bezier(.22,1,.36,1)}
+
+  /* ---------- Emergency footer ---------- */
+  .estop{
+    position:sticky;bottom:0;z-index:20;
+    background:var(--bg);
+    border-top:1px solid var(--hair);
+    padding:12px 20px;
+    display:flex;align-items:center;gap:16px;
+    max-width:1160px;margin:0 auto;
+  }
+  .estop-label{font-size:11px;letter-spacing:.08em;color:var(--dim);text-transform:uppercase}
+  .estop-label b{color:var(--loss);font-weight:600}
+  .estop-sub{font-size:11px;color:var(--dim)}
+  .estop-btn{
+    margin-left:auto;
+    background:none;border:1px solid var(--loss);color:var(--loss);
+    font-family:inherit;font-size:13px;font-weight:600;
+    padding:9px 20px;cursor:pointer;letter-spacing:.05em;
+    transition:background .15s;
+  }
+  .estop-btn:hover{background:rgba(217,84,77,.14)}
+  .estop-btn:focus-visible{outline:2px solid var(--loss);outline-offset:2px}
+
+  /* ---------- responsive ---------- */
+  @media (max-width:767px){
+    :root{--gutter:0px}
+    .entry,.section-label,.genesis{grid-template-columns:1fr}
+    .gutter{
+      border-right:none;text-align:left;
+      flex-direction:row;align-items:baseline;gap:10px;
+      padding:10px 20px 0;
+    }
+    .gtag{margin-top:0}
+    .stat-grid{grid-template-columns:1fr 1fr}
+    .stat:nth-child(2){border-right:none}
+    .metastrip{grid-template-columns:1fr}
+    .metastrip > div:first-child{border-right:none;border-bottom:1px solid var(--hair)}
+    .pos-detail{grid-template-columns:1fr 1fr;gap:4px 20px}
+    .header-actions{display:none}
+    .equity-val{font-size:26px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .anim{opacity:1 !important;transform:none !important;transition:none !important}
+    .pulse{animation:none}
+    html{scroll-behavior:auto}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand"><span class="a">α</span>LOOP</div>
+  <div class="sync">
+    <span class="dot pulse">✓</span>
+    <span>block <span class="blk">#1,284,736</span></span>
+    <span>synced</span>
+  </div>
+  <div class="header-actions">
+    <button class="hbtn">▸ 启动策略</button>
+    <button class="hbtn">▸ 回测</button>
+    <button class="hbtn">⬢ 同步 Freqtrade</button>
+    <button class="hbtn danger">■ 紧急停止</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="ledger" id="ledger">
+
+    <!-- GENESIS / equity block -->
+    <div class="entry genesis anim">
+      <div class="gutter">
+        <div class="gh">#4821</div>
+        <div class="gt">06:22</div>
+        <div class="gtag">GENESIS</div>
+      </div>
+      <div class="body">
+        <div class="equity-label"><span class="verify">✓</span> 账户总权益 · ACCOUNT EQUITY</div>
+        <div class="equity-val"><span class="num" data-count="1284736.52" data-dec="2">0.00</span><span class="unit">USDT</span></div>
+        <div class="equity-pnl">今日盈亏 <span class="em num">+<span data-count="18432.10" data-dec="2">0</span></span> <span class="em">(+1.46%)</span></div>
+
+        <div class="stat-grid">
+          <div class="stat">
+            <div class="k">活跃策略</div>
+            <div class="v"><span class="num" data-count="7" data-dec="0">0</span> <span class="dim">/ 12</span></div>
+            <div class="sub">运行 14d 06:22</div>
+          </div>
+          <div class="stat">
+            <div class="k">开放持仓</div>
+            <div class="v num" data-count="9" data-dec="0">0</div>
+            <div class="sub">今日成交 <span class="num" data-count="142" data-dec="0">0</span></div>
+          </div>
+          <div class="stat">
+            <div class="k">实盘就绪度</div>
+            <div class="v"><span class="em num" data-count="92" data-dec="0">0</span><span class="em">%</span></div>
+            <div class="sub em">7/8 检查通过</div>
+          </div>
+          <div class="stat">
+            <div class="k">风控守卫</div>
+            <div class="v amber"><span class="num" data-count="1" data-dec="0">0</span> 待确认</div>
+            <div class="sub">API 连接正常</div>
+          </div>
+        </div>
+
+        <div class="metastrip">
+          <div>
+            <div class="ms-title">全局风险 · GLOBAL RISK</div>
+            <div class="ms-line"><span class="dim">当前回撤</span><span class="loss">-4.82%</span></div>
+            <div class="ms-line"><span class="dim">保证金率</span><span>18.4%</span></div>
+            <div class="ms-line"><span class="dim">敞口占比</span><span>62%</span></div>
+            <div class="ms-line"><span class="dim">熔断事件</span><span class="em">0 未决</span></div>
+          </div>
+          <div>
+            <div class="ms-title">就绪度检查 · READINESS 92%</div>
+            <div class="ms-line"><span class="dim">API 连接</span><span class="em">✓ 正常</span></div>
+            <div class="ms-line"><span class="dim">对账状态</span><span class="em">✓ 142 匹配</span></div>
+            <div class="ms-line"><span class="dim">风控守卫</span><span class="amber">▸ 1 待确认</span></div>
+            <div class="ms-line"><span class="dim">时序守卫</span><span class="amber">CAUTION</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- POSITIONS section -->
+    <div class="entry section-label anim">
+      <div class="gutter"><div class="gtag">LAYER</div></div>
+      <div class="body">⬢ 开放持仓 · POSITIONS <span class="ln"></span> 5 signed</div>
+    </div>
+
+    <!-- position blocks -->
+    <div class="entry anim">
+      <div class="gutter"><div class="gh">#4820</div><div class="gt">06:20</div><div class="gtag">POS</div></div>
+      <div class="body">
+        <div class="pos-head">
+          <span class="pos-sym">BTC/USDT</span>
+          <span class="side long">LONG</span>
+          <span class="hash">0x8f..2a</span> <span class="verify">✓</span>
+          <span class="pos-pnl em">+$2,476</span>
+        </div>
+        <div class="pos-detail">
+          <span>数量 <b>0.842</b></span>
+          <span>开仓 <b>61,240</b></span>
+          <span>标记 <b>64,180</b></span>
+          <span>未实现 <b class="em">+$2,476</b></span>
+        </div>
+        <div class="confirm"><span class="confbar">████████░<span class="empty">░</span></span> settled 84% · 12 confirmations</div>
+      </div>
+    </div>
+
+    <div class="entry anim">
+      <div class="gutter"><div class="gh">#4819</div><div class="gt">06:18</div><div class="gtag">POS</div></div>
+      <div class="body">
+        <div class="pos-head">
+          <span class="pos-sym">ETH/USDT</span>
+          <span class="side long">LONG</span>
+          <span class="hash">0x3c..9e</span> <span class="verify">✓</span>
+          <span class="pos-pnl em">+$2,008</span>
+        </div>
+        <div class="pos-detail">
+          <span>数量 <b>12.4</b></span>
+          <span>开仓 <b>3,180</b></span>
+          <span>标记 <b>3,342</b></span>
+          <span>未实现 <b class="em">+$2,008</b></span>
+        </div>
+        <div class="confirm"><span class="confbar">█████████<span class="empty">░</span></span> settled 92% · 18 confirmations</div>
+      </div>
+    </div>
+
+    <div class="entry anim">
+      <div class="gutter"><div class="gh">#4818</div><div class="gt">06:15</div><div class="gtag">POS</div></div>
+      <div class="body">
+        <div class="pos-head">
+          <span class="pos-sym">SOL/USDT</span>
+          <span class="side short">SHORT</span>
+          <span class="hash">0xa1..4d</span> <span class="verify">✓</span>
+          <span class="pos-pnl loss">-$756</span>
+        </div>
+        <div class="pos-detail">
+          <span>数量 <b>180</b></span>
+          <span>开仓 <b>168.2</b></span>
+          <span>标记 <b>172.4</b></span>
+          <span>未实现 <b class="loss">-$756</b></span>
+        </div>
+        <div class="confirm"><span class="confbar">██████░░<span class="empty">░</span></span> settled 62% · 9 confirmations</div>
+      </div>
+    </div>
+
+    <div class="entry anim">
+      <div class="gutter"><div class="gh">#4817</div><div class="gt">06:12</div><div class="gtag">POS</div></div>
+      <div class="body">
+        <div class="pos-head">
+          <span class="pos-sym">AVAX/USDT</span>
+          <span class="side long">LONG</span>
+          <span class="hash">0x7b..c0</span> <span class="verify">✓</span>
+          <span class="pos-pnl em">+$588</span>
+        </div>
+        <div class="pos-detail">
+          <span>数量 <b>420</b></span>
+          <span>开仓 <b>28.4</b></span>
+          <span>标记 <b>29.8</b></span>
+          <span>未实现 <b class="em">+$588</b></span>
+        </div>
+        <div class="confirm"><span class="confbar">███████░<span class="empty">░</span></span> settled 76% · 14 confirmations</div>
+      </div>
+    </div>
+
+    <div class="entry anim">
+      <div class="gutter"><div class="gh">#4816</div><div class="gt">06:09</div><div class="gtag">POS</div></div>
+      <div class="body">
+        <div class="pos-head">
+          <span class="pos-sym">LINK/USDT</span>
+          <span class="side short">SHORT</span>
+          <span class="hash">0xd5..1f</span> <span class="verify">✓</span>
+          <span class="pos-pnl em">+$384</span>
+        </div>
+        <div class="pos-detail">
+          <span>数量 <b>640</b></span>
+          <span>开仓 <b>14.2</b></span>
+          <span>标记 <b>13.6</b></span>
+          <span>未实现 <b class="em">+$384</b></span>
+        </div>
+        <div class="confirm"><span class="confbar">████████<span class="empty">░░</span></span> settled 80% · 11 confirmations</div>
+      </div>
+    </div>
+
+    <!-- DECISIONS section -->
+    <div class="entry section-label anim">
+      <div class="gutter"><div class="gtag">LAYER</div></div>
+      <div class="body">▸ AI 决策流 · DECISIONS <span class="ln"></span> agent signed</div>
+    </div>
+
+    <div class="entry anim">
+      <div class="gutter"><div class="gh">#4815</div><div class="gt">06:06</div><div class="gtag">SIG</div></div>
+      <div class="feed-body">
+        <span class="glyph g-em">▲</span>
+        <div class="feed-main">
+          <div class="feed-title"><b>BTC 结构突破</b> · 建议加仓</div>
+          <div class="feed-meta">动量评分 <span class="tk">0.82</span> · 触发 <span class="tk">breakout_v3</span></div>
+        </div>
+        <div class="feed-ago">12s 前</div>
+      </div>
+    </div>
+
+    <div class="entry anim">
+      <div class="gutter"><div class="gh">#4814</div><div class="gt">06:05</div><div class="gtag">SIG</div></div>
+      <div class="feed-body">
+        <span class="glyph">≡</span>
+        <div class="feed-main">
+          <div class="feed-title"><b>ETH 网格再平衡</b></div>
+          <div class="feed-meta">重置 <span class="tk">8 档</span> 挂单</div>
+        </div>
+        <div class="feed-ago">1m 前</div>
+      </div>
+    </div>
+
+    <div class="entry anim">
+      <div class="gutter"><div class="gh">#4813</div><div class="gt">06:03</div><div class="gtag">SIG</div></div>
+      <div class="feed-body">
+        <span class="glyph g-em">✓</span>
+        <div class="feed-main">
+          <div class="feed-title"><b>SOL 止盈平仓 40%</b></div>
+          <div class="feed-meta">达目标位 <span class="tk">172.4</span></div>
+        </div>
+        <div class="feed-ago">3m 前</div>
+      </div>
+    </div>
+
+    <div class="entry anim">
+      <div class="gutter"><div class="gh">#4812</div><div class="gt">06:00</div><div class="gtag">SIG</div></div>
+      <div class="feed-body">
+        <span class="glyph">◈</span>
+        <div class="feed-main">
+          <div class="feed-title"><b>情绪信号更新</b></div>
+          <div class="feed-meta">FinBERT 中性偏多 · 权重下调 <span class="tk">0.1</span></div>
+        </div>
+        <div class="feed-ago">6m 前</div>
+      </div>
+    </div>
+
+    <!-- ALERTS section -->
+    <div class="entry section-label anim">
+      <div class="gutter"><div class="gtag">LAYER</div></div>
+      <div class="body">│ 风险告警 · ALERTS <span class="ln"></span> guard log</div>
+    </div>
+
+    <div class="entry anim">
+      <div class="gutter"><div class="gh">#4811</div><div class="gt">05:58</div><div class="gtag">ALT</div></div>
+      <div class="feed-body">
+        <span class="glyph g-loss">▼</span>
+        <div class="feed-main">
+          <div class="feed-title"><b>SOL 空头浮亏接近阈值</b></div>
+          <div class="feed-meta"><span class="loss">-1.8%</span> · 距止损线 <span class="tk">0.6%</span></div>
+        </div>
+        <div class="feed-ago">2m 前</div>
+      </div>
+    </div>
+
+    <div class="entry anim">
+      <div class="gutter"><div class="gh">#4810</div><div class="gt">05:52</div><div class="gtag">ALT</div></div>
+      <div class="feed-body">
+        <span class="glyph g-amber">▸</span>
+        <div class="feed-main">
+          <div class="feed-title"><b>风控守卫待确认</b></div>
+          <div class="feed-meta">MTF 时序守卫 <span class="amber">CAUTION</span> 态</div>
+        </div>
+        <div class="feed-ago">8m 前</div>
+      </div>
+    </div>
+
+    <div class="entry anim">
+      <div class="gutter"><div class="gh">#4809</div><div class="gt">05:46</div><div class="gtag">ALT</div></div>
+      <div class="feed-body">
+        <span class="glyph g-em">✓</span>
+        <div class="feed-main">
+          <div class="feed-title"><b>对账通过</b></div>
+          <div class="feed-meta">Freqtrade ↔ 交易所 <span class="tk">142 笔</span> 全部匹配</div>
+        </div>
+        <div class="feed-ago">14m 前</div>
+      </div>
+    </div>
+
+    <div class="entry anim">
+      <div class="gutter"><div class="gh">#4808</div><div class="gt">05:40</div><div class="gtag">ALT</div></div>
+      <div class="feed-body">
+        <span class="glyph g-em">✓</span>
+        <div class="feed-main">
+          <div class="feed-title"><b>操纵雷达无异常</b></div>
+          <div class="feed-meta">扫描 <span class="tk">38 个</span> 标的</div>
+        </div>
+        <div class="feed-ago">20m 前</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="estop">
+  <div>
+    <div class="estop-label"><b>■ 紧急停止总控</b> · KILL SWITCH</div>
+    <div class="estop-sub">一键撤单 · 平仓 · 冻结新开仓</div>
+  </div>
+  <button class="estop-btn">■ 全部停止</button>
+</div>
+
+<script>
+(function(){
+  var reduce = window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+
+  // ---- CountUp ----
+  function easeOutCubic(t){return 1-Math.pow(1-t,3);}
+  function countUp(el){
+    var target=parseFloat(el.getAttribute('data-count'));
+    var dec=parseInt(el.getAttribute('data-dec')||'0',10);
+    if(reduce){el.textContent=fmt(target,dec);return;}
+    var dur=1100, start=null;
+    function fmt(v,d){return v.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});}
+    function step(ts){
+      if(start===null)start=ts;
+      var p=Math.min((ts-start)/dur,1);
+      var v=target*easeOutCubic(p);
+      el.textContent=fmt(v,dec);
+      if(p<1)requestAnimationFrame(step);
+      else el.textContent=fmt(target,dec);
+    }
+    requestAnimationFrame(step);
+  }
+  function fmt(v,d){return v.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});}
+  Array.prototype.forEach.call(document.querySelectorAll('[data-count]'),countUp);
+
+  // ---- staggered block enter ----
+  var entries=Array.prototype.slice.call(document.querySelectorAll('.anim'));
+  if(reduce){
+    entries.forEach(function(e){e.classList.add('in');});
+    return;
+  }
+  if('IntersectionObserver' in window){
+    var io=new IntersectionObserver(function(list){
+      list.forEach(function(en){
+        if(en.isIntersecting){
+          en.target.classList.add('in');
+          io.unobserve(en.target);
+        }
+      });
+    },{threshold:0.08});
+    entries.forEach(function(e,i){
+      // initial visible ones get staggered load-in
+      io.observe(e);
+    });
+    // stagger the first screenful on load
+    entries.slice(0,8).forEach(function(e,i){
+      setTimeout(function(){e.classList.add('in');},i*70);
+    });
+  }else{
+    entries.forEach(function(e){e.classList.add('in');});
+  }
+})();
+</script>
+</body>
+</html>

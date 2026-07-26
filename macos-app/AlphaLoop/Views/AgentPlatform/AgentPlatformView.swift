@@ -71,11 +71,10 @@ private struct AgentPlatformContent: View {
     // MARK: - 顶部栏
 
     private var headerBar: some View {
-        HStack(spacing: PulseSpacing.md) {
-            Text(L10n.zh("Agent 平台", en: "Agent Platform"))
-                .font(PulseFonts.displayHeading)
-                .foregroundStyle(colors.textPrimary)
-
+        QuantPageHeader(
+            eyebrow: "AI RESEARCH",
+            title: L10n.zh("Agent 平台", en: "Agent Platform")
+        ) {
             Text("\(viewModel.agents.count)")
                 .font(PulseFonts.captionMedium)
                 .foregroundStyle(PulseColors.accent)
@@ -83,8 +82,6 @@ private struct AgentPlatformContent: View {
                 .padding(.vertical, 2)
                 .background(PulseColors.accentDim)
                 .clipShape(RoundedRectangle(cornerRadius: PulseRadii.badge))
-
-            Spacer()
         }
         .padding(.horizontal, PulseSpacing.lg)
         .padding(.vertical, PulseSpacing.sm)

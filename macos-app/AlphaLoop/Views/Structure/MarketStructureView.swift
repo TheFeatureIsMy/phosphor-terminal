@@ -79,7 +79,7 @@ private struct MarketStructureContentView: View {
                 }
                 .padding(.horizontal, PulseSpacing.xl)
                 .padding(.vertical, PulseSpacing.lg)
-                .frame(maxWidth: 1200, alignment: .leading)
+                .frame(maxWidth: PulseSpacing.contentMaxWidth, alignment: .leading)
                 .frame(maxWidth: .infinity, alignment: .center)
             }
 
@@ -111,111 +111,84 @@ private struct MarketStructureContentView: View {
 
     @ViewBuilder
     private var headerSection: some View {
-        HStack(alignment: .center, spacing: PulseSpacing.md) {
-            // α glyph
-            ZStack {
-                RoundedRectangle(cornerRadius: PulseRadii.sm)
-                    .fill(
-                        LinearGradient(
-                            colors: [PulseColors.accent.opacity(0.25), PulseColors.accent.opacity(0.08)],
-                            startPoint: .topLeading, endPoint: .bottomTrailing
-                        )
+        QuantPageHeader(
+            eyebrow: "SMC RESEARCH",
+            title: L10n.Structure.title
+        ) {
+            HStack(spacing: PulseSpacing.sm) {
+                // Symbol trigger
+                Button {
+                    symbolPickerOpen = true
+                } label: {
+                    HStack(spacing: PulseSpacing.xs) {
+                        Image(systemName: "magnifyingglass")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(colors.textSecondary)
+                        Text(vm.selectedSymbol)
+                            .font(PulseFonts.tabular)
+                            .foregroundStyle(colors.textPrimary)
+                        Text("⌘K")
+                            .font(PulseFonts.micro)
+                            .foregroundStyle(colors.textMuted)
+                            .padding(.horizontal, 4)
+                            .padding(.vertical, 1)
+                            .background(colors.textMuted.opacity(0.12))
+                            .clipShape(RoundedRectangle(cornerRadius: 3))
+                    }
+                    .padding(.horizontal, PulseSpacing.sm)
+                    .padding(.vertical, 6)
+                    .background(
+                        RoundedRectangle(cornerRadius: PulseRadii.button)
+                            .fill(colors.surfaceHover.opacity(0.5))
                     )
-                    .frame(width: 32, height: 32)
                     .overlay(
-                        RoundedRectangle(cornerRadius: PulseRadii.sm)
-                            .stroke(PulseColors.accent.opacity(0.4), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: PulseRadii.button)
+                            .stroke(colors.border, lineWidth: 1)
                     )
-                Text("α")
-                    .font(.system(size: 18, weight: .bold, design: .serif))
-                    .italic()
-                    .foregroundStyle(PulseColors.accent)
-            }
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(L10n.Structure.title)
-                    .font(PulseFonts.displayHeading)
-                    .foregroundStyle(colors.textPrimary)
-                Text("SMC RESEARCH")
-                    .font(PulseFonts.micro)
-                    .tracking(2)
-                    .foregroundStyle(PulseColors.accent.opacity(0.7))
-            }
-
-            Spacer()
-
-            // Symbol trigger
-            Button {
-                symbolPickerOpen = true
-            } label: {
-                HStack(spacing: PulseSpacing.xs) {
-                    Image(systemName: "magnifyingglass")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(colors.textSecondary)
-                    Text(vm.selectedSymbol)
-                        .font(PulseFonts.tabular)
-                        .foregroundStyle(colors.textPrimary)
-                    Text("⌘K")
-                        .font(PulseFonts.micro)
-                        .foregroundStyle(colors.textMuted)
-                        .padding(.horizontal, 4)
-                        .padding(.vertical, 1)
-                        .background(colors.textMuted.opacity(0.12))
-                        .clipShape(RoundedRectangle(cornerRadius: 3))
                 }
-                .padding(.horizontal, PulseSpacing.sm)
-                .padding(.vertical, 6)
+                .buttonStyle(.plain)
+
+                // Timeframe segmented
+                HStack(spacing: 2) {
+                    ForEach(timeframes, id: \.self) { tf in
+                        Button {
+                            vm.selectedTimeframe = tf
+                        } label: {
+                            Text(tf)
+                                .font(PulseFonts.monoLabel)
+                                .foregroundStyle(vm.selectedTimeframe == tf ? colors.textPrimary : colors.textSecondary)
+                                .padding(.horizontal, PulseSpacing.sm)
+                                .padding(.vertical, 5)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 5)
+                                        .fill(vm.selectedTimeframe == tf ? PulseColors.accent.opacity(0.18) : Color.clear)
+                                )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(3)
                 .background(
                     RoundedRectangle(cornerRadius: PulseRadii.button)
-                        .fill(colors.surfaceHover.opacity(0.5))
+                        .fill(colors.surfaceHover.opacity(0.4))
                 )
-                .overlay(
-                    RoundedRectangle(cornerRadius: PulseRadii.button)
-                        .stroke(colors.border, lineWidth: 1)
-                )
-            }
-            .buttonStyle(.plain)
 
-            // Timeframe segmented
-            HStack(spacing: 2) {
-                ForEach(timeframes, id: \.self) { tf in
-                    Button {
-                        vm.selectedTimeframe = tf
-                    } label: {
-                        Text(tf)
-                            .font(PulseFonts.monoLabel)
-                            .foregroundStyle(vm.selectedTimeframe == tf ? colors.textPrimary : colors.textSecondary)
-                            .padding(.horizontal, PulseSpacing.sm)
-                            .padding(.vertical, 5)
-                            .background(
-                                RoundedRectangle(cornerRadius: 5)
-                                    .fill(vm.selectedTimeframe == tf ? PulseColors.accent.opacity(0.18) : Color.clear)
-                            )
-                    }
-                    .buttonStyle(.plain)
+                // Refresh
+                Button {
+                    Task { await vm.refresh() }
+                } label: {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(PulseColors.accent)
+                        .frame(width: 30, height: 30)
+                        .background(PulseColors.accent.opacity(0.1))
+                        .clipShape(RoundedRectangle(cornerRadius: PulseRadii.button))
+                        .rotationEffect(.degrees(vm.isLoading ? 360 : 0))
+                        .animation(vm.isLoading ? .linear(duration: 1).repeatForever(autoreverses: false) : .default, value: vm.isLoading)
                 }
+                .buttonStyle(.plain)
+                .disabled(vm.isLoading)
             }
-            .padding(3)
-            .background(
-                RoundedRectangle(cornerRadius: PulseRadii.button)
-                    .fill(colors.surfaceHover.opacity(0.4))
-            )
-
-            // Refresh
-            Button {
-                Task { await vm.refresh() }
-            } label: {
-                Image(systemName: "arrow.clockwise")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(PulseColors.accent)
-                    .frame(width: 30, height: 30)
-                    .background(PulseColors.accent.opacity(0.1))
-                    .clipShape(RoundedRectangle(cornerRadius: PulseRadii.button))
-                    .rotationEffect(.degrees(vm.isLoading ? 360 : 0))
-                    .animation(vm.isLoading ? .linear(duration: 1).repeatForever(autoreverses: false) : .default, value: vm.isLoading)
-            }
-            .buttonStyle(.plain)
-            .disabled(vm.isLoading)
         }
     }
 
@@ -739,7 +712,7 @@ private struct MarketStructureContentView: View {
     @ViewBuilder
     private var symbolPickerOverlay: some View {
         ZStack(alignment: .top) {
-            Color.black.opacity(0.45)
+            PulseGlass.modalBackdrop
                 .ignoresSafeArea()
                 .onTapGesture { symbolPickerOpen = false }
 

@@ -138,13 +138,38 @@ struct ReadinessCheckResponse: Codable, Identifiable {
 
 struct ReadinessOption: Codable, Hashable, Identifiable {
     var id: String { key }
-    let key: String        // strategy id / pool id / exchange id
-    let name: String
-    let kind: String?      // e.g. "cex" for exchange
-    let detail: String?
+    var key: String = ""
+    var name: String = ""
+    var kind: String?
+    var detail: String?
 
     enum CodingKeys: String, CodingKey {
-        case key, name, kind, detail
+        case key, name, kind, detail, id
+    }
+
+    init() {}
+
+    init(key: String, name: String, kind: String? = nil, detail: String? = nil) {
+        self.key = key
+        self.name = name
+        self.kind = kind
+        self.detail = detail
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        key = try c.decodeIfPresent(String.self, forKey: .key) ?? (try c.decodeIfPresent(String.self, forKey: .id) ?? "")
+        name = try c.decodeIfPresent(String.self, forKey: .name) ?? ""
+        kind = try c.decodeIfPresent(String.self, forKey: .kind)
+        detail = try c.decodeIfPresent(String.self, forKey: .detail)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(key, forKey: .key)
+        try c.encode(name, forKey: .name)
+        try c.encodeIfPresent(kind, forKey: .kind)
+        try c.encodeIfPresent(detail, forKey: .detail)
     }
 }
 
@@ -278,11 +303,22 @@ struct DataSourceRef: Codable, Hashable {
 /// Aggregate provider health for the Dashboard.
 struct ProviderHealthSummary: Codable, Hashable {
     var total: Int = 0
-    var healthy: Int = 0
-    var warning: Int = 0
-    var error: Int = 0
-    var entries: [ProviderHealthEntry] = []
-    var dataSource: DataSourceRef?
+    var totalActive: Int = 0
+    var totalError: Int = 0
+    var totalDisabled: Int = 0
+    var totalConfigured: Int = 0
+    var byCategory: [String: Int] = [:]
+    var checkedAt: String?
+
+    enum CodingKeys: String, CodingKey {
+        case total
+        case totalActive = "total_active"
+        case totalError = "total_error"
+        case totalDisabled = "total_disabled"
+        case totalConfigured = "total_configured"
+        case byCategory = "by_category"
+        case checkedAt = "checked_at"
+    }
 }
 
 struct ProviderHealthEntry: Codable, Hashable, Identifiable {
@@ -357,11 +393,11 @@ struct APIOverview {
 
     // BFF endpoints (kept as-is)
     func getDashboard() async throws -> DashboardBFFResponse {
-        try await client.get("/api/overview/dashboard", mock: MockOverview.dashboard)
+        try await client.get("/api/overview/dashboard")
     }
 
     func getLiveReadiness() async throws -> LiveReadinessResponse {
-        try await client.get("/api/overview/live-readiness", mock: MockOverview.liveReadiness)
+        try await client.get("/api/overview/live-readiness")
     }
 
     func runReadinessCheck(
@@ -377,152 +413,32 @@ struct APIOverview {
         if !capitalPoolId.isEmpty { query.append("capital_pool_id=\(capitalPoolId)") }
         query.append("exchange=\(exchange)")
         path += "?" + query.joined(separator: "&")
-        return try await client.get(path, mock: MockOverview.liveReadiness)
+        return try await client.get(path)
     }
 
     func getGlobalStatus() async throws -> GlobalStatusBFFResponse {
-        try await client.get("/api/overview/global-status", mock: MockOverview.globalStatus)
+        try await client.get("/api/overview/global-status")
     }
 
     // Supplementary endpoints (Dashboard v2)
     func getKPIs() async throws -> DashboardKPIsResponse {
-        try await client.get("/api/dashboard/kpis", mock: MockOverview.dashboardKPIs)
+        try await client.get("/api/dashboard/kpis")
     }
 
     func getProviderHealth() async throws -> ProviderHealthSummary {
-        try await client.get("/api/admin/providers/categories", mock: MockOverview.providerHealth)
+        try await client.get("/api/admin/providers/categories")
     }
 
     func getAIModelStatus() async throws -> [AIModelStatusRef] {
-        try await client.get("/api/ai/models/runtime", mock: MockOverview.aiModels)
+        struct Response: Decodable { let models: [AIModelStatusRef] }
+        let resp: Response = try await client.get("/api/ai/models/runtime")
+        return resp.models
     }
 
     func getRecentSignals(limit: Int = 10) async throws -> [DashboardSignalRef] {
         try await client.get(
             "/api/agent-signals/signals?limit=\(limit)",
-            mock: { MockOverview.recentSignals(limit: limit) }
         )
     }
 }
 
-// MARK: - Mock Data
-
-enum MockOverview {
-    static func dashboard() -> DashboardBFFResponse {
-        DashboardBFFResponse(
-            state: "healthy",
-            availableActions: [AvailableActionResponse(type: "emergency_stop", enabled: true, label: "紧急停止", confirmRequired: true)],
-            account: AccountOverviewResponse(equity: 10248.32, currency: "USDT", todayPnlPct: 0.012, weekPnlPct: 0.038, maxDrawdownPct: 0.041),
-            runtime: RuntimeOverviewResponse(runningStrategies: 2, openPositions: 3, pendingOrders: 1),
-            risk: RiskOverviewResponse(globalState: "normal", dailyLossRemainingPct: 0.76, weeklyLossRemainingPct: 0.81),
-            system: SystemOverviewResponse(liveReadinessState: "LIVE_SMALL_READY", fastTrackLatencyMs: 45, redisRttMs: 3, freqtradeState: "healthy", exchangeState: "ok"),
-            recentDecisions: [],
-            alerts: []
-        )
-    }
-
-    static func liveReadiness() -> LiveReadinessResponse {
-        LiveReadinessResponse(
-            state: "LIVE_SMALL_READY",
-            grandStatus: "ready_for_live",
-            score: 86,
-            canStartPaper: true, canStartLiveSmall: true, canStartFullLive: false,
-            warnings: [ReadinessReason(code: "exchange_api_weight_warning", message: "交易所 API 权重剩余偏低")],
-            checks: [
-                ReadinessCheckResponse(key: "mode", label: "运行模式", status: "healthy", value: "LIVE_SMALL", threshold: "paper|live_small|live_full", detail: "", group: "mode"),
-                ReadinessCheckResponse(key: "strategy", label: "策略选择", status: "healthy", value: "v2:btc-scalp", threshold: "required", detail: "", group: "strategy"),
-                ReadinessCheckResponse(key: "capital", label: "资金配置", status: "healthy", value: "cp-1", threshold: "required", detail: "", group: "capital"),
-                ReadinessCheckResponse(key: "risk_config", label: "风控配置", status: "healthy", value: "已配置", threshold: "required", detail: "", group: "risk"),
-                ReadinessCheckResponse(key: "exchange", label: "交易所连接", status: "warning", value: "weight 80%", threshold: "connected", detail: "API 权重剩余偏低", group: "system"),
-                ReadinessCheckResponse(key: "data_source", label: "数据源健康", status: "healthy", value: "online", threshold: "online", detail: "", group: "system"),
-                ReadinessCheckResponse(key: "validation", label: "策略 DSL 验证", status: "healthy", value: "通过", threshold: "passed", detail: "", group: "strategy"),
-                ReadinessCheckResponse(key: "backtest", label: "回测通过", status: "healthy", value: "通过", threshold: "≥1", detail: "", group: "execution"),
-                ReadinessCheckResponse(key: "dryrun", label: "模拟/dry-run", status: "healthy", value: "100h", threshold: "≥72h", detail: "", group: "execution"),
-                ReadinessCheckResponse(key: "notification", label: "通知可用", status: "healthy", value: "已配置", threshold: "optional", detail: "", group: "system"),
-                ReadinessCheckResponse(key: "emergency_stop", label: "紧急停止", status: "healthy", value: "available", threshold: "available", detail: "", group: "system"),
-            ],
-            selectedMode: "live_small",
-            selectedStrategyId: "v2:btc-scalp",
-            selectedCapitalPoolId: "cp-1",
-            selectedExchange: "binance",
-            availableStrategies: [
-                ReadinessOption(key: "v2:btc-scalp", name: "BTC 结构化剥头皮", kind: nil, detail: nil),
-                ReadinessOption(key: "v2:eth-fvg", name: "ETH FVG 猎手", kind: nil, detail: nil),
-            ],
-            availableCapitalPools: [
-                ReadinessOption(key: "cp-1", name: "默认资金池", kind: nil, detail: "$500"),
-            ],
-            availableExchanges: [
-                ReadinessOption(key: "binance", name: "Binance", kind: "cex", detail: nil),
-                ReadinessOption(key: "okx", name: "OKX", kind: "cex", detail: nil),
-            ]
-        )
-    }
-
-    static func globalStatus() -> GlobalStatusBFFResponse {
-        GlobalStatusBFFResponse(
-            systemState: "LIVE_SMALL_READY", riskState: "normal",
-            fastTrackLatencyMs: 45, freqtradeState: "healthy",
-            redisRttMs: 3, exchangeState: "ok", openPositions: 3
-        )
-    }
-
-    static func dashboardKPIs() -> DashboardKPIsResponse {
-        DashboardKPIsResponse(
-            totalPnl: 12840.75, pnlChangePct: 3.4,
-            sharpeRatio: 1.48, maxDrawdown: 12.6, winRate: 63.5,
-            activeStrategies: 3, todaysTrades: 8, openPositions: 2,
-            dataSource: DataSourceRef(kind: "freqtrade_db", detail: "live", isSimulated: false)
-        )
-    }
-
-    static func providerHealth() -> ProviderHealthSummary {
-        ProviderHealthSummary(
-            total: 9, healthy: 7, warning: 1, error: 1,
-            entries: [
-                ProviderHealthEntry(id: 1, category: "llm", providerName: "Ollama", enabled: true, isActive: true, status: "active", credentialStatus: "configured", lastError: nil, latencyMs: 12),
-                ProviderHealthEntry(id: 2, category: "llm", providerName: "OpenAI", enabled: true, isActive: false, status: "error", credentialStatus: "missing", lastError: "API key not configured", latencyMs: nil),
-                ProviderHealthEntry(id: 3, category: "cex", providerName: "Binance", enabled: true, isActive: true, status: "active", credentialStatus: "configured", lastError: nil, latencyMs: 22),
-                ProviderHealthEntry(id: 4, category: "cex", providerName: "OKX", enabled: true, isActive: false, status: "warning", credentialStatus: "configured", lastError: "rate limit low", latencyMs: 145),
-            ],
-            dataSource: DataSourceRef(kind: "admin_api", detail: nil, isSimulated: false)
-        )
-    }
-
-    static func aiModels() -> [AIModelStatusRef] {
-        [
-            AIModelStatusRef(name: "finbert", provider: "local-gpu", state: "running", modelId: "ProsusAI/finbert", gpuMemoryMb: 2048),
-            AIModelStatusRef(name: "chronos", provider: "local-gpu", state: "available", modelId: "amazon/chronos-t5-tiny", gpuMemoryMb: nil),
-            AIModelStatusRef(name: "shap", provider: "local-gpu", state: "running", modelId: "lightgbm+shap", gpuMemoryMb: nil),
-        ]
-    }
-
-    static func recentSignals(limit: Int) -> [DashboardSignalRef] {
-        let base: [DashboardSignalRef] = [
-            DashboardSignalRef(
-                id: 1, symbol: "BTC/USDT", market: "crypto", direction: "long", rating: "Overweight",
-                confidence: 0.72, overallScore: 3.8,
-                content: "BTC 技术面看多，建议轻仓做多。",
-                createdAt: "2026-06-17T10:35:00Z",
-                sourceAgent: "tradingagents", sourceStrategyId: "v2:btc-structure-scalp",
-                sourceFeatureSnapshotId: "fs-2026-06-17-001"
-            ),
-            DashboardSignalRef(
-                id: 2, symbol: "ETH/USDT", market: "crypto", direction: "long", rating: "Buy",
-                confidence: 0.68, overallScore: 3.5,
-                content: "ETH 生态活跃度上升，DeFi TVL 增长。",
-                createdAt: "2026-06-17T09:18:00Z",
-                sourceAgent: "tradingagents", sourceStrategyId: "v2:eth-fvg-hunter",
-                sourceFeatureSnapshotId: nil
-            ),
-            DashboardSignalRef(
-                id: 3, symbol: "SOL/USDT", market: "crypto", direction: "short", rating: "Sell",
-                confidence: 0.55, overallScore: 2.9,
-                content: "SOL 短期超买，建议逢高做空。",
-                createdAt: "2026-06-17T08:42:00Z",
-                sourceAgent: "manual", sourceStrategyId: nil, sourceFeatureSnapshotId: nil
-            ),
-        ]
-        return Array(base.prefix(limit))
-    }
-}

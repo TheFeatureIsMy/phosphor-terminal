@@ -194,80 +194,41 @@ struct APIExecutionBFF {
     let client: NetworkClientProtocol
 
     func getCenter() async throws -> ExecutionCenterBFFResponse {
-        try await client.get("/api/execution/center", mock: MockExecutionBFF.center)
+        try await client.get("/api/execution/center")
     }
 
     func getOrdersPositions() async throws -> OrdersPositionsBFFResponse {
-        try await client.get("/api/execution/orders", mock: MockExecutionBFF.ordersPositions)
+        try await client.get("/api/execution/orders")
     }
 
     func getReconciliationBus() async throws -> ReconciliationBusBFFResponse {
-        try await client.get("/api/reconciliation/bus", mock: MockExecutionBFF.reconciliationBus)
+        try await client.get("/api/reconciliation/bus")
     }
 
     func cancelOrder(id: String) async throws -> CancelActionResponse {
-        try await client.post("/api/execution/orders/\(id)/cancel", body: nil, mock: { CancelActionResponse(cancelledOrderId: id, status: "cancelled") })
+        try await client.post("/api/execution/orders/\(id)/cancel", body: nil)
     }
 
     func closePosition(id: String) async throws -> CloseActionResponse {
-        try await client.post("/api/execution/positions/\(id)/close", body: nil, mock: { CloseActionResponse(closedPositionId: id, status: "closed") })
+        try await client.post("/api/execution/positions/\(id)/close", body: nil)
     }
 
     func cancelAllOrders() async throws -> BatchActionResponse {
-        try await client.post("/api/execution/orders/cancel-all", body: nil, mock: { BatchActionResponse(affectedCount: 1, status: "cancelled") })
+        try await client.post("/api/execution/orders/cancel-all", body: nil)
     }
 
     func forceCloseAllPositions() async throws -> BatchActionResponse {
-        try await client.post("/api/execution/positions/force-close-all", body: nil, mock: { BatchActionResponse(affectedCount: 1, status: "closed") })
+        try await client.post("/api/execution/positions/force-close-all", body: nil)
     }
 
     func retryReconciliationRun(id: String) async throws -> RetryActionResponse {
-        try await client.post("/api/reconciliation/runs/\(id)/retry", body: nil, mock: { RetryActionResponse(status: "retrying", runId: id, affectedCount: nil) })
+        try await client.post("/api/reconciliation/runs/\(id)/retry", body: nil)
     }
 
     func retryReconciliationBatch() async throws -> RetryActionResponse {
-        try await client.post("/api/reconciliation/retry", body: nil, mock: { RetryActionResponse(status: "retrying", runId: nil, affectedCount: -1) })
+        try await client.post("/api/reconciliation/retry", body: nil)
     }
 }
 
 // MARK: - Mock
 
-enum MockExecutionBFF {
-    static func center() -> ExecutionCenterBFFResponse {
-        ExecutionCenterBFFResponse(
-            state: "running",
-            availableActions: [AvailableActionResponse(type: "emergency_stop", enabled: true, label: "紧急停止", confirmRequired: true)],
-            sessions: [
-                ExecutionSessionResponse(runId: "run-001", strategyName: "BTC Structure Scalp", mode: "live_small", status: "running", symbol: "BTC/USDT", openPositions: 2, pendingOrders: 1),
-                ExecutionSessionResponse(runId: "run-002", strategyName: "ETH FVG Hunter", mode: "dryrun", status: "running", symbol: "ETH/USDT", openPositions: 1),
-            ],
-            totalRunning: 2, totalOpenPositions: 3, totalPendingOrders: 1,
-            freqtradeHeartbeat: "healthy", executionLatencyMs: 45
-        )
-    }
-
-    static func ordersPositions() -> OrdersPositionsBFFResponse {
-        OrdersPositionsBFFResponse(
-            orders: [OrderBFFResponse(id: "ord-001", symbol: "BTC/USDT", side: "buy", type: "limit", quantity: 0.01, price: 61500, status: "pending", exchangeOrderId: "ex-12345")],
-            positions: [
-                PositionBFFResponse(id: "pos-001", symbol: "BTC/USDT", side: "long", avgEntryPrice: 62100, currentPrice: 62450, quantity: 0.05, unrealizedPnl: 17.5, unrealizedPnlPct: 0.56, stopLoss: 61200),
-                PositionBFFResponse(id: "pos-002", symbol: "ETH/USDT", side: "long", avgEntryPrice: 3380, currentPrice: 3410, quantity: 1.0, unrealizedPnl: 30, unrealizedPnlPct: 0.89, stopLoss: 3320),
-            ]
-        )
-    }
-
-    static func reconciliationBus() -> ReconciliationBusBFFResponse {
-        ReconciliationBusBFFResponse(
-            availableActions: [
-                AvailableActionResponse(type: "refresh_exchange_state", enabled: true, label: "刷新交易所状态"),
-            ],
-            recentCommands: [
-                CommandBusEventResponse(id: "cmd-001", commandType: "start_dryrun", status: "completed"),
-                CommandBusEventResponse(id: "cmd-002", commandType: "place_order", status: "completed"),
-            ],
-            reconciliationRuns: [
-                ReconciliationRunResponse(id: "recon-001", status: "completed", discrepancies: 0),
-            ]
-        )
-    }
-}

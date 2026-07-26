@@ -38,7 +38,7 @@ private struct SimilarCaseRow: View {
                 Text("sim \(Int(item.similarity * 100))%").font(PulseFonts.micro).foregroundStyle(colors.textMuted)
                 if let dd = item.outcome["realized_drawdown"] {
                     Text(String(format: "%+.1f%%", dd * 100)).font(PulseFonts.tabular)
-                        .foregroundStyle(dd < 0 ? PulseColors.danger : PulseColors.accent)
+                        .foregroundStyle(dd < 0 ? PulseColors.bearish : PulseColors.bullish)
                 }
             }
         }

@@ -61,7 +61,7 @@ struct StrategyRuntimeCard: View {
                     )
                 }
             }
-            .frame(minHeight: 140)
+            .frame(minHeight: 160)
         }
     }
 

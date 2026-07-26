@@ -24,7 +24,7 @@ struct MetricsGrid: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(m.1)
                         .font(.system(size: 22, weight: .semibold, design: .monospaced))
-                        .foregroundStyle(m.2 ? PulseColors.accent : PulseColors.danger)
+                        .foregroundStyle(m.2 ? PulseColors.bullish : PulseColors.bearish)
                     Text(m.0)
                         .font(PulseFonts.micro)
                         .foregroundStyle(colors.textMuted)

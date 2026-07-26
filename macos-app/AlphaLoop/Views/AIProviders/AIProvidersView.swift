@@ -54,16 +54,11 @@ struct AIProvidersView: View {
     // MARK: - 标题
 
     private var headerSection: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
-                TerminalLabel(text: L10n.zh("AI 服务管理", en: "AI Services"))
-                Text(L10n.zh("推理引擎 · 模型调度 · 隐私合规", en: "Inference Engine · Model Routing · Privacy Compliance"))
-                    .font(PulseFonts.caption)
-                    .foregroundStyle(colors.textMuted)
-            }
-
-            Spacer()
-
+        QuantPageHeader(
+            eyebrow: "SYSTEM",
+            title: L10n.zh("AI 服务管理", en: "AI Services"),
+            subtitle: L10n.zh("推理引擎 · 模型调度 · 隐私合规", en: "Inference Engine · Model Routing · Privacy Compliance")
+        ) {
             Button {
                 Task { await loadAllData() }
             } label: {
@@ -101,7 +96,7 @@ struct AIProvidersView: View {
                 .background(
                     (result.contains("✓") ? PulseColors.success : PulseColors.danger).opacity(0.08)
                 )
-                .clipShape(RoundedRectangle(cornerRadius: PulseRadii.xs))
+                .clipShape(RoundedRectangle(cornerRadius: PulseRadii.badge))
             }
         }
     }

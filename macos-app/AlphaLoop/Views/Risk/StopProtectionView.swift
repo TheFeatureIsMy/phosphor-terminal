@@ -27,13 +27,6 @@ struct StopProtectionView: View {
     var body: some View {
         VStack(spacing: 0) {
             LiveWireStrip(mode: resolvedMode)
-            EmergencyStopBar(
-                mode: resolvedMode,
-                affectedRuns: affectedRunCount,
-                emergencyLocked: viewModel?.stopProtection?.state == "emergency_locked",
-                onStop: { await viewModel?.emergencyStop() },
-                onResume: { await viewModel?.emergencyResume() }
-            )
 
             if let vm = viewModel {
                 if vm.isLoading && vm.stopProtection == nil {
@@ -138,33 +131,34 @@ struct StopProtectionView: View {
     // MARK: - Header
 
     private func headerSection(_ vm: RiskCenterViewModel, data: StopProtectionBFFResponse) -> some View {
-        HStack {
-            TerminalLabel(text: L10n.Risk.stopProtection)
+        QuantPageHeader(
+            eyebrow: "RISK",
+            title: L10n.Risk.stopProtection
+        ) {
+            HStack(spacing: PulseSpacing.sm) {
+                // Position count badge
+                Text("\(data.positions.count)")
+                    .font(PulseFonts.micro)
+                    .foregroundStyle(colors.textMuted)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(colors.surface)
+                    .clipShape(Capsule())
 
-            // Position count badge
-            Text("\(data.positions.count)")
-                .font(PulseFonts.micro)
-                .foregroundStyle(colors.textMuted)
-                .padding(.horizontal, 6)
-                .padding(.vertical, 2)
-                .background(colors.surface)
-                .clipShape(Capsule())
-
-            Spacer()
-
-            Button {
-                Task { await vm.loadStopProtection() }
-            } label: {
-                HStack(spacing: PulseSpacing.xxs) {
-                    Image(systemName: "arrow.clockwise")
-                        .font(.system(size: 11))
-                    Text(L10n.Risk.refreshAll)
-                        .font(PulseFonts.monoLabel)
+                Button {
+                    Task { await vm.loadStopProtection() }
+                } label: {
+                    HStack(spacing: PulseSpacing.xxs) {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 11))
+                        Text(L10n.Risk.refreshAll)
+                            .font(PulseFonts.monoLabel)
+                    }
+                    .foregroundStyle(PulseColors.accent)
                 }
-                .foregroundStyle(PulseColors.accent)
+                .buttonStyle(.plain)
+                .controlSize(.small)
             }
-            .buttonStyle(.plain)
-            .controlSize(.small)
         }
         .padding(.horizontal, PulseSpacing.lg)
         .padding(.vertical, PulseSpacing.md)

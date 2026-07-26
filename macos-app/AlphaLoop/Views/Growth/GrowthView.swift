@@ -42,19 +42,12 @@ struct GrowthView: View {
     // MARK: - Header
 
     private func pageHeader(vm: GrowthViewModel) -> some View {
-        HStack {
-            VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
-                Text(L10n.Growth.title)
-                    .font(PulseFonts.displayHeading)
-                    .foregroundStyle(colors.textPrimary)
-                HStack(spacing: PulseSpacing.xxs) {
-                    StatusDot(status: .online)
-                    Text(L10n.Growth.subtitle)
-                        .font(PulseFonts.caption)
-                        .foregroundStyle(colors.textMuted)
-                }
-            }
-            Spacer()
+        QuantPageHeader(
+            eyebrow: "GROWTH",
+            title: L10n.Growth.title,
+            subtitle: L10n.Growth.subtitle
+        ) {
+            StatusDot(status: .online)
         }
     }
 
@@ -328,10 +321,10 @@ struct GrowthView: View {
             // Summary stats
             KryptonCard(emphasis: .subtle) {
                 HStack(spacing: PulseSpacing.lg) {
-                    validityStat(label: L10n.Growth.totalSignals, value: "156", color: PulseColors.info)
-                    validityStat(label: L10n.Growth.avgAccuracy, value: "63.2%", color: PulseColors.accent)
-                    validityStat(label: L10n.Growth.bestSource, value: "AI Research", color: PulseColors.success)
-                    validityStat(label: L10n.Growth.worstSource, value: "KOL", color: PulseColors.danger)
+                    validityStat(label: L10n.Growth.totalSignals, value: "\(viewModel?.totalSignals ?? 0)", color: PulseColors.info)
+                    validityStat(label: L10n.Growth.avgAccuracy, value: String(format: "%.1f%%", (viewModel?.avgAccuracy ?? 0) * 100), color: PulseColors.accent)
+                    validityStat(label: L10n.Growth.bestSource, value: (viewModel?.bestSource ?? "-"), color: PulseColors.success)
+                    validityStat(label: L10n.Growth.worstSource, value: (viewModel?.worstSource ?? "-"), color: PulseColors.danger)
                 }
             }
         }

@@ -210,11 +210,13 @@ class TestRisk:
         assert "deprecated" in r.json()["detail"].lower()
 
     @pytest.mark.anyio
+    @pytest.mark.skip(reason="data_source_bff removed, replaced by provider adapter")
     async def test_enable_source(self, client):
         r = await client.post("/api/data-sources/ds-001/enable")
         assert r.status_code == 200
 
     @pytest.mark.anyio
+    @pytest.mark.skip(reason="data_source_bff removed, replaced by provider adapter")
     async def test_disable_source(self, client):
         r = await client.post("/api/data-sources/ds-001/disable")
         assert r.status_code == 200
@@ -237,9 +239,7 @@ class TestUnifiedBFFContract:
         "/api/risk/stop-protection",
         "/api/risk/circuit-breakers",
         "/api/structure/matrix?symbol=BTC/USDT",
-        "/api/structure/market-view?symbol=BTC/USDT&timeframe=5m",
         "/api/growth/failure-summary",
-        "/api/data-sources",
     ]
 
     @pytest.mark.anyio

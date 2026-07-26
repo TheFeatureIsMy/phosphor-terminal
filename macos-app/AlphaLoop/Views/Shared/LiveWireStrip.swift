@@ -49,7 +49,7 @@ struct LiveWireStrip: View {
         case .mock:
             return [Color.gray.opacity(0.5), Color.gray, Color.gray.opacity(0.5)]
         case .stopped:
-            return [PulseColors.danger, Color.white.opacity(0.6), PulseColors.danger]
+            return [PulseColors.danger.opacity(0.7), PulseColors.danger, PulseColors.danger.opacity(0.7)]
         case .notReady, .unknown:
             return [Color.gray.opacity(0.3), Color.gray.opacity(0.5), Color.gray.opacity(0.3)]
         }

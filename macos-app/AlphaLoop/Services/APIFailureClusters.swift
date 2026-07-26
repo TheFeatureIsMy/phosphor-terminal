@@ -1,9 +1,7 @@
-// APIFailureClusters.swift — failure-clusters API service
-// GET /api/growth/failure-clusters?strategy_uuid={uuid} → [FailureClusterSummary]
+// APIFailureClusters.swift - failure-clusters API service
+// GET /api/growth/failure-clusters?strategy_uuid={uuid} -> [FailureClusterSummary]
 
 import Foundation
-
-// MARK: - Response/DTO types
 
 struct FailureClustersResponse: Decodable {
     let state: String
@@ -28,14 +26,10 @@ struct FailureClusterDTO: Decodable {
     }
 }
 
-// MARK: - NetworkClientProtocol extension
-
 extension NetworkClientProtocol {
-
     func getFailureClusters(strategyUuid: UUID) async throws -> [FailureClusterSummary] {
         let resp: FailureClustersResponse = try await get(
-            "/api/growth/failure-clusters?strategy_uuid=\(strategyUuid)",
-            mock: MockFailureClusters.response
+            "/api/growth/failure-clusters?strategy_uuid=\(strategyUuid)"
         )
         return resp.clusters.map {
             FailureClusterSummary(
@@ -47,11 +41,5 @@ extension NetworkClientProtocol {
                 commonFeatures: $0.suggestedFix.split(separator: ";").map(String.init)
             )
         }
-    }
-}
-
-enum MockFailureClusters {
-    static func response() -> FailureClustersResponse {
-        FailureClustersResponse(state: "empty", clusters: [])
     }
 }

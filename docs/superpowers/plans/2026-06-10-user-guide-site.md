@@ -934,10 +934,10 @@ Each step:
 
 ### Task 3.X (AI Research · 4 chapters)
 
-- [ ] **Task 3.15**: `ai-research-room` — Run 列表 / 阶段进度 / 候选策略评分。
-- [ ] **Task 3.16**: `agent-platform` — Agent registry / 健康 / 配置 / 部署。
-- [ ] **Task 3.17**: `signal-center` — 三层信号 (alpha / risk / context) / 融合 verdict。
-- [ ] **Task 3.18**: `market-sentiment` — FinBERT 时间序列 / Top 头条 / 标签云。
+- [x] **Task 3.15**: `ai-research-room` - Run 列表 / 阶段进度 / 候选策略评分。
+- [x] **Task 3.16**: `agent-platform` - Agent registry / 健康 / 配置 / 部署。
+- [x] **Task 3.17**: `signal-center` - 三层信号 (alpha / risk / context) / 融合 verdict。
+- [x] **Task 3.18**: `market-sentiment` - FinBERT 时间序列 / Top 头条 / 标签云。
 
 ### Task 3.X (Growth · 3 chapters)
 

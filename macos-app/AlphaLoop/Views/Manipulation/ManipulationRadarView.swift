@@ -97,7 +97,7 @@ struct ManipulationRadarView: View {
             }
             .padding(.horizontal, PulseSpacing.xl)
             .padding(.vertical, PulseSpacing.lg)
-            .frame(maxWidth: 1280, alignment: .leading)
+            .frame(maxWidth: PulseSpacing.contentMaxWidth, alignment: .leading)
             .frame(maxWidth: .infinity, alignment: .center)
         }
         .background(colors.background)
@@ -122,6 +122,13 @@ private struct MastheadBlock: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(PulseSpacing.lg)
-        .glassEffect()
+        .background(
+            RoundedRectangle(cornerRadius: PulseRadii.card)
+                .fill(colors.cardBackground)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: PulseRadii.card)
+                .stroke(colors.border, lineWidth: 1)
+        )
     }
 }

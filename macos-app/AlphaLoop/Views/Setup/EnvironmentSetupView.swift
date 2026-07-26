@@ -1,52 +1,48 @@
-// EnvironmentSetupView.swift — 首屏环境检测 + 一键启动后端
-// 用户无感安装：显示 4 个服务状态，点击 "一键启动后端" 执行 docker compose up。
+// EnvironmentSetupView.swift - 首屏环境检测 + 自动启动
+// 自动检测 PostgreSQL/Redis/Backend，自动启动，用户无需手动操作。
+
 import SwiftUI
 
 struct EnvironmentSetupView: View {
     @Environment(PulseColors.self) private var colors
-    @ObservedObject var dockerService: DockerEnvironmentService
-    @State private var hasLaunched = false
+    @ObservedObject var envService: LocalEnvironmentService
 
     var body: some View {
         ZStack {
             colors.background.ignoresSafeArea()
-            BackgroundLayersView()
-            Rectangle().fill(.ultraThinMaterial).ignoresSafeArea()
 
             VStack(spacing: 32) {
                 // Header
                 VStack(spacing: 8) {
-                    if dockerService.overallStatus() == .starting {
+                    if envService.isStarting || envService.overallStatus() == .starting {
                         ProgressView()
                             .controlSize(.large)
                             .tint(PulseColors.accent)
                             .padding(.bottom, 8)
-                        Text("正在启动后端服务")
+                        Text(L10n.zh("正在启动后端服务", en: "Starting Backend Services"))
                             .font(.system(size: 16, weight: .medium))
                             .foregroundStyle(colors.textPrimary)
-                        Text("请稍候，首次启动需下载镜像（约 1-2 分钟）")
+                        Text(L10n.zh("请稍候，正在自动拉起 PostgreSQL、Redis 和后端 API", en: "Please wait, automatically starting PostgreSQL, Redis, and Backend API"))
                             .font(.system(size: 13))
                             .foregroundStyle(colors.textSecondary)
                     } else {
                         Image(systemName: "cpu.and.display")
                             .font(.system(size: 44))
                             .foregroundStyle(PulseColors.accent)
-                        Text("环境配置")
+                        Text(L10n.zh("环境配置", en: "Environment Setup"))
                             .font(.system(size: 20, weight: .semibold))
                             .foregroundStyle(colors.textPrimary)
-                        Text("AlphaLoop 需要后端服务支持，一键启动即可")
+                        Text(L10n.zh("AlphaLoop 正在自动检测并启动后端服务", en: "AlphaLoop is auto-detecting and starting backend services"))
                             .font(.system(size: 13))
                             .foregroundStyle(colors.textSecondary)
                     }
                 }
 
-                // 4 个服务状态卡
+                // 3 个服务状态卡
                 VStack(spacing: 12) {
-                    serviceRow("Docker", status: dockerService.dockerRunning, icon: "square.stack.3d.down.right.fill")
-                    serviceRow("PostgreSQL", status: dockerService.postgresStatus, icon: "server.rack")
-                    serviceRow("Redis", status: dockerService.redisStatus, icon: "bolt.fill")
-                    serviceRow("Freqtrade", status: dockerService.freqtradeStatus, icon: "chart.line.uptrend.xyaxis")
-                    serviceRow("Backend API", status: dockerService.apiStatus, icon: "cloud.fill")
+                    serviceRow("PostgreSQL", status: envService.postgresStatus, icon: "server.rack")
+                    serviceRow("Redis", status: envService.redisStatus, icon: "bolt.fill")
+                    serviceRow("Backend API", status: envService.apiStatus, icon: "cloud.fill")
                 }
                 .padding(16)
                 .background(colors.cardBackground)
@@ -54,13 +50,13 @@ struct EnvironmentSetupView: View {
 
                 // 操作按钮
                 VStack(spacing: 12) {
-                    if dockerService.overallStatus() == .allHealthy {
+                    if envService.overallStatus() == .allHealthy {
                         Button {
                             NotificationCenter.default.post(name: NSNotification.Name("EnvironmentReady"), object: nil)
                         } label: {
                             HStack(spacing: 8) {
                                 Image(systemName: "checkmark.circle.fill")
-                                Text("后端就绪，进入登录")
+                                Text(L10n.zh("后端就绪，进入登录", en: "Backend Ready, Continue"))
                             }
                             .font(PulseFonts.body.weight(.semibold))
                             .foregroundStyle(.black)
@@ -70,68 +66,47 @@ struct EnvironmentSetupView: View {
                             .clipShape(RoundedRectangle(cornerRadius: PulseRadii.sm))
                         }
                         .buttonStyle(.plain)
-                    } else if dockerService.overallStatus() == .notInstalled {
-                        Link(destination: URL(string: "https://www.docker.com/products/docker-desktop/")!) {
-                            HStack(spacing: 8) {
-                                Image(systemName: "arrow.down.circle.fill")
-                                Text("下载 Docker Desktop")
-                            }
-                            .font(PulseFonts.body.weight(.semibold))
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                            .background(PulseColors.accent)
-                            .clipShape(RoundedRectangle(cornerRadius: PulseRadii.sm))
-                        }
-                        .buttonStyle(.plain)
+                    } else if envService.overallStatus() == .notInstalled {
+                        VStack(spacing: 12) {
+                            Text(L10n.zh("缺少必要依赖，请安装后重启 App", en: "Missing dependencies. Please install and restart."))
+                                .font(PulseFonts.caption)
+                                .foregroundStyle(colors.textMuted)
 
-                        Text("安装后重启 App 即可自动检测")
-                            .font(PulseFonts.caption)
-                            .foregroundStyle(colors.textMuted)
-                    } else if dockerService.overallStatus() == .dockerNotRunning {
-                        Button {
-                            Task { await dockerService.checkAllAndAutoStart() }
-                        } label: {
-                            HStack(spacing: 8) {
-                                Image(systemName: "arrow.clockwise")
-                                Text("启动 Docker 后点此重试")
-                            }
-                            .font(PulseFonts.body.weight(.semibold))
-                            .foregroundStyle(.black)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                            .background(PulseColors.amber)
-                            .clipShape(RoundedRectangle(cornerRadius: PulseRadii.sm))
+                            Text(L10n.zh("在终端执行：", en: "Run in terminal:"))
+                                .font(PulseFonts.caption)
+                                .foregroundStyle(colors.textSecondary)
+
+                            Text("brew install postgresql@16 redis python@3.11")
+                                .font(PulseFonts.monoLabel)
+                                .foregroundStyle(PulseColors.accent)
+                                .padding(8)
+                                .background(colors.surface)
+                                .clipShape(RoundedRectangle(cornerRadius: 4))
                         }
-                        .buttonStyle(.plain)
+                    } else if envService.isStarting {
+                        // 启动中不显示按钮
                     } else {
                         Button {
-                            hasLaunched = true
-                            Task { await dockerService.startAll() }
+                            Task { await envService.startAll() }
                         } label: {
                             HStack(spacing: 8) {
-                                if dockerService.isStarting {
-                                    ProgressView().controlSize(.small)
-                                } else {
-                                    Image(systemName: "play.fill")
-                                }
-                                Text(dockerService.isStarting ? "正在启动后端..." : "一键启动后端")
+                                Image(systemName: "play.fill")
+                                Text(L10n.zh("一键启动", en: "Start All"))
                             }
                             .font(PulseFonts.body.weight(.semibold))
                             .foregroundStyle(.black)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
-                            .background(dockerService.isStarting ? colors.surface : PulseColors.accent)
+                            .background(PulseColors.accent)
                             .clipShape(RoundedRectangle(cornerRadius: PulseRadii.sm))
                         }
                         .buttonStyle(.plain)
-                        .disabled(dockerService.isStarting)
                     }
                 }
 
                 // 日志输出
-                if !dockerService.lastLog.isEmpty {
-                    Text(dockerService.lastLog)
+                if !envService.lastLog.isEmpty {
+                    Text(envService.lastLog)
                         .font(PulseFonts.micro)
                         .foregroundStyle(colors.textMuted)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -142,7 +117,7 @@ struct EnvironmentSetupView: View {
         }
     }
 
-    private func serviceRow(_ name: String, status: DockerEnvironmentService.ServiceStatus, icon: String) -> some View {
+    private func serviceRow(_ name: String, status: LocalEnvironmentService.ServiceStatus, icon: String) -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
                 .font(.system(size: 14))
@@ -157,33 +132,33 @@ struct EnvironmentSetupView: View {
     }
 
     @ViewBuilder
-    private func statusBadge(_ status: DockerEnvironmentService.ServiceStatus) -> some View {
+    private func statusBadge(_ status: LocalEnvironmentService.ServiceStatus) -> some View {
         switch status {
         case .unknown, .checking:
             HStack(spacing: 4) {
                 ProgressView().controlSize(.small)
-                Text("检测中")
+                Text(L10n.zh("检测中", en: "Checking"))
                     .font(PulseFonts.micro)
                     .foregroundStyle(colors.textMuted)
             }
         case .notRunning, .starting:
             HStack(spacing: 4) {
                 Circle().fill(PulseColors.amber).frame(width: 6, height: 6)
-                Text("未启动")
+                Text(status == .starting ? L10n.zh("启动中", en: "Starting") : L10n.zh("未启动", en: "Not Running"))
                     .font(PulseFonts.micro)
                     .foregroundStyle(PulseColors.amber)
             }
         case .healthy:
             HStack(spacing: 4) {
                 Circle().fill(PulseColors.success).frame(width: 6, height: 6)
-                Text("运行中")
+                Text(L10n.zh("运行中", en: "Running"))
                     .font(PulseFonts.micro)
                     .foregroundStyle(PulseColors.success)
             }
         case .failed(let msg):
             HStack(spacing: 4) {
                 Circle().fill(PulseColors.danger).frame(width: 6, height: 6)
-                Text(msg)
+                Text(msg == "not_installed" ? L10n.zh("未安装", en: "Not Installed") : msg)
                     .font(PulseFonts.micro)
                     .foregroundStyle(PulseColors.danger)
             }

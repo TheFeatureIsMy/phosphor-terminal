@@ -20,9 +20,8 @@ struct SidebarView: View {
                         if !routes.isEmpty {
                             if !appState.sidebarCollapsed {
                                 HStack(spacing: 4) {
-                                    Text("//").font(PulseFonts.micro).foregroundStyle(PulseColors.accent.opacity(0.5))
-                                    Text(section.label).font(PulseFonts.micro).foregroundStyle(colors.textMuted)
-                                        .textCase(.uppercase).tracking(1.2)
+                                    Text(section.label).font(PulseFonts.body(11, .semibold)).foregroundStyle(colors.textSecondary)
+                                        .textCase(.uppercase).tracking(0.6)
                                 }
                                 .padding(.horizontal, PulseSpacing.sm)
                                 .padding(.top, PulseSpacing.md).padding(.bottom, PulseSpacing.xxs)

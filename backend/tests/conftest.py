@@ -1,6 +1,11 @@
 import os
 import sys
 
+# Set SQLite as default DATABASE_URL for tests BEFORE any app imports.
+# Integration tests can override this with their own file-based SQLite.
+os.environ.setdefault("DATABASE_URL", "sqlite://")
+os.environ.setdefault("PROVIDER_HEALTH_INTERVAL_S", "0")
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, event
@@ -36,6 +41,7 @@ import app.domain.command  # noqa: F401
 import app.models.dryrun  # noqa: F401
 import app.domain.strategy  # noqa: F401
 import app.models.research_v2  # noqa: F401
+import app.models.provider_config  # noqa: F401
 import app.domain.provider  # noqa: F401
 import app.domain.risk  # noqa: F401
 import app.domain.execution  # noqa: F401
@@ -59,8 +65,15 @@ def test_engine():
     engine.dispose()
 
 
+def _is_integration_test(request):
+    """Check if the test is in the integration directory."""
+    return '/integration/' in str(request.fspath)
+
 @pytest.fixture(autouse=True)
-def setup_db(test_engine):
+def setup_db(test_engine, request):
+    if _is_integration_test(request):
+        yield
+        return
     Base.metadata.create_all(bind=test_engine)
     yield
     Base.metadata.drop_all(bind=test_engine)
@@ -94,10 +107,15 @@ def session(test_engine):
 
 
 @pytest.fixture(autouse=True)
-def _patch_init_db(monkeypatch, test_engine):
+def _patch_init_db(monkeypatch, test_engine, request):
     """Prevent lifespan init_db from connecting to real Postgres."""
+    if _is_integration_test(request):
+        return
     monkeypatch.setattr('app.database.engine', test_engine)
     monkeypatch.setattr('app.database.init_db', lambda: Base.metadata.create_all(bind=test_engine))
+    # Also patch SessionLocal so get_db uses the test engine
+    from sqlalchemy.orm import sessionmaker as _sm
+    monkeypatch.setattr('app.database.SessionLocal', _sm(autocommit=False, autoflush=False, bind=test_engine))
 
 
 @pytest.fixture

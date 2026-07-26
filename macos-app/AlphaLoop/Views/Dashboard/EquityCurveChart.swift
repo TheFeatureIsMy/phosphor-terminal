@@ -39,7 +39,7 @@ struct EquityCurveChart: View {
                             .padding(.horizontal, PulseSpacing.xs)
                             .padding(.vertical, PulseSpacing.xxs)
                             .background(
-                                RoundedRectangle(cornerRadius: PulseRadii.sm)
+                                RoundedRectangle(cornerRadius: PulseRadii.badge)
                                     .fill(selectedRange == range ? PulseColors.accent : .clear)
                             )
                             .buttonStyle(.plain)

@@ -32,7 +32,7 @@ struct KryptonConfirmDialog: View {
 
     var body: some View {
         ZStack {
-            Color.black.opacity(0.5).ignoresSafeArea()
+            PulseGlass.modalBackdrop.ignoresSafeArea()
                 .onTapGesture { onCancel() }
 
             VStack(spacing: PulseSpacing.md) {
@@ -70,7 +70,7 @@ struct KryptonConfirmDialog: View {
                         Text(confirmLabel)
                             .font(PulseFonts.captionMedium)
                             .fontWeight(.bold)
-                            .foregroundStyle(confirmStyle == .danger ? Color.white : KryptonColor.background)
+                            .foregroundStyle(PulseColors.onAccent)
                             .frame(width: 120, height: 32)
                             .background(
                                 RoundedRectangle(cornerRadius: PulseRadii.button)
@@ -86,11 +86,10 @@ struct KryptonConfirmDialog: View {
             .background(
                 RoundedRectangle(cornerRadius: PulseRadii.lg)
                     .fill(colors.cardBackground)
-                    .background(RoundedRectangle(cornerRadius: PulseRadii.lg).fill(.ultraThinMaterial))
             )
             .clipShape(RoundedRectangle(cornerRadius: PulseRadii.lg))
             .overlay(RoundedRectangle(cornerRadius: PulseRadii.lg).stroke(colors.border, lineWidth: 1))
-            .shadow(color: .black.opacity(0.3), radius: 20, y: 8)
+            .applyShadow(PulseShadow.elevated(colors))
         }
         .transition(.opacity.combined(with: .scale(scale: 0.95)))
     }
@@ -198,6 +197,7 @@ struct EmergencyPauseButton: View {
 
 struct RiskAlertBanner: View {
     let alerts: [RiskAlert]
+    @Environment(PulseColors.self) private var colors
 
     struct RiskAlert: Identifiable {
         let id = UUID()
@@ -211,7 +211,7 @@ struct RiskAlertBanner: View {
             var color: Color {
                 switch self {
                 case .stopLoss: return KryptonColor.red
-                case .circuitBreaker: return Color(hex: "#ff4500")
+                case .circuitBreaker: return KryptonColor.orangeRed
                 case .emergency: return KryptonColor.red
                 case .riskWarning: return KryptonColor.amber
                 }
@@ -238,13 +238,13 @@ struct RiskAlertBanner: View {
 
                 Text(alert.message)
                     .font(PulseFonts.captionMedium)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(colors.textPrimary)
 
                 Spacer()
 
                 Text(alert.time, style: .relative)
                     .font(PulseFonts.micro)
-                    .foregroundStyle(.white.opacity(0.6))
+                    .foregroundStyle(colors.textMuted)
             }
             .padding(.horizontal, PulseSpacing.md)
             .padding(.vertical, PulseSpacing.sm)

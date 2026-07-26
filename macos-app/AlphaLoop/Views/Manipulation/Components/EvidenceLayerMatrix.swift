@@ -62,7 +62,7 @@ private struct EvidenceLayerRow: View {
                     ZStack(alignment: .leading) {
                         RoundedRectangle(cornerRadius: 2).fill(colors.border).frame(height: 6)
                         RoundedRectangle(cornerRadius: 2)
-                            .fill(layer.score > 0.8 ? PulseColors.danger : PulseColors.accent)
+                            .fill(layer.score > 0.8 ? PulseColors.danger : PulseColors.success)
                             .frame(width: max(2, geo.size.width * layer.score), height: 6)
                     }
                 }

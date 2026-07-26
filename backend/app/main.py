@@ -24,6 +24,7 @@ from app.routers import market_structure_bff, failure_clustering_bff
 from app.routers import workflow
 from app.routers.admin.providers import router as admin_providers_router
 from app.routers.admin.system_settings import router as admin_system_settings_router
+from app.routers.admin import router as admin_router
 from app.routers.providers_ws import router as providers_ws_router
 from app.routers.strategy_workspace import router as strategy_workspace_router
 from app.routers.manipulation_ws import router as manipulation_ws_router
@@ -33,7 +34,20 @@ from app.services.providers.realtime.ccxt_ticker_stream import run_binance_ticke
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     setup_logging(level=settings.log_level, fmt=settings.log_format)
+    # Ensure all ORM models are registered before create_all
+    import app.models.user  # noqa: F401
+    import app.models.strategy  # noqa: F401
+    import app.models.agent_signal  # noqa: F401
+    import app.models.ai  # noqa: F401
+    import app.models.research  # noqa: F401
+    import app.models.research_v2  # noqa: F401
+    import app.models.dryrun  # noqa: F401
+    import app.models.provider_config  # noqa: F401
+    import app.domain.shadow_strategy  # noqa: F401
     init_db()
+    # Register all provider adapters
+    from app.services.providers.categories import register_all
+    register_all()
     # Start provider health scheduler
     from app.services.providers.scheduler import ProviderHealthScheduler
 
@@ -107,6 +121,7 @@ app.include_router(inference.router)
 app.include_router(mcp.router)
 app.include_router(admin_providers_router)
 app.include_router(admin_system_settings_router)
+app.include_router(admin_router)
 app.include_router(providers_ws_router)
 app.include_router(decision.router)
 app.include_router(emergency_v2.router)

@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>αLOOP · Signal Center · Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0D0F0E;
+    --row:#111413;
+    --hair:#1E2422;
+    --txt:#C8D0CC;
+    --dim:#6B7671;
+    --num:#E8EEEB;
+    --em:#2FBF71;
+    --loss:#D9544D;
+    --amber:#C9A227;
+    --gutter:96px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--bg);color:var(--txt);
+    font-family:'IBM Plex Mono',ui-monospace,'SF Mono',monospace;
+    font-size:13px;line-height:1.5;-webkit-font-smoothing:antialiased;letter-spacing:.01em;
+  }
+  .num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1;color:var(--num)}
+  .em{color:var(--em)} .loss{color:var(--loss)} .amber{color:var(--amber)} .dim{color:var(--dim)}
+  a{color:var(--em);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  /* back link */
+  .backbar{padding:9px 20px;border-bottom:1px solid var(--hair);font-size:11px}
+  .backbar a{color:var(--dim)}
+  .backbar a:hover{color:var(--em)}
+
+  /* header */
+  header{
+    position:sticky;top:0;z-index:30;height:44px;
+    display:flex;align-items:center;gap:18px;
+    background:var(--bg);border-bottom:1px solid var(--hair);padding:0 20px;
+  }
+  .brand{font-weight:600;font-size:14px;color:var(--num);letter-spacing:.02em}
+  .brand .a{color:var(--em)}
+  .pagetag{font-size:11px;color:var(--dim);letter-spacing:.14em;text-transform:uppercase}
+  .sync{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--dim);margin-left:auto}
+  .sync .dot{color:var(--em)}
+  .pulse{animation:pulse 2.4s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+  .wrap{max-width:1180px;margin:0 auto}
+  .ledger{position:relative}
+  .entry{display:grid;grid-template-columns:var(--gutter) 1fr;border-bottom:1px solid var(--hair)}
+  .gutter{
+    border-right:1px solid var(--hair);padding:14px 12px 14px 0;text-align:right;
+    display:flex;flex-direction:column;gap:2px;align-items:flex-end;
+  }
+  .gh{color:var(--num);font-size:12px;font-weight:500}
+  .gt{color:var(--dim);font-size:11px}
+  .gtag{color:var(--dim);font-size:10px;letter-spacing:.06em;margin-top:4px}
+  .body{padding:14px 20px}
+
+  /* section labels */
+  .section-label .body{
+    padding:10px 20px;font-size:11px;letter-spacing:.14em;color:var(--dim);
+    text-transform:uppercase;display:flex;align-items:center;gap:10px;
+  }
+  .section-label .body .ln{flex:1;height:1px;background:var(--hair)}
+
+  /* genesis / global stats */
+  .genesis .body{padding:22px 20px}
+  .g-label{font-size:11px;letter-spacing:.12em;color:var(--dim);text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+  .g-title{font-size:26px;font-weight:600;color:var(--num);line-height:1.1}
+  .g-title .unit{font-size:14px;color:var(--dim);font-weight:400;margin-left:8px}
+  .stat-grid{display:grid;grid-template-columns:repeat(6,1fr);margin-top:20px;border-top:1px solid var(--hair)}
+  .stat{padding:12px 14px 12px 0;border-right:1px solid var(--hair)}
+  .stat:last-child{border-right:none}
+  .stat .k{font-size:10px;letter-spacing:.08em;color:var(--dim);text-transform:uppercase;margin-bottom:5px}
+  .stat .v{font-size:19px;font-weight:600}
+
+  /* filter bar */
+  .filters{padding:14px 20px;display:flex;flex-wrap:wrap;gap:18px}
+  .fgroup{display:flex;align-items:center;gap:8px}
+  .fglabel{font-size:10px;letter-spacing:.1em;color:var(--dim);text-transform:uppercase}
+  .chip{
+    font-family:inherit;font-size:11px;color:var(--dim);background:none;
+    border:1px solid var(--hair);padding:4px 10px;cursor:pointer;letter-spacing:.02em;
+    transition:color .15s,border-color .15s,background .15s;
+  }
+  .chip:hover{color:var(--txt);border-color:var(--dim)}
+  .chip.on{color:var(--em);border-color:var(--em);background:rgba(47,191,113,.08)}
+  .chip:focus-visible{outline:2px solid var(--em);outline-offset:1px}
+
+  /* conflict entries */
+  .conflict .body{padding:14px 20px}
+  .conf-line{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;font-size:13px}
+  .conf-sym{font-weight:600;color:var(--num);font-size:14px}
+  .cx{color:var(--loss);font-weight:600;padding:0 4px}
+  .conf-verdict{margin-left:auto;font-size:11px;color:var(--amber);letter-spacing:.04em}
+  .conf-detail{margin-top:7px;font-size:11px;color:var(--dim)}
+
+  /* signal row */
+  .sig{cursor:pointer}
+  .sig .body{padding:13px 20px}
+  .sig-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+  .glyph{width:14px;text-align:center;flex-shrink:0}
+  .sig-sym{font-size:14px;font-weight:600;color:var(--num)}
+  .tf{font-size:11px;color:var(--dim)}
+  .side{font-size:10px;letter-spacing:.08em;padding:2px 7px;border:1px solid var(--hair)}
+  .side.long{color:var(--em);border-color:rgba(47,191,113,.4)}
+  .side.short{color:var(--loss);border-color:rgba(217,84,77,.4)}
+  .side.hold{color:var(--dim)}
+  .side.risk{color:var(--amber);border-color:rgba(201,162,39,.5)}
+  .src{font-size:11px;color:var(--dim)}
+  .src b{color:var(--em);font-weight:500}
+  .sig-right{margin-left:auto;display:flex;align-items:baseline;gap:16px}
+  .conf{font-size:13px}
+  .confbar{letter-spacing:1px;font-size:11px;color:var(--em)}
+  .confbar .empty{color:var(--hair)}
+  .stars{color:var(--amber);font-size:11px;letter-spacing:1px}
+  .risk-tag{font-size:10px;letter-spacing:.06em;text-transform:uppercase}
+  .risk-low{color:var(--em)} .risk-medium{color:var(--amber)} .risk-high{color:var(--loss)} .risk-extreme{color:var(--loss);font-weight:600}
+  .st-tag{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim)}
+  .st-active{color:var(--em)} .st-pending{color:var(--amber)} .st-rejected{color:var(--loss)}
+  .ttl{font-size:11px;color:var(--dim)}
+  .ttl b{color:var(--num);font-weight:500}
+  .reasoning{margin-top:6px;font-size:12px;color:var(--dim);padding-left:24px}
+  .expand-hint{font-size:10px;color:var(--dim);margin-left:8px}
+
+  /* detail panel */
+  .detail{display:none;padding:0 20px 18px 44px;border-top:1px dashed var(--hair);margin-top:12px;padding-top:14px}
+  .sig.open .detail{display:block}
+  .sig.open{background:var(--row)}
+  .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px 32px}
+  .qblock .q{font-size:10px;letter-spacing:.1em;color:var(--dim);text-transform:uppercase;margin-bottom:5px}
+  .qblock .adef{font-size:12.5px;color:var(--txt)}
+  .qblock .adef b{color:var(--num)}
+  .evlist{list-style:none;margin-top:4px}
+  .evlist li{font-size:12px;color:var(--dim);padding:3px 0 3px 16px;position:relative}
+  .evlist li::before{content:"▸";position:absolute;left:0;color:var(--em)}
+  .perm{display:flex;flex-direction:column;gap:4px;font-size:12px}
+  .perm .pl{color:var(--em)} .perm .pn{color:var(--loss)} .perm .pw{color:var(--amber)}
+  .timeline{list-style:none;margin-top:4px}
+  .timeline li{font-size:12px;color:var(--dim);padding:3px 0 3px 18px;position:relative}
+  .timeline li::before{content:"│";position:absolute;left:4px;color:var(--hair)}
+  .timeline li b{color:var(--num);font-weight:500}
+  .timeline li time{color:var(--em)}
+  .actions{display:flex;gap:0;margin-top:16px;flex-wrap:wrap}
+  .abtn{
+    background:none;border:1px solid var(--hair);border-right:none;color:var(--txt);
+    font-family:inherit;font-size:11px;padding:7px 14px;cursor:pointer;transition:background .15s,color .15s;letter-spacing:.02em;
+  }
+  .abtn:last-child{border-right:1px solid var(--hair)}
+  .abtn:hover{background:var(--bg);color:var(--em);border-color:var(--em)}
+  .abtn.arch:hover{color:var(--dim);border-color:var(--dim)}
+  .abtn:focus-visible{outline:2px solid var(--em);outline-offset:-1px;position:relative;z-index:1}
+
+  .anim{opacity:0;transform:translateY(-8px)}
+  .anim.in{opacity:1;transform:none;transition:opacity .5s ease,transform .5s cubic-bezier(.22,1,.36,1)}
+
+  @media (max-width:767px){
+    :root{--gutter:0px}
+    .entry,.section-label,.genesis{grid-template-columns:1fr}
+    .gutter{border-right:none;text-align:left;flex-direction:row;align-items:baseline;gap:10px;padding:10px 20px 0}
+    .gtag{margin-top:0}
+    .stat-grid{grid-template-columns:1fr 1fr 1fr}
+    .detail-grid{grid-template-columns:1fr}
+    .sig-right{margin-left:0;width:100%;flex-wrap:wrap;gap:12px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .anim{opacity:1!important;transform:none!important;transition:none!important}
+    .pulse{animation:none}
+    html{scroll-behavior:auto}
+  }
+</style>
+</head>
+<body>
+
+<div class="backbar"><a href="index.html">← 返回矩阵</a></div>
+
+<header>
+  <div class="brand"><span class="a">α</span>LOOP</div>
+  <div class="pagetag">Signal Center · 信号中枢</div>
+  <div class="sync">
+    <span class="dot pulse">✓</span>
+    <span>ledger synced · block <span class="num">#SIG-047</span></span>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="ledger" id="ledger">
+
+    <!-- GENESIS / global stats -->
+    <div class="entry genesis anim">
+      <div class="gutter"><div class="gh">#GEN</div><div class="gt">14:22</div><div class="gtag">GENESIS</div></div>
+      <div class="body">
+        <div class="g-label"><span class="em">✓</span> 信号总账 · SIGNAL LEDGER</div>
+        <div class="g-title"><span class="num" data-count="47" data-dec="0">0</span> <span class="unit">在场 Signal / 47 committed</span></div>
+        <div class="stat-grid">
+          <div class="stat"><div class="k">在场</div><div class="v num" data-count="47" data-dec="0">0</div></div>
+          <div class="stat"><div class="k">active</div><div class="v em num" data-count="23" data-dec="0">0</div></div>
+          <div class="stat"><div class="k">pending</div><div class="v amber num" data-count="12" data-dec="0">0</div></div>
+          <div class="stat"><div class="k">expired</div><div class="v dim num" data-count="9" data-dec="0">0</div></div>
+          <div class="stat"><div class="k">rejected</div><div class="v loss num" data-count="3" data-dec="0">0</div></div>
+          <div class="stat"><div class="k">冲突待裁决</div><div class="v loss num" data-count="3" data-dec="0">0</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FILTERS -->
+    <div class="entry section-label anim">
+      <div class="gutter"><div class="gtag">QUERY</div></div>
+      <div class="body">⬢ 筛选账本 · FILTER <span class="ln"></span> 10 shown</div>
+    </div>
+    <div class="entry anim">
+      <div class="gutter"><div class="gtag">FILTER</div></div>
+      <div class="body filters">
+        <div class="fgroup"><span class="fglabel">来源</span>
+          <button class="chip on">全部</button><button class="chip">technical</button><button class="chip">sentiment</button><button class="chip">tradingagents</button><button class="chip">freqai</button><button class="chip">manipulation</button>
+        </div>
+        <div class="fgroup"><span class="fglabel">标的</span>
+          <button class="chip on">全部</button><button class="chip">BTC</button><button class="chip">ETH</button><button class="chip">SOL</button><button class="chip">PEPE</button>
+        </div>
+        <div class="fgroup"><span class="fglabel">方向</span>
+          <button class="chip on">全部</button><button class="chip">long</button><button class="chip">short</button><button class="chip">hold</button><button class="chip">risk</button>
+        </div>
+        <div class="fgroup"><span class="fglabel">状态</span>
+          <button class="chip on">全部</button><button class="chip">active</button><button class="chip">pending</button><button class="chip">rejected</button>
+        </div>
+        <div class="fgroup"><span class="fglabel">排序</span>
+          <button class="chip on">评分 ↓</button><button class="chip">置信度 ↓</button><button class="chip">有效期 ↑</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONFLICTS -->
+    <div class="entry section-label anim">
+      <div class="gutter"><div class="gtag">LAYER</div></div>
+      <div class="body">│ 冲突检测 · CONFLICTS <span class="ln"></span> 3 unresolved</div>
+    </div>
+    <div class="entry conflict anim">
+      <div class="gutter"><div class="gh">#CF-01</div><div class="gt">14:18</div><div class="gtag">CONF</div></div>
+      <div class="body">
+        <div class="conf-line"><span class="conf-sym">BTC/USDT</span>
+          <span>#1 <b class="em">breakout_v3</b> 看多 <span class="num">0.82</span></span>
+          <span class="cx">⚔</span>
+          <span>#8 <b class="amber">投研委员会</b> 看空 <span class="num">0.71</span></span>
+          <span class="conf-verdict">需人工裁决</span>
+        </div>
+        <div class="conf-detail">同标的多空对立 · 置信度接近 · 建议裁决冲突后再发布到策略</div>
+      </div>
+    </div>
+    <div class="entry conflict anim">
+      <div class="gutter"><div class="gh">#CF-02</div><div class="gt">14:15</div><div class="gtag">CONF</div></div>
+      <div class="body">
+        <div class="conf-line"><span class="conf-sym">SOL/USDT</span>
+          <span>#3 <b class="amber">投研委员会</b> 看空 <span class="num">0.71</span></span>
+          <span class="cx">⚔</span>
+          <span>#9 <b class="em">FinBERT</b> 看多 <span class="num">0.55</span></span>
+          <span class="conf-verdict">需人工裁决</span>
+        </div>
+        <div class="conf-detail">Agent 空头置信度高于情绪多头 · 建议以 Agent 结论为主</div>
+      </div>
+    </div>
+    <div class="entry conflict anim">
+      <div class="gutter"><div class="gh">#CF-03</div><div class="gt">14:11</div><div class="gtag">CONF</div></div>
+      <div class="body">
+        <div class="conf-line"><span class="conf-sym">PEPE/USDT</span>
+          <span>#6 <b class="loss">操控雷达</b> <span class="risk-extreme">EXTREME</span> 风险预警 <span class="num">0.88</span></span>
+          <span class="conf-verdict loss">建议 block 全部多头</span>
+        </div>
+        <div class="conf-detail">检出 M3 拉盘出货特征 · 建议 block 所有该标的多头信号进入实盘</div>
+      </div>
+    </div>
+
+    <!-- SIGNAL LIST -->
+    <div class="entry section-label anim">
+      <div class="gutter"><div class="gtag">LAYER</div></div>
+      <div class="body">▸ 信号列表 · SIGNALS <span class="ln"></span> click to expand</div>
+    </div>
+
+    <!-- signals injected by JS -->
+    <div id="siglist"></div>
+
+  </div>
+</div>
+
+<script>
+(function(){
+  var reduce = window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+
+  /* ---- data ---- */
+  var SIGNALS = [
+    {id:1, blk:'#S-10', t:'14:10', srcType:'technical', src:'breakout_v3', sym:'BTC/USDT', tf:'15m', dir:'long', conf:0.82, score:4.6, risk:'medium', ttl:'5h 12m', status:'active',
+     reason:'结构突破颈线，量能确认，HTF 守卫放行', glyph:'▲', gc:'em',
+     ev:['15m 颈线阻力放量突破，突破成交量为均量 1.8×','HTF 时序守卫返回 GO 态，多周期共振','ATR 扩张确认动能，非假突破'], live:'warn'},
+    {id:2, blk:'#S-09', t:'14:08', srcType:'sentiment', src:'FinBERT', sym:'ETH/USDT', tf:'1h', dir:'long', conf:0.67, score:3.8, risk:'low', ttl:'11h', status:'active',
+     reason:'新闻情绪转多，社媒热度上行', glyph:'▲', gc:'em',
+     ev:['过去 6h 新闻情绪均值由 -0.1 转 +0.34','社媒提及量环比 +42%，KOL 情绪偏正','未检出对冲/操纵性异常热度'], live:'no'},
+    {id:3, blk:'#S-08', t:'14:05', srcType:'tradingagents', src:'投研委员会', sym:'SOL/USDT', tf:'4h', dir:'short', conf:0.71, score:4.1, risk:'high', ttl:'3h 40m', status:'active',
+     reason:'多 Agent 辩论后偏空，链上流出加速', glyph:'▼', gc:'loss',
+     ev:['5 位 Agent 辩论 3 轮，4 空 1 多','链上净流出加速，交易所净流入放大','基本面 Agent 指出解锁抛压临近'], live:'no'},
+    {id:4, blk:'#S-07', t:'14:02', srcType:'freqai', src:'FreqAI-LGB', sym:'AVAX/USDT', tf:'1h', dir:'long', conf:0.58, score:3.2, risk:'medium', ttl:'8h', status:'pending',
+     reason:'模型预测短期反弹，待确认', glyph:'▲', gc:'em',
+     ev:['LightGBM 预测 8h 收益 +2.1%，置信区间偏窄','特征重要性以量价背离为主','待二次确认后转 active'], live:'no'},
+    {id:5, blk:'#S-06', t:'13:58', srcType:'prediction', src:'TimesFM', sym:'LINK/USDT', tf:'1d', dir:'hold', conf:0.44, score:2.4, risk:'low', ttl:'20h', status:'pending',
+     reason:'预测区间震荡，无明确方向', glyph:'≡', gc:'dim',
+     ev:['TimesFM 预测未来 24h 落在 ±1.5% 窄区间','方向性置信度不足，建议观望','无趋势性驱动'], live:'no'},
+    {id:6, blk:'#S-05', t:'13:52', srcType:'manipulation', src:'操控雷达', sym:'PEPE/USDT', tf:'5m', dir:'risk', conf:0.88, score:4.9, risk:'extreme', ttl:'1h 20m', status:'active',
+     reason:'检出 M3 拉盘出货特征，高集中度预警', glyph:'⚠', gc:'loss',
+     ev:['M3 分型：快速拉升后大单派发','Top-10 地址持仓集中度 78%','社媒加速度骤增，疑似协同拉盘'], live:'no'},
+    {id:7, blk:'#S-04', t:'13:46', srcType:'technical', src:'range_bottom', sym:'DOGE/USDT', tf:'1h', dir:'long', conf:0.63, score:3.5, risk:'medium', ttl:'6h', status:'active',
+     reason:'近 3 月低点分批建仓区间', glyph:'▲', gc:'em',
+     ev:['价格回落至近 3 月支撑带','RSI 进入超卖回升区','建议分批建仓，非一次性满仓'], live:'warn'},
+    {id:8, blk:'#S-03', t:'13:40', srcType:'tradingagents', src:'投研委员会', sym:'BTC/USDT', tf:'1h', dir:'short', conf:0.71, score:4.0, risk:'medium', ttl:'4h', status:'active',
+     reason:'空头观点：与 #1 方向冲突，需裁决', glyph:'▼', gc:'loss',
+     ev:['1h 级别顶背离，Agent 偏空','与 #1 breakout_v3 多头冲突','建议裁决冲突后再执行'], live:'no', conflict:'#1'},
+    {id:9, blk:'#S-02', t:'13:34', srcType:'sentiment', src:'FinBERT', sym:'SOL/USDT', tf:'15m', dir:'long', conf:0.55, score:3.0, risk:'medium', ttl:'2h', status:'active',
+     reason:'情绪偏多：与 #3 方向冲突', glyph:'▲', gc:'em',
+     ev:['短周期情绪转正，热度回升','与 #3 投研委员会空头冲突','置信度低于对立信号'], live:'no', conflict:'#3'},
+    {id:10, blk:'#S-01', t:'13:28', srcType:'factor', src:'因子研究', sym:'ARB/USDT', tf:'4h', dir:'long', conf:0.49, score:2.8, risk:'high', ttl:'9h', status:'rejected',
+     reason:'因子失效，已被人工驳回', glyph:'✕', gc:'dim',
+     ev:['动量因子近 30d IC 转负','因子拥挤度过高','人工复核后驳回，不进入策略'], live:'no'}
+  ];
+
+  function stars(s){
+    var full=Math.round(s);
+    return '★'.repeat(full)+'☆'.repeat(5-full);
+  }
+  function confbar(c){
+    var n=Math.round(c*10);
+    return '<span class="confbar">'+'█'.repeat(n)+'<span class="empty">'+'░'.repeat(10-n)+'</span></span>';
+  }
+  function permHTML(live){
+    var t='';
+    t+='<div class="pl">可回测 ✓</div>';
+    t+='<div class="pl">可模拟 ✓</div>';
+    if(live==='warn') t+='<div class="pw">可实盘 ⚠ 需人工确认</div>';
+    else t+='<div class="pn">可实盘 ✗ (来源默认禁实盘)</div>';
+    return t;
+  }
+  function riskCN(r){return {low:'低',medium:'中',high:'高',extreme:'极端'}[r];}
+  function statusCN(s){return {active:'active 生效中',pending:'pending 待确认',rejected:'rejected 已驳回'}[s];}
+  function dirCN(d){return {long:'看多 LONG',short:'看空 SHORT',hold:'观望 HOLD',risk:'风险 RISK'}[d];}
+
+  var list=document.getElementById('siglist');
+  var html='';
+  SIGNALS.forEach(function(s){
+    html+='<div class="entry sig anim" tabindex="0" role="button" aria-expanded="false" data-id="'+s.id+'">'+
+      '<div class="gutter"><div class="gh">'+s.blk+'</div><div class="gt">'+s.t+'</div><div class="gtag">SIG</div></div>'+
+      '<div class="body">'+
+        '<div class="sig-head">'+
+          '<span class="glyph '+ (s.gc==='em'?'em':s.gc==='loss'?'loss':'dim') +'">'+s.glyph+'</span>'+
+          '<span class="sig-sym">'+s.sym+'</span> <span class="tf">'+s.tf+'</span>'+
+          '<span class="side '+s.dir+'">'+s.dir.toUpperCase()+'</span>'+
+          '<span class="src"><b>'+s.src+'</b> · '+s.srcType+'</span>'+
+          (s.conflict?'<span class="risk-tag risk-high">⚔ 冲突 '+s.conflict+'</span>':'')+
+          '<span class="sig-right">'+
+            '<span class="conf">'+confbar(s.conf)+' <span class="num">'+s.conf.toFixed(2)+'</span></span>'+
+            '<span class="stars" title="评分 '+s.score+'">'+stars(s.score)+' <span class="dim">'+s.score.toFixed(1)+'</span></span>'+
+            '<span class="risk-tag risk-'+s.risk+'">'+riskCN(s.risk)+'风险</span>'+
+            '<span class="ttl">有效 <b>'+s.ttl+'</b></span>'+
+            '<span class="st-tag st-'+s.status+'">'+s.status+'</span>'+
+          '</span>'+
+        '</div>'+
+        '<div class="reasoning">'+s.reason+' <span class="expand-hint">▸ 点击展开完整信号</span></div>'+
+        '<div class="detail">'+
+          '<div class="detail-grid">'+
+            '<div class="qblock"><div class="q">谁产生的 · SOURCE</div><div class="adef"><b>'+s.src+'</b> · '+s.srcType+' 引擎</div></div>'+
+            '<div class="qblock"><div class="q">看什么标的 · TARGET</div><div class="adef"><b>'+s.sym+'</b> · 周期 '+s.tf+'</div></div>'+
+            '<div class="qblock"><div class="q">什么方向 · DIRECTION</div><div class="adef">'+dirCN(s.dir)+'</div></div>'+
+            '<div class="qblock"><div class="q">多可信 · CONFIDENCE</div><div class="adef">置信度 <b>'+s.conf.toFixed(2)+'</b> · 评分 <b>'+s.score.toFixed(1)+'</b>/5 · '+riskCN(s.risk)+'风险</div></div>'+
+            '<div class="qblock" style="grid-column:1/-1"><div class="q">为什么 · REASONING &amp; EVIDENCE</div><div class="adef">'+s.reason+'</div><ul class="evlist">'+s.ev.map(function(e){return '<li>'+e+'</li>';}).join('')+'</ul></div>'+
+            '<div class="qblock"><div class="q">何时有效 · VALIDITY</div><div class="adef">剩余 <b>'+s.ttl+'</b> · 状态 '+statusCN(s.status)+'</div></div>'+
+            '<div class="qblock"><div class="q">能做什么 · PERMISSION</div><div class="perm">'+permHTML(s.live)+'</div></div>'+
+            '<div class="qblock" style="grid-column:1/-1"><div class="q">生命周期 · LIFECYCLE</div><ul class="timeline">'+
+              '<li><time>'+s.t+'</time> <b>生成</b> · 由 '+s.src+' 产出</li>'+
+              '<li><time>'+s.t+'</time> <b>入账</b> · 提交至信号总账</li>'+
+              (s.status==='rejected'?'<li><time>13:30</time> <b>驳回</b> · 人工复核未通过</li>':'<li><time>—</time> <b>'+(s.status==='pending'?'待确认':'生效中')+'</b> · 当前状态</li>')+
+            '</ul></div>'+
+          '</div>'+
+          '<div class="actions">'+
+            '<button class="abtn">▸ 发布到策略</button>'+
+            '<button class="abtn">◈ 加入 dry-run 观察</button>'+
+            '<button class="abtn">⬢ 生成 StrategyDraft</button>'+
+            (s.conflict?'<button class="abtn">⚔ 裁决冲突</button>':'')+
+            '<button class="abtn arch">░ 归档</button>'+
+          '</div>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  });
+  list.innerHTML=html;
+
+  /* ---- expand toggle ---- */
+  list.querySelectorAll('.sig').forEach(function(row){
+    function toggle(){
+      var open=row.classList.toggle('open');
+      row.setAttribute('aria-expanded', open);
+    }
+    row.addEventListener('click',function(e){
+      if(e.target.closest('.abtn')) return;
+      toggle();
+    });
+    row.addEventListener('keydown',function(e){
+      if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle();}
+    });
+  });
+
+  /* ---- CountUp ---- */
+  function fmt(v,d){return v.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});}
+  function countUp(el){
+    var target=parseFloat(el.getAttribute('data-count'));
+    var dec=parseInt(el.getAttribute('data-dec')||'0',10);
+    if(reduce){el.textContent=fmt(target,dec);return;}
+    var dur=1000,start=null;
+    function step(ts){
+      if(start===null)start=ts;
+      var p=Math.min((ts-start)/dur,1);
+      el.textContent=fmt(target*(1-Math.pow(1-p,3)),dec);
+      if(p<1)requestAnimationFrame(step);else el.textContent=fmt(target,dec);
+    }
+    requestAnimationFrame(step);
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('[data-count]'),countUp);
+
+  /* ---- filter chips ---- */
+  document.querySelectorAll('.fgroup').forEach(function(g){
+    g.querySelectorAll('.chip').forEach(function(c){
+      c.addEventListener('click',function(){
+        g.querySelectorAll('.chip').forEach(function(x){x.classList.remove('on');});
+        c.classList.add('on');
+      });
+    });
+  });
+
+  /* ---- stagger enter ---- */
+  var entries=Array.prototype.slice.call(document.querySelectorAll('.anim'));
+  if(reduce){entries.forEach(function(e){e.classList.add('in');});return;}
+  if('IntersectionObserver' in window){
+    var io=new IntersectionObserver(function(l){l.forEach(function(en){if(en.isIntersecting){en.target.classList.add('in');io.unobserve(en.target);}});},{threshold:0.06});
+    entries.forEach(function(e){io.observe(e);});
+    entries.slice(0,10).forEach(function(e,i){setTimeout(function(){e.classList.add('in');},i*60);});
+  }else{entries.forEach(function(e){e.classList.add('in');});}
+})();
+</script>
+</body>
+</html>

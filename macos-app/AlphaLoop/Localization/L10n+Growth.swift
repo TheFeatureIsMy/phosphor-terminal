@@ -41,6 +41,20 @@ extension L10n {
         static var month: String { zh("月", en: "Month") }
 
         // Times suffix
-        static func times(_ n: Int) -> String { zh("\(n)次", en: "\(n)x") }
-    }
+       static func times(_ n: Int) -> String { zh("\(n)次", en: "\(n)x") }
+
+        // Evidence & version tracking
+        static var evidenceSource: String { zh("证据来源", en: "Evidence Source") }
+        static var rationale: String { zh("改进依据", en: "Rationale") }
+        static var sourceReport: String { zh("来源报告", en: "Source Report") }
+        static var sourceVersion: String { zh("源版本", en: "Source Version") }
+        static var confirmedVersion: String { zh("确认版本号", en: "Confirmed Version") }
+        static var dslValid: String { zh("DSL 校验通过", en: "DSL Valid") }
+        static var dslInvalid: String { zh("DSL 校验失败", en: "DSL Invalid") }
+        static var findings: String { zh("发现", en: "Findings") }
+        static var suggestions: String { zh("优化建议", en: "Suggestions") }
+        static var strategyVersion: String { zh("策略版本", en: "Strategy Version") }
+        static var noMetricsData: String { zh("暂无指标数据", en: "No metrics data") }
+        static var dataUnavailable: String { zh("数据源不可用", en: "Data source unavailable") }
+   }
 }

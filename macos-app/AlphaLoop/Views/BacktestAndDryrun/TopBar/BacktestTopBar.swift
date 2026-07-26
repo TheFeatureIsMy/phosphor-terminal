@@ -26,7 +26,7 @@ struct BacktestTopBar: View {
                 .padding(.horizontal, PulseSpacing.md)
                 .padding(.vertical, 6)
                 .background(PulseColors.accent)
-                .foregroundStyle(.white)
+                .foregroundStyle(PulseColors.onAccent)
                 .clipShape(RoundedRectangle(cornerRadius: PulseRadii.button))
             }
             .buttonStyle(.plain)

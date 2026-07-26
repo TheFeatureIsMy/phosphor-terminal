@@ -61,11 +61,11 @@ struct AvailableActionsRow: View {
             .padding(.horizontal, 14)
             .padding(.vertical, 6)
             .background(
-                RoundedRectangle(cornerRadius: PulseRadii.sm)
+                RoundedRectangle(cornerRadius: PulseRadii.button)
                     .fill(style.color.opacity(0.06))
             )
             .overlay(
-                RoundedRectangle(cornerRadius: PulseRadii.sm)
+                RoundedRectangle(cornerRadius: PulseRadii.button)
                     .stroke(style.color.opacity(0.25), lineWidth: 1)
             )
         }

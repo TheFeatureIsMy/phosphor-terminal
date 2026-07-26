@@ -16,7 +16,10 @@ struct DarkTextFieldModifier: ViewModifier {
             .textFieldStyle(.plain)
             .padding(.horizontal, PulseSpacing.sm)
             .padding(.vertical, PulseSpacing.xs)
-            .glassEffect(.regular, in: .rect(cornerRadius: PulseRadii.sm))
+            .background(
+                RoundedRectangle(cornerRadius: PulseRadii.sm)
+                    .fill(colors.surface)
+            )
             .overlay(
                 RoundedRectangle(cornerRadius: PulseRadii.sm)
                     .stroke(
@@ -43,7 +46,10 @@ struct DarkPickerModifier: ViewModifier {
             .foregroundStyle(colors.textPrimary)
             .padding(.horizontal, PulseSpacing.sm)
             .padding(.vertical, PulseSpacing.xxs)
-            .glassEffect(.regular, in: .rect(cornerRadius: PulseRadii.sm))
+            .background(
+                RoundedRectangle(cornerRadius: PulseRadii.sm)
+                    .fill(colors.surface)
+            )
             .overlay(
                 RoundedRectangle(cornerRadius: PulseRadii.sm)
                     .stroke(isHovering ? colors.borderHover : colors.border, lineWidth: 1)
@@ -60,7 +66,10 @@ struct DarkSegmentedPickerModifier: ViewModifier {
         content
             .font(PulseFonts.captionMedium)
             .padding(2)
-            .glassEffect(.regular, in: .rect(cornerRadius: PulseRadii.sm))
+            .background(
+                RoundedRectangle(cornerRadius: PulseRadii.sm)
+                    .fill(colors.surface)
+            )
             .overlay(
                 RoundedRectangle(cornerRadius: PulseRadii.sm)
                     .stroke(colors.border, lineWidth: 1)
@@ -80,7 +89,10 @@ struct DarkButtonModifier: ViewModifier {
             .foregroundStyle(isHovering ? colors.textPrimary : colors.textSecondary)
             .padding(.horizontal, PulseSpacing.sm)
             .padding(.vertical, PulseSpacing.xs)
-            .glassEffect(.regular, in: .rect(cornerRadius: PulseRadii.sm))
+            .background(
+                RoundedRectangle(cornerRadius: PulseRadii.sm)
+                    .fill(colors.surface)
+            )
             .overlay(
                 RoundedRectangle(cornerRadius: PulseRadii.sm)
                     .stroke(isHovering ? colors.borderHover : colors.border, lineWidth: 1)
@@ -133,7 +145,10 @@ struct PulseTextField: View {
                 .textFieldStyle(.plain)
                 .padding(.horizontal, PulseSpacing.sm)
                 .padding(.vertical, PulseSpacing.xs)
-                .glassEffect(.regular, in: .rect(cornerRadius: PulseRadii.sm))
+                .background(
+                RoundedRectangle(cornerRadius: PulseRadii.sm)
+                    .fill(colors.surface)
+            )
                 .overlay(
                     RoundedRectangle(cornerRadius: PulseRadii.sm)
                         .stroke(
@@ -170,7 +185,10 @@ struct PulseSecureField: View {
                 .textFieldStyle(.plain)
                 .padding(.horizontal, PulseSpacing.sm)
                 .padding(.vertical, PulseSpacing.xs)
-                .glassEffect(.regular, in: .rect(cornerRadius: PulseRadii.sm))
+                .background(
+                RoundedRectangle(cornerRadius: PulseRadii.sm)
+                    .fill(colors.surface)
+            )
                 .overlay(
                     RoundedRectangle(cornerRadius: PulseRadii.sm)
                         .stroke(
