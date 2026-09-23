@@ -20,9 +20,20 @@ class StrategyRunView(BaseModel):
     created_at: datetime
 
 
+class RunExecutionSummary(BaseModel):
+    """Aggregated execution facts for a run (orders / positions / activity)."""
+
+    orders_total: int = 0
+    orders_open: int = 0
+    orders_pending: int = 0
+    positions_open: int = 0
+    last_ledger_event_at: datetime | None = None
+
+
 class StrategyRunDetail(StrategyRunView):
     config_snapshot: dict[str, Any] | None = None
     result_summary: dict[str, Any] | None = None
+    execution: RunExecutionSummary = RunExecutionSummary()
 
 
 class FreqtradeRunView(BaseModel):

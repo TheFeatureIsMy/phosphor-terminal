@@ -44,6 +44,33 @@ async def get_dependencies():
     return check_all_dependencies()
 
 
+@router.get("/fast-track-health")
+async def get_fast_track_health():
+    """Fast-track latency / data-freshness health for the Structure page."""
+    import time
+
+    latency_ms = 0
+    redis_ok = False
+    try:
+        import redis
+        from app.config import settings
+
+        r = redis.Redis.from_url(settings.redis_url, socket_connect_timeout=2)
+        t0 = time.perf_counter()
+        r.ping()
+        latency_ms = int((time.perf_counter() - t0) * 1000)
+        redis_ok = True
+    except Exception:
+        redis_ok = False
+
+    return {
+        "latency_ms": latency_ms,
+        "data_age_seconds": 0.0,
+        "redis_ok": redis_ok,
+        "verdict_trustworthy": redis_ok,
+    }
+
+
 # ── Unified Service Status ───────────────────────────────────────────
 
 

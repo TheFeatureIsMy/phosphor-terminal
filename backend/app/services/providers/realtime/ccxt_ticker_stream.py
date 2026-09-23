@@ -49,6 +49,7 @@ async def run_binance_ticker_stream(symbols: list[str] | None = None) -> None:
                         "last": ticker.get("last"),
                         "bid": ticker.get("bid"),
                         "ask": ticker.get("ask"),
+                        "change_pct": ticker.get("percentage"),
                         "volume": ticker.get("baseVolume"),
                         "ts": ticker.get("timestamp"),
                     })

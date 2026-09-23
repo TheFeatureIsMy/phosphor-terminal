@@ -106,18 +106,3 @@ def create_stress_test(body: PortfolioStressTestCreate, db: Session = Depends(ge
 @router.get("/portfolio/stress-tests", response_model=list[PortfolioStressTestResponse])
 def list_stress_tests(db: Session = Depends(get_db)):
     return db.query(PortfolioStressTest).order_by(PortfolioStressTest.created_at.desc()).limit(50).all()
-
-
-# --- Emergency Stop / Resume endpoints (deprecated) ---
-
-from fastapi import HTTPException
-
-
-@router.post("/risk/emergency-stop")
-async def emergency_stop_deprecated():
-    raise HTTPException(status_code=410, detail="deprecated, use POST /api/v2/emergency/stop")
-
-
-@router.post("/risk/emergency-resume")
-async def emergency_resume_deprecated():
-    raise HTTPException(status_code=410, detail="deprecated, use POST /api/v2/emergency/resume")

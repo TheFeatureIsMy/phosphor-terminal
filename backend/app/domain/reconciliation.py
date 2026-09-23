@@ -50,3 +50,22 @@ class FreqtradeConnectionState(UUIDMixin, Base):
     __table_args__ = (
         Index("idx_freqtrade_conn_state_run", "freqtrade_run_id"),
     )
+
+
+class StateLease(UUIDMixin, Base):
+    """State lease — mutual-exclusion lock over a stateful resource (PRD §7.3).
+
+    A lease grants its owner exclusive authority to mutate the leased
+    resource (e.g. a strategy run under reconciliation) until it expires
+    or is released. Reconciliation runs must hold a lease while executing.
+    """
+    __tablename__ = "state_leases"
+
+    resource_key: Mapped[str] = mapped_column(String(256), nullable=False, unique=True, index=True)
+    owner: Mapped[str] = mapped_column(String(128), nullable=False)
+    purpose: Mapped[str | None] = mapped_column(String(64))
+    acquired_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(),
+    )
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    released: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")

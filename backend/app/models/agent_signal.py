@@ -18,6 +18,18 @@ class AgentProfile(Base):
     status = Column(String, nullable=False, default="active")
     description = Column(Text, nullable=True)
     last_heartbeat_at = Column(DateTime, nullable=True)
+
+    # ---- 沙箱运行时配置(Agent 平台一期) ----
+    runtime_type = Column(String, nullable=False, default="native")  # native | qoder | claude-code
+    model = Column(String, nullable=True)                            # 运行时使用模型,空=运行时默认
+    cwd = Column(String, nullable=True)                              # 沙箱工作目录
+    permission_mode = Column(String, nullable=False, default="readonly")  # readonly | approval | auto
+    allowed_tools = Column(JSON, default=list)                       # 工具白名单,空=运行时默认
+    max_turns = Column(Integer, nullable=False, default=20)
+    trigger_type = Column(String, nullable=False, default="manual")  # manual | schedule | event
+    output_target = Column(String, nullable=False, default="inbox")  # inbox | signals | growth
+    system_prompt = Column(Text, nullable=True)                      # 角色/职责注入
+
     created_at = Column(DateTime, default=_utcnow)
     updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 

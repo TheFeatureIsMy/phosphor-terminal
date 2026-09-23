@@ -54,6 +54,23 @@ class VolatilityLockService:
             }, ttl=10)
         return state
 
+    async def force_lock(self, symbol: str, reason: str = "manual_force_lock") -> VolatilityLockState:
+        """Manually force a volatility lock without ATR evaluation."""
+        state = VolatilityLockState(
+            symbol=symbol,
+            locked=True,
+            lock_type="manual_force_lock",
+            reason_codes=[reason],
+        )
+        if self._store:
+            await self._store.write_volatility_lock(symbol, {
+                "symbol": state.symbol, "timeframe": state.timeframe,
+                "locked": True, "lock_type": state.lock_type,
+                "trigger_value": 0, "threshold_value": 0,
+                "reason_codes": state.reason_codes,
+            }, ttl=300)
+        return state
+
     async def release(self, symbol: str) -> None:
         """Release volatility lock for a symbol."""
         if self._store:

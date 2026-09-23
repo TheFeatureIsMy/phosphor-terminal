@@ -82,3 +82,23 @@ async def get_market_regime(symbol: str = Query(default="BTC/USDT"), timeframe: 
             "structure_score": 0,
             "premium_discount": None,
         }
+
+
+@router.get("/mtf-guard/{strategy_id}/{symbol:path}")
+async def get_mtf_guard(strategy_id: str, symbol: str):
+    """MTF guard current state for a strategy/symbol (graceful default when engine unavailable)."""
+    try:
+        from app.services.structure.engine import StructureEngine
+        engine = StructureEngine()
+        if hasattr(engine, "get_mtf_guard"):
+            return await engine.get_mtf_guard(strategy_id=strategy_id, symbol=symbol)
+    except Exception as e:
+        logger.exception("[mtf-guard] StructureEngine unavailable: %s", e)
+    return {
+        "strategy_id": strategy_id,
+        "symbol": symbol,
+        "guard_state": "inactive",
+        "action": "ignore",
+        "reason_codes": [],
+        "violation": {},
+    }

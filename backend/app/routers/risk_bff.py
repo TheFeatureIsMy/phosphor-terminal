@@ -1,8 +1,11 @@
 """Risk BFF — Overview + Stop Protection + Circuit Breakers"""
+import json
 import logging
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel
+from pydantic import BaseModel as BaseModel
 from fastapi.responses import JSONResponse
 
 from app.schemas.risk_bff import (
@@ -18,6 +21,7 @@ from app.database import get_db
 
 from app.services.account_risk_firewall import AccountRiskFirewall
 from app.services.risk_rules_service import RiskRulesService
+from app.utils import hash_string
 
 router = APIRouter(prefix="/api/risk", tags=["risk-bff"])
 logger = logging.getLogger(__name__)
@@ -179,8 +183,191 @@ async def get_stop_protection():
 
 
 @router.get("/volatility-locks")
-async def get_volatility_locks():
-    return {"locks": [], "state": "healthy", "reason_codes": []}
+async def get_volatility_locks(symbol: str | None = Query(None)):
+    try:
+        from app.services.volatility_lock_service import VolatilityLockService
+        from app.services.runtime_redis_store import RuntimeRedisStore
+        from app.config import settings
+
+        store = RuntimeRedisStore(redis_url=settings.redis_url)
+        svc = VolatilityLockService(redis_store=store)
+        locks = await svc.list_locks(symbol)
+        active = [lk for lk in locks if lk.locked]
+        return {
+            "state": "locked" if active else "healthy",
+            "reason_codes": [c for lk in active for c in lk.reason_codes],
+            "locks": [
+                {
+                    "symbol": lk.symbol, "timeframe": lk.timeframe, "locked": lk.locked,
+                    "lock_type": lk.lock_type, "trigger_value": lk.trigger_value,
+                    "threshold_value": lk.threshold_value, "reason_codes": lk.reason_codes,
+                }
+                for lk in locks
+            ],
+        }
+    except Exception as e:
+        logger.exception("[volatility-locks] failed: %s", e)
+        return {"state": "data_source_unavailable", "reason_codes": [type(e).__name__], "locks": []}
+
+
+@router.get("/exchange-protective-stops")
+async def get_exchange_protective_stops():
+    """Exchange-side protective stops aggregated from Freqtrade open trades."""
+    try:
+        from app.services.freqtrade_client import FreqtradeClient
+        from app.config import settings
+
+        ft = FreqtradeClient(base_url=settings.freqtrade_url)
+        status_data = await ft.get_status()
+        if not FreqtradeClient.is_success(status_data):
+            return {
+                "state": "data_source_unavailable",
+                "reason_codes": ["freqtrade_unavailable"],
+                "available_actions": [],
+                "stops": [],
+            }
+        trades = status_data if isinstance(status_data, list) else status_data.get("result", [])
+        stops = []
+        for trade in trades:
+            if not isinstance(trade, dict):
+                continue
+            stop_abs = trade.get("stop_loss_abs") or trade.get("stop_loss")
+            stops.append({
+                "symbol": trade.get("pair", ""),
+                "exchange_protective_stop": stop_abs,
+                "current_rate": trade.get("current_rate"),
+                "reason_codes": [] if stop_abs is not None else ["stop_not_available"],
+            })
+        return {
+            "state": "healthy",
+            "reason_codes": [],
+            "available_actions": [],
+            "stops": stops,
+        }
+    except Exception as e:
+        logger.exception("[exchange-protective-stops] failed: %s", e)
+        return {
+            "state": "data_source_unavailable",
+            "reason_codes": ["data_source_unavailable", type(e).__name__],
+            "available_actions": [],
+            "stops": [],
+        }
+
+
+async def _resolve_position_symbol(position_id: str) -> tuple[str | None, dict | None]:
+    """Resolve a position's symbol via StopProtectionService; returns (symbol, error_body)."""
+    from app.services.stop_protection_service import StopProtectionService
+    from app.services.runtime_redis_store import RuntimeRedisStore
+    from app.config import settings
+
+    store = RuntimeRedisStore(redis_url=settings.redis_url)
+    svc = StopProtectionService(redis_store=store)
+    pos = await svc.refresh_position(position_id)
+    if pos is None:
+        return None, {
+            "state": "data_source_unavailable",
+            "reason_codes": ["position_not_found"],
+            "available_actions": [],
+        }
+    return pos.symbol, None
+
+
+@router.post("/stop-protection/{position_id}/refresh")
+async def refresh_stop_protection(position_id: str):
+    """Refresh stop levels for a single position."""
+    try:
+        from app.services.stop_protection_service import StopProtectionService
+        from app.services.runtime_redis_store import RuntimeRedisStore
+        from app.config import settings
+
+        store = RuntimeRedisStore(redis_url=settings.redis_url)
+        svc = StopProtectionService(redis_store=store)
+        pos = await svc.refresh_position(position_id)
+        if pos is None:
+            return JSONResponse(
+                content={"state": "data_source_unavailable",
+                         "reason_codes": ["position_not_found"], "available_actions": []},
+                status_code=404,
+            )
+        return {
+            "state": "healthy",
+            "reason_codes": pos.reason_codes,
+            "available_actions": [
+                {"type": "force_lock", "enabled": True, "label": "强制波动率锁定"},
+                {"type": "release_lock", "enabled": True, "label": "解除锁定"},
+            ],
+            "position": {
+                "position_id": pos.position_id, "symbol": pos.symbol, "side": pos.side,
+                "entry_price": pos.entry_price, "current_price": pos.current_price,
+                "stops": {
+                    "raw_structure_stop": pos.stops.raw_structure_stop,
+                    "last_known_good_stop": pos.stops.last_known_good_stop,
+                    "secure_runtime_stop": pos.stops.secure_runtime_stop,
+                    "exchange_protective_stop": pos.stops.exchange_protective_stop,
+                    "volatility_locked": pos.stops.volatility_locked,
+                },
+                "stop_update_allowed": pos.stop_update_allowed,
+            },
+        }
+    except Exception as e:
+        logger.exception("[stop-protection/refresh] failed: %s", e)
+        return {"state": "data_source_unavailable",
+                "reason_codes": ["data_source_unavailable", type(e).__name__],
+                "available_actions": []}
+
+
+@router.post("/stop-protection/{position_id}/force-lock")
+async def force_lock_position(position_id: str):
+    """Manually force a volatility lock on the position's symbol."""
+    try:
+        from app.services.volatility_lock_service import VolatilityLockService
+        from app.services.runtime_redis_store import RuntimeRedisStore
+        from app.config import settings
+
+        symbol, err = await _resolve_position_symbol(position_id)
+        if err is not None:
+            return JSONResponse(content=err, status_code=404)
+
+        store = RuntimeRedisStore(redis_url=settings.redis_url)
+        svc = VolatilityLockService(redis_store=store)
+        lock = await svc.force_lock(symbol, reason="manual_force_lock")
+        return {
+            "state": "locked",
+            "reason_codes": lock.reason_codes,
+            "available_actions": [{"type": "release_lock", "enabled": True, "label": "解除锁定"}],
+            "symbol": symbol,
+            "position_id": position_id,
+        }
+    except Exception as e:
+        logger.exception("[stop-protection/force-lock] failed: %s", e)
+        return {"state": "failed", "reason_codes": [type(e).__name__], "available_actions": []}
+
+
+@router.post("/stop-protection/{position_id}/release-lock")
+async def release_lock_position(position_id: str):
+    """Release the volatility lock on the position's symbol."""
+    try:
+        from app.services.volatility_lock_service import VolatilityLockService
+        from app.services.runtime_redis_store import RuntimeRedisStore
+        from app.config import settings
+
+        symbol, err = await _resolve_position_symbol(position_id)
+        if err is not None:
+            return JSONResponse(content=err, status_code=404)
+
+        store = RuntimeRedisStore(redis_url=settings.redis_url)
+        svc = VolatilityLockService(redis_store=store)
+        await svc.release(symbol)
+        return {
+            "state": "healthy",
+            "reason_codes": [],
+            "available_actions": [{"type": "force_lock", "enabled": True, "label": "强制波动率锁定"}],
+            "symbol": symbol,
+            "position_id": position_id,
+        }
+    except Exception as e:
+        logger.exception("[stop-protection/release-lock] failed: %s", e)
+        return {"state": "failed", "reason_codes": [type(e).__name__], "available_actions": []}
 
 
 @router.get("/circuit-breakers", response_model=CircuitBreakersResponse)
@@ -234,12 +421,6 @@ async def get_circuit_breakers(db: Session = Depends(get_db)):
             records=[],
             total_count=0,
         ).model_dump()
-
-
-@router.get("/emergency-stop", include_in_schema=False)
-@router.post("/emergency-stop", include_in_schema=False)
-async def emergency_stop_deprecated():
-    raise HTTPException(status_code=410, detail="deprecated, use POST /api/v2/emergency/stop")
 
 
 @router.post("/block-new-entries")
@@ -297,3 +478,83 @@ async def resolve_circuit_breaker(event_id: str, db: Session = Depends(get_db)):
         return ResolveResponse(status="already_resolved", resolved_event_id=event_id, reason_codes=[])
     repo.mark_resolved(event_id)
     return ResolveResponse(status="resolved", resolved_event_id=event_id, reason_codes=[])
+
+
+# --- Risk Rules Update ---
+
+class RiskRulesUpdateRequest(BaseModel):
+    daily_loss_limit: float | None = None
+    weekly_loss_limit: float | None = None
+    consecutive_losses_limit: int | None = None
+    max_drawdown: float | None = None
+    correlation_threshold: float | None = None
+    kill_switch_active: bool | None = None
+
+
+@router.put("/rules", response_model=RiskRulesResponse)
+def update_risk_rules(body: RiskRulesUpdateRequest, db: Session = Depends(get_db)):
+    """Update the active risk policy's rule thresholds."""
+    from app.domain.risk import RiskPolicy, RiskPolicyVersion
+    from datetime import datetime, timezone
+
+    # Find or create active policy
+    active_version = (
+        db.query(RiskPolicyVersion)
+        .filter(RiskPolicyVersion.status == "active")
+        .order_by(RiskPolicyVersion.created_at.desc())
+        .first()
+    )
+
+    if active_version is None:
+        # Create a default policy + version
+        policy = RiskPolicy(
+            name="default_risk_policy",
+            policy_type="global",
+            status="active",
+        )
+        db.add(policy)
+        db.flush()
+
+        policy_json = {}
+        active_version = RiskPolicyVersion(
+            risk_policy_id=policy.id,
+            version_no=1,
+            status="active",
+            policy_json=policy_json,
+            policy_hash=hash_string(json.dumps(policy_json, sort_keys=True)),
+            created_by="web",
+        )
+        db.add(active_version)
+        db.flush()
+
+    # Update fields
+    pj = dict(active_version.policy_json or {})
+    if body.daily_loss_limit is not None:
+        pj["max_daily_loss_pct"] = body.daily_loss_limit / 100.0
+    if body.weekly_loss_limit is not None:
+        pj["max_weekly_loss_pct"] = body.weekly_loss_limit / 100.0
+    if body.consecutive_losses_limit is not None:
+        pj["max_consecutive_losses"] = body.consecutive_losses_limit
+    if body.max_drawdown is not None:
+        pj["max_drawdown_pct"] = body.max_drawdown / 100.0
+    if body.correlation_threshold is not None:
+        pj["correlation_threshold"] = body.correlation_threshold
+    if body.kill_switch_active is not None:
+        pj["kill_switch_active"] = body.kill_switch_active
+
+    active_version.policy_json = pj
+    db.commit()
+
+    # Return updated rules
+    svc = RiskRulesService()
+    rules = svc.get_effective(db)
+    return RiskRulesResponse(
+        state="healthy",
+        reason_codes=[],
+        daily_loss_limit=rules.daily_loss_limit,
+        weekly_loss_limit=rules.weekly_loss_limit,
+        consecutive_losses_limit=rules.consecutive_losses_limit,
+        max_drawdown=rules.max_drawdown,
+        correlation_threshold=rules.correlation_threshold,
+        kill_switch={"active": rules.kill_switch_active, "threshold": rules.kill_switch_threshold},
+    )

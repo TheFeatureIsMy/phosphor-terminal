@@ -114,14 +114,22 @@ class LiveReadinessService:
         selected_exchange: str = "binance",
     ) -> ReadinessResult:
         if self._store:
-            cached = await self._store.read_live_readiness(account_id)
+            try:
+                cached = await self._store.read_live_readiness(account_id)
+            except Exception:
+                logger.warning("live-readiness cache read failed, recomputing", exc_info=True)
+                cached = None
             if cached and cached.get("selected_mode") == selected_mode:
-                # Still respect explicit selections
-                cached["selected_mode"] = selected_mode
-                cached["selected_strategy_id"] = selected_strategy_id
-                cached["selected_capital_pool_id"] = selected_capital_pool_id
-                cached["selected_exchange"] = selected_exchange
-                return ReadinessResult(**cached)
+                try:
+                    # Still respect explicit selections
+                    cached["selected_mode"] = selected_mode
+                    cached["selected_strategy_id"] = selected_strategy_id
+                    cached["selected_capital_pool_id"] = selected_capital_pool_id
+                    cached["selected_exchange"] = selected_exchange
+                    return self._deserialize(cached)
+                except Exception:
+                    # Corrupt / stale-schema cache must not fail the whole eval.
+                    logger.warning("live-readiness cache corrupt, recomputing", exc_info=True)
 
         result = ReadinessResult()
         result.selected_mode = selected_mode
@@ -274,7 +282,11 @@ class LiveReadinessService:
         result.reason_codes = [b["code"] for b in blockers] + [w["code"] for w in warns]
 
         if self._store:
-            await self._store.write_live_readiness(account_id, self._serialize(result), ttl=30)
+            try:
+                await self._store.write_live_readiness(account_id, self._serialize(result), ttl=30)
+            except Exception:
+                # Cache persistence is best-effort; never fail the response.
+                logger.warning("live-readiness cache write failed", exc_info=True)
         return result
 
     # === Per-strategy readiness (for strategy workbench ⌘6 panel) ===
@@ -343,7 +355,11 @@ class LiveReadinessService:
 
         # ── 5 system gates ────────────────────────────────────────────
         if system_gates is None:
-            system_gates = self._default_healthy_system_gates()
+            try:
+                system_gates = self._probe_system_gates(db)
+            except Exception:
+                logger.exception("system gate probe failed, falling back to defaults")
+                system_gates = self._default_healthy_system_gates()
 
         # ── Grand status ──────────────────────────────────────────────
         has_live_small_run = self._check_has_live_small_run(latest_version, db, StrategyRun)
@@ -729,6 +745,66 @@ class LiveReadinessService:
             ReadinessGate(key="emergency_stop", status="healthy", value="available", threshold="available"),
         ]
 
+    @classmethod
+    def _probe_system_gates(cls, db: "Session") -> list["ReadinessGate"]:
+        """Derive the 5 system gates from real provider health rows.
+
+        mode / emergency_stop are capability selectors (always available);
+        exchange / data_source / notification derive from provider_configs.
+        """
+        from app.models.provider_config import ProviderConfig
+        from app.schemas.per_strategy_readiness import ReadinessGate
+        from sqlalchemy import select
+
+        def rows_for(category: str) -> list:
+            return list(db.scalars(
+                select(ProviderConfig).where(
+                    ProviderConfig.category == category,
+                    ProviderConfig.enabled.is_(True),
+                )
+            ).all())
+
+        def provider_gate(key: str, label: str, category: str, optional: bool) -> "ReadinessGate":
+            try:
+                rows = rows_for(category)
+            except Exception:
+                rows = []
+            if not rows:
+                if optional:
+                    return ReadinessGate(
+                        key=key, status="healthy", value="unconfigured (optional)",
+                        threshold="optional", reason_codes=[],
+                    )
+                return ReadinessGate(
+                    key=key, status="warning", value="unconfigured",
+                    threshold="configured", reason_codes=[f"{category}_unconfigured"],
+                )
+            if any(r.status == "active" for r in rows):
+                return ReadinessGate(key=key, status="healthy", value="active", threshold="active")
+            if optional:
+                return ReadinessGate(
+                    key=key, status="warning", value="degraded",
+                    threshold="active", reason_codes=[f"{category}_degraded"],
+                )
+            return ReadinessGate(
+                key=key, status="failed", value="error",
+                threshold="active", reason_codes=[f"{category}_unavailable"],
+            )
+
+        return [
+            ReadinessGate(
+                key="mode", status="healthy", value="live_small",
+                threshold="paper|live_small|live_full",
+            ),
+            provider_gate("exchange", "交易所连接", "cex", optional=False),
+            provider_gate("data_source", "数据源健康", "market_data", optional=False),
+            provider_gate("notification", "通知可用", "notification", optional=True),
+            ReadinessGate(
+                key="emergency_stop", status="healthy", value="available",
+                threshold="available",
+            ),
+        ]
+
     # === Grand status derivation ===
     @staticmethod
     def _derive_grand_status(checks: list[CheckResult], blockers: list[dict], selected_mode: str = "live_small") -> str:
@@ -822,23 +898,80 @@ class LiveReadinessService:
         )
 
     @staticmethod
+    def _provider_rows(category: str) -> list:
+        """Read enabled provider_configs rows for a category (real health rows)."""
+        from sqlalchemy import select
+
+        from app.database import SessionLocal
+        from app.models.provider_config import ProviderConfig
+
+        db = SessionLocal()
+        try:
+            return list(db.scalars(
+                select(ProviderConfig).where(
+                    ProviderConfig.category == category,
+                    ProviderConfig.enabled.is_(True),
+                )
+            ).all())
+        finally:
+            db.close()
+
+    @staticmethod
     def _check_exchange(exchange: str) -> CheckResult:
         if not exchange:
             return CheckResult(
                 key="exchange", label="交易所连接", status="failed",
                 value="未选择", threshold="required", group="system",
             )
+        # Real probe: derive from persisted cex provider health rows.
+        try:
+            rows = LiveReadinessService._provider_rows("cex")
+        except Exception:
+            rows = []
+        if not rows:
+            return CheckResult(
+                key="exchange", label="交易所连接", status="warning",
+                value=f"{exchange.upper()} (未配置 CEX provider)",
+                threshold="connected", group="system",
+                detail="未配置任何 CEX provider，实盘前请配置",
+            )
+        if any(r.status == "active" for r in rows):
+            return CheckResult(
+                key="exchange", label="交易所连接", status="healthy",
+                value=exchange.upper(), threshold="connected", group="system",
+            )
         return CheckResult(
-            key="exchange", label="交易所连接", status="healthy",
-            value=exchange.upper(), threshold="connected", group="system",
+            key="exchange", label="交易所连接", status="failed",
+            value=f"{exchange.upper()} (provider 异常)",
+            threshold="connected", group="system",
+            detail="CEX provider 均不可用（error/inactive）",
         )
 
-    @staticmethod
-    def _check_data_source() -> CheckResult:
-        # Read from cache or default healthy
+    def _check_data_source(self) -> CheckResult:
+        """Real probe: market_data provider health from provider_configs."""
+        try:
+            rows = self._provider_rows("market_data")
+        except Exception:
+            return CheckResult(
+                key="data_source", label="数据源健康", status="warning",
+                value="probe_error", threshold="online", group="system",
+                detail="数据源健康探测异常",
+            )
+        if not rows:
+            return CheckResult(
+                key="data_source", label="数据源健康", status="warning",
+                value="unconfigured", threshold="online", group="system",
+                detail="未配置 market_data provider",
+            )
+        if any(r.status == "active" for r in rows):
+            return CheckResult(
+                key="data_source", label="数据源健康", status="healthy",
+                value="online", threshold="online", group="system",
+            )
         return CheckResult(
-            key="data_source", label="数据源健康", status="healthy",
-            value="online", threshold="online", group="system",
+            key="data_source", label="数据源健康", status="failed",
+            value="error", threshold="online", group="system",
+            detail="market_data provider 均不可用",
         )
 
     @staticmethod
@@ -937,6 +1070,20 @@ class LiveReadinessService:
         return CheckResult(key="risk", label="风控状态", status="healthy", value="normal", threshold="not locked")
 
     # === Serializer ===
+
+    @staticmethod
+    def _deserialize(data: dict) -> ReadinessResult:
+        """Rebuild a ReadinessResult from its cached dict form.
+
+        `_serialize` flattens `checks` into plain dicts for JSON storage; convert
+        them back into CheckResult so attribute access (`c.key`, ...) keeps working.
+        """
+        payload = dict(data)
+        payload["checks"] = [
+            c if isinstance(c, CheckResult) else CheckResult(**c)
+            for c in payload.get("checks", [])
+        ]
+        return ReadinessResult(**payload)
 
     @staticmethod
     def _serialize(result: ReadinessResult) -> dict:

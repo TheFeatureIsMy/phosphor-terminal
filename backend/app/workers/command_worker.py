@@ -15,6 +15,8 @@ from app.workers.handlers import get_handler
 
 logger = logging.getLogger(__name__)
 
+_RECONCILIATION_BYPASS_TYPES = frozenset({"emergency_stop"})
+
 
 def _utcnow() -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None)
@@ -49,6 +51,10 @@ class CommandWorker:
         cmd = self._s.scalar(stmt)
         if cmd is None:
             return None
+
+        if self._is_blocked_by_reconciliation(cmd):
+            return None
+
         cmd.status = CommandStatus.RUNNING.value
         cmd.locked_by = self._worker_id
         cmd.locked_at = now
@@ -56,6 +62,45 @@ class CommandWorker:
             cmd.started_at = now
         self._s.flush()
         return cmd
+
+    def _is_blocked_by_reconciliation(self, cmd: CommandBusCommand) -> bool:
+        """Block commands targeting a FreqtradeRun in reconciliating state.
+        emergency_stop always bypasses."""
+        if cmd.command_type in _RECONCILIATION_BYPASS_TYPES:
+            return False
+        if cmd.aggregate_id is None:
+            return False
+
+        from app.domain.execution import FreqtradeRun
+        # Check if any FreqtradeRun linked to this aggregate is reconciliating
+        ft_run = self._s.scalars(
+            select(FreqtradeRun).where(and_(
+                FreqtradeRun.strategy_run_id == cmd.aggregate_id,
+                FreqtradeRun.status == "reconciliating",
+            )).limit(1)
+        ).first()
+        if ft_run:
+            logger.info(
+                "Command %s blocked: FreqtradeRun %s is reconciliating",
+                cmd.id, ft_run.id,
+            )
+            return True
+
+        # Also check payload for explicit freqtrade_run_id
+        ft_run_id = (cmd.payload or {}).get("freqtrade_run_id")
+        if ft_run_id:
+            try:
+                ft_run = self._s.get(FreqtradeRun, uuid.UUID(str(ft_run_id)))
+                if ft_run and ft_run.status == "reconciliating":
+                    logger.info(
+                        "Command %s blocked: payload FreqtradeRun %s is reconciliating",
+                        cmd.id, ft_run_id,
+                    )
+                    return True
+            except (ValueError, TypeError):
+                pass
+
+        return False
 
     def execute_command(self, cmd: CommandBusCommand) -> None:
         if cmd.cancel_requested:

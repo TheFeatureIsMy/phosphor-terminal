@@ -56,7 +56,7 @@ class StrategyRiskPolicyBinding(UUIDMixin, Base):
     __tablename__ = "strategy_risk_policy_bindings"
 
     strategy_version_id: Mapped[uuid.UUID] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("strategy_versions.id"), nullable=False,
+        PG_UUID(as_uuid=True), ForeignKey("strategy_versions.id", ondelete="CASCADE"), nullable=False,
     )
     risk_policy_version_id: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True), ForeignKey("risk_policy_versions.id"), nullable=False,

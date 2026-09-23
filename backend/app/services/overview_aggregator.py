@@ -8,6 +8,42 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 
+def _provider_category_state(category: str) -> str:
+    """Derive a health state for a provider category from persisted health rows.
+
+    Returns ok / degraded / error / unknown / unconfigured based on the
+    provider_configs status field maintained by ProviderHealthScheduler.
+    """
+    try:
+        from sqlalchemy import select
+
+        from app.database import SessionLocal
+        from app.models.provider_config import ProviderConfig
+
+        db = SessionLocal()
+        try:
+            rows = list(db.scalars(
+                select(ProviderConfig).where(
+                    ProviderConfig.category == category,
+                    ProviderConfig.enabled.is_(True),
+                )
+            ).all())
+        finally:
+            db.close()
+
+        if not rows:
+            return "unconfigured"
+        statuses = [r.status for r in rows]
+        if any(s == "active" for s in statuses):
+            return "ok"
+        if any(s in ("rate_limited", "unknown") for s in statuses):
+            return "degraded"
+        return "error"
+    except Exception:
+        logger.exception("provider category state lookup failed for %s", category)
+        return "unknown"
+
+
 class OverviewAggregatorService:
     """Aggregates data from multiple sub-services into a single dashboard response.
 
@@ -33,6 +69,9 @@ class OverviewAggregatorService:
         state, reason_codes = self._derive_state(risk, system)
         available_actions = self._derive_actions(state)
 
+        recent_decisions = await self._fetch_recent_decisions()
+        alerts = await self._fetch_alerts()
+
         return {
             "state": state,
             "reason_codes": reason_codes,
@@ -41,8 +80,8 @@ class OverviewAggregatorService:
             "runtime": runtime,
             "risk": risk,
             "system": system,
-            "recent_decisions": [],
-            "alerts": [],
+            "recent_decisions": recent_decisions,
+            "alerts": alerts,
         }
 
     # ── Sub-fetchers ──────────────────────────────────────────────────
@@ -72,25 +111,48 @@ class OverviewAggregatorService:
         }
 
     async def _fetch_runtime(self) -> dict:
-        from app.config import settings
-        from app.services.runtime_redis_store import RuntimeRedisStore
+        from app.database import SessionLocal
+        from app.domain.execution import StrategyRun, FreqtradeRun
+        from app.domain.order import ExecutionOrder
+        from sqlalchemy import select, func
 
-        store = RuntimeRedisStore(redis_url=settings.redis_url)
-        # Try to read strategy count from the store
-        count = 0
+        db = SessionLocal()
         try:
-            raw = await store._get("pd:runtime:strategy_count")
-            if raw and isinstance(raw, dict):
-                count = int(raw.get("count", 0))
-        except Exception:
-            pass
+            running_strategies = db.scalar(
+                select(func.count()).select_from(StrategyRun).where(
+                    StrategyRun.status == "running"
+                )
+            ) or 0
 
-        return {
-            "running_strategies": count,
-            "open_positions": 0,
-            "pending_orders": 0,
-            "reconciling_count": 0,
-        }
+            open_positions = db.scalar(
+                select(func.count()).select_from(ExecutionOrder).where(
+                    ExecutionOrder.status.in_(["open", "partially_filled"])
+                )
+            ) or 0
+
+            pending_orders = db.scalar(
+                select(func.count()).select_from(ExecutionOrder).where(
+                    ExecutionOrder.status == "pending"
+                )
+            ) or 0
+
+            reconciling_count = db.scalar(
+                select(func.count()).select_from(FreqtradeRun).where(
+                    FreqtradeRun.status == "reconciliating"
+                )
+            ) or 0
+
+            return {
+                "running_strategies": running_strategies,
+                "open_positions": open_positions,
+                "pending_orders": pending_orders,
+                "reconciling_count": reconciling_count,
+            }
+        except Exception:
+            logger.exception("Failed to fetch runtime from DB")
+            return self._default_runtime()
+        finally:
+            db.close()
 
     async def _fetch_risk(self) -> dict:
         from app.config import settings
@@ -125,17 +187,88 @@ class OverviewAggregatorService:
         redis_ok = await store.ping()
 
         ft_state = "connected" if ft_connected else "disconnected"
-        redis_rtt = 0 if redis_ok else -1
+
+        # Real latency probes (None → -1 means unavailable, never fake zeros)
+        redis_rtt = await store.ping_rtt_ms()
+        fast_track = await store.probe_fast_track_latency_ms()
+
+        reason_codes: list[str] = []
+        if store.is_degraded:
+            reason_codes.append("redis_degraded_in_memory")
+        if fast_track is None:
+            reason_codes.append("fast_track_unavailable")
 
         return {
             "live_readiness_state": "live_ready" if (ft_connected and redis_ok) else "NOT_READY",
-            "fast_track_latency_ms": 0,
-            "redis_rtt_ms": redis_rtt,
+            "fast_track_latency_ms": fast_track if fast_track is not None else -1,
+            "redis_rtt_ms": redis_rtt if redis_rtt is not None else -1,
             "freqtrade_state": ft_state,
-            "exchange_state": "unknown",
+            "exchange_state": _provider_category_state("cex"),
+            "reason_codes": reason_codes,
         }
 
-    # ── State derivation ──────────────────────────────────────────────
+    async def _fetch_recent_decisions(self) -> list[dict]:
+        """Fetch last 10 risk decisions from Ledger."""
+        from app.database import SessionLocal
+        from app.domain.ledger import ExecutionLedgerEvent
+        from sqlalchemy import select
+
+        db = SessionLocal()
+        try:
+            events = list(db.scalars(
+                select(ExecutionLedgerEvent)
+                .where(ExecutionLedgerEvent.event_type == "PULSEDESK_RISK_DECISION_CREATED")
+                .order_by(ExecutionLedgerEvent.event_time.desc())
+                .limit(10)
+            ).all())
+            return [
+                {
+                    "id": str(e.id),
+                    "timestamp": e.event_time.isoformat() if e.event_time else "",
+                    "decision": (e.normalized_payload or {}).get("decision", ""),
+                    "symbol": (e.normalized_payload or {}).get("symbol", ""),
+                }
+                for e in events
+            ]
+        except Exception:
+            return []
+        finally:
+            db.close()
+
+    async def _fetch_alerts(self) -> list[dict]:
+        """Fetch last 10 alert-level Ledger events."""
+        from app.database import SessionLocal
+        from app.domain.ledger import ExecutionLedgerEvent
+        from sqlalchemy import select
+
+        alert_types = [
+            "CIRCUIT_BREAKER_TRIPPED",
+            "FREQTRADE_RUN_DEGRADED",
+            "PULSEDESK_COMMAND_FAILED",
+        ]
+        db = SessionLocal()
+        try:
+            events = list(db.scalars(
+                select(ExecutionLedgerEvent)
+                .where(ExecutionLedgerEvent.event_type.in_(alert_types))
+                .order_by(ExecutionLedgerEvent.event_time.desc())
+                .limit(10)
+            ).all())
+            return [
+                {
+                    "id": str(e.id),
+                    "timestamp": e.event_time.isoformat() if e.event_time else "",
+                    "type": e.event_type,
+                    "message": ", ".join((e.normalized_payload or {}).get("reasons", [e.event_type])),
+                }
+                for e in events
+            ]
+        except Exception:
+            return []
+        finally:
+            db.close()
+
+        # ── State derivation ──────────────────────────────────────────────
 
     @staticmethod
     def _derive_state(risk: dict, system: dict) -> tuple[str, list[str]]:
@@ -228,8 +361,9 @@ class OverviewAggregatorService:
     def _default_system() -> dict:
         return {
             "live_readiness_state": "NOT_READY",
-            "fast_track_latency_ms": 0,
-            "redis_rtt_ms": 0,
+            "fast_track_latency_ms": -1,
+            "redis_rtt_ms": -1,
             "freqtrade_state": "unknown",
             "exchange_state": "unknown",
+            "reason_codes": ["system_probe_failed"],
         }

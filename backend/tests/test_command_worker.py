@@ -219,3 +219,91 @@ class TestRetryWithDelay:
         # Try acquire again — should be blocked by next_retry_at
         acquired2 = worker.acquire_next()
         assert acquired2 is None
+
+
+
+
+class TestReconciliationBlocking:
+    """Commands targeting reconciliating FreqtradeRuns should be blocked."""
+
+    def setup_method(self):
+        _registry.clear()
+        register_handler("deploy_rules", SuccessHandler)
+        register_handler("emergency_stop", SuccessHandler)
+
+    def _make_ft_run(self, session, status="reconciliating"):
+        from app.domain.execution import StrategyRun, FreqtradeRun
+
+        run = StrategyRun(
+            strategy_version_id=uuid.uuid4(),
+            mode="dry_run",
+            status="running",
+        )
+        session.add(run)
+        session.flush()
+
+        ft_run = FreqtradeRun(
+            strategy_run_id=run.id,
+            config_path="/tmp/config.json",
+            rules_path="/tmp/rules.json",
+            rule_package_hash="abc123",
+            status=status,
+        )
+        session.add(ft_run)
+        session.flush()
+        return run, ft_run
+
+    def test_blocked_when_freqtrade_run_reconciliating(self, session: Session):
+        run, ft_run = self._make_ft_run(session, status="reconciliating")
+
+        _enqueue_cmd(
+            session,
+            command_type="deploy_rules",
+            aggregate_type="strategy_run",
+            aggregate_id=run.id,
+        )
+
+        worker = CommandWorker(session)
+        acquired = worker.acquire_next()
+        assert acquired is None
+
+    def test_emergency_stop_bypasses_reconciliation(self, session: Session):
+        run, ft_run = self._make_ft_run(session, status="reconciliating")
+
+        _enqueue_cmd(
+            session,
+            command_type="emergency_stop",
+            aggregate_type="strategy_run",
+            aggregate_id=run.id,
+        )
+
+        worker = CommandWorker(session)
+        acquired = worker.acquire_next()
+        assert acquired is not None
+        assert acquired.command_type == "emergency_stop"
+
+    def test_not_blocked_when_no_reconciliation(self, session: Session):
+        run, ft_run = self._make_ft_run(session, status="running")
+
+        _enqueue_cmd(
+            session,
+            command_type="deploy_rules",
+            aggregate_type="strategy_run",
+            aggregate_id=run.id,
+        )
+
+        worker = CommandWorker(session)
+        acquired = worker.acquire_next()
+        assert acquired is not None
+
+    def test_not_blocked_when_no_aggregate_id(self, session: Session):
+        _enqueue_cmd(
+            session,
+            command_type="deploy_rules",
+            aggregate_type="test",
+            aggregate_id=None,
+        )
+
+        worker = CommandWorker(session)
+        acquired = worker.acquire_next()
+        assert acquired is not None

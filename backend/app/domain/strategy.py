@@ -25,7 +25,7 @@ class StrategyVersion(UUIDMixin, Base):
     __tablename__ = "strategy_versions"
 
     strategy_id: Mapped[uuid.UUID] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("strategies_v2.id"), nullable=False,
+        PG_UUID(as_uuid=True), ForeignKey("strategies_v2.id", ondelete="CASCADE"), nullable=False,
     )
     version_no: Mapped[int] = mapped_column(Integer, nullable=False)
     status: Mapped[str] = mapped_column(String(24), nullable=False, server_default="draft")
@@ -45,7 +45,7 @@ class StrategyRuleDSLVersion(UUIDMixin, Base):
     __tablename__ = "strategy_rule_dsl_versions"
 
     strategy_version_id: Mapped[uuid.UUID] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("strategy_versions.id"), nullable=False,
+        PG_UUID(as_uuid=True), ForeignKey("strategy_versions.id", ondelete="CASCADE"), nullable=False,
     )
     dsl_version: Mapped[str] = mapped_column(String(8), nullable=False)
     rule_dsl: Mapped[dict] = mapped_column(JSONB, nullable=False)
@@ -54,3 +54,21 @@ class StrategyRuleDSLVersion(UUIDMixin, Base):
     validation_result: Mapped[dict | None] = mapped_column(JSONB)
     validator_version: Mapped[str] = mapped_column(String(8), nullable=False, server_default="2.5")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class CanvasDraft(UUIDMixin, TimestampMixin, Base):
+    """Canvas editor draft — one per strategy (PRD §5.2 save-draft).
+
+    Stores the editor graph JSON plus the last compiled DSL so the canvas
+    can be reopened exactly where the user left off. Publishing promotes
+    the DSL into a StrategyVersion; the draft itself never executes.
+    """
+    __tablename__ = "canvas_drafts"
+
+    strategy_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("strategies_v2.id", ondelete="CASCADE"), nullable=False, unique=True,
+    )
+    graph: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default="{}")
+    dsl: Mapped[dict | None] = mapped_column(JSONB)
+    dsl_hash: Mapped[str | None] = mapped_column(String(128))
+    updated_by: Mapped[str] = mapped_column(String(128), nullable=False, server_default="canvas")

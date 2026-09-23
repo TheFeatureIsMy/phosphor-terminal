@@ -16,7 +16,7 @@ from app.database.base import Base, UUIDMixin
 class ResearchReport(UUIDMixin, Base):
     __tablename__ = "research_reports"
 
-    run_id: Mapped[int] = mapped_column(Integer, ForeignKey("ai_research_runs.id"), nullable=False)
+    run_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("ai_research_runs.id"), nullable=True)
     symbol: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
     market: Mapped[str] = mapped_column(String(16), nullable=False, server_default="crypto")
     timeframe: Mapped[str] = mapped_column(String(8), nullable=False, server_default="1d")

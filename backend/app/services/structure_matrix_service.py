@@ -1,11 +1,13 @@
 """Structure Matrix Service — multi-timeframe structure analysis.
 
 Runs StructureEngine.analyze() across multiple timeframes (5m, 15m, 1h, 4h)
-and composes a unified matrix showing zone health per TF. Falls back to
-mock data when no market data is available.
+and composes a unified matrix showing zone health per TF. OHLCV comes from
+the real MarketDataService (CCXT + local cache); when no market data is
+available the result is ``data_source_unavailable`` — never mock data.
 """
 from __future__ import annotations
 
+import asyncio
 import logging
 from dataclasses import dataclass, field
 from typing import Optional
@@ -50,10 +52,29 @@ class MatrixResult:
 class StructureMatrixService:
     TIMEFRAMES = ["5m", "15m", "1h", "4h"]
     ZONE_TYPES = ["bullish_ob", "fvg", "liquidity_pool"]
+    OHLCV_LIMIT = 200
+    # 单个周期的行情拉取超时(秒)。CCXT 走公网交易所,网络不可达时
+    # 底层同步线程无法被取消,wait_for 保证服务侧快速降级而不是挂死请求。
+    OHLCV_FETCH_TIMEOUT = 5.0
 
-    def __init__(self, redis_store: RuntimeRedisStore | None = None):
+    def __init__(
+        self,
+        redis_store: RuntimeRedisStore | None = None,
+        market_data_service: "MarketDataService | None" = None,
+    ):
         self._store = redis_store
+        self._market = market_data_service
         self._engines: dict[str, StructureEngine] = {}
+
+    def _get_market_service(self) -> "MarketDataService | None":
+        if self._market is None:
+            try:
+                from app.services.market_data import MarketDataService
+                self._market = MarketDataService()
+            except Exception:
+                logger.exception("MarketDataService unavailable")
+                return None
+        return self._market
 
     def _get_engine(self, timeframe: str) -> StructureEngine:
         if timeframe not in self._engines:
@@ -63,9 +84,9 @@ class StructureMatrixService:
     async def get_matrix(self, symbol: str) -> MatrixResult:
         """Build the structure matrix for a symbol.
 
-        Tries Redis cache first, then attempts real analysis by fetching
-        market data from the store, and falls back to mock data if neither
-        is available.
+        Tries Redis cache first, then builds a real matrix from OHLCV via
+        MarketDataService. Without market data the result is
+        ``data_source_unavailable`` (no mock fallback).
         """
         # Try cache first
         if self._store:
@@ -73,19 +94,20 @@ class StructureMatrixService:
             if cached:
                 return self._deserialize(cached)
 
-        # Try to build real matrix from stored market data
         market_data = await self._fetch_market_data(symbol)
         if market_data:
             result = self._build_real_matrix(symbol, market_data)
         else:
-            logger.warning(
-                "No market data available for %s — falling back to mock matrix",
-                symbol,
+            logger.warning("No market data available for %s", symbol)
+            result = MatrixResult(
+                symbol=symbol,
+                state="data_source_unavailable",
+                reason_codes=["data_source_unavailable", "market_data_missing"],
+                rows=[],
             )
-            result = self._build_mock_matrix(symbol)
 
-        # Cache result
-        if self._store:
+        # Cache only real results — never cache an unavailable state
+        if self._store and result.state != "data_source_unavailable":
             await self._store.write_structure_matrix(symbol, self._serialize(result), ttl=5)
 
         return result
@@ -93,14 +115,38 @@ class StructureMatrixService:
     async def _fetch_market_data(
         self, symbol: str,
     ) -> dict[str, pd.DataFrame] | None:
-        """Attempt to fetch OHLCV data for all timeframes.
+        """Fetch real OHLCV data for all matrix timeframes via MarketDataService.
 
-        Returns a dict mapping timeframe to DataFrame, or None when no
-        market-data source is available. Override or extend this method
-        to integrate with a live data feed or exchange client.
+        Returns a dict mapping timeframe to DataFrame (may be partial); None
+        when no market-data source is available at all. Timeframes are fetched
+        concurrently with a per-timeframe timeout so an unreachable exchange
+        degrades fast instead of hanging the request.
         """
-        # TODO: wire up a market data provider (exchange client, DB, etc.)
-        return None
+        market = self._get_market_service()
+        if market is None:
+            return None
+
+        async def _fetch_tf(tf: str) -> tuple[str, pd.DataFrame | None]:
+            try:
+                candles = await asyncio.wait_for(
+                    market.get_ohlcv(symbol, timeframe=tf, limit=self.OHLCV_LIMIT),
+                    timeout=self.OHLCV_FETCH_TIMEOUT,
+                )
+            except Exception:
+                logger.exception("OHLCV fetch failed for %s %s", symbol, tf)
+                return tf, None
+            if not candles:
+                return tf, None
+            df = pd.DataFrame(candles)
+            if df.empty:
+                return tf, None
+            if "timestamp" in df.columns:
+                df["timestamp"] = pd.to_datetime(df["timestamp"], unit="ms")
+                df = df.set_index("timestamp")
+            return tf, df
+
+        pairs = await asyncio.gather(*(_fetch_tf(tf) for tf in self.TIMEFRAMES))
+        return {tf: df for tf, df in pairs if df is not None} or None
 
     def _build_real_matrix(
         self,
@@ -252,39 +298,6 @@ class StructureMatrixService:
             )
 
         return cells
-
-    def _build_mock_matrix(self, symbol: str) -> MatrixResult:
-        """Fallback mock data when no market data is available."""
-        rows = []
-        overall_state = "healthy"
-        overall_reasons: list[str] = []
-
-        mock_data = {
-            "5m": {"bullish_ob": (0.78, "active"), "fvg": (0.65, "active"), "liquidity_pool": (0.70, "active")},
-            "15m": {"bullish_ob": (0.82, "active"), "fvg": (0.71, "active"), "liquidity_pool": (0.60, "active")},
-            "1h": {"bullish_ob": (0.41, "warning"), "fvg": (0.55, "active"), "liquidity_pool": (0.35, "warning")},
-            "4h": {"bullish_ob": (0.88, "active"), "fvg": (0.92, "active"), "liquidity_pool": (0.85, "active")},
-        }
-
-        for tf in self.TIMEFRAMES:
-            cells = {}
-            tf_data = mock_data.get(tf, {})
-            for zt in self.ZONE_TYPES:
-                strength, status = tf_data.get(zt, (0.5, "unknown"))
-                violation = status == "warning"
-                action = "reduce_size" if violation else "allow"
-                reasons = []
-                if violation:
-                    reasons.append(f"{tf}_{zt}_violation")
-                    overall_state = "warning"
-                    overall_reasons.append(f"{tf}_{zt}_violation")
-                cells[zt] = MatrixCell(
-                    zone_type=zt, status=status, current_strength=strength,
-                    temporary_violation=violation, action=action, reason_codes=reasons,
-                )
-            rows.append(MatrixRow(timeframe=tf, cells=cells))
-
-        return MatrixResult(symbol=symbol, state=overall_state, reason_codes=overall_reasons, rows=rows)
 
     def _serialize(self, result: MatrixResult) -> dict:
         return {

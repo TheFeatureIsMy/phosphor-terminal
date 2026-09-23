@@ -1,8 +1,22 @@
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.dialects.postgresql import JSONB, UUID as PG_UUID
 
 from app.config import settings
 from app.database.base import Base
+
+
+# SQLite compatibility: render PostgreSQL types as their SQLite equivalents
+if settings.database_url.startswith("sqlite"):
+    @compiles(JSONB, "sqlite")
+    def _compile_jsonb_sqlite(type_, compiler, **kw):
+        return "JSON"
+
+    @compiles(PG_UUID, "sqlite")
+    def _compile_uuid_sqlite(type_, compiler, **kw):
+        return "CHAR(32)"
+
 
 from app.domain.activity_log import StrategyActivityLog  # noqa: F401
 from app.domain.circuit_breaker import CircuitBreakerEvent  # noqa: F401

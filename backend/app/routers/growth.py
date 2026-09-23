@@ -5,6 +5,7 @@ but never modifies running strategies or triggers execution directly.
 """
 from __future__ import annotations
 
+import logging
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -20,6 +21,8 @@ from app.schemas.growth import (
     StrategyCandidateResponse,
 )
 from app.services.growth import GrowthService
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/growth", tags=["growth-engine"])
 
@@ -103,6 +106,44 @@ def confirm_candidate(candidate_id: uuid.UUID, svc: GrowthService = Depends(_svc
         version_no=version.version_no,
         status=version.status,
     )
+
+
+@router.post("/candidates/{candidate_id}/advance")
+def advance_candidate(
+    candidate_id: uuid.UUID,
+    svc: GrowthService = Depends(_svc),
+    db: Session = Depends(get_db),
+):
+    """Advance the candidate one stage of the PRD §10.3 safety pipeline:
+    draft→validated→backtesting→paper_running→pending_review.
+    Final approval stays on /confirm (manual)."""
+    from app.services.growth.optimization_workflow import StrategyOptimizationWorkflow
+
+    candidate = svc.get_candidate(candidate_id)
+    if not candidate:
+        raise HTTPException(status_code=404, detail="Candidate not found")
+
+    workflow = StrategyOptimizationWorkflow(db)
+    result = workflow.advance(candidate)
+    db.commit()
+
+    response = {
+        "state": "blocked" if result.get("blocked") else "healthy",
+        "reason_codes": result.get("reason_codes", []),
+        "available_actions": [],
+        "candidate_id": str(candidate_id),
+        "stage": result.get("stage"),
+        "command_id": result.get("command_id"),
+    }
+    if "errors" in result:
+        response["errors"] = result["errors"]
+    if "message" in result:
+        response["message"] = result["message"]
+    if not result.get("blocked"):
+        response["available_actions"] = [
+            {"type": "advance", "enabled": True, "label": "推进下一阶段"},
+        ]
+    return response
 
 
 # ── List / Get Candidates ─────────────────────────────────────────────

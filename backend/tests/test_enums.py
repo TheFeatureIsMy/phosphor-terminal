@@ -21,9 +21,11 @@ def test_signal_status_values():
 
 
 def test_command_type_values():
-    assert len(CommandType) == 8
+    assert len(CommandType) == 10
     assert "deploy_rules" in [e.value for e in CommandType]
     assert "emergency_stop" in [e.value for e in CommandType]
+    assert "resume_strategy" in [e.value for e in CommandType]
+    assert "run_agent_task" in [e.value for e in CommandType]
 
 
 def test_command_status_values():

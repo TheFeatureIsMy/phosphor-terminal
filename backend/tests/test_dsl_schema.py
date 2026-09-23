@@ -170,18 +170,20 @@ class TestInvalidDSLRejection:
 
 
 class TestWhitelistEnums:
-    def test_all_14_indicators(self):
-        assert len(DSLIndicator) == 14
+    def test_all_21_indicators(self):
+        assert len(DSLIndicator) == 21
 
     def test_all_10_operators(self):
         assert len(DSLOperator) == 10
 
-    def test_all_8_rule_types(self):
-        assert len(DSLRuleType) == 8
+    def test_all_15_rule_types(self):
+        assert len(DSLRuleType) == 15
 
     def test_indicator_values(self):
         expected = {"rsi", "ema", "sma", "macd", "macd_signal", "bb_upper",
-                    "bb_lower", "atr", "volume", "volume_sma", "close", "open", "high", "low"}
+                    "bb_lower", "atr", "volume", "volume_sma", "close", "open", "high", "low",
+                    "ai_growth_score", "circuit_state", "funding_rate", "news_heat",
+                    "sentiment_score", "structure_score", "whale_netflow"}
         assert {i.value for i in DSLIndicator} == expected
 
     def test_operator_values(self):

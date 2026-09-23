@@ -3,6 +3,7 @@ import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 
 from app.database import get_db
 from app.domain.enums import StrategyVersionStatus
@@ -125,8 +126,15 @@ def delete_strategy(
     strategy = repo.get_strategy_by_id(strategy_id)
     if not strategy:
         raise HTTPException(status_code=404, detail="Strategy not found")
-    repo.delete_strategy(strategy)
-    db.commit()
+    try:
+        repo.delete_strategy(strategy)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409, detail={
+            "message": "该策略存在关联数据，无法直接删除",
+            "hint": "存在资金池绑定 / 成长报告 / 交易意图等历史记录；请先解除相关绑定，或使用归档(archived)保留历史",
+        })
     return None
 
 @router.post("/{strategy_id}/versions", response_model=StrategyVersionResponse, status_code=201)

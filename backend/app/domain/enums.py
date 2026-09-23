@@ -55,9 +55,11 @@ class CommandType(str, enum.Enum):
     START_DRYRUN = "start_dryrun"
     STOP_DRYRUN = "stop_dryrun"
     PAUSE_STRATEGY = "pause_strategy"
+    RESUME_STRATEGY = "resume_strategy"
     REQUEST_LIVE_SMALL = "request_live_small"
     EMERGENCY_STOP = "emergency_stop"
     START_RECONCILIATION = "start_reconciliation"
+    RUN_AGENT_TASK = "run_agent_task"
 
 
 class CommandStatus(str, enum.Enum):

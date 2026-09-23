@@ -156,37 +156,111 @@ def load_clusters(
 # ---------------------------------------------------------------------------
 
 class FailureClusteringService:
-    """In-memory failure clustering service providing async BFF endpoints.
+    """Failure clustering service — reads real ExecutionTrade data and runs clustering."""
 
-    When the DB has no ``failure_clusters`` rows, this service returns
-    an empty-but-valid response instead of crashing.
-    """
+    async def get_summary(self, strategy_run_id: Optional[str] = None) -> dict:
+        from app.database import SessionLocal
+        from app.domain.order import ExecutionTrade
+        from sqlalchemy import select, and_
 
-    async def get_summary(self) -> dict:
+        db = SessionLocal()
+        try:
+            stmt = select(ExecutionTrade).where(
+                ExecutionTrade.status == "closed",
+                ExecutionTrade.profit_abs < 0,
+            )
+            if strategy_run_id:
+                stmt = stmt.where(ExecutionTrade.strategy_run_id == uuid.UUID(strategy_run_id))
+            stmt = stmt.order_by(ExecutionTrade.closed_at.desc()).limit(200)
+
+            losing_trades = list(db.scalars(stmt).all())
+
+            if not losing_trades:
+                return {
+                    "state": "healthy",
+                    "reason_codes": [],
+                    "available_actions": [],
+                    "total_loss_trades": 0,
+                    "total_loss_amount": 0.0,
+                    "clusters": [],
+                    "regime_matrix": [],
+                    "common_reject_reasons": [],
+                    "labels": [],
+                }
+
+            # Convert to dicts for clustering
+            trade_dicts = []
+            labels_map: dict[str, list[str]] = {}
+            for t in losing_trades:
+                tid = str(t.id)
+                trade_dicts.append({
+                    "trade_id": tid,
+                    "profit_pct": float(t.profit_pct or 0),
+                    "profit_abs": float(t.profit_abs or 0),
+                    "symbol": t.symbol,
+                    "duration_hours": (
+                        (t.closed_at - t.opened_at).total_seconds() / 3600
+                        if t.opened_at and t.closed_at else 0
+                    ),
+                })
+                # Auto-label based on trade characteristics
+                labels_map[tid] = self._auto_label(t)
+
+            clusters = cluster_failures(trade_dicts, labels_map)
+            total_loss = sum(float(t.profit_abs or 0) for t in losing_trades)
+
+            return {
+                "state": "healthy",
+                "reason_codes": [],
+                "available_actions": [
+                    {"type": "generate_optimization", "enabled": True, "label": "Generate Optimization"},
+                ],
+                "total_loss_trades": len(losing_trades),
+                "total_loss_amount": round(total_loss, 2),
+                "clusters": [
+                    {
+                        "cluster_name": c.cluster_name,
+                        "trade_count": c.trade_count,
+                        "total_loss": c.total_loss,
+                        "avg_loss_pct": c.avg_loss_pct,
+                        "suggested_fix": c.suggested_fix,
+                    }
+                    for c in clusters
+                ],
+                "regime_matrix": [],
+                "common_reject_reasons": [],
+                "labels": list(set(l for ls in labels_map.values() for l in ls)),
+            }
+        except Exception as exc:
+            logger.exception("Failure clustering failed: %s", exc)
+            return {
+                "state": "data_source_unavailable",
+                "reason_codes": [str(exc)],
+                "available_actions": [],
+                "total_loss_trades": 0,
+                "total_loss_amount": 0.0,
+                "clusters": [],
+                "regime_matrix": [],
+                "common_reject_reasons": [],
+                "labels": [],
+            }
+        finally:
+            db.close()
+
+    async def get_clusters(self, strategy_run_id: Optional[str] = None) -> dict:
+        summary = await self.get_summary(strategy_run_id)
         return {
-            "state": "healthy",
-            "reason_codes": [],
-            "available_actions": [],
-            "total_loss_trades": 0,
-            "total_loss_amount": 0.0,
-            "clusters": [],
-            "regime_matrix": [],
-            "common_reject_reasons": [],
-            "labels": [],
+            "state": summary["state"],
+            "reason_codes": summary["reason_codes"],
+            "clusters": summary["clusters"],
         }
 
-    async def get_clusters(self) -> dict:
+    async def get_labels(self, strategy_run_id: Optional[str] = None) -> dict:
+        summary = await self.get_summary(strategy_run_id)
         return {
-            "state": "healthy",
-            "reason_codes": [],
-            "clusters": [],
-        }
-
-    async def get_labels(self) -> dict:
-        return {
-            "state": "healthy",
-            "reason_codes": [],
-            "labels": [],
+            "state": summary["state"],
+            "reason_codes": summary["reason_codes"],
+            "labels": summary["labels"],
         }
 
     async def get_regime_matrix(self) -> dict:
@@ -195,3 +269,27 @@ class FailureClusteringService:
             "reason_codes": [],
             "regime_matrix": [],
         }
+
+    @staticmethod
+    def _auto_label(trade) -> list[str]:
+        """Auto-label a losing trade based on its characteristics."""
+        labels = []
+        profit_pct = float(trade.profit_pct or 0)
+        duration_hours = 0
+        if trade.opened_at and trade.closed_at:
+            duration_hours = (trade.closed_at - trade.opened_at).total_seconds() / 3600
+
+        # Quick loss (< 30 min) suggests stop hit or volatility
+        if duration_hours < 0.5 and profit_pct < -0.02:
+            labels.append("stop_too_close_to_liquidity_pool")
+        elif duration_hours < 0.1:
+            labels.append("failed_due_to_high_volatility")
+
+        # Large loss suggests news/panic
+        if profit_pct < -0.05:
+            labels.append("failed_due_to_news_shock")
+
+        if not labels:
+            labels.append("unclassified_loss")
+
+        return labels

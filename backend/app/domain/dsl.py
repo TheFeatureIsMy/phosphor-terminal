@@ -26,6 +26,15 @@ class DSLIndicator(str, enum.Enum):
     OPEN = "open"
     HIGH = "high"
     LOW = "low"
+    # 另类数据指标（新闻/情绪/热点/资金/链上）
+    SENTIMENT_SCORE = "sentiment_score"
+    NEWS_HEAT = "news_heat"
+    FUNDING_RATE = "funding_rate"
+    WHALE_NETFLOW = "whale_netflow"
+    # 平台原生信号
+    STRUCTURE_SCORE = "structure_score"
+    AI_GROWTH_SCORE = "ai_growth_score"
+    CIRCUIT_STATE = "circuit_state"
 
 
 class DSLOperator(str, enum.Enum):
@@ -50,6 +59,15 @@ class DSLRuleType(str, enum.Enum):
     VOLATILITY_FILTER = "volatility_filter"
     COOLDOWN_FILTER = "cooldown_filter"
     PORTFOLIO_EXPOSURE_FILTER = "portfolio_exposure_filter"
+    # 另类数据过滤（新闻/情绪/热点/资金/链上）
+    SENTIMENT_FILTER = "sentiment_filter"
+    NEWS_HEAT_FILTER = "news_heat_filter"
+    FUNDING_FILTER = "funding_filter"
+    ONCHAIN_FILTER = "onchain_filter"
+    # 平台原生功能（熔断/结构信号/AI 成长）
+    CIRCUIT_BREAKER_FILTER = "circuit_breaker_filter"
+    STRUCTURE_SIGNAL_FILTER = "structure_signal_filter"
+    AI_GROWTH_FILTER = "ai_growth_filter"
 
 
 class DSLLogic(str, enum.Enum):

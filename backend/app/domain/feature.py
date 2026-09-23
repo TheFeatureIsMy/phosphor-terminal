@@ -39,7 +39,7 @@ class FeatureSnapshot(Base):
 
     strategy_id: Mapped[str | None] = mapped_column(String(128))
     strategy_version_id: Mapped[uuid.UUID | None] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("strategy_versions.id"),
+        PG_UUID(as_uuid=True), ForeignKey("strategy_versions.id", ondelete="CASCADE"),
     )
     runtime_snapshot_id: Mapped[str | None] = mapped_column(String(128))
     strategy_run_id: Mapped[uuid.UUID | None] = mapped_column(

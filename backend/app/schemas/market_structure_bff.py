@@ -1,6 +1,6 @@
 """Market Structure BFF schemas"""
 from __future__ import annotations
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from app.schemas.common import AvailableAction
 
 
@@ -48,3 +48,13 @@ class MarketStructureResponse(BaseModel):
     liquidity_pools: list[LiquidityPoolResponse] = Field(default_factory=list)
     events: list[StructureEvent] = Field(default_factory=list)
     premium_discount: str = ""  # premium / discount / equilibrium
+
+    @field_validator("market_regime", mode="before")
+    @classmethod
+    def _regime_not_none(cls, v):
+        return v if v is not None else "unknown"
+
+    @field_validator("premium_discount", mode="before")
+    @classmethod
+    def _pd_not_none(cls, v):
+        return v if v is not None else ""

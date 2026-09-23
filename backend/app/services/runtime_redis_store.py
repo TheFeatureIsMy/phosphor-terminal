@@ -12,6 +12,9 @@ class RuntimeRedisStore:
     def __init__(self, redis_url: str | None = None):
         self._redis = None
         self._fallback: dict[str, tuple[str, float]] = {}
+        # Set True when a real Redis was configured but a read/write failed,
+        # i.e. the store silently degraded to the in-memory fallback at runtime.
+        self._runtime_degraded = False
 
         if redis_url:
             try:
@@ -37,8 +40,55 @@ class RuntimeRedisStore:
             try:
                 return await self._redis.ping()
             except Exception:
+                self._runtime_degraded = True
                 return False
         return True
+
+    @property
+    def is_degraded(self) -> bool:
+        """True when serving from the in-memory fallback instead of real Redis.
+
+        Covers both "no Redis configured" and "Redis configured but unreachable
+        at probe time" (lazy clients only fail on first I/O).
+        """
+        return self._redis is None or self._runtime_degraded
+
+    async def ping_rtt_ms(self) -> float | None:
+        """Measured Redis ping round-trip in milliseconds.
+
+        Returns None when Redis is unavailable or the store is running on
+        the in-memory fallback (where RTT is meaningless).
+        """
+        if not self._redis:
+            return None
+        try:
+            start = time.monotonic()
+            ok = await self._redis.ping()
+            if not ok:
+                return None
+            return round((time.monotonic() - start) * 1000, 2)
+        except Exception:
+            self._runtime_degraded = True
+            return None
+
+    async def probe_fast_track_latency_ms(self) -> float | None:
+        """Probe the fast-track runtime path: a real Redis set+get round-trip.
+
+        The fast track is the Redis-backed runtime state pipeline, so its
+        latency is measured as a write-then-read round-trip on a probe key.
+        Returns None when Redis is unavailable or degraded.
+        """
+        if not self._redis:
+            return None
+        try:
+            key = "pd:probe:fast_track"
+            start = time.monotonic()
+            await self._redis.set(key, "1", ex=5)
+            await self._redis.get(key)
+            return round((time.monotonic() - start) * 1000, 2)
+        except Exception:
+            self._runtime_degraded = True
+            return None
 
     async def _set(self, key: str, value: dict, ttl: int) -> None:
         payload = json.dumps(value)

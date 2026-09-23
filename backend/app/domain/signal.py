@@ -36,7 +36,7 @@ class Signal(Base):
     score: Mapped[float | None] = mapped_column(Numeric(8, 4))
     risk_level: Mapped[str | None] = mapped_column(String(16))
 
-    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
     permission: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
 
     valid_from: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -84,8 +84,8 @@ class SignalLifecycleEvent(UUIDMixin, Base):
         PG_UUID(as_uuid=True), ForeignKey("signal_identity.id"), nullable=False,
     )
     event_type: Mapped[str] = mapped_column(String(64), nullable=False)
-    from_status: Mapped[str | None] = mapped_column(String(16))
-    to_status: Mapped[str | None] = mapped_column(String(16))
+    from_status: Mapped[str | None] = mapped_column(String(32))
+    to_status: Mapped[str | None] = mapped_column(String(32))
     reason: Mapped[str | None] = mapped_column(Text)
     actor: Mapped[str | None] = mapped_column(String(128))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

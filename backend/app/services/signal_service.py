@@ -155,11 +155,50 @@ class SignalService:
         )
         lifecycle_events = list(self._s.scalars(lifecycle_stmt).all())
 
+        perm = sig.permission or {}
+        # Assemble the flat shape SignalView expects (SignalSummary scalars +
+        # optional payload/evidence/lifecycle). The previous nested
+        # {signal, payload, ...} dict failed FastAPI response validation (500).
         return {
-            "signal": sig,
-            "payload": payload,
-            "evidence": evidence,
-            "lifecycle_events": lifecycle_events,
+            "id": sig.id,
+            "source_type": sig.source_type,
+            "symbol": sig.symbol,
+            "direction": sig.direction,
+            "confidence": float(sig.confidence) if sig.confidence is not None else 0.0,
+            "score": float(sig.score) if sig.score is not None else None,
+            "risk_level": sig.risk_level or "medium",
+            "status": sig.status,
+            "expires_at": sig.expires_at,
+            "created_at": sig.created_at,
+            "can_live_trade": bool(perm.get("can_live_trade", False)),
+            "reasoning": payload.reasoning if payload else None,
+            "trigger_condition": payload.trigger_condition if payload else None,
+            "current_state": payload.current_state if payload else None,
+            "provider_trace": None,
+            "evidence": [
+                {
+                    "id": str(e.id),
+                    "evidence_type": e.evidence_type,
+                    "evidence_ref": e.evidence_ref,
+                    "evidence_payload": e.evidence_payload,
+                    "source_uri": e.source_uri,
+                    "quality_score": float(e.quality_score) if e.quality_score is not None else None,
+                    "created_at": e.created_at.isoformat() if e.created_at else None,
+                }
+                for e in evidence
+            ],
+            "lifecycle_events": [
+                {
+                    "id": str(e.id),
+                    "event_type": e.event_type,
+                    "from_status": e.from_status,
+                    "to_status": e.to_status,
+                    "reason": e.reason,
+                    "actor": e.actor,
+                    "created_at": e.created_at.isoformat() if e.created_at else None,
+                }
+                for e in lifecycle_events
+            ],
         }
 
     def transition_status(
@@ -245,7 +284,7 @@ class SignalService:
 
         # Create a placeholder ResearchReport for the signal-sourced draft
         report = ResearchReport(
-            run_id=0,  # synthetic — signal center origin
+            run_id=None,  # signal center origin — no research run behind it
             symbol=sig.symbol,
             market=sig.market,
             timeframe=sig.timeframe or "1d",

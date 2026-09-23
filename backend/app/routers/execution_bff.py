@@ -263,10 +263,6 @@ async def get_positions():
         ).model_dump()
 
 
-@router.post("/emergency-stop")
-async def emergency_stop_deprecated():
-    raise HTTPException(status_code=410, detail="deprecated, use POST /api/v2/emergency/stop")
-
 
 @router.post("/orders/{order_id}/cancel", response_model=CancelResponse)
 async def cancel_single_order(order_id: str):

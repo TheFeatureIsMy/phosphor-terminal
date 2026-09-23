@@ -37,17 +37,21 @@ def _ensure_registered() -> None:
     from app.workers.dryrun_handler import StartDryRunHandler, StopDryRunHandler
     from app.workers.deploy_rules_handler import DeployRulesHandler
     from app.workers.pause_handler import PauseStrategyHandler
+    from app.workers.resume_handler import ResumeStrategyHandler
     from app.workers.live_small_handler import RequestLiveSmallHandler
     from app.workers.emergency_stop_handler import EmergencyStopHandler
     from app.workers.reconciliation_handler import StartReconciliationHandler
+    from app.workers.agent_task_handler import RunAgentTaskHandler
     register_handler("start_backtest", StartBacktestHandler)
     register_handler("start_dryrun", StartDryRunHandler)
     register_handler("stop_dryrun", StopDryRunHandler)
     register_handler("deploy_rules", DeployRulesHandler)
     register_handler("pause_strategy", PauseStrategyHandler)
+    register_handler("resume_strategy", ResumeStrategyHandler)
     register_handler("request_live_small", RequestLiveSmallHandler)
     register_handler("emergency_stop", EmergencyStopHandler)
     register_handler("start_reconciliation", StartReconciliationHandler)
+    register_handler("run_agent_task", RunAgentTaskHandler)
 
 
 def get_handler(command_type: str) -> CommandHandler | None:

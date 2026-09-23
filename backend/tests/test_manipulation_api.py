@@ -5,21 +5,14 @@ from fastapi.testclient import TestClient
 
 @pytest.fixture
 def mock_radar_adapter(monkeypatch):
-    from app.services.manipulation.radar_service import (
-        ManipulationRadarService,
-        MockMarketDataAdapter,
-    )
-    original_init = ManipulationRadarService.__init__
+    """Swap the live market-data adapter for the deterministic mock.
 
-    def patched_init(
-        self, session, adapter=None, cross_market_adapter=None,
-        orderbook_adapter=None, social_adapter=None,
-    ):
-        if adapter is None:
-            adapter = MockMarketDataAdapter()
-        original_init(self, session, adapter, cross_market_adapter, orderbook_adapter, social_adapter)
-
-    monkeypatch.setattr(ManipulationRadarService, "__init__", patched_init)
+    The scan router now always injects LiveMarketDataAdapter (no silent
+    mock fallback in production code); tests patch the adapter class at
+    its import source to stay hermetic.
+    """
+    import app.services.manipulation.data_adapter as da
+    monkeypatch.setattr(da, "LiveMarketDataAdapter", da.MockMarketDataAdapter)
     yield
 
 

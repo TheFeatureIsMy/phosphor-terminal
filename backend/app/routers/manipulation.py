@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.schemas.manipulation import ManipulationScanRequest, ManipulationScoreResponse
-from app.services.manipulation.radar_service import ManipulationRadarService
+from app.services.manipulation.radar_service import ManipulationRadarService, ProviderNotConfiguredError
 from app.services.manipulation.lifecycle import ManipulationLifecycleTracker
 from app.services.manipulation.strategy_impact import compute_strategy_impact
 
@@ -99,8 +99,25 @@ def _build_case_detail_v2(case: dict) -> dict:
 
 @router.post("/scan", response_model=ManipulationScoreResponse, status_code=201)
 def scan_symbol(req: ManipulationScanRequest, db: Session = Depends(get_db)):
-    svc = ManipulationRadarService(db)
-    svc.scan_symbol(req.symbol, req.timeframe)
+    from app.services.manipulation.data_adapter import LiveMarketDataAdapter
+
+    # Inject the real market-data adapter; without it the scan cannot run
+    # (no silent mock fallback).
+    svc = ManipulationRadarService(db, adapter=LiveMarketDataAdapter())
+    try:
+        svc.scan_symbol(req.symbol, req.timeframe)
+    except ProviderNotConfiguredError as e:
+        raise HTTPException(status_code=503, detail={
+            "state": "data_source_unavailable",
+            "reason_codes": ["provider_not_configured"],
+            "message": str(e),
+        })
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail={
+            "state": "data_source_unavailable",
+            "reason_codes": ["market_data_unavailable"],
+            "message": str(e),
+        })
     db.commit()
 
     record = svc.get_latest_score(req.symbol)

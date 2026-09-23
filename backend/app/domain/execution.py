@@ -13,7 +13,7 @@ class StrategyRun(UUIDMixin, Base):
     __tablename__ = "strategy_runs"
 
     strategy_version_id: Mapped[uuid.UUID] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("strategy_versions.id"), nullable=False,
+        PG_UUID(as_uuid=True), ForeignKey("strategy_versions.id", ondelete="CASCADE"), nullable=False,
     )
     capital_pool_id: Mapped[uuid.UUID | None] = mapped_column(
         PG_UUID(as_uuid=True), ForeignKey("capital_pools.id"),
@@ -29,7 +29,7 @@ class FreqtradeRun(UUIDMixin, Base):
     __tablename__ = "freqtrade_runs"
 
     strategy_run_id: Mapped[uuid.UUID] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("strategy_runs.id"), nullable=False,
+        PG_UUID(as_uuid=True), ForeignKey("strategy_runs.id", ondelete="CASCADE"), nullable=False,
     )
     container_id: Mapped[str | None] = mapped_column(String(128))
     config_path: Mapped[str] = mapped_column(String(512), nullable=False)

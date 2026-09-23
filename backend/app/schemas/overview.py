@@ -1,7 +1,17 @@
 """Overview BFF schemas — Dashboard + Live Readiness + Global Status"""
 from __future__ import annotations
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from app.schemas.common import AvailableAction
+
+
+def _coerce_ms(v) -> int:
+    """Latency probes may return float / None; coerce to a safe int (ms)."""
+    if v is None:
+        return 0
+    try:
+        return int(round(float(v)))
+    except (TypeError, ValueError):
+        return 0
 
 
 class AccountOverview(BaseModel):
@@ -34,6 +44,11 @@ class SystemOverview(BaseModel):
     redis_rtt_ms: int = 0
     freqtrade_state: str = "unknown"
     exchange_state: str = "unknown"
+
+    @field_validator("fast_track_latency_ms", "redis_rtt_ms", mode="before")
+    @classmethod
+    def _ms_int(cls, v):
+        return _coerce_ms(v)
 
 
 class RecentDecision(BaseModel):
@@ -107,3 +122,8 @@ class GlobalStatusResponse(BaseModel):
     open_positions: int = 0
     emergency_locked: bool = False
     reason_codes: list[str] = Field(default_factory=list)
+
+    @field_validator("fast_track_latency_ms", "redis_rtt_ms", mode="before")
+    @classmethod
+    def _ms_int(cls, v):
+        return _coerce_ms(v)

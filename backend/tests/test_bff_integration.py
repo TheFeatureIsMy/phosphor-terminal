@@ -115,12 +115,6 @@ class TestExecutionCenter:
         data = (await client.get("/api/execution/orders")).json()
         assert "orders" in data or "positions" in data
 
-    @pytest.mark.anyio
-    async def test_emergency_stop(self, client):
-        r = await client.post("/api/execution/emergency-stop")
-        assert r.status_code == 410
-        assert "deprecated" in r.json()["detail"].lower()
-
 
 # ═══════════════════════════════════════════════════════════════════════
 # RECONCILIATION
@@ -200,14 +194,6 @@ class TestRisk:
         data = (await client.get("/api/risk/circuit-breakers")).json()
         assert "state" in data
         assert "records" in data
-
-    @pytest.mark.anyio
-    @pytest.mark.anyio
-    async def test_emergency_stop_action(self, client):
-        r = await client.post("/api/risk/emergency-stop", json={"account_id": "default", "reason": "test"})
-        # Old endpoint now deprecated — returns 410
-        assert r.status_code == 410
-        assert "deprecated" in r.json()["detail"].lower()
 
     @pytest.mark.anyio
     @pytest.mark.skip(reason="data_source_bff removed, replaced by provider adapter")

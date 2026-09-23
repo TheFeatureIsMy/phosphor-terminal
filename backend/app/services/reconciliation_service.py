@@ -62,7 +62,22 @@ class ReconciliationService:
         strategy_run_id: uuid.UUID,
         freqtrade_run_id: uuid.UUID,
     ) -> ReconciliationEvent:
-        """Create reconciliation event + write RECONCILIATION_STARTED to ledger."""
+        """Create reconciliation event + write RECONCILIATION_STARTED to ledger.
+
+        Acquires a state lease over the strategy run first (PRD §7.3): while
+        the lease is held, no other actor may start a reconciliation for the
+        same run.
+        """
+        from app.services.state_lease_service import StateLeaseService
+
+        lease_svc = StateLeaseService(self._s)
+        lease_key = f"reconciliation:{strategy_run_id}"
+        owner = f"reconciliation:{uuid.uuid4().hex[:8]}"
+        lease, status = lease_svc.acquire(lease_key, owner, ttl_sec=300, purpose="reconciliation")
+        if lease is None:
+            raise RuntimeError(f"state lease held for {lease_key} ({status})")
+        self._lease_owner = owner
+
         event = ReconciliationEvent(
             strategy_run_id=strategy_run_id,
             freqtrade_run_id=freqtrade_run_id,
@@ -170,6 +185,16 @@ class ReconciliationService:
 
         event.status = "completed" if success else "failed"
         event.completed_at = self._now()
+
+        # Release the state lease acquired at start (best-effort: the lease
+        # also expires by TTL if the worker died mid-run).
+        if event.strategy_run_id is not None:
+            from app.services.state_lease_service import StateLeaseService
+            owner = getattr(self, "_lease_owner", None)
+            if owner:
+                StateLeaseService(self._s).release(
+                    f"reconciliation:{event.strategy_run_id}", owner,
+                )
 
         # Restore FreqtradeRun status
         if event.freqtrade_run_id:

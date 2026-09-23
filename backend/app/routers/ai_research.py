@@ -381,3 +381,63 @@ def confirm_strategy_draft(draft_id: str, db: Session = Depends(get_db)):
         version_no=version.version_no,
         status="draft",
     )
+
+
+# ---------------------------------------------------------------------------
+# AI Risk Cache (PRD §9.1: GET /api/ai-risk-cache + generate-cache)
+# ---------------------------------------------------------------------------
+
+cache_router = APIRouter(prefix="/api/ai-risk-cache", tags=["ai-risk-cache"])
+
+
+def _get_ai_risk_cache_service():
+    from app.config import settings
+    from app.services.runtime_redis_store import RuntimeRedisStore
+    from app.services.ai_risk_cache import AIRiskCacheService
+
+    store = RuntimeRedisStore(redis_url=settings.redis_url)
+    return AIRiskCacheService(redis_store=store, llm_service=_get_llm_service())
+
+
+@cache_router.get("")
+async def get_ai_risk_cache(symbol: str = "BTC/USDT"):
+    """Read the cached AI risk assessment for a symbol (no refresh)."""
+    svc = _get_ai_risk_cache_service()
+    cached = await svc.get_cached(symbol)
+    if cached is None:
+        return {
+            "state": "data_source_unavailable",
+            "reason_codes": ["ai_cache_empty"],
+            "available_actions": [
+                {"type": "generate_cache", "enabled": True, "label": "生成 AI 风险缓存"},
+            ],
+            "symbol": symbol,
+            "cache": None,
+        }
+    return {
+        "state": "healthy",
+        "reason_codes": [],
+        "available_actions": [],
+        "symbol": symbol,
+        "cache": cached,
+    }
+
+
+@cache_router.post("/generate")
+async def generate_ai_risk_cache(symbol: str = "BTC/USDT"):
+    """Refresh (or create) the AI risk cache for a symbol."""
+    svc = _get_ai_risk_cache_service()
+    try:
+        result = await svc.refresh(symbol)
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail={
+            "state": "data_source_unavailable",
+            "reason_codes": ["ai_cache_refresh_failed", type(exc).__name__],
+        })
+    return {
+        "state": "healthy",
+        "reason_codes": [],
+        "available_actions": [],
+        "symbol": symbol,
+        "cache": result,
+    }
