@@ -37,12 +37,12 @@ private struct ActiveCaseCard: View {
         VStack(alignment: .leading, spacing: PulseSpacing.xs) {
             HStack(spacing: PulseSpacing.xs) {
                 Text(case_.symbol).font(PulseFonts.tabular)
-                Text(case_.manipulationType).font(PulseFonts.micro).foregroundStyle(PulseColors.accent)
+                Text(case_.manipulationType).font(PulseFonts.micro).foregroundStyle(PulseColors.accentText)
             }
             HStack(spacing: PulseSpacing.xs) {
                 Text(case_.lifecycleStage.uppercased()).font(PulseFonts.micro).foregroundStyle(colors.textMuted)
                 Text("·").foregroundStyle(colors.textMuted)
-                Text("\(Int(case_.confidence * 100))%").font(PulseFonts.tabular).foregroundStyle(PulseColors.accent)
+                Text("\(Int(case_.confidence * 100))%").font(PulseFonts.tabular).foregroundStyle(PulseColors.accentText)
             }
         }
         .padding(PulseSpacing.md)

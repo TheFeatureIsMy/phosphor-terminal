@@ -238,6 +238,30 @@ struct LiveReadinessResponse: Codable {
     }
 }
 
+struct TapeEntry: Codable, Identifiable {
+    var id: String { symbol }
+    let symbol: String
+    let last: Double
+    let changePct: Double?
+
+    enum CodingKeys: String, CodingKey {
+        case symbol, last
+        case changePct = "change_pct"
+    }
+}
+
+struct MarketTapeResponse: Codable {
+    let state: String
+    let reasonCodes: [String]
+    let items: [TapeEntry]
+
+    enum CodingKeys: String, CodingKey {
+        case state
+        case reasonCodes = "reason_codes"
+        case items
+    }
+}
+
 struct GlobalStatusBFFResponse: Codable {
     var systemState: String = "NOT_READY"
     var riskState: String = "normal"
@@ -418,6 +442,11 @@ struct APIOverview {
 
     func getGlobalStatus() async throws -> GlobalStatusBFFResponse {
         try await client.get("/api/overview/global-status")
+    }
+
+    /// Ticker tape — latest prices from the backend realtime stream.
+    func getTape() async throws -> MarketTapeResponse {
+        try await client.get("/api/markets/tape")
     }
 
     // Supplementary endpoints (Dashboard v2)

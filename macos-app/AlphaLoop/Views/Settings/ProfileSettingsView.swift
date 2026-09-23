@@ -23,22 +23,22 @@ struct ProfileSettingsView: View {
                 .overlay(
                     Text(String((authState.user?.name ?? "T").prefix(1)).uppercased())
                         .font(PulseFonts.monoLarge)
-                        .foregroundStyle(PulseColors.accent)
+                        .foregroundStyle(PulseColors.accentText)
                 )
                 .padding(.bottom, PulseSpacing.xs)
 
             VStack(alignment: .leading, spacing: PulseSpacing.md) {
                 row(L10n.zh("用户名", en: "Username")) {
                     TextField("", text: $name)
-                        .darkTextField()
+                        
                         .onChange(of: name) { _, _ in hasChanges = true }
                 }
                 row(L10n.zh("邮箱", en: "Email")) {
                     TextField("", text: $email)
-                        .darkTextField()
+                        
                         .onChange(of: email) { _, _ in hasChanges = true }
                 }
-                row(L10n.zh("角色", en: "Role")) { BadgeView(text: authState.user?.role ?? "trader", color: PulseColors.accent) }
+                row(L10n.zh("角色", en: "Role")) { BadgeView(text: authState.user?.role ?? "trader", color: PulseColors.accentText) }
                 row(L10n.zh("时区", en: "Timezone")) { Text("Asia/Shanghai").font(PulseFonts.body).foregroundStyle(colors.textPrimary) }
                 row(L10n.zh("双因素认证", en: "2FA")) { BadgeView(text: L10n.zh("未启用", en: "Not Enabled"), color: colors.textMuted) }
             }

@@ -90,7 +90,6 @@ private struct MarketStructureContentView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(colors.background)
         .onChange(of: vm.selectedSymbol) { _, new in
             pushRecent(new)
             Task { await vm.load() }
@@ -179,7 +178,7 @@ private struct MarketStructureContentView: View {
                 } label: {
                     Image(systemName: "arrow.clockwise")
                         .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(PulseColors.accent)
+                        .foregroundStyle(PulseColors.accentText)
                         .frame(width: 30, height: 30)
                         .background(PulseColors.accent.opacity(0.1))
                         .clipShape(RoundedRectangle(cornerRadius: PulseRadii.button))
@@ -205,11 +204,11 @@ private struct MarketStructureContentView: View {
                 // Regime
                 VStack(alignment: .leading, spacing: PulseSpacing.xs) {
                     Text(regimeWord)
-                        .font(.system(size: 36, weight: .bold, design: .rounded))
+                        .font(PulseFonts.display(36, .bold))
                         .foregroundStyle(regimeColor)
                         .tracking(-1)
                     Text(regimeNarrative)
-                        .font(.system(size: 13, weight: .regular, design: .serif).italic())
+                        .font(PulseFonts.body(13).italic())
                         .foregroundStyle(colors.textSecondary)
                         .lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)
@@ -243,7 +242,7 @@ private struct MarketStructureContentView: View {
                         value: "\(activeZoneCount)z · \(activePoolCount)p",
                         suffix: nil,
                         bar: nil,
-                        color: PulseColors.accent
+                        color: PulseColors.accentText
                     )
                     .frame(width: 130)
                 }
@@ -261,7 +260,7 @@ private struct MarketStructureContentView: View {
 
             HStack(alignment: .lastTextBaseline, spacing: 4) {
                 Text(value)
-                    .font(.system(size: 22, weight: .semibold, design: .monospaced))
+                    .font(PulseFonts.mono(22, .semibold))
                     .foregroundStyle(color)
                 if let suffix = suffix {
                     Text(suffix)
@@ -352,11 +351,11 @@ private struct MarketStructureContentView: View {
             VStack(alignment: .leading, spacing: PulseSpacing.xs) {
                 HStack(spacing: PulseSpacing.sm) {
                     Text(eventLabel(event))
-                        .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                        .font(PulseFonts.mono(13, .semibold))
                         .foregroundStyle(eventColor(event))
 
                     Text(formatPrice(event.price))
-                        .font(.system(size: 14, weight: .semibold, design: .monospaced))
+                        .font(PulseFonts.mono(14, .semibold))
                         .foregroundStyle(colors.textPrimary)
 
                     Image(systemName: event.direction == "bullish" ? "arrow.up.right" : "arrow.down.right")
@@ -379,7 +378,7 @@ private struct MarketStructureContentView: View {
                 }
 
                 Text(eventNarrative(event))
-                    .font(.system(size: 13, weight: .regular, design: .serif).italic())
+                    .font(PulseFonts.body(13).italic())
                     .foregroundStyle(colors.textSecondary)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
@@ -397,7 +396,7 @@ private struct MarketStructureContentView: View {
                 .font(.system(size: 14))
                 .foregroundStyle(colors.textMuted.opacity(0.5))
             Text(L10n.zh("即将上线：价格走势叠加", en: "coming soon · price sparkline overlay"))
-                .font(.system(size: 12, weight: .regular, design: .serif).italic())
+                .font(PulseFonts.body(12).italic())
                 .foregroundStyle(colors.textMuted)
             Spacer()
         }
@@ -446,7 +445,7 @@ private struct MarketStructureContentView: View {
             // Lede: distance from now
             HStack(alignment: .lastTextBaseline, spacing: PulseSpacing.xs) {
                 Text(String(format: "%@%.2f%%", above ? "+" : "−", abs(dist) * 100))
-                    .font(.system(size: 26, weight: .bold, design: .monospaced))
+                    .font(PulseFonts.mono(26, .bold))
                     .foregroundStyle(zoneDirectionColor(zone))
 
                 Text(above ? L10n.zh("高于现价", en: "ABOVE NOW") : L10n.zh("低于现价", en: "BELOW NOW"))
@@ -478,7 +477,7 @@ private struct MarketStructureContentView: View {
 
             // Narrative
             Text(zoneNarrative(zone))
-                .font(.system(size: 12.5, weight: .regular, design: .serif).italic())
+                .font(PulseFonts.body(12.5).italic())
                 .foregroundStyle(colors.textSecondary)
                 .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
@@ -590,13 +589,13 @@ private struct MarketStructureContentView: View {
 
             // Price
             Text(formatPrice(pool.priceLevel))
-                .font(.system(size: 14, weight: .semibold, design: .monospaced))
+                .font(PulseFonts.mono(14, .semibold))
                 .foregroundStyle(colors.textPrimary)
                 .frame(width: 90, alignment: .leading)
 
             // Narrative
             Text(poolNarrative(pool))
-                .font(.system(size: 12.5, weight: .regular, design: .serif).italic())
+                .font(PulseFonts.body(12.5).italic())
                 .foregroundStyle(colors.textSecondary)
                 .lineLimit(1)
 
@@ -639,9 +638,9 @@ private struct MarketStructureContentView: View {
         VStack(alignment: .leading, spacing: PulseSpacing.md) {
             HStack(alignment: .firstTextBaseline, spacing: PulseSpacing.sm) {
                 Text(numeral + ".")
-                    .font(.system(size: 18, weight: .semibold, design: .serif))
+                    .font(PulseFonts.display(18, .semibold))
                     .italic()
-                    .foregroundStyle(PulseColors.accent.opacity(0.8))
+                    .foregroundStyle(PulseColors.accentText.opacity(0.8))
                     .frame(width: 28, alignment: .leading)
 
                 Text(title)
@@ -650,7 +649,7 @@ private struct MarketStructureContentView: View {
                     .foregroundStyle(colors.textPrimary)
 
                 Text("— " + pose)
-                    .font(.system(size: 13, weight: .regular, design: .serif).italic())
+                    .font(PulseFonts.body(13).italic())
                     .foregroundStyle(colors.textMuted)
 
                 Spacer()
@@ -667,7 +666,7 @@ private struct MarketStructureContentView: View {
             Image(systemName: icon)
                 .foregroundStyle(colors.textMuted.opacity(0.5))
             Text(text)
-                .font(.system(size: 13, weight: .regular, design: .serif).italic())
+                .font(PulseFonts.body(13).italic())
                 .foregroundStyle(colors.textMuted)
             Spacer()
         }
@@ -1011,7 +1010,7 @@ private struct SymbolPickerPanel: View {
                     if !query.isEmpty && filtered.isEmpty {
                         HStack {
                             Text(L10n.zh("未找到匹配的交易对", en: "No matching symbol"))
-                                .font(.system(size: 13, design: .serif).italic())
+                                .font(PulseFonts.body(13).italic())
                                 .foregroundStyle(colors.textMuted)
                             Spacer()
                         }
@@ -1043,7 +1042,7 @@ private struct SymbolPickerPanel: View {
             RoundedRectangle(cornerRadius: PulseRadii.lg)
                 .stroke(colors.border, lineWidth: 1)
         )
-        .shadow(color: .black.opacity(0.5), radius: 30, y: 12)
+        .applyShadow(PulseShadow.modal)
         .onAppear { focused = true }
     }
 
@@ -1065,13 +1064,13 @@ private struct SymbolPickerPanel: View {
         } label: {
             HStack(spacing: PulseSpacing.sm) {
                 Text(symbol)
-                    .font(.system(size: 13, weight: .medium, design: .monospaced))
+                    .font(PulseFonts.mono(13, .medium))
                     .foregroundStyle(colors.textPrimary)
                 Spacer()
                 if isCurrent {
                     Image(systemName: "checkmark")
                         .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(PulseColors.accent)
+                        .foregroundStyle(PulseColors.accentText)
                 }
             }
             .padding(.horizontal, PulseSpacing.md)

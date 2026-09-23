@@ -64,7 +64,6 @@ private struct SignalCenterContent: View {
             .frame(maxWidth: PulseSpacing.contentMaxWidth)
             .frame(maxWidth: .infinity)
         }
-        .background(colors.background)
         .id(settingsState.language)
         .task { await viewModel.load() }
     }
@@ -75,7 +74,7 @@ private struct SignalCenterContent: View {
         VStack(alignment: .leading, spacing: 14) {
             Text(L10n.zh("Signal Center · 信号中枢", en: "Signal Center"))
                 .font(PulseFonts.body(13, .semibold))
-                .foregroundStyle(PulseColors.accent)
+                .foregroundStyle(PulseColors.accentText)
                 .textCase(.uppercase)
                 .tracking(0.6)
             Text(L10n.zh("所有交易观点，汇聚一处裁决", en: "Every trading thesis, adjudicated in one place"))
@@ -114,8 +113,8 @@ private struct SignalCenterContent: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: PulseRadii.sm).fill(colors.cardBackground))
-        .overlay(RoundedRectangle(cornerRadius: PulseRadii.sm).stroke(colors.border, lineWidth: 1))
+        
+        .voltCardSurface()
     }
 
     // MARK: - 过滤卡
@@ -138,7 +137,7 @@ private struct SignalCenterContent: View {
                     .font(PulseFonts.body(12, .medium))
                     .foregroundStyle(colors.textSecondary)
                     .padding(.horizontal, 9).padding(.vertical, 3)
-                    .background(Capsule().fill(colors.surface))
+                    .background(RoundedRectangle(cornerRadius: PulseRadii.badge).fill(colors.surface))
             }
 
             let groups = viewModel.conflictGroups
@@ -174,7 +173,7 @@ private struct SignalCenterContent: View {
                     .font(PulseFonts.body(11.5, .semibold))
                     .foregroundStyle(colors.textSecondary)
                     .padding(.horizontal, 9).padding(.vertical, 3)
-                    .background(Capsule().fill(colors.surface))
+                    .background(RoundedRectangle(cornerRadius: PulseRadii.badge).fill(colors.surface))
             }
             .padding(.horizontal, 22)
             .padding(.top, 20)
@@ -200,8 +199,8 @@ private struct SignalCenterContent: View {
             .padding(.horizontal, 22)
             .padding(.bottom, 16)
         }
-        .background(RoundedRectangle(cornerRadius: PulseRadii.card).fill(colors.cardBackground))
-        .overlay(RoundedRectangle(cornerRadius: PulseRadii.card).stroke(colors.border, lineWidth: 1))
+        
+        .voltCardSurface()
     }
 
     // MARK: - 空态
@@ -221,8 +220,8 @@ private struct SignalCenterContent: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 60)
-        .background(RoundedRectangle(cornerRadius: PulseRadii.card).fill(colors.cardBackground))
-        .overlay(RoundedRectangle(cornerRadius: PulseRadii.card).stroke(colors.border, lineWidth: 1))
+        
+        .voltCardSurface()
     }
 
     // MARK: - 加载骨架

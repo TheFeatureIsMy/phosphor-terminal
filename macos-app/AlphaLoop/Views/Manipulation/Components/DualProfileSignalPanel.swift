@@ -36,7 +36,7 @@ struct DualProfileSignalPanel: View {
                         FlowLayout(spacing: PulseSpacing.xs) {
                             ForEach(symbols, id: \.self) { s in
                                 Text(s).font(PulseFonts.micro).padding(.horizontal, PulseSpacing.sm).padding(.vertical, 2)
-                                    .background { Capsule().fill(colors.cardBackground) }
+                                    .background { RoundedRectangle(cornerRadius: PulseRadii.badge).fill(colors.cardBackground) }
                             }
                         }
                     }
@@ -102,7 +102,7 @@ private struct StrategyImpactRow: View {
                 Text(item.strategyName).font(PulseFonts.tabular)
                 if item.wouldBlock {
                     Label(L10n.Manipulation.wouldBlock, systemImage: "checkmark.shield")
-                        .font(PulseFonts.micro).foregroundStyle(PulseColors.accent)
+                        .font(PulseFonts.micro).foregroundStyle(PulseColors.accentText)
                 } else if item.reasonCodes.contains("filter_disabled") {
                     Label(L10n.Manipulation.filterDisabled, systemImage: "exclamationmark.triangle")
                         .font(PulseFonts.micro).foregroundStyle(PulseColors.amber)

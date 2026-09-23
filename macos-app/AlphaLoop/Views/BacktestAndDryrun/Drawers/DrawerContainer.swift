@@ -22,7 +22,7 @@ struct DrawerContainer<Content: View>: View {
                         RoundedRectangle(cornerRadius: PulseRadii.card)
                             .fill(colors.cardBackground)
                             .overlay(RoundedRectangle(cornerRadius: PulseRadii.card).stroke(colors.border, lineWidth: 1))
-                            .shadow(color: .black.opacity(0.3), radius: 30, x: 0, y: 12)
+                            .applyShadow(PulseShadow.modal)
                     )
                     .clipShape(RoundedRectangle(cornerRadius: PulseRadii.card))
                     .transition(.move(edge: .trailing).combined(with: .opacity))

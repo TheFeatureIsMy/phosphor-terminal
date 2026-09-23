@@ -113,31 +113,31 @@ struct LiveModeIndicator: View {
         if emergencyLocked {
             HStack(spacing: 5) {
                 Image(systemName: "bolt.fill").font(.system(size: 9))
-                Text("EMERGENCY LOCKED").font(.system(size: 10, weight: .bold))
+                Text("EMERGENCY LOCKED").font(PulseFonts.mono(10, .bold))
             }
-            .foregroundStyle(KryptonColor.red)
+            .foregroundStyle(PulseColors.danger)
             .padding(.horizontal, 10).padding(.vertical, 4)
-            .background(Capsule().fill(KryptonColor.red.opacity(0.12)))
-            .overlay(Capsule().stroke(KryptonColor.red.opacity(0.3), lineWidth: 1))
+            .background(RoundedRectangle(cornerRadius: PulseRadii.badge).fill(PulseColors.danger.opacity(0.12)))
+            .overlay(RoundedRectangle(cornerRadius: PulseRadii.badge).stroke(PulseColors.danger.opacity(0.3), lineWidth: 1))
         } else if isLive {
             HStack(spacing: 5) {
-                Circle().fill(KryptonColor.green).frame(width: 5, height: 5)
-                    .shadow(color: KryptonColor.green.opacity(0.5), radius: 3)
-                Text("LIVE").font(.system(size: 10, weight: .bold))
+                Circle().fill(PulseColors.bullish).frame(width: 5, height: 5)
+                    .shadow(color: PulseColors.bullish.opacity(0.5), radius: 3)
+                Text("LIVE").font(PulseFonts.mono(10, .bold))
             }
-            .foregroundStyle(KryptonColor.green)
+            .foregroundStyle(PulseColors.bullish)
             .padding(.horizontal, 10).padding(.vertical, 4)
-            .background(Capsule().fill(KryptonColor.green.opacity(0.08)))
-            .overlay(Capsule().stroke(KryptonColor.green.opacity(0.2), lineWidth: 1))
+            .background(RoundedRectangle(cornerRadius: PulseRadii.badge).fill(PulseColors.bullish.opacity(0.08)))
+            .overlay(RoundedRectangle(cornerRadius: PulseRadii.badge).stroke(PulseColors.bullish.opacity(0.2), lineWidth: 1))
         } else {
             HStack(spacing: 5) {
-                Circle().fill(KryptonColor.amber).frame(width: 5, height: 5)
-                Text("PAPER").font(.system(size: 10, weight: .bold))
+                Circle().fill(PulseColors.amber).frame(width: 5, height: 5)
+                Text("PAPER").font(PulseFonts.mono(10, .bold))
             }
-            .foregroundStyle(KryptonColor.amber)
+            .foregroundStyle(PulseColors.amber)
             .padding(.horizontal, 10).padding(.vertical, 4)
-            .background(Capsule().fill(KryptonColor.amber.opacity(0.08)))
-            .overlay(Capsule().stroke(KryptonColor.amber.opacity(0.2), lineWidth: 1))
+            .background(RoundedRectangle(cornerRadius: PulseRadii.badge).fill(PulseColors.amber.opacity(0.08)))
+            .overlay(RoundedRectangle(cornerRadius: PulseRadii.badge).stroke(PulseColors.amber.opacity(0.2), lineWidth: 1))
         }
     }
 }
@@ -160,19 +160,19 @@ struct EmergencyPauseButton: View {
                 Image(systemName: "hand.raised.fill")
                     .font(.system(size: 11))
                 Text(L10n.zh("暂停交易", en: "Halt Trading"))
-                    .font(.system(size: 10, weight: .bold))
+                    .font(PulseFonts.mono(10, .bold))
             }
-            .foregroundStyle(isLive ? KryptonColor.red : colors.textMuted)
+            .foregroundStyle(isLive ? PulseColors.danger : colors.textMuted)
             .padding(.horizontal, 12).padding(.vertical, 5)
             .background(
-                Capsule()
-                    .fill(isLive ? KryptonColor.red.opacity(isHovered ? 0.2 : 0.08) : colors.surface)
+                RoundedRectangle(cornerRadius: PulseRadii.badge)
+                    .fill(isLive ? PulseColors.danger.opacity(isHovered ? 0.2 : 0.08) : colors.surface)
             )
             .overlay(
-                Capsule()
-                    .stroke(isLive ? KryptonColor.red.opacity(0.35) : colors.border, lineWidth: 1)
+                RoundedRectangle(cornerRadius: PulseRadii.badge)
+                    .stroke(isLive ? PulseColors.danger.opacity(0.35) : colors.border, lineWidth: 1)
             )
-            .shadow(color: isLive ? KryptonColor.red.opacity(isHovered ? 0.3 : 0.1) : .clear, radius: 6)
+            .shadow(color: isLive ? PulseColors.danger.opacity(isHovered ? 0.3 : 0.1) : .clear, radius: 6)
         }
         .buttonStyle(.plain)
         .disabled(!isLive)

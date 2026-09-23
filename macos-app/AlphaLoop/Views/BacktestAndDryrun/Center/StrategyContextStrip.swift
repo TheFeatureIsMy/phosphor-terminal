@@ -73,7 +73,7 @@ struct StrategyContextStrip: View {
                         HStack(spacing: PulseSpacing.sm) {
                             Image(systemName: "cube")
                                 .font(.system(size: 12))
-                                .foregroundStyle(PulseColors.accent)
+                                .foregroundStyle(PulseColors.accentText)
                             Text(strategyLabel)
                                 .font(PulseFonts.tabular)
                                 .foregroundStyle(colors.textPrimary)
@@ -157,7 +157,7 @@ struct StrategyContextStrip: View {
                                 Text(L10n.BacktestLab.Context.goLive)
                                     .font(PulseFonts.captionMedium)
                             }
-                            .foregroundStyle(PulseColors.accent)
+                            .foregroundStyle(PulseColors.accentText)
                         }
                         .buttonStyle(.plain)
                         .padding(.leading, PulseSpacing.lg)

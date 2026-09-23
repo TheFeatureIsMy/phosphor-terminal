@@ -134,7 +134,7 @@ struct AgentDetailView: View {
                 metricCard(
                     title: L10n.Agent.weight,
                     value: "—",
-                    color: PulseColors.accent
+                    color: PulseColors.accentText
                 )
             }
         }

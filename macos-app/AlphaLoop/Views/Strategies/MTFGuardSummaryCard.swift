@@ -36,14 +36,7 @@ struct MTFGuardSummaryCard: View {
             }
         }
         .padding(PulseSpacing.sm)
-        .background(
-            RoundedRectangle(cornerRadius: PulseRadii.card)
-                .fill(colors.cardBackground)
-                .overlay(
-                    RoundedRectangle(cornerRadius: PulseRadii.card)
-                        .stroke(colors.border, lineWidth: 1)
-                )
-        )
+        .voltCardSurface()
     }
 
     @ViewBuilder

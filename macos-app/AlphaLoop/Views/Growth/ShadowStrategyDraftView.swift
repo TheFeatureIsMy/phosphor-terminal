@@ -19,14 +19,7 @@ struct ShadowStrategyDraftView: View {
             actionBar
         }
         .padding(PulseSpacing.md)
-        .background(
-            RoundedRectangle(cornerRadius: PulseRadii.card)
-                .fill(colors.cardBackground)
-                .overlay(
-                    RoundedRectangle(cornerRadius: PulseRadii.card)
-                        .stroke(colors.border, lineWidth: 1)
-                )
-        )
+        .voltCardSurface()
     }
 
     private var header: some View {
@@ -133,7 +126,7 @@ struct ShadowStrategyDraftView: View {
             if draft.status == "validated" || draft.status == "backtested" || draft.status == "dryrun_passed" {
                 Button(L10n.zh("请求升级", en: "Request Upgrade")) { onRequestUpgrade?() }
                     .buttonStyle(.borderedProminent)
-                    .tint(PulseColors.accent)
+                    .tint(PulseColors.accentText)
                     .controlSize(.small)
             }
         }

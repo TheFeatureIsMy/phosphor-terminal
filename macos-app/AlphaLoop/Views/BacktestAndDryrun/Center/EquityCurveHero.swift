@@ -38,7 +38,7 @@ struct EquityCurveHero: View {
                             equityPath(for: r.equityCurve, in: geo.size, color: seriesColor(for: r.id))
                         }
                     } else {
-                        equityPath(for: run.equityCurve, in: geo.size, color: PulseColors.accent, fill: true)
+                        equityPath(for: run.equityCurve, in: geo.size, color: PulseColors.accentText, fill: true)
                     }
                 }
             }

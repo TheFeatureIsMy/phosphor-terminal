@@ -46,11 +46,11 @@ struct NotificationPopover: View {
             if viewModel.unreadCount > 0 {
                 Text("\(viewModel.unreadCount)")
                     .font(PulseFonts.micro)
-                    .foregroundStyle(PulseColors.accent)
+                    .foregroundStyle(PulseColors.accentText)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
                     .background(
-                        Capsule()
+                        RoundedRectangle(cornerRadius: PulseRadii.badge)
                             .fill(PulseColors.accent.opacity(0.15))
                     )
             }
@@ -94,7 +94,7 @@ struct NotificationPopover: View {
     private var loadingState: some View {
         VStack(spacing: PulseSpacing.sm) {
             ProgressView()
-                .tint(PulseColors.accent)
+                .tint(PulseColors.accentText)
             Text(L10n.zh("加载中...", en: "Loading..."))
                 .font(PulseFonts.caption)
                 .foregroundStyle(colors.textMuted)
@@ -125,7 +125,7 @@ struct NotificationPopover: View {
             } label: {
                 Text(L10n.zh("全部已读", en: "Mark All Read"))
                     .font(PulseFonts.captionMedium)
-                    .foregroundStyle(PulseColors.accent)
+                    .foregroundStyle(PulseColors.accentText)
             }
             .buttonStyle(.plain)
             .disabled(viewModel.unreadCount == 0)

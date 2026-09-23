@@ -134,7 +134,7 @@ struct VersionsPanel: View {
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
             .background(color.opacity(0.12))
-            .clipShape(Capsule())
+            .clipShape(RoundedRectangle(cornerRadius: PulseRadii.badge))
     }
 
     // MARK: - Helpers

@@ -1,5 +1,6 @@
-// GlobalStatusBar.swift — Two-row top bar for the entire app.
+// GlobalStatusBar.swift — VOLT 顶栏：报价跑马灯 + 主操作行 + 状态条。
 //
+//   Row 0 — TickerTapeView（实时行情跑马灯；无数据时自动隐藏）
 //   Row 1 — brand + mode pill + main actions (language / theme / command palette /
 //           notifications / emergency stop). Breadcrumb ("// 当前页") only when
 //           the active route is NOT `.dashboard` (Dashboard has its own page
@@ -24,12 +25,14 @@ struct GlobalStatusBar: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            TickerTapeView(items: statusVM.tapeItems)
             row1
             row2
         }
+        // 顶栏与页面同暖纸底(外壳一体),仅靠底部发丝线分隔 —— 消除白栏/暖页割裂
         .background(
             Rectangle()
-                .fill(colors.cardBackground)
+                .fill(colors.background)
         )
         .overlay(alignment: .bottom) {
             Rectangle().fill(colors.border).frame(height: 1)
@@ -52,20 +55,34 @@ struct GlobalStatusBar: View {
                 HStack(spacing: PulseSpacing.xxs) {
                     Text(appState.selectedRoute.label)
                         .font(PulseFonts.body(12, .semibold))
-                        .foregroundStyle(PulseColors.accent)
+                        .foregroundStyle(PulseColors.accentText)
                         .textCase(.uppercase)
                         .tracking(0.6)
                 }
                 .id(settingsState.language)
             } else {
                 HStack(spacing: PulseSpacing.xs) {
-                    Text("弈机")
-                        .font(.system(size: 12, weight: .bold, design: .rounded))
-                        .foregroundStyle(colors.textPrimary)
-                    Text("AlphaLoop")
-                        .font(PulseFonts.monoLabel)
-                        .foregroundStyle(PulseColors.accent)
-                        .tracking(2)
+                    // VOLT logo mark: 实心电光黄块 + 近黑字 + 斜切
+                    Text("ALPHALOOP")
+                        .font(PulseFonts.display(13, .black))
+                        .tracking(0.5)
+                        .foregroundStyle(Color(hex: "0A0A0C"))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(
+                            PulseColors.accent
+                        )
+                        .clipShape(
+                            Path { p in
+                                let w: CGFloat = 100
+                                let h: CGFloat = 24
+                                p.move(to: CGPoint(x: 0, y: 0))
+                                p.addLine(to: CGPoint(x: w, y: 0))
+                                p.addLine(to: CGPoint(x: w - 6, y: h))
+                                p.addLine(to: CGPoint(x: 0, y: h))
+                                p.closeSubpath()
+                            }
+                        )
                 }
             }
 
@@ -77,7 +94,7 @@ struct GlobalStatusBar: View {
             HStack(spacing: PulseSpacing.sm) {
                 Button { settingsState.toggleLanguage() } label: {
                     Text(settingsState.language == .zhCN ? "中" : "EN")
-                        .font(.system(size: 11, weight: .medium, design: .rounded))
+                        .font(PulseFonts.mono(11, .medium))
                         .foregroundStyle(colors.textMuted)
                         .frame(width: 24, height: 24)
                         .hoverGlassStyle(cornerRadius: PulseRadii.md)
@@ -119,7 +136,7 @@ struct GlobalStatusBar: View {
                                 .foregroundStyle(.white)
                                 .padding(.horizontal, 3)
                                 .padding(.vertical, 1)
-                                .background(Capsule().fill(PulseColors.danger))
+                                .background(RoundedRectangle(cornerRadius: PulseRadii.badge).fill(PulseColors.danger))
                                 .offset(x: 6, y: -6)
                         }
                     }
@@ -208,6 +225,7 @@ final class TopBarStatusViewModel {
     var risk: RiskOverviewResponse?
     var providerHealth: ProviderHealthSummary?
     var positions: [PositionData] = []
+    var tapeItems: [TapeItem] = []
     var lastUpdated: Date?
 
     private var client: NetworkClientProtocol?
@@ -223,7 +241,8 @@ final class TopBarStatusViewModel {
         async let overview: () = loadOverview(client: client)
         async let providers: () = loadProviders(client: client)
         async let positions: () = loadPositions(client: client)
-        _ = await (overview, providers, positions)
+        async let tape: () = loadTape(client: client)
+        _ = await (overview, providers, positions, tape)
         lastUpdated = Date()
     }
 
@@ -266,6 +285,16 @@ final class TopBarStatusViewModel {
             )
         } catch {
             // soft-fail; keep prior values
+        }
+    }
+
+    private func loadTape(client: NetworkClientProtocol) async {
+        do {
+            let api = APIOverview(client: client)
+            let resp = try await api.getTape()
+            tapeItems = resp.items.map { TapeItem(symbol: $0.symbol, last: $0.last, changePct: $0.changePct) }
+        } catch {
+            // soft-fail; tape stays hidden when empty
         }
     }
 

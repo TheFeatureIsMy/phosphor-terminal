@@ -17,11 +17,18 @@ struct FailureClusteringView: View {
                 } else {
                     VStack(spacing: PulseSpacing.md) {
                         pageHeader
+                        if !vm.reasonCodes.isEmpty {
+                            reasonCodesStrip(vm: vm)
+                        }
                         summaryCards(vm: vm)
                         tabSelector(vm: vm)
                         tabContent(vm: vm)
                     }
-                    .padding(PulseSpacing.lg)
+                    .padding(.horizontal, 28)
+                    .padding(.top, 20)
+                    .padding(.bottom, 40)
+                    .frame(maxWidth: PulseSpacing.contentMaxWidth)
+                    .frame(maxWidth: .infinity)
                     .id(settingsState.language)
                 }
             } else {
@@ -39,6 +46,27 @@ struct FailureClusteringView: View {
     }
 
     // MARK: - Header
+
+    private func reasonCodesStrip(vm: FailureClusteringViewModel) -> some View {
+        HStack(spacing: PulseSpacing.xs) {
+            Image(systemName: vm.state == "data_source_unavailable" ? "exclamationmark.triangle" : "info.circle")
+                .font(.system(size: 11))
+                .foregroundStyle(vm.state == "data_source_unavailable" ? PulseColors.StateColors.yellow : colors.textMuted)
+            ForEach(vm.reasonCodes, id: \.self) { code in
+                Text(code)
+                    .font(PulseFonts.monoLabel)
+                    .foregroundStyle(vm.state == "data_source_unavailable" ? PulseColors.StateColors.yellow : colors.textMuted)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background((vm.state == "data_source_unavailable" ? PulseColors.StateColors.yellow : colors.textMuted).opacity(0.08))
+                    .clipShape(RoundedRectangle(cornerRadius: PulseRadii.badge))
+            }
+            Spacer()
+        }
+        .padding(PulseSpacing.sm)
+        .background(colors.surface.opacity(0.4))
+        .clipShape(RoundedRectangle(cornerRadius: PulseRadii.sm))
+    }
 
     private var pageHeader: some View {
         QuantPageHeader(

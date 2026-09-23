@@ -71,10 +71,10 @@ struct ModePill: View {
         .padding(.horizontal, compact ? 7 : 9)
         .padding(.vertical, compact ? 2 : 4)
         .background(
-            Capsule().fill(mode.color.opacity(0.10))
+            RoundedRectangle(cornerRadius: PulseRadii.badge).fill(mode.color.opacity(0.10))
         )
         .overlay(
-            Capsule().stroke(mode.color.opacity(0.30), lineWidth: 0.7)
+            RoundedRectangle(cornerRadius: PulseRadii.badge).stroke(mode.color.opacity(0.30), lineWidth: 0.7)
         )
     }
 }

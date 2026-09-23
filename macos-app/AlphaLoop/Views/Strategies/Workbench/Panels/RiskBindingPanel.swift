@@ -59,7 +59,7 @@ struct RiskBindingPanel: View {
                 .foregroundStyle(PulseColors.onAccent)
                 .padding(.horizontal, 10).padding(.vertical, 6)
                 .background(PulseColors.accent)
-                .clipShape(Capsule())
+                .clipShape(RoundedRectangle(cornerRadius: PulseRadii.badge))
             }
             .buttonStyle(.plain)
         }
@@ -76,7 +76,7 @@ struct RiskBindingPanel: View {
                 Text(b.mode.uppercased())
                     .font(PulseFonts.micro)
                     .tracking(0.8)
-                    .foregroundStyle(PulseColors.accent)
+                    .foregroundStyle(PulseColors.accentText)
                 Spacer()
                 Text(L10n.Workbench.bindingActive)
                     .font(PulseFonts.micro)

@@ -1,25 +1,46 @@
-// ViewModifiers.swift — Protocol 可复用视图修饰器
-// 白卡 + 极轻边框 + 品牌色柔和阴影;悬停上浮反馈
+// ViewModifiers.swift — VOLT 可复用视图修饰器
+// 炭卡 + 硬边框 + 电光强调;slam 入场;mono 终端标签
 
 import SwiftUI
 
-// MARK: - 卡片样式 (Protocol 白卡)
+// MARK: - 卡片样式 (统一 = dashboard ProtocolCard 语言:1pt 边框 + 卡片阴影 + hover 浮起)
 struct CardModifier: ViewModifier {
     @Environment(PulseColors.self) private var colors
     var padding: CGFloat = PulseSpacing.md
+    @State private var isHovering = false
 
     func body(content: Content) -> some View {
         content
             .padding(padding)
+            .voltCardSurface()
+    }
+}
+
+// MARK: - 统一卡片表面 (不含 padding,供已自管内边距的内联卡迁移)
+// 与 dashboard ProtocolCard 同款:cardBackground + 1pt border + 卡片阴影;
+// hover:边框加亮 + elevated 阴影 + 浮起 2pt。voltBorder = 电光描边变体(Verdict 卡等)。
+struct VoltCardSurfaceModifier: ViewModifier {
+    @Environment(PulseColors.self) private var colors
+    var voltBorder: Bool = false
+    @State private var isHovering = false
+
+    func body(content: Content) -> some View {
+        content
             .background(
                 RoundedRectangle(cornerRadius: PulseRadii.card)
                     .fill(colors.cardBackground)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: PulseRadii.card)
-                    .stroke(colors.border, lineWidth: 1)
+                    .stroke(voltBorder ? PulseColors.accent.opacity(0.4) : (isHovering ? colors.borderHover : colors.border),
+                            lineWidth: 1)
             )
-            .applyShadow(PulseShadow.card(colors))
+            .shadow(color: voltBorder ? PulseColors.accent.opacity(isHovering ? 0.12 : 0.06) : .clear,
+                    radius: voltBorder ? 32 : 0, y: 0)
+            .applyShadow(isHovering ? PulseShadow.elevated(colors) : PulseShadow.card(colors))
+            .offset(y: isHovering ? -2 : 0)
+            .animation(PulseAnimation.hoverLift, value: isHovering)
+            .onHover { isHovering = $0 }
     }
 }
 
@@ -195,7 +216,7 @@ struct StaggeredAppearanceModifier: ViewModifier {
                     appeared = true
                 } else {
                     withAnimation(
-                        PulseAnimation.springDefault
+                        PulseAnimation.slam
                             .delay(baseDelay + Double(index) * PulseAnimation.staggerDelay)
                     ) {
                         appeared = true
@@ -211,10 +232,10 @@ struct TerminalLabelModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .font(PulseFonts.body(13, .semibold))
+            .font(PulseFonts.mono(11, .semibold))
             .foregroundColor(colors.textSecondary)
             .textCase(.uppercase)
-            .tracking(0.6)
+            .tracking(1.2)
     }
 }
 
@@ -222,6 +243,11 @@ struct TerminalLabelModifier: ViewModifier {
 extension View {
     func cardStyle(padding: CGFloat = PulseSpacing.md) -> some View {
         modifier(CardModifier(padding: padding))
+    }
+
+    /// 统一卡片表面(dashboard ProtocolCard 语言),不含 padding
+    func voltCardSurface(voltBorder: Bool = false) -> some View {
+        modifier(VoltCardSurfaceModifier(voltBorder: voltBorder))
     }
 
     func glassStyle() -> some View {

@@ -18,7 +18,7 @@ struct StrategyRuntimeCard: View {
                 // Large number + unit
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Text(String(format: "%.0f", displayCount))
-                        .font(.system(size: 28, weight: .bold, design: .monospaced))
+                        .font(PulseFonts.mono(28, .bold))
                         .monospacedDigit()
                         .foregroundStyle(PulseColors.purple)
                         .contentTransition(.numericText())

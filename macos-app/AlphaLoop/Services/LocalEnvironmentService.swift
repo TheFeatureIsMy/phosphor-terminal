@@ -99,6 +99,13 @@ final class LocalEnvironmentService: ObservableObject {
             _ = try? await shell("brew services start postgresql@16 2>&1")
             try? await Task.sleep(for: .seconds(2))
             await checkPostgres()
+            // 回退：brew services 不可用时直接 pg_ctl 启动
+            if postgresStatus != .healthy {
+                lastLog = "回退 pg_ctl 启动 PostgreSQL..."
+                _ = try? await shell("pg_ctl -D /opt/homebrew/var/postgresql@16 -l /opt/homebrew/var/log/postgresql@16.log start 2>&1")
+                try? await Task.sleep(for: .seconds(2))
+                await checkPostgres()
+            }
         }
 
         // 2. 启动 Redis
@@ -108,6 +115,13 @@ final class LocalEnvironmentService: ObservableObject {
             _ = try? await shell("brew services start redis 2>&1")
             try? await Task.sleep(for: .seconds(2))
             await checkRedis()
+            // 回退：brew services 不可用时直接 daemonize 启动
+            if redisStatus != .healthy {
+                lastLog = "回退直接启动 Redis..."
+                _ = try? await shell("redis-server --daemonize yes 2>&1")
+                try? await Task.sleep(for: .seconds(1))
+                await checkRedis()
+            }
         }
 
         // 3. 启动后端 API
@@ -209,9 +223,12 @@ final class LocalEnvironmentService: ObservableObject {
             return
         }
 
-        // 查找 python3.11 可执行文件
+        // 查找 Python 可执行文件：优先 backend/.venv（依赖完整），其次系统 python3.11
+        let venvPython = "\(backendDir)/.venv/bin/python"
         let pythonPath: String
-        if let whichResult = try? await shell("which python3.11 2>/dev/null"), !whichResult.isEmpty {
+        if FileManager.default.fileExists(atPath: venvPython) {
+            pythonPath = venvPython
+        } else if let whichResult = try? await shell("which python3.11 2>/dev/null"), !whichResult.isEmpty {
             pythonPath = whichResult.trimmingCharacters(in: .whitespacesAndNewlines)
         } else {
             pythonPath = "/opt/homebrew/opt/python@3.11/bin/python3.11"

@@ -18,11 +18,11 @@ struct NotificationSettingsView: View {
             VStack(alignment: .leading, spacing: PulseSpacing.md) {
                 row(L10n.Settings.telegramBotToken) {
                     SecureField(L10n.Settings.telegramBotToken, text: $s.telegramBotToken)
-                        .darkTextField()
+                        
                 }
                 row(L10n.Settings.telegramChatId) {
                     TextField(L10n.Settings.telegramChatId, text: $s.telegramChatId)
-                        .darkTextField()
+                        
                 }
                 Divider().overlay(colors.border)
                 toggleRow(L10n.Settings.notifyRisk, isOn: $s.notifyRiskEvents)
@@ -76,7 +76,7 @@ struct NotificationSettingsView: View {
                 .foregroundStyle(colors.textSecondary)
                 .frame(width: 160, alignment: .leading)
             Toggle("", isOn: isOn)
-                .tint(PulseColors.accent)
+                .tint(PulseColors.accentText)
             Spacer()
         }
     }

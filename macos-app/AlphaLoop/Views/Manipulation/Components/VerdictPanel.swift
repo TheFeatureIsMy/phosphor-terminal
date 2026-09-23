@@ -76,7 +76,7 @@ private struct RiskBadge: View {
             .padding(.horizontal, PulseSpacing.sm)
             .padding(.vertical, 2)
             .background {
-                Capsule().fill(level == "critical" || level == "high" ? PulseColors.danger.opacity(0.2) : PulseColors.amber.opacity(0.2))
+                RoundedRectangle(cornerRadius: PulseRadii.badge).fill(level == "critical" || level == "high" ? PulseColors.danger.opacity(0.2) : PulseColors.amber.opacity(0.2))
             }
     }
 }

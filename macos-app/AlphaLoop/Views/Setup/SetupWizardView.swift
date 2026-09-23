@@ -72,7 +72,7 @@ struct SetupWizardView: View {
                     }
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(PulseColors.accent)
+                .tint(PulseColors.accentText)
             }
             .padding(PulseSpacing.lg)
         }
@@ -175,11 +175,13 @@ struct SetupWizardView: View {
 
             Text(statusText)
                 .font(PulseFonts.caption)
-                .foregroundStyle(isAvailable ? PulseColors.accent : colors.textMuted)
+                .foregroundStyle(isAvailable ? PulseColors.accentText : colors.textMuted)
         }
         .padding(PulseSpacing.sm)
-        .background(colors.cardBackground)
-        .cornerRadius(PulseRadii.sm)
+        .background(
+            RoundedRectangle(cornerRadius: PulseRadii.sm)
+                .fill(colors.cardBackground)
+        )
     }
 
     private func completeSetup() {

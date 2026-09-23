@@ -63,7 +63,7 @@ struct StrategyListPanel: View {
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
                 .background(active ? PulseColors.accent : colors.surface)
-                .clipShape(Capsule())
+                .clipShape(RoundedRectangle(cornerRadius: PulseRadii.badge))
         }
         .buttonStyle(.plain)
     }
@@ -122,7 +122,7 @@ struct StrategyListPanel: View {
                 if selected {
                     Image(systemName: "checkmark")
                         .font(.system(size: 10, weight: .semibold))
-                        .foregroundStyle(PulseColors.accent)
+                        .foregroundStyle(PulseColors.accentText)
                 }
             }
             .padding(.horizontal, 10)

@@ -27,7 +27,7 @@ struct SettingsView: View {
         QuantPageHeader(
             eyebrow: "SYSTEM",
             title: L10n.Settings.title,
-            subtitle: L10n.zh("基础偏好 · 交易 · 数据源 · LLM · 通知 · 安全", en: "Preferences · Trading · Data · LLM · Notifications · Security")
+            subtitle: L10n.zh("基础偏好 · 通知 · 安全 · 高级", en: "Preferences · Notifications · Security · Advanced")
         )
         .padding(.horizontal, PulseSpacing.lg)
         .padding(.vertical, PulseSpacing.sm)
@@ -42,17 +42,6 @@ struct SettingsView: View {
                 appearanceSection
                 helpSection
                 ProfileSettingsView()
-            }
-        case .trading:
-            VStack(spacing: PulseSpacing.lg) {
-                ExchangeSettingsView()
-                RiskSettingsView()
-            }
-        case .dataProviders:
-            DataSourcesView()
-        case .llm:
-            VStack(spacing: PulseSpacing.lg) {
-                LLMProviderSettingsView()
             }
         case .notifications:
             NotificationSettingsView()
@@ -112,7 +101,7 @@ struct SettingsView: View {
                     .foregroundStyle(colors.textPrimary)
                 Spacer()
                 Toggle("", isOn: Bindable(settings).dryRun)
-                    .tint(PulseColors.accent)
+                    .tint(PulseColors.accentText)
                     .onChange(of: settings.dryRun) { _, _ in
                         settings.scheduleSave()
                     }

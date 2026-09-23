@@ -61,8 +61,8 @@ struct SignalFilterCard: View {
             }
         }
         .padding(16)
-        .background(RoundedRectangle(cornerRadius: PulseRadii.card).fill(colors.cardBackground))
-        .overlay(RoundedRectangle(cornerRadius: PulseRadii.card).stroke(colors.border, lineWidth: 1))
+        
+        .voltCardSurface()
     }
 
     private func filterGroup(_ label: String, options: [String], selected: String, onSelect: @escaping (String) -> Void) -> some View {
@@ -79,7 +79,7 @@ struct SignalFilterCard: View {
     private func filterChip(_ text: String, selected: Bool, onTap: @escaping () -> Void) -> some View {
         Text(text)
             .font(PulseFonts.body(13, selected ? .semibold : .regular))
-            .foregroundStyle(selected ? PulseColors.accent : colors.textSecondary)
+            .foregroundStyle(selected ? PulseColors.accentText : colors.textSecondary)
             .padding(.horizontal, 12).padding(.vertical, 6)
             .background(RoundedRectangle(cornerRadius: 10).fill(selected ? PulseColors.accentSoft : colors.surface))
             .overlay(RoundedRectangle(cornerRadius: 10).stroke(selected ? PulseColors.accent.opacity(0.4) : Color.clear, lineWidth: 1))
@@ -139,7 +139,7 @@ struct SignalRiskChip: View {
         let (label, fg, bg): (String, Color, Color) = {
             switch r {
             case "low": return (L10n.Signals.riskLow, PulseColors.bullish, PulseColors.bullishSoft)
-            case "medium": return (L10n.Signals.riskMedium, Color(hex: "B4740B"), PulseColors.warningSoft)
+            case "medium": return (L10n.Signals.riskMedium, PulseColors.warning, PulseColors.warningSoft)
             case "high": return (L10n.Signals.riskHigh, PulseColors.bearish, PulseColors.bearishSoft)
             default: return (L10n.Signals.riskCritical, PulseColors.bearish, PulseColors.bearishSoft)
             }
@@ -148,7 +148,7 @@ struct SignalRiskChip: View {
             .font(PulseFonts.body(11, .semibold))
             .foregroundStyle(fg)
             .padding(.horizontal, 8).padding(.vertical, 3)
-            .background(Capsule().fill(bg))
+            .background(RoundedRectangle(cornerRadius: PulseRadii.badge).fill(bg))
     }
 }
 
@@ -160,8 +160,8 @@ struct SignalConfidenceBar: View {
         HStack(spacing: 8) {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
-                    Capsule().fill(colors.surface).frame(height: 6)
-                    Capsule().fill(PulseColors.accent)
+                    RoundedRectangle(cornerRadius: 3).fill(colors.surface).frame(height: 6)
+                    RoundedRectangle(cornerRadius: 3).fill(PulseColors.accent)
                         .frame(width: geo.size.width * min(max(confidence, 0), 1), height: 6)
                 }
             }
@@ -191,7 +191,7 @@ struct SignalTableRow: View {
                     RoundedRectangle(cornerRadius: 9).fill(signalSymbolColor(signal.symbol))
                         .frame(width: 30, height: 30)
                         .overlay(Text(signalSymbolInitials(signal.symbol))
-                            .font(PulseFonts.display(12, .bold)).foregroundStyle(.white))
+                            .font(PulseFonts.display(12, .bold)).foregroundStyle(PulseColors.onAccent))
                     Text(signal.symbol).font(PulseFonts.body(14, .semibold)).foregroundStyle(colors.textPrimary)
                 }
                 .frame(width: 200, alignment: .leading)
@@ -323,7 +323,7 @@ struct SignalConflictCard: View {
                 Text(L10n.Signals.conflictDirection)
                     .font(PulseFonts.body(11, .semibold)).foregroundStyle(PulseColors.warning)
                     .padding(.horizontal, 8).padding(.vertical, 3)
-                    .background(Capsule().fill(PulseColors.warningSoft))
+                    .background(RoundedRectangle(cornerRadius: PulseRadii.badge).fill(PulseColors.warningSoft))
             }
 
             // 多空对立行
@@ -337,13 +337,13 @@ struct SignalConflictCard: View {
                 .font(PulseFonts.body(12.5)).foregroundStyle(colors.textSecondary)
 
             Text(L10n.Signals.conflictAdjudicate)
-                .font(PulseFonts.body(13, .semibold)).foregroundStyle(PulseColors.accent)
+                .font(PulseFonts.body(13, .semibold)).foregroundStyle(PulseColors.accentText)
                 .onTapGesture(perform: onAdjudicate)
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: PulseRadii.card).fill(colors.cardBackground))
-        .overlay(RoundedRectangle(cornerRadius: PulseRadii.card).stroke(colors.border, lineWidth: 1))
+        
+        .voltCardSurface()
     }
 
     private func sideLine(_ s: SignalV2?, long: Bool) -> some View {

@@ -33,11 +33,16 @@ struct RiskView: View {
                     topCorrelations
                     liveSmallApprovalSection
                 }
-                .padding(PulseSpacing.lg)
+                .padding(.horizontal, 28)
+                .padding(.top, PulseSpacing.md)
+                .padding(.bottom, 40)
+                .frame(maxWidth: PulseSpacing.contentMaxWidth)
+                .frame(maxWidth: .infinity)
                 .id(settingsState.language)
             }
         }
         .scrollEdgeEffectStyle(.soft, for: .vertical)
+        .riskAtmosphericBackground(tint: PulseColors.danger)
         .task { await loadData() }
         .alert(L10n.zh("紧急停止确认", en: "Emergency Stop Confirmation"), isPresented: $showEmergencyConfirm) {
             Button(L10n.zh("取消", en: "Cancel"), role: .cancel) {}
@@ -127,6 +132,7 @@ struct RiskView: View {
             RoundedRectangle(cornerRadius: PulseRadii.card)
                 .stroke(PulseColors.danger.opacity(0.3), lineWidth: 1)
         )
+        .shadow(color: PulseColors.danger.opacity(0.08), radius: 24, y: 0)
     }
 
     private func executeEmergencyStop() async {
@@ -161,19 +167,18 @@ struct RiskView: View {
     // MARK: - Header
 
     private var pageHeader: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: PulseSpacing.xxs) {
-                Text(L10n.zh("风险管理", en: "Risk Management"))
-                    .font(PulseFonts.displayHeading)
-                    .foregroundStyle(colors.textPrimary)
-                HStack(spacing: PulseSpacing.xxs) {
-                    StatusDot(status: riskEvents.isEmpty ? .online : .loading)
-                    Text(riskEvents.isEmpty ? L10n.zh("风险可控", en: "Risk Under Control") : L10n.zh("需要关注", en: "Attention Required"))
-                        .font(PulseFonts.caption)
-                        .foregroundStyle(colors.textMuted)
-                }
+        QuantPageHeader(
+            eyebrow: "RISK MANAGEMENT",
+            title: L10n.zh("风险管理", en: "Risk Management"),
+            subtitle: riskEvents.isEmpty ? L10n.zh("风险可控 · 全部指标正常", en: "Risk under control · all metrics nominal") : L10n.zh("需要关注 · \(riskEvents.count) 条风险事件", en: "Attention required · \(riskEvents.count) risk events")
+        ) {
+            HStack(spacing: PulseSpacing.xs) {
+                StatusDot(status: riskEvents.isEmpty ? .online : .loading)
+                Text(riskEvents.isEmpty ? L10n.zh("风险可控", en: "Risk Under Control") : L10n.zh("需要关注", en: "Attention Required"))
+                    .font(PulseFonts.mono(10, .semibold))
+                    .foregroundStyle(colors.textMuted)
+                    .tracking(0.8)
             }
-            Spacer()
         }
     }
 
@@ -183,25 +188,25 @@ struct RiskView: View {
         HStack(spacing: PulseSpacing.md) {
             StatCard(
                 icon: "exclamationmark.triangle.fill",
-                label: L10n.zh("风险事件", en: "Risk Events"),
+                label: L10n.zh("风险事件", en: "RISK EVENTS"),
                 value: "\(riskEvents.count)",
                 color: severityColor(.critical)
             )
             StatCard(
                 icon: "bell.badge.fill",
-                label: L10n.zh("活跃告警", en: "Active Alerts"),
+                label: L10n.zh("活跃告警", en: "ACTIVE ALERTS"),
                 value: "\(activeAlertsCount)",
                 color: PulseColors.warning
             )
             StatCard(
                 icon: "arrow.triangle.branch",
-                label: L10n.zh("相关性对", en: "Correlated Pairs"),
+                label: L10n.zh("相关性对", en: "CORR. PAIRS"),
                 value: "\(correlation.count)",
                 color: PulseColors.info
             )
             StatCard(
                 icon: "gauge.with.dots.needle.33percent",
-                label: L10n.zh("风险评分", en: "Risk Score"),
+                label: L10n.zh("风险评分", en: "RISK SCORE"),
                 value: riskScore,
                 color: riskScoreColor
             )
@@ -343,7 +348,7 @@ struct RiskView: View {
                     if let action = event.actionTaken {
                         Text(action)
                             .font(PulseFonts.micro)
-                            .foregroundStyle(PulseColors.accent)
+                            .foregroundStyle(PulseColors.accentText)
                     }
                     Text(String(event.createdAt.prefix(16)))
                         .font(PulseFonts.micro)
@@ -426,7 +431,7 @@ struct RiskView: View {
                             .font(PulseFonts.captionMedium)
                             .foregroundStyle(colors.textSecondary)
                         TextField(L10n.zh("输入策略版本 ID...", en: "Enter strategy version ID..."), text: $liveSmallStrategyId)
-                            .darkTextField()
+                            
                     }
 
                     KryptonButton(
@@ -603,9 +608,9 @@ extension RiskView {
                             Image(systemName: category.icon)
                                 .font(.system(size: 10))
                             Text(category.displayName)
-                                .font(PulseFonts.captionMedium)
+                                .font(PulseFonts.mono(10, .semibold))
                         }
-                        .foregroundStyle(selectedCategory == category ? colors.background : colors.textSecondary)
+                        .foregroundStyle(selectedCategory == category ? PulseColors.onAccent : colors.textSecondary)
                         .padding(.horizontal, PulseSpacing.sm)
                         .padding(.vertical, PulseSpacing.xs)
                         .background(
@@ -690,18 +695,26 @@ struct StatCard: View {
 
     var body: some View {
         KryptonCard(emphasis: .subtle) {
-            VStack(spacing: PulseSpacing.xs) {
-                Image(systemName: icon)
-                    .font(.system(size: 18))
-                    .foregroundStyle(color)
+            VStack(alignment: .leading, spacing: PulseSpacing.xs) {
+                // Icon + eyebrow label
+                HStack(spacing: PulseSpacing.xs) {
+                    Image(systemName: icon)
+                        .font(.system(size: 11))
+                        .foregroundStyle(color)
+                    Text(label)
+                        .font(PulseFonts.mono(9.5, .medium))
+                        .foregroundStyle(colors.textMuted)
+                        .tracking(0.8)
+                        .lineLimit(1)
+                }
+
+                // Big number — VOLT: Archivo display
                 Text(value)
-                    .font(PulseFonts.displayHeading)
+                    .font(PulseFonts.display(26, .bold))
                     .foregroundStyle(colors.textPrimary)
-                Text(label)
-                    .font(PulseFonts.caption)
-                    .foregroundStyle(colors.textMuted)
+                    .monospacedDigit()
             }
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 }

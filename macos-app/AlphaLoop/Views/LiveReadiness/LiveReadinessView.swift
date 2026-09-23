@@ -12,7 +12,7 @@
 //   2) Step 1: 阅读启动摘要
 //   3) Step 2: 勾选 "我已理解" 确认
 //   4) Step 3: 输入确认短语 "I confirm live trading"
-//   5) 真实调用 APIEmergency.emergencyStop（占位）+ 重新拉取 BFF
+//   5) 确认后调用真实 /api/trading/start-paper | start-live-small，重新拉取 BFF
 
 import SwiftUI
 
@@ -21,6 +21,7 @@ struct LiveReadinessView: View {
     @Environment(AppState.self) private var appState
     @Environment(SettingsState.self) private var settingsState
     @Bindable var viewModel: LiveReadinessViewModel
+    @State private var showDisableAutoConfirm = false
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
@@ -37,9 +38,13 @@ struct LiveReadinessView: View {
                     .staggeredAppearance(index: 4)
                 Spacer().frame(height: PulseSpacing.lg)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 16)
+            .padding(.horizontal, 28)
+            .padding(.top, 20)
+            .padding(.bottom, 40)
+            .frame(maxWidth: PulseSpacing.contentMaxWidth)
+            .frame(maxWidth: .infinity)
         }
+        .scrollEdgeEffectStyle(.soft, for: .vertical)
         .safeAreaPadding(.top, PulseSpacing.xxs)
         .task {
             await viewModel.loadData()
@@ -82,10 +87,10 @@ struct LiveReadinessView: View {
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
             .background(
-                Capsule().fill(color.opacity(0.10))
+                RoundedRectangle(cornerRadius: PulseRadii.badge).fill(color.opacity(0.10))
             )
             .overlay(
-                Capsule().stroke(color.opacity(0.30), lineWidth: 0.7)
+                RoundedRectangle(cornerRadius: PulseRadii.badge).stroke(color.opacity(0.30), lineWidth: 0.7)
             )
     }
 
@@ -119,7 +124,7 @@ struct LiveReadinessView: View {
                     .textCase(.uppercase)
                     .tracking(0.5)
             }
-            .foregroundStyle(PulseColors.accent)
+            .foregroundStyle(PulseColors.accentText)
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
             .background(
@@ -536,8 +541,39 @@ struct LiveReadinessView: View {
                         action: { viewModel.requestLaunch(mode: "live_full") }
                     )
                 }
+
+                // Disable auto trading (stops active dry-runs + blocks new entries)
+                HStack {
+                    Spacer()
+                    Button {
+                        showDisableAutoConfirm = true
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "pause.octagon")
+                                .font(.system(size: 11))
+                            Text(L10n.zh("停用自动交易", en: "Disable Auto Trading"))
+                                .font(PulseFonts.monoLabel)
+                        }
+                        .foregroundStyle(PulseColors.danger)
+                    }
+                    .buttonStyle(.plain)
+                }
             }
         }
+        .confirmDialog(
+            isPresented: $showDisableAutoConfirm,
+            title: L10n.zh("停用自动交易", en: "Disable Auto Trading"),
+            message: L10n.zh(
+                "将停止所有活跃模拟运行并封锁新入场，确定继续？",
+                en: "This stops all active dry-runs and blocks new entries. Continue?"
+            ),
+            confirmLabel: L10n.zh("停用", en: "Disable"),
+            confirmStyle: .danger,
+            onConfirm: {
+                showDisableAutoConfirm = false
+                Task { await viewModel.disableAutoTrading() }
+            }
+        )
     }
 
     @ViewBuilder
@@ -547,7 +583,7 @@ struct LiveReadinessView: View {
             HStack(spacing: 6) {
                 Image(systemName: "checkmark.circle.fill")
                     .font(.system(size: 11))
-                    .foregroundStyle(PulseColors.accent)
+                    .foregroundStyle(PulseColors.accentText)
                 Text(L10n.LiveReadiness.noBlockers)
                     .font(PulseFonts.caption)
                     .foregroundStyle(colors.textMuted)
@@ -658,11 +694,11 @@ private struct LaunchTripleConfirmSheet: View {
                 ForEach(1...3, id: \.self) { i in
                     HStack(spacing: 4) {
                         Circle()
-                            .fill(i <= step ? PulseColors.accent : colors.border)
+                            .fill(i <= step ? PulseColors.accentText : colors.border)
                             .frame(width: 14, height: 14)
                         Text("\(i)")
                             .font(PulseFonts.micro)
-                            .foregroundStyle(i <= step ? PulseColors.accent : colors.textMuted)
+                            .foregroundStyle(i <= step ? PulseColors.accentText : colors.textMuted)
                     }
                     if i < 3 {
                         Rectangle()
@@ -710,7 +746,7 @@ private struct LaunchTripleConfirmSheet: View {
                         }
                         .font(PulseFonts.monoLabel)
                         .textCase(.uppercase)
-                        .foregroundStyle(canProceed ? PulseColors.accent : colors.textMuted)
+                        .foregroundStyle(canProceed ? PulseColors.accentText : colors.textMuted)
                         .padding(.horizontal, PulseSpacing.md)
                         .padding(.vertical, PulseSpacing.xs)
                         .background(
@@ -784,7 +820,7 @@ private struct LaunchTripleConfirmSheet: View {
                 .tracking(0.5)
 
             Text(L10n.LiveReadiness.confirmSummary)
-                .font(.system(size: 14, weight: .semibold, design: .monospaced))
+                .font(PulseFonts.mono(14, .semibold))
                 .foregroundStyle(colors.textPrimary)
 
             VStack(alignment: .leading, spacing: 4) {
@@ -843,7 +879,7 @@ private struct LaunchTripleConfirmSheet: View {
                 HStack(alignment: .top, spacing: 8) {
                     Image(systemName: acknowledged ? "checkmark.square.fill" : "square")
                         .font(.system(size: 14))
-                        .foregroundStyle(acknowledged ? PulseColors.accent : colors.textMuted)
+                        .foregroundStyle(acknowledged ? PulseColors.accentText : colors.textMuted)
                     Text(L10n.LiveReadiness.confirmCheckText)
                         .font(PulseFonts.body)
                         .foregroundStyle(colors.textPrimary)
@@ -869,13 +905,13 @@ private struct LaunchTripleConfirmSheet: View {
                     .font(PulseFonts.caption)
                     .foregroundStyle(colors.textSecondary)
                 Text("\u{201C}\(requiredPhrase)\u{201D}")
-                    .font(.system(size: 13, weight: .medium, design: .monospaced))
+                    .font(PulseFonts.mono(13, .medium))
                     .foregroundStyle(PulseColors.amber)
             }
 
             TextField("", text: $phrase)
                 .textFieldStyle(.plain)
-                .font(.system(size: 13, design: .monospaced))
+                .font(PulseFonts.mono(13))
                 .padding(PulseSpacing.xs)
                 .background(
                     RoundedRectangle(cornerRadius: PulseRadii.sm)

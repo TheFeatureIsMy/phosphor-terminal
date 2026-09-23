@@ -96,7 +96,7 @@ struct AvailableActionsRow: View {
     private func buttonStyle(for type: String) -> ActionButtonStyle {
         let lower = type.lowercased()
         if lower.contains("deploy") || lower.contains("approve") || lower.contains("start") {
-            return ActionButtonStyle(color: PulseColors.accent)
+            return ActionButtonStyle(color: PulseColors.accentText)
         } else if lower.contains("review") || lower.contains("inspect") || lower.contains("check") {
             return ActionButtonStyle(color: PulseColors.cyan)
         } else if lower.contains("tighten") || lower.contains("reduce") || lower.contains("stop") || lower.contains("emergency") {

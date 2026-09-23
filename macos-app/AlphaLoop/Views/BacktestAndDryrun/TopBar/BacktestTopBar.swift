@@ -40,7 +40,7 @@ struct BacktestTopBar: View {
                             .font(PulseFonts.micro)
                             .padding(.horizontal, 4).padding(.vertical, 1)
                             .background(colors.textMuted.opacity(0.2))
-                            .clipShape(Capsule())
+                            .clipShape(RoundedRectangle(cornerRadius: PulseRadii.badge))
                     }
                     .font(PulseFonts.captionMedium)
                     .padding(.horizontal, PulseSpacing.md)

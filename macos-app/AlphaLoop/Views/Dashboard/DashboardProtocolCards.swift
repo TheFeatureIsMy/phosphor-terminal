@@ -4,26 +4,32 @@
 // 全部绑定 DashboardViewModel 真实数据。
 
 import SwiftUI
+// UI Polish: numeric values use contentTransition for smooth updates
 
-// MARK: - Protocol 卡片容器(白卡 + 极轻边框 + 品牌色柔和阴影 + hover 上浮)
+// MARK: - Protocol 卡片容器(VOLT: 炭卡 + 硬边框 + hover 上浮;支持 voltBorder 电光发光)
 struct ProtocolCard<Content: View>: View {
     @Environment(PulseColors.self) private var colors
     var padding: CGFloat = 22
+    /// VOLT 招牌电光边框 — 加亮边框 + 电光黄发光阴影
+    var voltBorder: Bool = false
     @ViewBuilder var content: () -> Content
     @State private var hover = false
 
     var body: some View {
         content()
             .padding(padding)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .background(
                 RoundedRectangle(cornerRadius: PulseRadii.card)
                     .fill(colors.cardBackground)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: PulseRadii.card)
-                    .stroke(colors.border, lineWidth: 1)
+                    .stroke(voltBorder ? PulseColors.accent.opacity(0.4) : (hover ? colors.borderHover : colors.border),
+                            lineWidth: voltBorder ? 1 : 1)
             )
+            .shadow(color: voltBorder ? PulseColors.accent.opacity(hover ? 0.12 : 0.06) : .clear,
+                    radius: voltBorder ? 32 : 0, y: 0)
             .applyShadow(hover ? PulseShadow.elevated(colors) : PulseShadow.card(colors))
             .offset(y: hover ? -3 : 0)
             .animation(PulseAnimation.hoverLift, value: hover)
@@ -31,7 +37,7 @@ struct ProtocolCard<Content: View>: View {
     }
 }
 
-// MARK: - 卡片小标题(accent 图标 + 次要色文字)
+// MARK: - 卡片小标题(accent 图标 + mono 标签)
 struct ProtocolCardTitle: View {
     @Environment(PulseColors.self) private var colors
     let icon: String
@@ -40,10 +46,12 @@ struct ProtocolCardTitle: View {
         HStack(spacing: 9) {
             Image(systemName: icon)
                 .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(PulseColors.accent)
+                .foregroundStyle(PulseColors.accentText)
             Text(text)
-                .font(PulseFonts.body(14, .semibold))
+                .font(PulseFonts.monoLabel)
                 .foregroundStyle(colors.textSecondary)
+                .textCase(.uppercase)
+                .tracking(0.8)
         }
     }
 }
@@ -58,7 +66,7 @@ struct ProtocolChip: View {
     private var fg: Color {
         switch kind {
         case .up: return PulseColors.bullish
-        case .warn: return Color(hex: "B4740B")
+        case .warn: return PulseColors.warning
         case .down: return PulseColors.bearish
         case .neutral: return colors.textSecondary
         }
@@ -77,11 +85,11 @@ struct ProtocolChip: View {
             .foregroundStyle(fg)
             .padding(.horizontal, 9)
             .padding(.vertical, 3)
-            .background(Capsule().fill(bg))
+            .background(RoundedRectangle(cornerRadius: PulseRadii.badge).fill(bg))
     }
 }
 
-// MARK: - ① Equity 大卡(徽章 + 46pt 权益 + PnL pill + 4 子指标)
+// MARK: - ① Equity 大卡(VOLT: 56pt 超大数字 + 电路纹理 + 实心 delta chip)
 struct ProtocolEquityCard: View {
     @Environment(PulseColors.self) private var colors
     let account: AccountOverviewResponse?
@@ -96,57 +104,84 @@ struct ProtocolEquityCard: View {
     private var isUp: Bool { pnlPct >= 0 }
 
     var body: some View {
-        ProtocolCard {
-            VStack(alignment: .leading, spacing: 16) {
-                // 徽章
-                HStack(spacing: 6) {
-                    Circle().fill(PulseColors.bullish).frame(width: 6, height: 6)
-                    Text(L10n.zh("实盘账户 · ", en: "Live Account · ") + (account?.currency ?? "USDT"))
-                        .font(PulseFonts.body(12, .semibold))
-                        .foregroundStyle(colors.textSecondary)
-                }
-                .padding(.horizontal, 10).padding(.vertical, 4)
-                .background(Capsule().fill(colors.surface))
+        ProtocolCard(voltBorder: true) {
+            ZStack(alignment: .topTrailing) {
+                // 电路纹理(VOLT 招牌装饰)
+                CircuitTexture()
+                    .offset(x: 20, y: 20)
 
-                // 权益
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(L10n.Dashboard.equity)
-                        .font(PulseFonts.body(14, .medium))
-                        .foregroundStyle(colors.textSecondary)
-                    HStack(alignment: .lastTextBaseline, spacing: 8) {
-                        Text(available ? fmt2(animatedEquity) : "—")
-                            .font(PulseFonts.display(46, .bold))
-                            .foregroundStyle(colors.textPrimary)
-                            .monospacedDigit()
-                        Text(account?.currency ?? "USDT")
-                            .font(PulseFonts.display(20, .semibold))
-                            .foregroundStyle(colors.textSecondary)
+                VStack(alignment: .leading, spacing: 16) {
+                    // 徽章 + delta chip
+                    HStack {
+                        HStack(spacing: 6) {
+                            Circle().fill(PulseColors.bullish).frame(width: 6, height: 6)
+                                .shadow(color: PulseColors.bullish.opacity(0.5), radius: 3)
+                            Text(L10n.zh("实盘账户 · ", en: "Live Account · ") + (account?.currency ?? "USDT"))
+                                .font(PulseFonts.monoLabel)
+                                .foregroundStyle(colors.textSecondary)
+                        }
+                        .padding(.horizontal, 10).padding(.vertical, 4)
+                        .background(RoundedRectangle(cornerRadius: PulseRadii.badge).fill(colors.surface))
+
+                        Spacer()
+
+                        // VOLT 实心 delta chip(up=实心绿黑字, down=实心红白字)
+                        if available {
+                            HStack(spacing: 5) {
+                                Image(systemName: isUp ? "arrow.up.right" : "arrow.down.right")
+                                    .font(.system(size: 10, weight: .bold))
+                                Text("\(isUp ? "+" : "")\(fmt2(pnlPct))% TODAY")
+                                    .monospacedDigit()
+                            }
+                            .font(PulseFonts.mono(11, .semibold))
+                            .foregroundStyle(isUp ? PulseColors.onBullish : PulseColors.onBearish)
+                            .padding(.horizontal, 11).padding(.vertical, 5)
+                            .background(RoundedRectangle(cornerRadius: PulseRadii.badge).fill(isUp ? PulseColors.bullish : PulseColors.bearish))
+                        }
                     }
-                }
 
-                // PnL pill
-                if available {
-                    HStack(spacing: 7) {
-                        Image(systemName: isUp ? "arrow.up.right" : "arrow.down.right")
-                            .font(.system(size: 13, weight: .bold))
-                        Text("\(isUp ? "+" : "")\(fmt2(pnlAbs))")
-                            .monospacedDigit()
-                        Text("(\(isUp ? "+" : "")\(fmt2(pnlPct))%)")
-                            .foregroundStyle((isUp ? PulseColors.bullish : PulseColors.bearish).opacity(0.85))
-                            .monospacedDigit()
+                    // VOLT 56pt 超大权益数字(Archivo 字重 800)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(L10n.Dashboard.equity)
+                            .font(PulseFonts.mono(10, .semibold))
+                            .foregroundStyle(colors.textMuted)
+                            .textCase(.uppercase)
+                            .tracking(1.4)
+                        HStack(alignment: .firstTextBaseline, spacing: 8) {
+                            Text(available ? fmt2(animatedEquity) : "—")
+                                .font(PulseFonts.display(56, .black))
+                                .foregroundStyle(colors.textPrimary)
+                                .monospacedDigit()
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.6)
+                            Text(account?.currency ?? "USDT")
+                                .font(PulseFonts.display(16, .semibold))
+                                .foregroundStyle(colors.textMuted)
+                        }
                     }
-                    .font(PulseFonts.body(15, .bold))
-                    .foregroundStyle(isUp ? PulseColors.bullish : PulseColors.bearish)
-                    .padding(.horizontal, 14).padding(.vertical, 8)
-                    .background(Capsule().fill(isUp ? PulseColors.bullishSoft : PulseColors.bearishSoft))
-                }
 
-                // 4 子指标
-                HStack(alignment: .top, spacing: 26) {
-                    subItem(L10n.zh("活跃策略", en: "Active"), "\(kpis?.activeStrategies ?? runtime?.runningStrategies ?? 0)")
-                    subItem(L10n.zh("开放持仓", en: "Positions"), "\(runtime?.openPositions ?? kpis?.openPositions ?? 0)")
-                    subItem(L10n.zh("今日成交", en: "Trades"), "\(kpis?.todaysTrades ?? 0)")
-                    subItem(L10n.zh("待处理单", en: "Pending"), "\(runtime?.pendingOrders ?? 0)")
+                    // 辅助读数行
+                    if available {
+                        HStack(spacing: PulseSpacing.md) {
+                            miniStat(L10n.zh("今日盈亏", en: "Today P&L"),
+                                     "\(isUp ? "+" : "")\(fmt2(pnlAbs))",
+                                     isUp ? PulseColors.bullish : PulseColors.bearish)
+                            miniStat(L10n.zh("最大回撤", en: "Max DD"),
+                                     String(format: "%.2f%%", account?.maxDrawdownPct ?? 0),
+                                     PulseColors.bearish)
+                            miniStat(L10n.zh("对账中", en: "Reconciling"),
+                                     "\(runtime?.reconcilingCount ?? 0)",
+                                     colors.textPrimary)
+                        }
+                    }
+
+                    // 4 子指标
+                    HStack(alignment: .top, spacing: 26) {
+                        subItem(L10n.zh("活跃策略", en: "Active"), "\(kpis?.activeStrategies ?? runtime?.runningStrategies ?? 0)")
+                        subItem(L10n.zh("开放持仓", en: "Positions"), "\(runtime?.openPositions ?? kpis?.openPositions ?? 0)")
+                        subItem(L10n.zh("今日成交", en: "Trades"), "\(kpis?.todaysTrades ?? 0)")
+                        subItem(L10n.zh("待处理单", en: "Pending"), "\(runtime?.pendingOrders ?? 0)")
+                    }
                 }
             }
         }
@@ -163,10 +198,17 @@ struct ProtocolEquityCard: View {
         }
     }
 
+    private func miniStat(_ label: String, _ value: String, _ color: Color) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(label).font(PulseFonts.micro).foregroundStyle(colors.textMuted).textCase(.uppercase).tracking(0.8)
+            Text(value).font(PulseFonts.mono(13, .bold)).foregroundStyle(color).monospacedDigit()
+        }
+    }
+
     private func subItem(_ k: String, _ v: String) -> some View {
         VStack(alignment: .leading, spacing: 3) {
-            Text(k).font(PulseFonts.body(12, .medium)).foregroundStyle(colors.textSecondary)
-            Text(v).font(PulseFonts.display(16, .semibold)).foregroundStyle(colors.textPrimary).monospacedDigit()
+            Text(k).font(PulseFonts.mono(10, .medium)).foregroundStyle(colors.textMuted).textCase(.uppercase).tracking(0.8)
+            Text(v).font(PulseFonts.display(19, .bold)).foregroundStyle(colors.textPrimary).monospacedDigit()
         }
     }
     private func fmt2(_ v: Double) -> String {
@@ -176,7 +218,40 @@ struct ProtocolEquityCard: View {
     }
 }
 
-// MARK: - ③ 运行时卡
+// MARK: - 电路纹理(VOLT 招牌装饰 — 极淡电光黄线条)
+struct CircuitTexture: View {
+    var body: some View {
+        Canvas { ctx, size in
+            let c = PulseColors.accent.opacity(0.07)
+            let w: CGFloat = 1
+            // 横向主干
+            var path = Path()
+            path.move(to: CGPoint(x: size.width * 0.3, y: 0))
+            path.addLine(to: CGPoint(x: size.width * 0.3, y: size.height * 0.4))
+            path.addLine(to: CGPoint(x: size.width * 0.7, y: size.height * 0.4))
+            path.addLine(to: CGPoint(x: size.width * 0.7, y: size.height * 0.8))
+            path.addLine(to: CGPoint(x: size.width, y: size.height * 0.8))
+            ctx.stroke(path, with: .color(c), lineWidth: w)
+            // 分支
+            var p2 = Path()
+            p2.move(to: CGPoint(x: size.width * 0.3, y: size.height * 0.4))
+            p2.addLine(to: CGPoint(x: size.width * 0.1, y: size.height * 0.4))
+            p2.addLine(to: CGPoint(x: size.width * 0.1, y: size.height * 0.9))
+            ctx.stroke(p2, with: .color(c), lineWidth: w)
+            // 节点
+            for pt in [CGPoint(x: size.width * 0.3, y: size.height * 0.4),
+                       CGPoint(x: size.width * 0.7, y: size.height * 0.4),
+                       CGPoint(x: size.width * 0.7, y: size.height * 0.8)] {
+                let r = CGRect(x: pt.x - 2.5, y: pt.y - 2.5, width: 5, height: 5)
+                ctx.fill(Path(ellipseIn: r), with: .color(PulseColors.accent.opacity(0.15)))
+            }
+        }
+        .frame(width: 200, height: 200)
+        .allowsHitTesting(false)
+    }
+}
+
+// MARK: - ③ 运行时卡(VOLT: mono 标签 + 大号数字)
 struct ProtocolRuntimeCard: View {
     @Environment(PulseColors.self) private var colors
     let runtime: RuntimeOverviewResponse?
@@ -201,14 +276,21 @@ struct ProtocolRuntimeCard: View {
     }
     private func statRow(_ k: String, _ v: String) -> some View {
         HStack {
-            Text(k).font(PulseFonts.body(13.5, .medium)).foregroundStyle(colors.textSecondary)
+            Text(k)
+                .font(PulseFonts.mono(10, .medium))
+                .foregroundStyle(colors.textMuted)
+                .textCase(.uppercase)
+                .tracking(0.8)
             Spacer()
-            Text(v).font(PulseFonts.display(15, .semibold)).foregroundStyle(colors.textPrimary).monospacedDigit()
+            Text(v)
+                .font(PulseFonts.display(19, .bold))
+                .foregroundStyle(colors.textPrimary)
+                .monospacedDigit()
         }
     }
 }
 
-// MARK: - ③ 实盘就绪度卡(进度条 + 检查项)
+// MARK: - ③ 实盘就绪度卡(VOLT: 电光进度条 + 发光效果)
 struct ProtocolReadinessCard: View {
     @Environment(PulseColors.self) private var colors
     let readiness: LiveReadinessResponse?
@@ -222,27 +304,40 @@ struct ProtocolReadinessCard: View {
     var body: some View {
         ProtocolCard {
             VStack(alignment: .leading, spacing: 14) {
-                ProtocolCardTitle(icon: "checkmark.shield", text: L10n.zh("实盘就绪度", en: "Live Readiness"))
+                HStack {
+                    ProtocolCardTitle(icon: "checkmark.shield", text: L10n.zh("实盘就绪度", en: "Live Readiness"))
+                    Spacer()
+                    Text("GATE")
+                        .font(PulseFonts.mono(10, .semibold))
+                        .foregroundStyle(PulseColors.accentText)
+                        .textCase(.uppercase)
+                        .tracking(1.4)
+                }
 
                 HStack(alignment: .firstTextBaseline, spacing: 10) {
-                    Text(available ? "\(score)%" : "—")
-                        .font(PulseFonts.display(36, .bold))
-                        .foregroundStyle(PulseColors.accent)
+                    Text(available ? "\(score)" : "—")
+                        .font(PulseFonts.display(46, .black))
+                        .foregroundStyle(PulseColors.accentText)
                         .monospacedDigit()
+                    Text("/ 100")
+                        .font(PulseFonts.display(14, .semibold))
+                        .foregroundStyle(colors.textMuted)
                     if !checks.isEmpty {
+                        Spacer()
                         Text("\(passed) / \(checks.count) " + L10n.zh("检查通过", en: "checks"))
-                            .font(PulseFonts.body(13))
+                            .font(PulseFonts.monoLabel)
                             .foregroundStyle(colors.textSecondary)
                     }
                 }
 
-                // 进度条
+                // VOLT 电光进度条(发光效果)
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
-                        Capsule().fill(colors.surface).frame(height: 8)
-                        Capsule()
-                            .fill(LinearGradient(colors: [PulseColors.accent, PulseColors.accentLight], startPoint: .leading, endPoint: .trailing))
-                            .frame(width: barWidth, height: 8)
+                        RoundedRectangle(cornerRadius: 5).fill(colors.surface).frame(height: 10)
+                        RoundedRectangle(cornerRadius: 5)
+                            .fill(LinearGradient(colors: [PulseColors.accentText, PulseColors.bullish], startPoint: .leading, endPoint: .trailing))
+                            .frame(width: barWidth, height: 10)
+                            .shadow(color: PulseColors.accentText.opacity(0.35), radius: 8)
                     }
                     .onAppear {
                         withAnimation(PulseAnimation.protocolEase) {
@@ -250,7 +345,7 @@ struct ProtocolReadinessCard: View {
                         }
                     }
                 }
-                .frame(height: 8)
+                .frame(height: 10)
 
                 // 检查项(最多 3)
                 VStack(alignment: .leading, spacing: 9) {
@@ -275,7 +370,7 @@ struct ProtocolReadinessCard: View {
     }
 }
 
-// MARK: - ③ 全局风险卡(2×2 网格)
+// MARK: - ③ 全局风险卡(VOLT: mono 标签 + 26pt 大号数字 + 2×2 网格)
 struct ProtocolRiskCard: View {
     @Environment(PulseColors.self) private var colors
     let risk: RiskOverviewResponse?
@@ -303,8 +398,15 @@ struct ProtocolRiskCard: View {
     private func riskItem(_ k: String, _ v: String, _ tone: Tone) -> some View {
         let color: Color = tone == .down ? PulseColors.bearish : tone == .warn ? PulseColors.warning : colors.textPrimary
         return VStack(alignment: .leading, spacing: 4) {
-            Text(k).font(PulseFonts.body(12.5, .medium)).foregroundStyle(colors.textSecondary)
-            Text(v).font(PulseFonts.display(22, .bold)).foregroundStyle(color).monospacedDigit()
+            Text(k)
+                .font(PulseFonts.mono(10, .medium))
+                .foregroundStyle(colors.textMuted)
+                .textCase(.uppercase)
+                .tracking(0.8)
+            Text(v)
+                .font(PulseFonts.display(26, .bold))
+                .foregroundStyle(color)
+                .monospacedDigit()
         }
     }
     private func fmtPct(_ v: Double) -> String { String(format: "%.2f%%", v) }
@@ -334,7 +436,7 @@ struct ProtocolEquityCurveCard: View {
                             let on = selectedRange == r
                             Text("\(r)D")
                                 .font(PulseFonts.body(12.5, .semibold))
-                                .foregroundStyle(on ? PulseColors.accent : colors.textSecondary)
+                                .foregroundStyle(on ? PulseColors.accentText : colors.textSecondary)
                                 .padding(.horizontal, 11).padding(.vertical, 5)
                                 .background(RoundedRectangle(cornerRadius: 8).fill(on ? PulseColors.accentSoft : .clear))
                                 .onTapGesture { withAnimation(.easeOut(duration: 0.2)) { selectedRange = r } }
@@ -404,10 +506,10 @@ struct ProtocolEquityCurveCard: View {
             // 描边线
             smoothPath(pts, closed: false, height: h)
                 .trim(from: 0, to: drawProgress)
-                .stroke(PulseColors.accent, style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
+                .stroke(PulseColors.accentText, style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
             // 末端点
             if let last = pts.last {
-                Circle().fill(PulseColors.accent)
+                Circle().fill(PulseColors.accentText)
                     .frame(width: 9, height: 9)
                     .overlay(Circle().stroke(colors.cardBackground, lineWidth: 2.5))
                     .position(last)
@@ -434,7 +536,7 @@ struct ProtocolEquityCurveCard: View {
     }
 }
 
-// MARK: - feed 行
+// MARK: - feed 行(VOLT: mono 时间 + 标签芯片 + 紧凑布局)
 private struct ProtocolFeedRow: View {
     @Environment(PulseColors.self) private var colors
     enum Tone { case accent, up, warn, down }
@@ -459,24 +561,29 @@ private struct ProtocolFeedRow: View {
                 .frame(width: 34, height: 34)
                 .overlay(Image(systemName: icon).font(.system(size: 15, weight: .medium)).foregroundStyle(fg))
             VStack(alignment: .leading, spacing: 3) {
-                Text(title).font(PulseFonts.body(14, .semibold)).foregroundStyle(colors.textPrimary)
+                HStack(spacing: 8) {
+                    Text(title).font(PulseFonts.body(14, .semibold)).foregroundStyle(colors.textPrimary)
+                    if !time.isEmpty {
+                        Text(time)
+                            .font(PulseFonts.mono(10, .medium))
+                            .foregroundStyle(colors.textMuted)
+                    }
+                }
                 Text(detail).font(PulseFonts.body(13)).foregroundStyle(colors.textSecondary).lineLimit(2)
                 if !tags.isEmpty {
-                    HStack(spacing: 8) {
+                    HStack(spacing: 6) {
                         ForEach(tags, id: \.self) { t in
-                            Text(t).font(PulseFonts.body(11.5, .medium))
-                                .foregroundStyle(colors.textSecondary)
-                                .padding(.horizontal, 8).padding(.vertical, 2)
-                                .background(Capsule().fill(colors.surface))
+                            Text(t)
+                                .font(PulseFonts.mono(9, .medium))
+                                .foregroundStyle(colors.textMuted)
+                                .padding(.horizontal, 7).padding(.vertical, 2)
+                                .background(RoundedRectangle(cornerRadius: 6).fill(colors.surface))
                         }
                     }
                     .padding(.top, 3)
                 }
             }
             Spacer(minLength: 8)
-            if !time.isEmpty {
-                Text(time).font(PulseFonts.body(12)).foregroundStyle(colors.textSecondary)
-            }
         }
         .padding(.vertical, 13)
     }

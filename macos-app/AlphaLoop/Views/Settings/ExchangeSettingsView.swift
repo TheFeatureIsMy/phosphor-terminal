@@ -20,7 +20,7 @@ struct ExchangeSettingsView: View {
                         ForEach(Exchange.allCases) { Text($0.label).tag($0) }
                     }
                     .pickerStyle(.menu)
-                    .darkPicker()
+                    
                 }
 
                 settingsRow(L10n.zh("交易模式", en: "Trading Mode")) {
@@ -28,22 +28,22 @@ struct ExchangeSettingsView: View {
                         ForEach(TradingMode.allCases) { Text($0.label).tag($0) }
                     }
                     .pickerStyle(.segmented)
-                    .darkSegmentedPicker()
+                    
                 }
 
                 settingsRow("API Key") {
                     SecureField(L10n.zh("输入 API Key", en: "Enter API Key"), text: $s.apiKey)
-                        .darkTextField()
+                        
                 }
 
                 settingsRow("API Secret") {
                     SecureField(L10n.zh("输入 API Secret", en: "Enter API Secret"), text: $s.apiSecret)
-                        .darkTextField()
+                        
                 }
 
                 settingsRow(L10n.zh("模拟交易", en: "Paper Trading")) {
                     Toggle("", isOn: $s.dryRun)
-                        .tint(PulseColors.accent)
+                        .tint(PulseColors.accentText)
                 }
             }
             .cardStyle()

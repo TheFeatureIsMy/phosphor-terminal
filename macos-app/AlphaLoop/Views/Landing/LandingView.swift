@@ -1,5 +1,5 @@
-// LandingView.swift — AlphaLoop 风格启动/落地页
-// 简洁设计：Logo + 标题 + 特性亮点 + CTA
+// LandingView.swift — VOLT 风格启动/落地页
+// 实心电光黄 Logo + 大字重标题 + 粒子场 + CTA
 
 import SwiftUI
 
@@ -14,24 +14,31 @@ struct LandingView: View {
         ZStack {
             colors.background.ignoresSafeArea()
 
+            // 粒子场背景
+            ParticleFieldView()
+                .opacity(0.4)
+
             VStack(spacing: 0) {
                 Spacer()
 
-                // Logo + 标题
+                // VOLT Logo + 标题
                 VStack(spacing: PulseSpacing.lg) {
-                    // 品牌 mark — protocol 钴蓝圆角方块 + 上升箭头
-                    RoundedRectangle(cornerRadius: 18)
-                        .fill(LinearGradient(colors: [PulseColors.accent, PulseColors.accentLight], startPoint: .topLeading, endPoint: .bottomTrailing))
+                    // 实心电光黄 Logo mark — 斜切块 + 近黑箭头
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(PulseColors.accent)
                         .frame(width: 64, height: 64)
                         .overlay(Image(systemName: "arrow.up.right")
-                            .font(.system(size: 26, weight: .bold)).foregroundStyle(.white))
+                            .font(.system(size: 26, weight: .bold))
+                            .foregroundStyle(Color(hex: "0A0A0C")))
+                        .shadow(color: PulseColors.accent.opacity(0.4), radius: 20)
                         .applyShadow(PulseShadow.glow)
 
                     if showContent {
                         VStack(spacing: PulseSpacing.sm) {
                             Text("AlphaLoop")
-                                .font(PulseFonts.display(44, .bold))
+                                .font(PulseFonts.display(44, .black))
                                 .foregroundStyle(colors.textPrimary)
+                                .tracking(-0.02)
                                 .transition(.opacity.combined(with: .move(edge: .bottom)))
                             Text(settings.language == .zhCN ? "AI 多 Agent 加密量化交易终端" : "AI Multi-Agent Crypto Quant Trading Terminal")
                                 .font(PulseFonts.body(15))
@@ -40,12 +47,12 @@ struct LandingView: View {
                         }
                     }
 
-                    // 特性亮点 — protocol pill
+                    // 特性亮点 — VOLT mono 芯片
                     if showContent {
                         HStack(spacing: PulseSpacing.sm) {
                             FeaturePill(icon: "brain.head.profile", label: L10n.zh("多智能体", en: "Multi-Agent"), color: PulseColors.accent)
                             FeaturePill(icon: "chart.bar.fill", label: L10n.zh("量化策略", en: "Quant Strategies"), color: PulseColors.bullish)
-                            FeaturePill(icon: "shield.checkered", label: L10n.zh("实时风控", en: "Real-Time Risk Control"), color: PulseColors.coral)
+                            FeaturePill(icon: "shield.checkered", label: L10n.zh("实时风控", en: "Real-Time Risk Control"), color: PulseColors.violet)
                         }
                         .transition(.opacity)
                     }
@@ -56,14 +63,14 @@ struct LandingView: View {
                 // CTA
                 if showCTA {
                     VStack(spacing: PulseSpacing.md) {
-                        KryptonButton(title: L10n.zh("进入仪表盘", en: "Enter Dashboard")) {
+                        PulseActionButton(label: L10n.zh("进入仪表盘", en: "Enter Dashboard"), icon: "arrow.right", style: .primary) {
                             withAnimation(PulseAnimation.springDefault) { appState.hasLaunched = true }
                         }
 
                         HStack(spacing: PulseSpacing.xs) {
                             BadgeDot(color: PulseColors.success, label: "v1.0.0", size: .small)
                             BadgeDot(color: PulseColors.accent, label: "macOS 26", size: .small)
-                            BadgeDot(color: PulseColors.coral, label: "LIVE", size: .small)
+                            BadgeDot(color: PulseColors.violet, label: "VOLT", size: .small)
                         }
                     }
                     .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -80,7 +87,7 @@ struct LandingView: View {
     }
 }
 
-// MARK: - 特性 Pill
+// MARK: - 特性 Pill(VOLT: mono 标签 + 圆角芯片)
 struct FeaturePill: View {
     let icon: String; let label: String; let color: Color
     @Environment(PulseColors.self) private var colors
@@ -89,11 +96,11 @@ struct FeaturePill: View {
     var body: some View {
         HStack(spacing: 5) {
             Image(systemName: icon).font(.system(size: 10)).foregroundStyle(color)
-            Text(label).font(PulseFonts.micro).foregroundStyle(colors.textSecondary)
+            Text(label).font(PulseFonts.mono(10, .medium)).foregroundStyle(colors.textSecondary)
         }
         .padding(.horizontal, 10).padding(.vertical, 5)
-        .background(Capsule().fill(colors.cardBackground))
-        .overlay(Capsule().stroke(colors.border, lineWidth: 1))
+        
+        .voltCardSurface()
         .opacity(appeared ? 1 : 0)
         .scaleEffect(appeared ? 1 : 0.9)
         .onAppear { withAnimation(PulseAnimation.springDefault.delay(0.5)) { appeared = true } }

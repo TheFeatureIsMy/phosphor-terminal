@@ -87,7 +87,7 @@ struct BacktestDryrunPanel: View {
                         Image(systemName: "arrow.right")
                     }
                     .font(PulseFonts.micro)
-                    .foregroundStyle(PulseColors.accent)
+                    .foregroundStyle(PulseColors.accentText)
                 }
                 .buttonStyle(.plain)
             }

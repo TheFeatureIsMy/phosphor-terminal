@@ -146,7 +146,11 @@ struct SentimentView: View {
                     .cardStyle()
                 }
             }
-            .padding(PulseSpacing.lg)
+            .padding(.horizontal, 28)
+            .padding(.top, 20)
+            .padding(.bottom, 40)
+            .frame(maxWidth: PulseSpacing.contentMaxWidth)
+            .frame(maxWidth: .infinity)
         }
         .id(settingsState.language)
         .task {

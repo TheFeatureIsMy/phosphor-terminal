@@ -22,7 +22,11 @@ struct GrowthView: View {
                         tabSelector(vm: vm)
                         tabContent(vm: vm)
                     }
-                    .padding(PulseSpacing.lg)
+                    .padding(.horizontal, 28)
+                    .padding(.top, 20)
+                    .padding(.bottom, 40)
+                    .frame(maxWidth: PulseSpacing.contentMaxWidth)
+                    .frame(maxWidth: .infinity)
                 }
             } else {
                 LoadingView(type: .detail).padding(PulseSpacing.lg)
@@ -322,7 +326,7 @@ struct GrowthView: View {
             KryptonCard(emphasis: .subtle) {
                 HStack(spacing: PulseSpacing.lg) {
                     validityStat(label: L10n.Growth.totalSignals, value: "\(viewModel?.totalSignals ?? 0)", color: PulseColors.info)
-                    validityStat(label: L10n.Growth.avgAccuracy, value: String(format: "%.1f%%", (viewModel?.avgAccuracy ?? 0) * 100), color: PulseColors.accent)
+                    validityStat(label: L10n.Growth.avgAccuracy, value: String(format: "%.1f%%", (viewModel?.avgAccuracy ?? 0) * 100), color: PulseColors.accentText)
                     validityStat(label: L10n.Growth.bestSource, value: (viewModel?.bestSource ?? "-"), color: PulseColors.success)
                     validityStat(label: L10n.Growth.worstSource, value: (viewModel?.worstSource ?? "-"), color: PulseColors.danger)
                 }

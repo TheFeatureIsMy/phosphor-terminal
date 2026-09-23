@@ -23,7 +23,7 @@ struct MetricsGrid: View {
                 let m = metrics[idx]
                 VStack(alignment: .leading, spacing: 4) {
                     Text(m.1)
-                        .font(.system(size: 22, weight: .semibold, design: .monospaced))
+                        .font(PulseFonts.mono(22, .semibold))
                         .foregroundStyle(m.2 ? PulseColors.bullish : PulseColors.bearish)
                     Text(m.0)
                         .font(PulseFonts.micro)

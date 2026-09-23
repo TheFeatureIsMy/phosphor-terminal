@@ -12,9 +12,8 @@ private struct RiskProtoCard<Content: View>: View {
         content()
             .padding(22)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(RoundedRectangle(cornerRadius: PulseRadii.card).fill(colors.cardBackground))
-            .overlay(RoundedRectangle(cornerRadius: PulseRadii.card).stroke(colors.border, lineWidth: 1))
-            .applyShadow(PulseShadow.card(colors))
+            
+            .voltCardSurface()
     }
 }
 
@@ -26,7 +25,7 @@ private struct RiskProtoCardTitle: View {
     var body: some View {
         HStack(spacing: 9) {
             Image(systemName: icon).font(.system(size: 14, weight: .medium))
-                .foregroundStyle(accent ? PulseColors.accent : colors.textSecondary)
+                .foregroundStyle(accent ? PulseColors.accentText : colors.textSecondary)
             Text(text).font(PulseFonts.body(14, .semibold)).foregroundStyle(colors.textSecondary)
         }
     }
@@ -44,7 +43,7 @@ extension RiskCenterView {
         HStack(alignment: .center) {
             VStack(alignment: .leading, spacing: 8) {
                 Text(L10n.Risk.protoEyebrow)
-                    .font(PulseFonts.body(13, .semibold)).foregroundStyle(PulseColors.accent)
+                    .font(PulseFonts.body(13, .semibold)).foregroundStyle(PulseColors.accentText)
                     .textCase(.uppercase).tracking(0.6)
                 Text(L10n.Risk.protoTitle)
                     .font(PulseFonts.display(30, .bold)).foregroundStyle(colors.textPrimary)
@@ -59,8 +58,8 @@ extension RiskCenterView {
                     .font(PulseFonts.body(13, .semibold)).foregroundStyle(colors.textSecondary)
             }
             .padding(.horizontal, 12).padding(.vertical, 7)
-            .background(RoundedRectangle(cornerRadius: PulseRadii.card).fill(colors.cardBackground))
-            .overlay(RoundedRectangle(cornerRadius: PulseRadii.card).stroke(colors.border, lineWidth: 1))
+            
+            .voltCardSurface()
         }
     }
 
@@ -76,7 +75,7 @@ extension RiskCenterView {
                         .font(PulseFonts.body(12, .semibold)).foregroundStyle(colors.textSecondary)
                 }
                 .padding(.horizontal, 10).padding(.vertical, 4)
-                .background(Capsule().fill(colors.surface))
+                .background(RoundedRectangle(cornerRadius: PulseRadii.badge).fill(colors.surface))
 
                 // 大数字水位
                 VStack(alignment: .leading, spacing: 4) {
@@ -93,8 +92,8 @@ extension RiskCenterView {
                 // 水位条
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
-                        Capsule().fill(colors.surface).frame(height: 8)
-                        Capsule().fill(overallRiskColor)
+                        RoundedRectangle(cornerRadius: 4).fill(colors.surface).frame(height: 8)
+                        RoundedRectangle(cornerRadius: 4).fill(overallRiskColor)
                             .frame(width: geo.size.width * waterValue(overview), height: 8)
                     }
                 }
@@ -169,13 +168,13 @@ extension RiskCenterView {
                 Text(guardStatusLabel(g.status))
                     .font(PulseFonts.body(11, .semibold)).foregroundStyle(color)
                     .padding(.horizontal, 8).padding(.vertical, 3)
-                    .background(Capsule().fill(isWarn ? PulseColors.warningSoft : PulseColors.bullishSoft))
+                    .background(RoundedRectangle(cornerRadius: PulseRadii.badge).fill(isWarn ? PulseColors.warningSoft : PulseColors.bullishSoft))
             }
             // 迷你水位条
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
-                    Capsule().fill(colors.surface).frame(height: 6)
-                    Capsule().fill(color).frame(width: geo.size.width * min(max(usedPct, 0), 1), height: 6)
+                    RoundedRectangle(cornerRadius: 3).fill(colors.surface).frame(height: 6)
+                    RoundedRectangle(cornerRadius: 3).fill(color).frame(width: geo.size.width * min(max(usedPct, 0), 1), height: 6)
                 }
             }
             .frame(height: 6)
@@ -224,7 +223,7 @@ extension RiskCenterView {
                 Text(L10n.Risk.blockedRejected)
                     .font(PulseFonts.body(11, .semibold)).foregroundStyle(PulseColors.bearish)
                     .padding(.horizontal, 8).padding(.vertical, 3)
-                    .background(Capsule().fill(PulseColors.bearishSoft))
+                    .background(RoundedRectangle(cornerRadius: PulseRadii.badge).fill(PulseColors.bearishSoft))
             }
             if let reason = lock["reason"], !reason.isEmpty {
                 Text(reason).font(PulseFonts.body(13)).foregroundStyle(colors.textSecondary)
@@ -245,7 +244,7 @@ extension RiskCenterView {
                     Text(L10n.Risk.gateRulesReadOnly)
                         .font(PulseFonts.body(11, .semibold)).foregroundStyle(colors.textSecondary)
                         .padding(.horizontal, 8).padding(.vertical, 3)
-                        .background(Capsule().fill(colors.surface))
+                        .background(RoundedRectangle(cornerRadius: PulseRadii.badge).fill(colors.surface))
                 }
                 if let r = rules {
                     ruleRow(L10n.Risk.dailyLossLimit, String(format: "%.2f%%", r.dailyLossLimit))
@@ -271,7 +270,7 @@ extension RiskCenterView {
             Text(L10n.Risk.gateRulesActive)
                 .font(PulseFonts.body(11, .semibold)).foregroundStyle(PulseColors.bullish)
                 .padding(.horizontal, 8).padding(.vertical, 3)
-                .background(Capsule().fill(PulseColors.bullishSoft))
+                .background(RoundedRectangle(cornerRadius: PulseRadii.badge).fill(PulseColors.bullishSoft))
         }
         .padding(.vertical, 6)
     }

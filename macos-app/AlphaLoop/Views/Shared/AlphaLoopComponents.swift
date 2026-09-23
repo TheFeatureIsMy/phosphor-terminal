@@ -132,7 +132,7 @@ struct GlowText: View {
     var body: some View {
         Text(text)
             .font(font)
-            .foregroundStyle(PulseColors.accent)
+            .foregroundStyle(PulseColors.accentText)
             .shadow(color: PulseColors.accent.opacity(0.5), radius: 10)
             .shadow(color: PulseColors.accent.opacity(0.25), radius: 20)
     }
@@ -250,6 +250,15 @@ struct KryptonCard<Content: View>: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(cardBackground)
             .overlay(cardBorder)
+            // VOLT HUD 四角刻线 — 仅 hover 时浮现(平时与 dashboard 卡片一致干净)
+            .overlay(
+                VoltCorners(
+                    color: PulseColors.accentText.opacity(isHovering ? 0.55 : 0.0),
+                    length: 9,
+                    lineWidth: 1.5,
+                    inset: 3
+                )
+            )
             .applyShadow(isHovering ? PulseShadow.elevated(colors) : PulseShadow.card(colors))
             .offset(y: isHovering ? -3 : 0)
             .scaleEffect(isPressed ? 0.98 : 1.0)
@@ -290,10 +299,20 @@ struct KryptonCard<Content: View>: View {
             }
     }
 
-    // Card background
+    // Card background — 炭卡 + 内顶部高光(级联全页的高级深度感)
     private var cardBackground: some View {
         RoundedRectangle(cornerRadius: PulseRadii.card)
             .fill(colors.cardBackground)
+            .overlay(
+                RoundedRectangle(cornerRadius: PulseRadii.card)
+                    .fill(
+                        LinearGradient(
+                            colors: [Color.white.opacity(0.035), .clear],
+                            startPoint: .top, endPoint: .center
+                        )
+                    )
+                    .allowsHitTesting(false)
+            )
     }
 
     // Default border (subtle gets subtle white, bold gets accent; empty gets dashed)
@@ -310,7 +329,7 @@ struct KryptonCard<Content: View>: View {
                 .stroke(
                     emphasis == .bold
                         ? PulseGlass.accentBorder
-                        : PulseGlass.subtleBorder(colors),
+                        : (isHovering ? PulseGlass.accentBorderHover : PulseGlass.subtleBorder(colors)),
                     lineWidth: 1
                 )
         }
@@ -361,7 +380,7 @@ struct AlphaLoopLogoView: View {
 
                 // α — bold, dominant, single layer
                 Text("α")
-                    .font(.system(size: dim * 0.50, weight: .bold, design: .serif))
+                    .font(.system(size: dim * 0.50, weight: .bold))
                     .foregroundStyle(
                         LinearGradient(
                             colors: [.white, accent],

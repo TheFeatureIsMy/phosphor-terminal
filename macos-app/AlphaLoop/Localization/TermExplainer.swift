@@ -18,14 +18,14 @@ struct TermExplainer: View {
             Button(action: { showPopover.toggle() }) {
                 Image(systemName: "info.circle")
                     .font(.system(size: fontSize * 0.8))
-                    .foregroundStyle(PulseColors.accent.opacity(0.6))
+                    .foregroundStyle(PulseColors.accentText.opacity(0.6))
             }
             .buttonStyle(.plain)
             .popover(isPresented: $showPopover, arrowEdge: .bottom) {
                 VStack(alignment: .leading, spacing: PulseSpacing.xs) {
                     Text(term)
                         .font(PulseFonts.captionMedium)
-                        .foregroundStyle(PulseColors.accent)
+                        .foregroundStyle(PulseColors.accentText)
 
                     Text(explanation)
                         .font(PulseFonts.caption)

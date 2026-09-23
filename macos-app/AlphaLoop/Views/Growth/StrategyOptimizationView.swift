@@ -22,7 +22,11 @@ struct StrategyOptimizationView: View {
                         tabSelector(vm: vm)
                         tabContent(vm: vm)
                     }
-                    .padding(PulseSpacing.lg)
+                    .padding(.horizontal, 28)
+                    .padding(.top, 20)
+                    .padding(.bottom, 40)
+                    .frame(maxWidth: PulseSpacing.contentMaxWidth)
+                    .frame(maxWidth: .infinity)
                     .id(settingsState.language)
                 }
             } else {
@@ -59,7 +63,7 @@ struct StrategyOptimizationView: View {
                 HStack(spacing: PulseSpacing.xs) {
                     Image(systemName: "shield.checkered")
                         .font(PulseFonts.headline)
-                        .foregroundStyle(PulseColors.accent)
+                        .foregroundStyle(PulseColors.accentText)
                     Text(L10n.zh("安全工作流 — 候选策略不可直接上线", en: "Safety Workflow — Candidates cannot go live directly"))
                         .font(PulseFonts.captionMedium)
                         .foregroundStyle(colors.textPrimary)
@@ -289,7 +293,7 @@ struct StrategyOptimizationView: View {
                         metricPill(
                             label: L10n.zh("胜率", en: "Win Rate"),
                             value: String(format: "%.0f%%", winRate * 100),
-                            color: PulseColors.accent
+                            color: PulseColors.accentText
                         )
                     }
                     // Sharpe

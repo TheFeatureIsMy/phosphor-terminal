@@ -218,7 +218,7 @@ struct PulseToggle: View {
                 .foregroundStyle(colors.textSecondary)
             Spacer()
             Toggle("", isOn: $isOn)
-                .tint(PulseColors.accent)
+                .tint(PulseColors.accentText)
         }
     }
 }

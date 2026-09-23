@@ -11,7 +11,7 @@ struct TradeSourceTraceView: View {
         VStack(alignment: .leading, spacing: PulseSpacing.sm) {
             HStack(spacing: 4) {
                 Image(systemName: "point.topleft.down.to.point.bottomright.curvepath.fill")
-                    .foregroundStyle(PulseColors.accent)
+                    .foregroundStyle(PulseColors.accentText)
                     .font(.system(size: 12))
                 Text(L10n.zh("来源追踪", en: "Source Trace"))
                     .font(PulseFonts.caption)
@@ -34,7 +34,7 @@ struct TradeSourceTraceView: View {
                         title: "Strategy",
                         subtitle: trace.strategy?.strategyName ?? L10n.zh("无策略", en: "No strategy"),
                         detail: trace.strategy?.dslVersion.map { "DSL v\($0)" },
-                        color: PulseColors.accent
+                        color: PulseColors.accentText
                     )
                     traceConnector()
                     traceNode(
@@ -71,14 +71,7 @@ struct TradeSourceTraceView: View {
             }
         }
         .padding(PulseSpacing.sm)
-        .background(
-            RoundedRectangle(cornerRadius: PulseRadii.card)
-                .fill(colors.cardBackground)
-                .overlay(
-                    RoundedRectangle(cornerRadius: PulseRadii.card)
-                        .stroke(colors.border, lineWidth: 1)
-                )
-        )
+        .voltCardSurface()
     }
 
     @ViewBuilder

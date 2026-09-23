@@ -147,7 +147,7 @@ struct AIProvidersView: View {
                     }
                     .buttonStyle(.plain)
                     .font(PulseFonts.monoLabel)
-                    .foregroundStyle(PulseColors.accent)
+                    .foregroundStyle(PulseColors.accentText)
                 }
             }
         }
@@ -216,7 +216,7 @@ struct AIProvidersView: View {
                 .foregroundStyle(colors.textPrimary)
             Text(rule.primary)
                 .frame(width: 100, alignment: .leading)
-                .foregroundStyle(PulseColors.accent)
+                .foregroundStyle(PulseColors.accentText)
             Text(rule.fallback)
                 .frame(width: 100, alignment: .leading)
                 .foregroundStyle(colors.textSecondary)

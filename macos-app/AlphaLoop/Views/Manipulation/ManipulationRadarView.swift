@@ -100,7 +100,6 @@ struct ManipulationRadarView: View {
             .frame(maxWidth: PulseSpacing.contentMaxWidth, alignment: .leading)
             .frame(maxWidth: .infinity, alignment: .center)
         }
-        .background(colors.background)
         .id(settingsState.language)
     }
 }
@@ -122,13 +121,6 @@ private struct MastheadBlock: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(PulseSpacing.lg)
-        .background(
-            RoundedRectangle(cornerRadius: PulseRadii.card)
-                .fill(colors.cardBackground)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: PulseRadii.card)
-                .stroke(colors.border, lineWidth: 1)
-        )
+        .voltCardSurface()
     }
 }

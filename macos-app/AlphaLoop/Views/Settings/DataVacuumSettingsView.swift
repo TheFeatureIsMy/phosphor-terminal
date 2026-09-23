@@ -132,7 +132,7 @@ struct DataVacuumSettingsView: View {
                 VStack(alignment: .trailing, spacing: 0) {
                     Text("\(archived)")
                         .font(PulseFonts.monoLabel)
-                        .foregroundStyle(PulseColors.accent)
+                        .foregroundStyle(PulseColors.accentText)
                     Text(L10n.zh("已归档", en: "Archived"))
                         .font(PulseFonts.micro)
                         .foregroundStyle(colors.textMuted)

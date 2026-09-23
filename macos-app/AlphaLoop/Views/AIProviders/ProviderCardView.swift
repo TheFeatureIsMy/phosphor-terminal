@@ -42,7 +42,7 @@ struct ProviderCardView: View {
                     if let count = provider.modelCount {
                         Text("\(count) \(L10n.zh("模型", en: "models"))")
                             .font(PulseFonts.caption)
-                            .foregroundStyle(PulseColors.accent)
+                            .foregroundStyle(PulseColors.accentText)
                     }
 
                     Spacer()
@@ -50,7 +50,7 @@ struct ProviderCardView: View {
                     Button(L10n.zh("测试连接", en: "Test Connection")) { onTest() }
                         .buttonStyle(.plain)
                         .font(PulseFonts.monoLabel)
-                        .foregroundStyle(PulseColors.accent)
+                        .foregroundStyle(PulseColors.accentText)
                 }
             }
         }

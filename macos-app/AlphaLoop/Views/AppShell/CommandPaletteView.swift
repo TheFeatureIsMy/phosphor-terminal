@@ -157,7 +157,7 @@ struct CommandPaletteView: View {
 
                 HStack(spacing: PulseSpacing.xs) {
                     Image(systemName: "magnifyingglass")
-                        .font(.system(size: 13)).foregroundStyle(PulseColors.accent)
+                        .font(.system(size: 13)).foregroundStyle(PulseColors.accentText)
 
                     TextField("open dashboard · btc position · pause trading ...", text: $searchText)
                         .textFieldStyle(.plain)

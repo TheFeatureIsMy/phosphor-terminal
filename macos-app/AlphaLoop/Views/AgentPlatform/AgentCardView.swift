@@ -69,7 +69,7 @@ struct AgentCardView: View {
                                 .foregroundStyle(colors.textMuted)
                             Text("\(weight)")
                                 .font(PulseFonts.captionMedium)
-                                .foregroundStyle(PulseColors.accent)
+                                .foregroundStyle(PulseColors.accentText)
                         }
                     }
 

@@ -460,7 +460,7 @@ struct ExecutionDetailSheet: View {
                 id: String(run.strategyVersionId.prefix(8)),
                 status: L10n.zh("已匹配", en: "Matched"),
                 statusColor: PulseColors.success,
-                color: PulseColors.accent,
+                color: PulseColors.accentText,
                 timestamp: formatDateTime(baseTime)
             ),
             TraceStep(

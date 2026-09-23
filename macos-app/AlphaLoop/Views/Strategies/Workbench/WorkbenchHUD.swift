@@ -98,7 +98,7 @@ struct WorkbenchHUD: View {
                         .foregroundStyle(colors.textPrimary)
                     Image(systemName: "arrow.right")
                         .font(.system(size: 10, weight: .semibold))
-                        .foregroundStyle(PulseColors.accent)
+                        .foregroundStyle(PulseColors.accentText)
                 }
                 .padding(.horizontal, 10)
                 .frame(height: 26)

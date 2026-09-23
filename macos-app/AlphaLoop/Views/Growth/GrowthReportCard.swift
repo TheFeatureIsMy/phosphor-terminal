@@ -55,7 +55,7 @@ struct GrowthReportCard: View {
                             HStack(alignment: .top, spacing: PulseSpacing.xxs) {
                                 Image(systemName: "arrowtriangle.right.fill")
                                     .font(.system(size: 7))
-                                    .foregroundStyle(PulseColors.accent)
+                                    .foregroundStyle(PulseColors.accentText)
                                     .padding(.top, 3)
                                 Text(suggestion)
                                     .font(PulseFonts.caption)

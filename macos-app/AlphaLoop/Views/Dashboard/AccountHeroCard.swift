@@ -60,7 +60,7 @@ struct AccountHeroCard: View {
 
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(effectiveEquity > 0 ? String(format: "%.2f", displayEquity) : "—")
-                    .font(.system(size: 36, weight: .bold, design: .monospaced))
+                    .font(PulseFonts.mono(36, .bold))
                     .monospacedDigit()
                     .foregroundStyle(colors.textPrimary)
                     .contentTransition(.numericText())

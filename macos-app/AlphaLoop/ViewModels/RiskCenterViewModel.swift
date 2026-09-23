@@ -38,6 +38,35 @@ final class RiskCenterViewModel {
         }
     }
 
+    // MARK: - Stop Protection actions
+
+    func refreshPositionStop(_ positionId: String) async {
+        do {
+            _ = try await api.refreshStopProtection(positionId: positionId)
+            await loadStopProtection()
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
+    func forceLockPosition(_ positionId: String) async {
+        do {
+            _ = try await api.forceLockPosition(positionId: positionId)
+            await loadStopProtection()
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
+    func releaseLockPosition(_ positionId: String) async {
+        do {
+            _ = try await api.releaseLockPosition(positionId: positionId)
+            await loadStopProtection()
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
     func loadCircuitBreakers() async {
         do {
             circuitBreakers = try await api.getCircuitBreakers()
@@ -47,6 +76,35 @@ final class RiskCenterViewModel {
     }
 
     // MARK: - Risk Rules
+
+    var isEditingRules = false
+    var isSavingRules = false
+
+    func saveRiskRules(
+        dailyLossLimit: Double?,
+        weeklyLossLimit: Double?,
+        consecutiveLossesLimit: Int?,
+        maxDrawdown: Double?,
+        correlationThreshold: Double?,
+        killSwitchActive: Bool?
+    ) async {
+        isSavingRules = true
+        defer { isSavingRules = false }
+        do {
+            let body = RiskRulesUpdateBody(
+                dailyLossLimit: dailyLossLimit,
+                weeklyLossLimit: weeklyLossLimit,
+                consecutiveLossesLimit: consecutiveLossesLimit,
+                maxDrawdown: maxDrawdown,
+                correlationThreshold: correlationThreshold,
+                killSwitchActive: killSwitchActive
+            )
+            riskRules = try await api.updateRiskRules(body: body)
+            isEditingRules = false
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
 
     func loadRiskRules() async {
         do {

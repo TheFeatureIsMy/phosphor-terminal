@@ -43,17 +43,23 @@ final class LiveReadinessViewModel {
     var capitalMaxOpenTrades: Int = 0
     var capitalMaxDailyLossPct: Double = 0
     var emergencyStopAvailable: Bool = true
+    /// Result message of the last launch attempt (shown as toast by the view).
+    var launchMessage: String?
 
     // MARK: - Private
     private let client: NetworkClientProtocol
     private let api: APIOverview
     private let apiEmergency: APIEmergency
+    private let apiTrading: APITrading
+    private let apiStrategies: APIStrategiesV2
     private var pollingTask: Task<Void, Never>?
 
     init(client: NetworkClientProtocol) {
         self.client = client
         self.api = APIOverview(client: client)
         self.apiEmergency = APIEmergency(client: client)
+        self.apiTrading = APITrading(client: client)
+        self.apiStrategies = APIStrategiesV2(client: client)
     }
 
     // MARK: - Public API
@@ -142,16 +148,53 @@ final class LiveReadinessViewModel {
     }
 
     /// Triple confirmation: launch must type the configured phrase.
+    /// Dispatches to the real /api/trading endpoints (paper → start-paper,
+    /// live_small → start-live-small gate chain). Never touches emergency stop.
     func confirmLaunch(phrase: String) async -> Bool {
         guard let mode = pendingMode else { return false }
         let required = L10n.LiveReadiness.confirmPhrase
         guard phrase == required else { return false }
         do {
-            _ = try await apiEmergency.emergencyStop(reason: "Launch \(mode) at \(Date())")
-            // Real launch would dispatch to /api/v2/live-small/launch; the
-            // current backend has no such endpoint, so we treat the
-            // emergency stop call as a placeholder (the view's toast will
-            // show success) and the polling will pick up the new state.
+            switch mode {
+            case "paper":
+                let versionId = try await latestStrategyVersionId()
+                let result = try await apiTrading.startPaper(
+                    strategyVersionId: versionId,
+                    stakeAmount: capitalStake > 0 ? capitalStake : 100,
+                    maxOpenTrades: capitalMaxOpenTrades > 0 ? capitalMaxOpenTrades : 5
+                )
+                launchMessage = result.message ?? result.state
+            case "live_small":
+                let versionId = try await latestStrategyVersionId()
+                guard !capitalPoolId.isEmpty else {
+                    launchMessage = L10n.zh("请先选择资金池", en: "Select a capital pool first")
+                    return false
+                }
+                let result = try await apiTrading.startLiveSmall(
+                    strategyVersionId: versionId,
+                    capitalPoolId: capitalPoolId,
+                    confirmedBy: "macos-app"
+                )
+                switch result.state {
+                case "approved_enqueued":
+                    launchMessage = L10n.zh("小仓实盘命令已提交", en: "Live-small command enqueued")
+                case "not_enabled":
+                    launchMessage = L10n.zh("服务端未开启实盘执行（LIVE_SMALL_ENABLED=false）", en: "Live execution disabled on server")
+                case "waiting_confirmation":
+                    launchMessage = L10n.zh("需要人工确认", en: "Human confirmation required")
+                default:
+                    launchMessage = result.reasonCodes.joined(separator: ", ")
+                }
+                if result.state != "approved_enqueued" {
+                    showLaunchConfirmation = false
+                    pendingMode = nil
+                    await loadData()
+                    return false
+                }
+            default:
+                launchMessage = L10n.zh("暂不支持该模式启动", en: "Launch mode not supported")
+                return false
+            }
             showLaunchConfirmation = false
             pendingMode = nil
             await loadData()
@@ -159,6 +202,39 @@ final class LiveReadinessViewModel {
         } catch {
             self.error = error.localizedDescription
             return false
+        }
+    }
+
+    /// Resolve the latest strategy version id for the selected strategy.
+    private func latestStrategyVersionId() async throws -> String {
+        let strategyId = data?.selectedStrategyId ?? ""
+        guard !strategyId.isEmpty else {
+            throw NSError(
+                domain: "LiveReadiness", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: L10n.zh("请先选择策略", en: "Select a strategy first")]
+            )
+        }
+        let versions = try await apiStrategies.listVersions(strategyId: strategyId)
+        guard let latest = versions.first else {
+            throw NSError(
+                domain: "LiveReadiness", code: 2,
+                userInfo: [NSLocalizedDescriptionKey: L10n.zh("该策略没有可用版本", en: "No versions available")]
+            )
+        }
+        return latest.id
+    }
+
+    /// Disable automated trading: stop active dry-runs + block new entries.
+    func disableAutoTrading() async {
+        do {
+            let result = try await apiTrading.disableAuto(reason: "macos_disable_auto")
+            launchMessage = L10n.zh(
+                "已停止 \(result.stoppedDryruns) 个模拟运行，新入场已封锁",
+                en: "Stopped \(result.stoppedDryruns) dry-runs, new entries blocked"
+            )
+            await loadData()
+        } catch {
+            self.error = error.localizedDescription
         }
     }
 

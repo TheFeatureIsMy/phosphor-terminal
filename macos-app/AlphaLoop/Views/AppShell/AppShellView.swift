@@ -26,11 +26,13 @@ struct AppShellView: View {
                 VStack(spacing: 0) {
                     GlobalStatusBar()
                     ZStack {
+                        // VOLT HUD 终端底纹：全局网格铺在内容之下，级联每一页
+                        TerminalGridBackground()
                         detailContent
                             .id(appState.selectedRoute)
                             .transition(.asymmetric(
-                                insertion: .move(edge: .trailing).combined(with: .opacity).combined(with: .scale(scale: 0.92)),
-                                removal: .scale(scale: 0.92).combined(with: .opacity)
+                                insertion: .opacity.combined(with: .offset(y: 8)),
+                                removal: .opacity
                             ))
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -129,7 +131,7 @@ struct AppShellView: View {
             StrategyOptimizationView()
         // SYSTEM
         case .serviceManagement:
-            AIProvidersView()
+            ServiceManagementView()
         case .dataSourceManagement:
             DataSourcesView()
         case .systemSettings:
@@ -144,7 +146,7 @@ struct AppShellView: View {
             Spacer()
             Image(systemName: icon)
                 .font(.system(size: 48, weight: .light))
-                .foregroundStyle(PulseColors.accent.opacity(0.4))
+                .foregroundStyle(PulseColors.accentText.opacity(0.4))
                 .shadow(color: PulseColors.accent.opacity(0.2), radius: 12)
             Text(title)
                 .font(PulseFonts.displaySubheading)

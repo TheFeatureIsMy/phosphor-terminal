@@ -27,7 +27,7 @@ struct LearnAlphaLoopCard: View {
                     HStack(spacing: PulseSpacing.xs) {
                         Image(systemName: "book.closed.fill")
                             .font(.system(size: 14))
-                            .foregroundStyle(PulseColors.accent)
+                            .foregroundStyle(PulseColors.accentText)
                         Text(L10n.Guide.dashboardTitle)
                             .font(PulseFonts.headline)
                             .foregroundStyle(colors.textPrimary)
@@ -78,10 +78,10 @@ struct LearnAlphaLoopCard: View {
             .padding(.horizontal, PulseSpacing.sm)
             .padding(.vertical, 6)
             .background(
-                Capsule().fill(colors.surface.opacity(0.6))
+                RoundedRectangle(cornerRadius: PulseRadii.badge).fill(colors.surface.opacity(0.6))
             )
             .overlay(
-                Capsule().stroke(colors.border, lineWidth: 0.5)
+                RoundedRectangle(cornerRadius: PulseRadii.badge).stroke(colors.border, lineWidth: 0.5)
             )
         }
         .buttonStyle(.plain)

@@ -17,25 +17,35 @@ struct QuantPageHeader<Trailing: View>: View {
     @ViewBuilder var trailing: () -> Trailing
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: PulseSpacing.md) {
-            VStack(alignment: .leading, spacing: 5) {
-                Text(eyebrow)
-                    .font(PulseFonts.body(13, .semibold))
-                    .foregroundStyle(PulseColors.accent)
-                    .textCase(.uppercase)
-                    .tracking(0.6)
-                Text(title)
-                    .font(PulseFonts.display(28, .bold))
-                    .foregroundStyle(colors.textPrimary)
-                    .tracking(-0.3)
-                if let subtitle {
-                    Text(subtitle)
-                        .font(PulseFonts.body(14))
-                        .foregroundStyle(colors.textSecondary)
+        VStack(alignment: .leading, spacing: PulseSpacing.sm) {
+            HStack(alignment: .firstTextBaseline, spacing: PulseSpacing.md) {
+                HStack(alignment: .center, spacing: PulseSpacing.xs) {
+                    // 左侧电光竖条（页头签名）
+                    RoundedRectangle(cornerRadius: 1)
+                        .fill(PulseColors.accent)
+                        .frame(width: 3, height: 30)
+                        .shadow(color: PulseColors.accent.opacity(0.5), radius: 5)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("// " + eyebrow)
+                            .font(PulseFonts.mono(10, .semibold))
+                            .foregroundStyle(colors.accentInk)
+                            .textCase(.uppercase)
+                            .tracking(1.6)
+                        Text(title)
+                            .font(PulseFonts.display(26, .bold))
+                            .foregroundStyle(colors.textPrimary)
+                            .tracking(-0.3)
+                        if let subtitle {
+                            Text(subtitle)
+                                .font(PulseFonts.body(13))
+                                .foregroundStyle(colors.textSecondary)
+                        }
+                    }
                 }
+                Spacer(minLength: PulseSpacing.md)
+                trailing()
             }
-            Spacer(minLength: PulseSpacing.md)
-            trailing()
+            VoltRule()
         }
         .id(settingsState.language)
     }

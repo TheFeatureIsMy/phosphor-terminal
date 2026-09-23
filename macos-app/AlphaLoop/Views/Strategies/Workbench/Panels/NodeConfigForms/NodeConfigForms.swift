@@ -53,8 +53,7 @@ struct SignalInputForm: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             FormSection(label: L10n.Workbench.nodeFieldSymbols) {
-                TextField("BTC/USDT,ETH/USDT", text: $symbols)
-                    .textFieldStyle(.roundedBorder)
+                PulseTextField(label: "", text: $symbols, placeholder: "BTC/USDT,ETH/USDT")
             }
             FormSection(label: L10n.Workbench.nodeFieldTimeframe) {
                 Picker("", selection: $timeframe) {
@@ -122,11 +121,11 @@ struct IndicatorConditionForm: View {
             }
             FormSection(label: L10n.Workbench.nodeFieldValue) {
                 TextField("0", text: numberBinding($value))
-                    .textFieldStyle(.roundedBorder)
+                    
             }
             FormSection(label: L10n.Workbench.nodeFieldTimeframe) {
                 TextField("14", text: intBinding($period))
-                    .textFieldStyle(.roundedBorder)
+                    
             }
             commitButton
         }
@@ -182,11 +181,11 @@ struct FilterForm: View {
             }
             FormSection(label: L10n.Workbench.nodeFieldValue) {
                 TextField("1.0", text: numberBinding($value))
-                    .textFieldStyle(.roundedBorder)
+                    
             }
             FormSection(label: L10n.Workbench.nodeFieldCandles) {
                 TextField("5", text: intBinding($candles))
-                    .textFieldStyle(.roundedBorder)
+                    
             }
             commitButton
         }
@@ -268,7 +267,7 @@ struct RiskPolicyForm: View {
             }
             FormSection(label: L10n.Workbench.nodeFieldMaxOpen) {
                 TextField("3", text: intBinding($maxOpen))
-                    .textFieldStyle(.roundedBorder)
+                    
             }
             Toggle(L10n.Workbench.nodeFieldTrailing, isOn: $trailing)
             commitButton
@@ -348,12 +347,11 @@ struct StructureDefenseForm: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             FormSection(label: L10n.Workbench.nodeFieldStructures) {
-                TextField("liquidity_pool,fvg", text: $structures)
-                    .textFieldStyle(.roundedBorder)
+                PulseTextField(label: "", text: $structures, placeholder: "liquidity_pool,fvg")
             }
             FormSection(label: L10n.Workbench.nodeFieldMinScore) {
                 TextField("70", text: intBinding($minScore))
-                    .textFieldStyle(.roundedBorder)
+                    
             }
             commitButton
         }
@@ -401,7 +399,7 @@ struct AccountRiskForm: View {
             }
             FormSection(label: L10n.Workbench.nodeFieldConsecLoss) {
                 TextField("4", text: intBinding($consec))
-                    .textFieldStyle(.roundedBorder)
+                    
             }
             commitButton
         }

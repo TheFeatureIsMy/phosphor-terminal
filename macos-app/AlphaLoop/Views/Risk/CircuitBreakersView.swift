@@ -63,7 +63,10 @@ struct CircuitBreakersView: View {
                         } else {
                             // Timeline layout
                             timelineLayout(filtered)
-                                .padding(PulseSpacing.xl)
+                                .padding(.horizontal, 28)
+                                .padding(.vertical, 20)
+                                .frame(maxWidth: PulseSpacing.contentMaxWidth)
+                                .frame(maxWidth: .infinity)
                         }
 
                     }
@@ -139,7 +142,7 @@ struct CircuitBreakersView: View {
                         Image(systemName: "bolt.fill")
                             .font(.system(size: 8))
                         Text("\(data.totalCount)")
-                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                            .font(PulseFonts.mono(11, .bold))
                     }
                     .foregroundStyle(data.totalCount > 0 ? PulseColors.StateColors.orange : colors.textMuted)
                     .padding(.horizontal, 8)
@@ -147,7 +150,7 @@ struct CircuitBreakersView: View {
                     .background(
                         (data.totalCount > 0 ? PulseColors.StateColors.orange : colors.surface).opacity(0.12)
                     )
-                    .clipShape(Capsule())
+                    .clipShape(RoundedRectangle(cornerRadius: PulseRadii.badge))
 
                     Button {
                         Task { await vm.loadCircuitBreakers() }
@@ -158,7 +161,7 @@ struct CircuitBreakersView: View {
                             Text(L10n.Risk.cbRefresh)
                                 .font(PulseFonts.monoLabel)
                         }
-                        .foregroundStyle(PulseColors.accent)
+                        .foregroundStyle(PulseColors.accentText)
                     }
                     .buttonStyle(.plain)
                     .controlSize(.small)
@@ -259,9 +262,9 @@ struct CircuitBreakersView: View {
             .background(
                 isSelected ? color.opacity(0.15) : colors.surface
             )
-            .clipShape(Capsule())
+            .clipShape(RoundedRectangle(cornerRadius: PulseRadii.badge))
             .overlay(
-                Capsule()
+                RoundedRectangle(cornerRadius: PulseRadii.badge)
                     .stroke(isSelected ? color.opacity(0.4) : Color.clear, lineWidth: 1)
             )
         }
@@ -297,7 +300,7 @@ struct CircuitBreakersView: View {
 
             VStack(spacing: PulseSpacing.xs) {
                 Text(L10n.Risk.cbFilterAllClear)
-                    .font(.system(size: 20, weight: .bold, design: .monospaced))
+                    .font(PulseFonts.display(20, .bold))
                     .foregroundStyle(PulseColors.StateColors.green)
                     .tracking(3)
 
@@ -371,7 +374,7 @@ struct CircuitBreakersView: View {
                         Image(systemName: info.icon)
                             .font(.system(size: 12, weight: .bold))
                         Text(L10n.zh(info.label, en: info.labelEn))
-                            .font(.system(size: 12, weight: .bold, design: .monospaced))
+                            .font(PulseFonts.mono(12, .bold))
                     }
                     .foregroundStyle(info.color)
                     .padding(.horizontal, 10)
@@ -386,12 +389,12 @@ struct CircuitBreakersView: View {
                     // Resolved badge
                     if record.resolved {
                         Text(L10n.Risk.resolved)
-                            .font(.system(size: 9, weight: .bold, design: .monospaced))
+                            .font(PulseFonts.mono(9, .bold))
                             .foregroundStyle(PulseColors.StateColors.green)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 3)
                             .background(PulseColors.StateColors.green.opacity(0.1))
-                            .clipShape(Capsule())
+                            .clipShape(RoundedRectangle(cornerRadius: PulseRadii.badge))
                     }
 
                     Spacer()
@@ -413,12 +416,12 @@ struct CircuitBreakersView: View {
                     HStack(spacing: PulseSpacing.xs) {
                         ForEach(record.reasonCodes, id: \.self) { code in
                             Text(code)
-                                .font(.system(size: 10, weight: .medium, design: .monospaced))
+                                .font(PulseFonts.mono(10, .medium))
                                 .foregroundStyle(info.color.opacity(0.9))
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 3)
                                 .background(info.color.opacity(0.06))
-                                .clipShape(Capsule())
+                                .clipShape(RoundedRectangle(cornerRadius: PulseRadii.badge))
                         }
                     }
                 }
@@ -428,10 +431,10 @@ struct CircuitBreakersView: View {
                     if let cmdId = record.relatedCommandId {
                         HStack(spacing: 3) {
                             Text("CMD")
-                                .font(.system(size: 8, weight: .bold, design: .monospaced))
+                                .font(PulseFonts.mono(8, .bold))
                                 .foregroundStyle(colors.textMuted)
                             Text(cmdId)
-                                .font(.system(size: 10, design: .monospaced))
+                                .font(PulseFonts.mono(10))
                                 .foregroundStyle(colors.textSecondary)
                                 .lineLimit(1)
                         }
@@ -439,10 +442,10 @@ struct CircuitBreakersView: View {
                     if let reconId = record.relatedReconciliationId {
                         HStack(spacing: 3) {
                             Text("RECON")
-                                .font(.system(size: 8, weight: .bold, design: .monospaced))
+                                .font(PulseFonts.mono(8, .bold))
                                 .foregroundStyle(colors.textMuted)
                             Text(reconId)
-                                .font(.system(size: 10, design: .monospaced))
+                                .font(PulseFonts.mono(10))
                                 .foregroundStyle(colors.textSecondary)
                                 .lineLimit(1)
                         }
@@ -463,13 +466,13 @@ struct CircuitBreakersView: View {
                         .help(L10n.Risk.markResolved)
                     } else if record.type == "kill_switch" || record.type == "emergency_stop" {
                         Text(L10n.Risk.cannotResolveKillSwitch)
-                            .font(.system(size: 9, design: .monospaced))
+                            .font(PulseFonts.mono(9))
                             .foregroundStyle(colors.textMuted.opacity(0.5))
                     }
 
                     // Record ID
                     Text(record.id)
-                        .font(.system(size: 9, design: .monospaced))
+                        .font(PulseFonts.mono(9))
                         .foregroundStyle(colors.textMuted.opacity(0.6))
                         .lineLimit(1)
                 }

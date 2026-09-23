@@ -60,7 +60,7 @@ struct HistoryDrawer: View {
         Button { Task { await vm.selectRun(run) }; isPresented = false } label: {
             HStack(spacing: PulseSpacing.sm) {
                 Image(systemName: vm.comparedRunIds.contains(run.id) ? "checkmark.square.fill" : "square")
-                    .foregroundStyle(PulseColors.accent)
+                    .foregroundStyle(PulseColors.accentText)
                 Text("#\(run.id)").font(PulseFonts.tabular).foregroundStyle(colors.textPrimary)
                 Text(run.symbols.first ?? "—").font(PulseFonts.caption).foregroundStyle(colors.textSecondary)
                 Spacer()

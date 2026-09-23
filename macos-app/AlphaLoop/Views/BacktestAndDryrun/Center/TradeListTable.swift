@@ -45,7 +45,7 @@ struct TradeListTable: View {
                         Button { showAll = true } label: {
                             Text(L10n.BacktestLab.showAllTrades(trades.count))
                                 .font(PulseFonts.captionMedium)
-                                .foregroundStyle(PulseColors.accent)
+                                .foregroundStyle(PulseColors.accentText)
                                 .frame(maxWidth: .infinity)
                                 .padding(PulseSpacing.md)
                         }

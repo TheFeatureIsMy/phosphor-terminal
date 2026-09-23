@@ -123,7 +123,6 @@ private struct StructureMatrixContentView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(colors.background)
         .onReceive(countdownTimer) { _ in vm.tickCountdown() }
         .onChange(of: vm.selectedSymbol) { _, _ in Task { await vm.loadAll() } }
         .onChange(of: vm.selectedTimeframe) { _, _ in Task { await vm.loadAll() } }
@@ -218,7 +217,7 @@ private struct StructureMatrixContentView: View {
             Button { Task { await vm.refresh() } } label: {
                 Image(systemName: "arrow.clockwise")
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(PulseColors.accent)
+                    .foregroundStyle(PulseColors.accentText)
                     .frame(width: 30, height: 30)
                     .background(PulseColors.accent.opacity(0.1))
                     .clipShape(RoundedRectangle(cornerRadius: PulseRadii.button))
@@ -252,10 +251,10 @@ private struct FastTrackHealthMiniBar: View {
         let h = health ?? FastTrackHealthResponse()
         HStack(spacing: PulseSpacing.md) {
             Circle()
-                .fill(h.verdictTrustworthy ? PulseColors.accent : PulseColors.StateColors.orange)
+                .fill(h.verdictTrustworthy ? PulseColors.accentText : PulseColors.StateColors.orange)
                 .frame(width: 8, height: 8)
                 .overlay(
-                    Circle().fill(h.verdictTrustworthy ? PulseColors.accent : PulseColors.StateColors.orange)
+                    Circle().fill(h.verdictTrustworthy ? PulseColors.accentText : PulseColors.StateColors.orange)
                         .frame(width: 8, height: 8)
                         .blur(radius: 4).opacity(0.8)
                 )
@@ -275,7 +274,7 @@ private struct FastTrackHealthMiniBar: View {
                     RoundedRectangle(cornerRadius: PulseRadii.badge)
                         .fill((h.verdictTrustworthy ? PulseColors.accent : PulseColors.StateColors.orange).opacity(0.15))
                 )
-                .foregroundStyle(h.verdictTrustworthy ? PulseColors.accent : PulseColors.StateColors.orange)
+                .foregroundStyle(h.verdictTrustworthy ? PulseColors.accentText : PulseColors.StateColors.orange)
         }
         .padding(.horizontal, PulseSpacing.md).padding(.vertical, PulseSpacing.sm)
         .background(
@@ -307,11 +306,11 @@ private struct TribunalMasthead: View {
         HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(L10n.Structure.tribunalTitle.uppercased())
-                    .font(.system(size: 28, weight: .bold, design: .serif))
+                    .font(PulseFonts.display(28, .black))
                     .tracking(2)
                     .foregroundStyle(colors.textPrimary)
                 Text(L10n.Structure.tribunalSubtitle)
-                    .font(.system(size: 13, weight: .regular, design: .serif).italic())
+                    .font(PulseFonts.body(13).italic())
                     .foregroundStyle(colors.textMuted)
             }
             Spacer()
@@ -420,7 +419,7 @@ private struct TribunalCenterpiece: View {
 
                 VStack(spacing: 4) {
                     Text(formattedCountdown)
-                        .font(.system(size: 36, weight: .semibold, design: .monospaced))
+                        .font(PulseFonts.mono(36, .semibold))
                         .monospacedDigit()
                         .foregroundStyle(colors.textPrimary)
                     Text(slowTfLabel + " " + L10n.Structure.candleClosesIn)
@@ -465,7 +464,7 @@ private struct TribunalCenterpiece: View {
                 .foregroundStyle(colors.textMuted)
 
             Text(verdictWord)
-                .font(.system(size: 32, weight: .bold, design: .serif))
+                .font(PulseFonts.display(32, .bold))
                 .foregroundStyle(verdictColor)
 
             Text(verdictSub)
@@ -474,7 +473,7 @@ private struct TribunalCenterpiece: View {
 
             if let reason = guard_?.reasonCodes.first {
                 Text("\"" + humanize(reason) + "\"")
-                    .font(.system(size: 13, weight: .regular, design: .serif).italic())
+                    .font(PulseFonts.body(13).italic())
                     .foregroundStyle(colors.textPrimary)
                     .lineLimit(3)
                     .padding(.top, PulseSpacing.xs)
@@ -603,7 +602,7 @@ private struct EvidenceMatrix: View {
     var body: some View {
         VStack(alignment: .leading, spacing: PulseSpacing.sm) {
             HStack(spacing: PulseSpacing.xs) {
-                Text("§").font(.system(size: 14, weight: .semibold, design: .serif)).foregroundStyle(PulseColors.accent)
+                Text("§").font(PulseFonts.body(14, .semibold)).foregroundStyle(PulseColors.accentText)
                 Text(L10n.Structure.evidenceMatrix)
                     .font(PulseFonts.monoLabel)
                     .foregroundStyle(colors.textMuted)
@@ -766,7 +765,7 @@ private struct ShadowWindowsPanel: View {
     var body: some View {
         VStack(alignment: .leading, spacing: PulseSpacing.sm) {
             HStack(spacing: PulseSpacing.xs) {
-                Text("§").font(.system(size: 14, weight: .semibold, design: .serif)).foregroundStyle(PulseColors.accent)
+                Text("§").font(PulseFonts.body(14, .semibold)).foregroundStyle(PulseColors.accentText)
                 Text(L10n.Structure.shadowWindows)
                     .font(PulseFonts.monoLabel)
                     .foregroundStyle(colors.textMuted)
@@ -777,7 +776,7 @@ private struct ShadowWindowsPanel: View {
 
             if windows.isEmpty {
                 Text(L10n.Structure.noActiveShadowWindows)
-                    .font(.system(size: 13, weight: .regular, design: .serif).italic())
+                    .font(PulseFonts.body(13).italic())
                     .foregroundStyle(colors.textMuted)
                     .padding(PulseSpacing.md)
                     .frame(maxWidth: .infinity)
@@ -881,7 +880,7 @@ private struct ChargesPanel: View {
     var body: some View {
         VStack(alignment: .leading, spacing: PulseSpacing.sm) {
             HStack(spacing: PulseSpacing.xs) {
-                Text("§").font(.system(size: 14, weight: .semibold, design: .serif)).foregroundStyle(PulseColors.accent)
+                Text("§").font(PulseFonts.body(14, .semibold)).foregroundStyle(PulseColors.accentText)
                 Text(L10n.Structure.chargesAndReasons)
                     .font(PulseFonts.monoLabel)
                     .foregroundStyle(colors.textMuted)
@@ -889,7 +888,7 @@ private struct ChargesPanel: View {
 
             if charges.isEmpty {
                 Text(L10n.Structure.noChargesFiled)
-                    .font(.system(size: 13, weight: .regular, design: .serif).italic())
+                    .font(PulseFonts.body(13).italic())
                     .foregroundStyle(colors.textMuted)
                     .padding(PulseSpacing.md)
                     .frame(maxWidth: .infinity)
@@ -921,8 +920,8 @@ private struct ChargeRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: PulseSpacing.sm) {
             Text(numeral)
-                .font(.system(size: 14, weight: .semibold, design: .serif))
-                .foregroundStyle(PulseColors.accent.opacity(0.7))
+                .font(PulseFonts.body(14, .semibold))
+                .foregroundStyle(PulseColors.accentText.opacity(0.7))
                 .frame(width: 24, alignment: .leading)
 
             Text(charge.tf)
@@ -931,7 +930,7 @@ private struct ChargeRow: View {
                 .frame(width: 36, alignment: .leading)
 
             Text("\"" + humanize(charge.reasonCode) + "\"")
-                .font(.system(size: 13, weight: .regular, design: .serif).italic())
+                .font(PulseFonts.body(13).italic())
                 .foregroundStyle(colors.textPrimary)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -964,7 +963,7 @@ private struct HearingsTimeline: View {
     var body: some View {
         VStack(alignment: .leading, spacing: PulseSpacing.sm) {
             HStack(spacing: PulseSpacing.xs) {
-                Text("§").font(.system(size: 14, weight: .semibold, design: .serif)).foregroundStyle(PulseColors.accent)
+                Text("§").font(PulseFonts.body(14, .semibold)).foregroundStyle(PulseColors.accentText)
                 Text(L10n.Structure.hearingsAndRulings)
                     .font(PulseFonts.monoLabel)
                     .foregroundStyle(colors.textMuted)
@@ -972,7 +971,7 @@ private struct HearingsTimeline: View {
 
             if events.isEmpty {
                 Text(L10n.Structure.noPastHearings)
-                    .font(.system(size: 13, weight: .regular, design: .serif).italic())
+                    .font(PulseFonts.body(13).italic())
                     .foregroundStyle(colors.textMuted)
                     .padding(PulseSpacing.md)
                     .frame(maxWidth: .infinity)
@@ -1023,7 +1022,7 @@ private struct HearingRow: View {
                 }
                 if let reason = event.reasonCodes.first {
                     Text(humanize(reason))
-                        .font(.system(size: 12, weight: .regular, design: .serif).italic())
+                        .font(PulseFonts.body(12).italic())
                         .foregroundStyle(colors.textMuted)
                 }
             }
@@ -1067,7 +1066,7 @@ private struct StructureDetailDrawer: View {
                             .font(PulseFonts.monoLabel)
                             .foregroundStyle(colors.textMuted)
                         Text("\(payload.cell.zoneType.uppercased()) · \(payload.timeframe)")
-                            .font(.system(size: 18, weight: .semibold, design: .serif))
+                            .font(PulseFonts.body(18, .semibold))
                             .foregroundStyle(colors.textPrimary)
                     }
                     Spacer()
@@ -1103,7 +1102,7 @@ private struct StructureDetailDrawer: View {
                                     .background(RoundedRectangle(cornerRadius: 3).fill(colors.border.opacity(0.3)))
                                     .foregroundStyle(colors.textSecondary)
                                 Text(humanize(code))
-                                    .font(.system(size: 12, design: .serif).italic())
+                                    .font(PulseFonts.body(12).italic())
                                     .foregroundStyle(colors.textPrimary)
                                 Spacer()
                             }
@@ -1192,7 +1191,7 @@ private struct SymbolPickerOverlay: View {
                 RoundedRectangle(cornerRadius: PulseRadii.card)
                     .fill(colors.cardBackground)
                     .overlay(RoundedRectangle(cornerRadius: PulseRadii.card).stroke(colors.border, lineWidth: 1))
-                    .shadow(color: .black.opacity(0.3), radius: 30, x: 0, y: 12)
+                    .applyShadow(PulseShadow.modal)
             )
             .clipShape(RoundedRectangle(cornerRadius: PulseRadii.card))
             .padding(.top, 80)
@@ -1228,7 +1227,7 @@ private struct SymbolPickerOverlay: View {
                 if symbol == selected {
                     Image(systemName: "checkmark")
                         .font(.system(size: 10, weight: .semibold))
-                        .foregroundStyle(PulseColors.accent)
+                        .foregroundStyle(PulseColors.accentText)
                 }
             }
             .padding(.horizontal, PulseSpacing.md).padding(.vertical, 8)

@@ -46,7 +46,11 @@ struct DataSourcesView: View {
                     }
                 }
             }
-            .padding(PulseSpacing.lg)
+            .padding(.horizontal, 28)
+            .padding(.top, 20)
+            .padding(.bottom, 40)
+            .frame(maxWidth: PulseSpacing.contentMaxWidth)
+            .frame(maxWidth: .infinity)
         }
         .id(settingsState.language)
         .scrollEdgeEffectStyle(.soft, for: .vertical)
@@ -54,6 +58,14 @@ struct DataSourcesView: View {
             let vm = DataSourcesViewModel(client: networkClient)
             viewModel = vm
             await vm.load()
+        }
+        .sheet(isPresented: Binding(
+            get: { viewModel?.showAddSheet ?? false },
+            set: { viewModel?.showAddSheet = $0 }
+        )) {
+            if let vm = viewModel {
+                AddDataSourceSheet(vm: vm)
+            }
         }
     }
 
@@ -111,7 +123,20 @@ struct DataSourcesView: View {
                         Text(L10n.zh("测试所有连接", en: "Test All Connections"))
                             .font(PulseFonts.monoLabel)
                     }
-                    .foregroundStyle(PulseColors.accent)
+                    .foregroundStyle(PulseColors.accentText)
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    vm.showAddSheet = true
+                } label: {
+                    HStack(spacing: PulseSpacing.xxs) {
+                        Image(systemName: "plus")
+                            .font(PulseFonts.caption)
+                        Text(L10n.zh("新增", en: "Add"))
+                            .font(PulseFonts.monoLabel)
+                    }
+                    .foregroundStyle(PulseColors.accentText)
                 }
                 .buttonStyle(.plain)
 

@@ -34,7 +34,11 @@ struct ServiceManagementView: View {
                         .padding(PulseSpacing.lg)
                 }
             }
-            .padding(PulseSpacing.lg)
+            .padding(.horizontal, 28)
+            .padding(.top, 20)
+            .padding(.bottom, 40)
+            .frame(maxWidth: PulseSpacing.contentMaxWidth)
+            .frame(maxWidth: .infinity)
         }
         .id(settingsState.language)
         .scrollEdgeEffectStyle(.soft, for: .vertical)
@@ -43,6 +47,14 @@ struct ServiceManagementView: View {
                 let vm = ServiceManagementViewModel(client: networkClient)
                 viewModel = vm
                 await vm.load()
+            }
+        }
+        .sheet(isPresented: Binding(
+            get: { viewModel?.showAddSheet ?? false },
+            set: { viewModel?.showAddSheet = $0 }
+        )) {
+            if let vm = viewModel {
+                AddProviderSheet(vm: vm)
             }
         }
     }
@@ -55,15 +67,30 @@ struct ServiceManagementView: View {
             title: L10n.zh("服务管理", en: "Service Management"),
             subtitle: L10n.zh("后端 · 数据库 · 缓存 · 交易所 · 模型网关 - 全链路健康监控", en: "Backend · Database · Cache · Exchange · Model Gateway - Full Health Monitor")
         ) {
-            Button {
-                Task { await vm.load() }
-            } label: {
-                Image(systemName: "arrow.clockwise")
-                    .font(PulseFonts.label)
-                    .foregroundStyle(colors.textMuted)
+            HStack(spacing: PulseSpacing.sm) {
+                Button {
+                    vm.showAddSheet = true
+                } label: {
+                    HStack(spacing: PulseSpacing.xxs) {
+                        Image(systemName: "plus")
+                            .font(PulseFonts.caption)
+                        Text(L10n.zh("新增", en: "Add"))
+                            .font(PulseFonts.monoLabel)
+                    }
+                    .foregroundStyle(PulseColors.accentText)
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    Task { await vm.load() }
+                } label: {
+                    Image(systemName: "arrow.clockwise")
+                        .font(PulseFonts.label)
+                        .foregroundStyle(colors.textMuted)
+                }
+                .buttonStyle(.plain)
+                .help(L10n.zh("刷新", en: "Refresh"))
             }
-            .buttonStyle(.plain)
-            .help(L10n.zh("刷新", en: "Refresh"))
         }
     }
 

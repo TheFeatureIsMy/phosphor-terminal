@@ -31,5 +31,28 @@ struct APIStrategyRuns {
     func getRunLedger(_ runId: String, limit: Int = 50) async throws -> [AnyCodable] {
         try await client.get("/api/v2/strategy-runs/\(runId)/ledger?limit=\(limit)")
     }
+
+    // MARK: - Lifecycle control (pause / resume / stop)
+
+    func pauseRun(_ runId: String, reason: String = "user_requested") async throws -> [String: AnyCodable] {
+        try await client.post(
+            "/api/v2/strategy-runs/\(runId)/pause",
+            body: AnyEncodable(["reason": reason])
+        )
+    }
+
+    func resumeRun(_ runId: String, reason: String = "user_requested") async throws -> [String: AnyCodable] {
+        try await client.post(
+            "/api/v2/strategy-runs/\(runId)/resume",
+            body: AnyEncodable(["reason": reason])
+        )
+    }
+
+    func stopRun(_ runId: String, reason: String = "user_requested") async throws -> [String: AnyCodable] {
+        try await client.post(
+            "/api/v2/strategy-runs/\(runId)/stop",
+            body: AnyEncodable(["reason": reason])
+        )
+    }
 }
 

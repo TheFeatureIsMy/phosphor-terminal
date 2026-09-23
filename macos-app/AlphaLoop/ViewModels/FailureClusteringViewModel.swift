@@ -33,6 +33,8 @@ final class FailureClusteringViewModel {
     var totalLossAmount: Double { data?.totalLossAmount ?? 0 }
     var labels: [String] { data?.labels ?? [] }
     var commonRejectReasons: [[String: String]] { data?.commonRejectReasons ?? [] }
+    var state: String { data?.state ?? "unknown" }
+    var reasonCodes: [String] { data?.reasonCodes ?? [] }
 
     var maxClusterLoss: Double {
         clusters.map { abs($0.totalLoss) }.max() ?? 1.0

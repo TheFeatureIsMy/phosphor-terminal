@@ -77,7 +77,7 @@ private struct AgentPlatformContent: View {
         ) {
             Text("\(viewModel.agents.count)")
                 .font(PulseFonts.captionMedium)
-                .foregroundStyle(PulseColors.accent)
+                .foregroundStyle(PulseColors.accentText)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 2)
                 .background(PulseColors.accentDim)
@@ -106,7 +106,11 @@ private struct AgentPlatformContent: View {
                     .staggeredAppearance(index: index)
                 }
             }
-            .padding(PulseSpacing.lg)
+            .padding(.horizontal, 28)
+            .padding(.top, 20)
+            .padding(.bottom, 40)
+            .frame(maxWidth: PulseSpacing.contentMaxWidth)
+            .frame(maxWidth: .infinity)
         }
         .id(settingsState.language)
     }

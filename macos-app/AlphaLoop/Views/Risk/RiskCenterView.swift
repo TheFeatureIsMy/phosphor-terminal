@@ -171,7 +171,7 @@ struct RiskCenterView: View {
                     Label(L10n.Risk.unblock, systemImage: "hand.thumbsup")
                 }
                 .buttonStyle(.bordered)
-                .tint(PulseColors.accent)
+                .tint(PulseColors.accentText)
                 .disabled(!overview.activeLocks.contains { $0["lock"] == "manual_block" })
 
                 Spacer()

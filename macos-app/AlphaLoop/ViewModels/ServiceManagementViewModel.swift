@@ -88,4 +88,44 @@ final class ServiceManagementViewModel {
         default: return "gearshape"
         }
     }
+
+    // MARK: - Add Provider
+
+    var showAddSheet = false
+    var newCategory = "llm"
+    var newProviderName = ""
+    var newInstanceName = ""
+    var newApiKey = ""
+    var isCreating = false
+
+    func createProvider() async {
+        guard !newProviderName.isEmpty else { return }
+        isCreating = true
+        defer { isCreating = false }
+        do {
+            let body = ProviderConfigPayload(
+                category: newCategory,
+                providerName: newProviderName,
+                instanceName: newInstanceName.isEmpty ? nil : newInstanceName,
+                enabled: true,
+                priority: 100,
+                config: [:],
+                credentials: newApiKey.isEmpty ? nil : ["api_key": newApiKey]
+            )
+            let providerAPI = APIAIProviders(client: api.client)
+            _ = try await providerAPI.updateConfig(body: body)
+            resetForm()
+            showAddSheet = false
+            await load()
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
+    func resetForm() {
+        newProviderName = ""
+        newInstanceName = ""
+        newApiKey = ""
+        newCategory = "llm"
+    }
 }

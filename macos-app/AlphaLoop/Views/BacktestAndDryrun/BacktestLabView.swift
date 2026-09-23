@@ -23,6 +23,12 @@ struct BacktestLabView: View {
 
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: PulseSpacing.lg) {
+                    QuantPageHeader(
+                        eyebrow: "STRATEGY",
+                        title: L10n.Nav.backtestSimulation,
+                        subtitle: L10n.zh("回测 / 干跑 · 权益曲线与指标", en: "Backtest / dry-run · equity curve & metrics")
+                    )
+
                     if vm.phase == .running {
                         LoadingView(type: .detail)
                             .frame(maxWidth: .infinity)
@@ -57,12 +63,13 @@ struct BacktestLabView: View {
                         .padding(PulseSpacing.xl)
                     }
                 }
-                .padding(PulseSpacing.lg)
+                .padding(.horizontal, 28)
+                .padding(.top, 20)
+                .padding(.bottom, 40)
                 .frame(maxWidth: PulseSpacing.contentMaxWidth, alignment: .leading)
                 .frame(maxWidth: .infinity, alignment: .center)
             }
         }
-        .background(colors.background.ignoresSafeArea())
         .task {
             viewModel.networkClient = networkClient
             await vm.loadInitial()

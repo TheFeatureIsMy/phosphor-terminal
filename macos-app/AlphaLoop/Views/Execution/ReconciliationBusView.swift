@@ -42,7 +42,11 @@ struct ReconciliationBusView: View {
                             commandBusSection(data.recentCommands)
                             reconciliationRunsSection(data.reconciliationRuns)
                         }
-                        .padding(PulseSpacing.lg)
+                        .padding(.horizontal, 28)
+                        .padding(.top, 20)
+                        .padding(.bottom, 40)
+                        .frame(maxWidth: PulseSpacing.contentMaxWidth)
+                        .frame(maxWidth: .infinity)
                     }
                     .id(settingsState.language)
                 } else if let error = vm.error {
@@ -128,7 +132,7 @@ struct ReconciliationBusView: View {
                         Text(L10n.Reconciliation.refreshExchangeState)
                             .font(PulseFonts.monoLabel)
                     }
-                    .foregroundStyle(PulseColors.accent)
+                    .foregroundStyle(PulseColors.accentText)
                 }
                 .buttonStyle(.plain)
             }
@@ -220,7 +224,7 @@ struct ReconciliationBusView: View {
                 .padding(.horizontal, 5)
                 .padding(.vertical, 2)
                 .background(commandStatusColor(command.status).opacity(0.1))
-                .clipShape(Capsule())
+                .clipShape(RoundedRectangle(cornerRadius: PulseRadii.badge))
         }
         .padding(PulseSpacing.xs)
         .background(colors.cardBackground)
@@ -273,7 +277,7 @@ struct ReconciliationBusView: View {
                 .padding(.horizontal, 5)
                 .padding(.vertical, 2)
                 .background(commandStatusColor(run.status).opacity(0.1))
-                .clipShape(Capsule())
+                .clipShape(RoundedRectangle(cornerRadius: PulseRadii.badge))
 
             // reason_codes 警告
             if !run.reasonCodes.isEmpty {

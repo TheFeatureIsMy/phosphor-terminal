@@ -26,6 +26,7 @@ struct ExecutionCenterView: View {
                         if vm.isLoading && vm.centerData == nil {
                             LoadingView(type: .detail)
                         } else if let data = vm.centerData {
+                            pageHeader(data)
                             stateBanner(data)
                             summaryCardsRow(data)
                             sessionTableSection(data)
@@ -45,7 +46,11 @@ struct ExecutionCenterView: View {
                         }
                     }
                 }
-                .padding(PulseSpacing.lg)
+                .padding(.horizontal, 28)
+                .padding(.top, PulseSpacing.md)
+                .padding(.bottom, 40)
+                .frame(maxWidth: PulseSpacing.contentMaxWidth)
+                .frame(maxWidth: .infinity)
                 .id(settingsState.language)
             }
             .scrollEdgeEffectStyle(.soft, for: .vertical)
@@ -55,6 +60,39 @@ struct ExecutionCenterView: View {
             let vm = ExecutionCenterViewModel(client: networkClient)
             viewModel = vm
             await vm.loadCenter()
+        }
+    }
+
+    // MARK: - 页面标题
+
+    @ViewBuilder
+    private func pageHeader(_ data: ExecutionCenterBFFResponse) -> some View {
+        QuantPageHeader(
+            eyebrow: "EXECUTION",
+            title: L10n.zh("执行中心", en: "Execution Center"),
+            subtitle: L10n.zh("\(data.totalRunning) 运行 · \(data.totalOpenPositions) 持仓 · \(data.totalPendingOrders) 挂单", en: "\(data.totalRunning) running · \(data.totalOpenPositions) positions · \(data.totalPendingOrders) pending")
+        ) {
+            HStack(spacing: PulseSpacing.xs) {
+                // Status pill
+                HStack(spacing: 5) {
+                    Circle()
+                        .fill(data.state == "running" || data.state == "healthy" ? PulseColors.accent : PulseColors.warning)
+                        .frame(width: 6, height: 6)
+                        .shadow(color: (data.state == "running" || data.state == "healthy" ? PulseColors.accent : PulseColors.warning).opacity(0.6), radius: 4)
+                    Text(data.state.uppercased())
+                        .font(PulseFonts.mono(10, .semibold))
+                        .foregroundStyle(colors.textSecondary)
+                        .tracking(1.2)
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(colors.surface)
+                .clipShape(RoundedRectangle(cornerRadius: PulseRadii.badge))
+                .overlay(
+                    RoundedRectangle(cornerRadius: PulseRadii.badge)
+                        .stroke(colors.border, lineWidth: 1)
+                )
+            }
         }
     }
 
@@ -160,48 +198,60 @@ struct ExecutionCenterView: View {
 
     private func sessionRow(_ session: ExecutionSessionResponse) -> some View {
         HStack(spacing: PulseSpacing.md) {
+            // Status dot with glow
             Circle()
                 .fill(sessionStatusColor(session.status))
                 .frame(width: 8, height: 8)
+                .shadow(color: sessionStatusColor(session.status).opacity(0.5), radius: 3)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(session.strategyName)
                     .font(PulseFonts.bodyMedium)
                     .foregroundStyle(colors.textPrimary)
-                Text(session.symbol)
-                    .font(PulseFonts.caption)
-                    .foregroundStyle(colors.textMuted)
+                HStack(spacing: PulseSpacing.xs) {
+                    Text(session.symbol)
+                        .font(PulseFonts.mono(11, .medium))
+                        .foregroundStyle(colors.textMuted)
+                    if !session.reasonCodes.isEmpty {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.system(size: 9))
+                            .foregroundStyle(PulseColors.StateColors.yellow)
+                            .help(session.reasonCodes.joined(separator: ", "))
+                    }
+                }
             }
 
             Spacer()
 
-            Text(session.mode)
-                .font(PulseFonts.micro)
+            // Mode tag — VOLT: mono + RoundedRectangle
+            Text(session.mode.uppercased())
+                .font(PulseFonts.mono(9.5, .semibold))
                 .foregroundStyle(modeColor(session.mode))
-                .padding(.horizontal, 6)
-                .padding(.vertical, 2)
+                .tracking(0.8)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3)
                 .background(modeColor(session.mode).opacity(0.1))
-                .clipShape(Capsule())
+                .clipShape(RoundedRectangle(cornerRadius: PulseRadii.badge))
 
+            // Stats — mono numbers
             VStack(alignment: .trailing, spacing: 2) {
                 Text(L10n.Execution.positionsCount(session.openPositions))
-                    .font(PulseFonts.caption)
+                    .font(PulseFonts.mono(12, .medium))
                     .foregroundStyle(colors.textSecondary)
                 Text(L10n.Execution.pendingCount(session.pendingOrders))
-                    .font(PulseFonts.caption)
+                    .font(PulseFonts.mono(11))
                     .foregroundStyle(colors.textMuted)
-            }
-
-            if !session.reasonCodes.isEmpty {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.system(size: 10))
-                    .foregroundStyle(PulseColors.StateColors.yellow)
-                    .help(session.reasonCodes.joined(separator: ", "))
             }
         }
         .padding(PulseSpacing.sm)
-        .background(colors.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: PulseRadii.sm))
+        .background(
+            RoundedRectangle(cornerRadius: PulseRadii.sm)
+                .fill(colors.cardBackground)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: PulseRadii.sm)
+                .stroke(colors.border, lineWidth: 0.5)
+        )
     }
 
     // MARK: - 辅助方法

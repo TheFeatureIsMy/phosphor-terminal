@@ -31,6 +31,14 @@ struct OrdersPositionsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            QuantPageHeader(
+                eyebrow: "EXECUTION",
+                title: L10n.Nav.ordersPositions,
+                subtitle: L10n.zh("当前订单与开放持仓", en: "Open orders & positions")
+            )
+            .padding(.horizontal, PulseSpacing.lg)
+            .padding(.top, PulseSpacing.sm)
+
             LiveWireStrip(mode: resolvedMode)
 
             if let vm = viewModel {
@@ -204,7 +212,7 @@ struct OrdersPositionsView: View {
                     .padding(.horizontal, 4)
                     .padding(.vertical, 1)
                     .background(selectedTab == index ? PulseColors.accent.opacity(0.2) : colors.surface)
-                    .clipShape(Capsule())
+                    .clipShape(RoundedRectangle(cornerRadius: PulseRadii.badge))
             }
             .foregroundStyle(selectedTab == index ? PulseColors.accent : colors.textMuted)
         }
@@ -314,7 +322,7 @@ struct OrdersPositionsView: View {
                 .padding(.horizontal, 5)
                 .padding(.vertical, 2)
                 .background(orderStatusColor(order.status).opacity(0.1))
-                .clipShape(Capsule())
+                .clipShape(RoundedRectangle(cornerRadius: PulseRadii.badge))
 
             if let exchangeId = order.exchangeOrderId {
                 Text(exchangeId)

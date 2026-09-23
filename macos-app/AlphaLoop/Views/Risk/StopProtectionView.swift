@@ -62,7 +62,11 @@ struct StopProtectionView: View {
                                 )
                             }
                         }
-                        .padding(PulseSpacing.xl)
+                        .padding(.horizontal, 28)
+                        .padding(.top, 20)
+                        .padding(.bottom, 40)
+                        .frame(maxWidth: PulseSpacing.contentMaxWidth)
+                        .frame(maxWidth: .infinity)
                         .id(settingsState.language)
                     }
                     .scrollEdgeEffectStyle(.soft, for: .vertical)
@@ -143,7 +147,7 @@ struct StopProtectionView: View {
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
                     .background(colors.surface)
-                    .clipShape(Capsule())
+                    .clipShape(RoundedRectangle(cornerRadius: PulseRadii.badge))
 
                 Button {
                     Task { await vm.loadStopProtection() }
@@ -154,7 +158,7 @@ struct StopProtectionView: View {
                         Text(L10n.Risk.refreshAll)
                             .font(PulseFonts.monoLabel)
                     }
-                    .foregroundStyle(PulseColors.accent)
+                    .foregroundStyle(PulseColors.accentText)
                 }
                 .buttonStyle(.plain)
                 .controlSize(.small)
@@ -196,7 +200,7 @@ struct StopProtectionView: View {
                                     .padding(.horizontal, 6)
                                     .padding(.vertical, 2)
                                     .background(PulseColors.StateColors.orange.opacity(0.1))
-                                    .clipShape(Capsule())
+                                    .clipShape(RoundedRectangle(cornerRadius: PulseRadii.badge))
                             }
                         }
                     }
@@ -205,7 +209,7 @@ struct StopProtectionView: View {
                 Spacer()
 
                 Text(data.state.uppercased())
-                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                    .font(PulseFonts.mono(11, .bold))
                     .foregroundStyle(PulseColors.StateColors.orange)
                     .tracking(1.5)
             }
@@ -223,6 +227,13 @@ struct StopProtectionView: View {
 
     // MARK: - Risk Rules Section
 
+    @State private var editDailyLoss: Double = 5.0
+    @State private var editWeeklyLoss: Double = 10.0
+    @State private var editConsecutive: Int = 3
+    @State private var editMaxDrawdown: Double = 15.0
+    @State private var editCorrelation: Double = 0.9
+    @State private var editKillSwitch: Bool = false
+
     private func riskRulesSection(_ rules: RiskRulesResponse) -> some View {
         VStack(alignment: .leading, spacing: PulseSpacing.sm) {
             Button {
@@ -233,6 +244,57 @@ struct StopProtectionView: View {
                         .font(PulseFonts.captionMedium)
                         .foregroundStyle(colors.textPrimary)
                     Spacer()
+
+                    if showRules {
+                        if let vm = viewModel, vm.isEditingRules {
+                            Button {
+                                Task {
+                                    await vm.saveRiskRules(
+                                        dailyLossLimit: editDailyLoss,
+                                        weeklyLossLimit: editWeeklyLoss,
+                                        consecutiveLossesLimit: editConsecutive,
+                                        maxDrawdown: editMaxDrawdown,
+                                        correlationThreshold: editCorrelation,
+                                        killSwitchActive: editKillSwitch
+                                    )
+                                }
+                            } label: {
+                                Text(L10n.zh("保存", en: "Save"))
+                                    .font(PulseFonts.monoLabel)
+                                    .foregroundStyle(PulseColors.accentText)
+                            }
+                            .buttonStyle(.plain)
+
+                            Button {
+                                viewModel?.isEditingRules = false
+                            } label: {
+                                Text(L10n.zh("取消", en: "Cancel"))
+                                    .font(PulseFonts.monoLabel)
+                                    .foregroundStyle(colors.textMuted)
+                            }
+                            .buttonStyle(.plain)
+                        } else {
+                            Button {
+                                editDailyLoss = rules.dailyLossLimit
+                                editWeeklyLoss = rules.weeklyLossLimit
+                                editConsecutive = rules.consecutiveLossesLimit
+                                editMaxDrawdown = rules.maxDrawdown
+                                editCorrelation = rules.correlationThreshold
+                                editKillSwitch = rules.killSwitch.active
+                                viewModel?.isEditingRules = true
+                            } label: {
+                                HStack(spacing: PulseSpacing.xxs) {
+                                    Image(systemName: "pencil")
+                                        .font(.system(size: 10))
+                                    Text(L10n.zh("编辑", en: "Edit"))
+                                        .font(PulseFonts.monoLabel)
+                                }
+                                .foregroundStyle(PulseColors.accentText)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+
                     Image(systemName: showRules ? "chevron.down" : "chevron.right")
                         .font(.system(size: 10))
                         .foregroundStyle(colors.textMuted)
@@ -245,30 +307,82 @@ struct StopProtectionView: View {
                 .foregroundStyle(colors.textSecondary)
 
             if showRules {
-                VStack(alignment: .leading, spacing: PulseSpacing.xs) {
-                    ruleRow(L10n.Risk.dailyLossLimit, value: String(format: "%.1f%%", rules.dailyLossLimit))
-                    ruleRow(L10n.Risk.weeklyLossLimit, value: String(format: "%.1f%%", rules.weeklyLossLimit))
-                    ruleRow(L10n.Risk.consecutiveLosses, value: "\(rules.consecutiveLossesLimit)")
-                    ruleRow(L10n.Risk.maxDrawdown, value: String(format: "%.1f%%", rules.maxDrawdown))
-                    ruleRow(L10n.Risk.correlationThreshold, value: String(format: "%.2f", rules.correlationThreshold))
-                    HStack {
-                        Text(L10n.Risk.killSwitch)
-                            .font(PulseFonts.caption)
-                            .foregroundStyle(colors.textPrimary)
-                        Spacer()
-                        Text(rules.killSwitch.active
-                             ? L10n.Risk.killSwitchActive
-                             : L10n.Risk.killSwitchInactive)
-                            .font(PulseFonts.captionMedium)
-                            .foregroundStyle(rules.killSwitch.active ? PulseColors.danger : colors.textSecondary)
+                if viewModel?.isEditingRules == true {
+                    // Editable mode
+                    VStack(alignment: .leading, spacing: PulseSpacing.xs) {
+                        editableRuleRow(L10n.Risk.dailyLossLimit, value: $editDailyLoss, suffix: "%")
+                        editableRuleRow(L10n.Risk.weeklyLossLimit, value: $editWeeklyLoss, suffix: "%")
+                        editableIntRow(L10n.Risk.consecutiveLosses, value: $editConsecutive)
+                        editableRuleRow(L10n.Risk.maxDrawdown, value: $editMaxDrawdown, suffix: "%")
+                        editableRuleRow(L10n.Risk.correlationThreshold, value: $editCorrelation, suffix: "")
+                        HStack {
+                            Text(L10n.Risk.killSwitch)
+                                .font(PulseFonts.caption)
+                                .foregroundStyle(colors.textPrimary)
+                            Spacer()
+                            Toggle("", isOn: $editKillSwitch)
+                                .tint(PulseColors.danger)
+                        }
                     }
+                    .padding(.top, PulseSpacing.xs)
+                } else {
+                    // Read-only mode
+                    VStack(alignment: .leading, spacing: PulseSpacing.xs) {
+                        ruleRow(L10n.Risk.dailyLossLimit, value: String(format: "%.1f%%", rules.dailyLossLimit))
+                        ruleRow(L10n.Risk.weeklyLossLimit, value: String(format: "%.1f%%", rules.weeklyLossLimit))
+                        ruleRow(L10n.Risk.consecutiveLosses, value: "\(rules.consecutiveLossesLimit)")
+                        ruleRow(L10n.Risk.maxDrawdown, value: String(format: "%.1f%%", rules.maxDrawdown))
+                        ruleRow(L10n.Risk.correlationThreshold, value: String(format: "%.2f", rules.correlationThreshold))
+                        HStack {
+                            Text(L10n.Risk.killSwitch)
+                                .font(PulseFonts.caption)
+                                .foregroundStyle(colors.textPrimary)
+                            Spacer()
+                            Text(rules.killSwitch.active
+                                 ? L10n.Risk.killSwitchActive
+                                 : L10n.Risk.killSwitchInactive)
+                                .font(PulseFonts.captionMedium)
+                                .foregroundStyle(rules.killSwitch.active ? PulseColors.danger : colors.textSecondary)
+                        }
+                    }
+                    .padding(.top, PulseSpacing.xs)
                 }
-                .padding(.top, PulseSpacing.xs)
             }
         }
         .padding(PulseSpacing.md)
         .background(colors.surfaceHover.opacity(0.35))
         .overlay(RoundedRectangle(cornerRadius: PulseRadii.md).stroke(colors.border, lineWidth: 0.5))
+    }
+
+    private func editableRuleRow(_ label: String, value: Binding<Double>, suffix: String) -> some View {
+        HStack {
+            Text(label)
+                .font(PulseFonts.caption)
+                .foregroundStyle(colors.textPrimary)
+            Spacer()
+            TextField("", value: value, format: .number)
+                .font(PulseFonts.monoLabel)
+                .frame(width: 60)
+                
+            if !suffix.isEmpty {
+                Text(suffix)
+                    .font(PulseFonts.caption)
+                    .foregroundStyle(colors.textMuted)
+            }
+        }
+    }
+
+    private func editableIntRow(_ label: String, value: Binding<Int>) -> some View {
+        HStack {
+            Text(label)
+                .font(PulseFonts.caption)
+                .foregroundStyle(colors.textPrimary)
+            Spacer()
+            TextField("", value: value, format: .number)
+                .font(PulseFonts.monoLabel)
+                .frame(width: 60)
+                
+        }
     }
 
     private func ruleRow(_ label: String, value: String) -> some View {
@@ -294,17 +408,17 @@ struct StopProtectionView: View {
                 HStack(alignment: .center) {
                     // Symbol
                     Text(position.symbol)
-                        .font(.system(size: 18, weight: .bold, design: .monospaced))
+                        .font(PulseFonts.mono(18, .bold))
                         .foregroundStyle(colors.textPrimary)
 
                     // Side badge
                     Text(position.side.uppercased())
-                        .font(.system(size: 10, weight: .heavy, design: .monospaced))
+                        .font(PulseFonts.mono(10, .heavy))
                         .foregroundStyle(sideColor)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 3)
                         .background(sideColor.opacity(0.12))
-                        .clipShape(Capsule())
+                        .clipShape(RoundedRectangle(cornerRadius: PulseRadii.badge))
 
                     Spacer()
 
@@ -314,15 +428,15 @@ struct StopProtectionView: View {
                             Image(systemName: "lock.fill")
                                 .font(.system(size: 10))
                             Text(L10n.zh("波动率锁定", en: "VOL LOCKED"))
-                                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                .font(PulseFonts.mono(10, .bold))
                         }
                         .foregroundStyle(PulseColors.StateColors.red)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 4)
                         .background(PulseColors.StateColors.red.opacity(0.08))
-                        .clipShape(Capsule())
+                        .clipShape(RoundedRectangle(cornerRadius: PulseRadii.badge))
                         .overlay(
-                            Capsule()
+                            RoundedRectangle(cornerRadius: PulseRadii.badge)
                                 .stroke(PulseColors.StateColors.red.opacity(0.4 * pulsePhase), lineWidth: 1.5)
                         )
                     }
@@ -330,13 +444,36 @@ struct StopProtectionView: View {
                     // Action buttons
                     HStack(spacing: PulseSpacing.xs) {
                         Button {
-                            // Refresh action placeholder
+                            Task { await viewModel?.refreshPositionStop(position.positionId) }
                         } label: {
                             Image(systemName: "arrow.clockwise")
                                 .font(.system(size: 10))
-                                .foregroundStyle(PulseColors.accent)
+                                .foregroundStyle(PulseColors.accentText)
                         }
                         .buttonStyle(.plain)
+                        .help(L10n.zh("刷新该持仓止损", en: "Refresh stops for this position"))
+
+                        if position.stops.volatilityLocked {
+                            Button {
+                                Task { await viewModel?.releaseLockPosition(position.positionId) }
+                            } label: {
+                                Image(systemName: "lock.open")
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(PulseColors.StateColors.yellow)
+                            }
+                            .buttonStyle(.plain)
+                            .help(L10n.zh("解除波动率锁定", en: "Release volatility lock"))
+                        } else {
+                            Button {
+                                Task { await viewModel?.forceLockPosition(position.positionId) }
+                            } label: {
+                                Image(systemName: "lock")
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(colors.textMuted)
+                            }
+                            .buttonStyle(.plain)
+                            .help(L10n.zh("强制波动率锁定", en: "Force volatility lock"))
+                        }
 
                         Button {
                             closePositionId = position.positionId
@@ -410,7 +547,7 @@ struct StopProtectionView: View {
                             .padding(.horizontal, 8)
                             .padding(.vertical, 3)
                             .background(reasonCodeColor(code).opacity(0.08))
-                            .clipShape(Capsule())
+                            .clipShape(RoundedRectangle(cornerRadius: PulseRadii.badge))
                         }
                     }
                 }
@@ -464,7 +601,7 @@ struct StopProtectionView: View {
                     priceLadderMarker(
                         price: position.currentPrice,
                         label: L10n.zh("当前", en: "NOW"),
-                        color: PulseColors.accent,
+                        color: PulseColors.accentText,
                         minPrice: minPrice,
                         range: range,
                         height: height,
@@ -504,10 +641,10 @@ struct StopProtectionView: View {
             // Label + value
             VStack(alignment: .leading, spacing: 0) {
                 Text(label)
-                    .font(.system(size: 8, weight: .bold, design: .monospaced))
+                    .font(PulseFonts.mono(8, .bold))
                     .foregroundStyle(color.opacity(0.8))
                 Text(String(format: "%.2f", price))
-                    .font(.system(size: 10, weight: emphasized ? .bold : .medium, design: .monospaced))
+                    .font(PulseFonts.mono(10, emphasized ? .bold : .medium))
                     .foregroundStyle(color)
             }
         }
@@ -553,11 +690,11 @@ struct StopProtectionView: View {
                     .foregroundStyle(colors.textMuted)
                 if let v = value {
                     Text(String(format: "%.2f", v))
-                        .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                        .font(PulseFonts.mono(13, .semibold))
                         .foregroundStyle(color)
                 } else {
                     Text("—")
-                        .font(.system(size: 13, weight: .medium, design: .monospaced))
+                        .font(PulseFonts.mono(13, .medium))
                         .foregroundStyle(colors.textMuted.opacity(0.5))
                 }
             }

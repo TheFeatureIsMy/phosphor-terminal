@@ -53,7 +53,6 @@ struct AIStudioView: View {
             .frame(maxWidth: .infinity)
         }
         .scrollEdgeEffectStyle(.soft, for: .vertical)
-        .background(colors.background)
         .id(settingsState.language)
     }
 
@@ -63,7 +62,7 @@ struct AIStudioView: View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 10) {
                 Text(L10n.AIStudio.protoEyebrow)
-                    .font(PulseFonts.body(13, .semibold)).foregroundStyle(PulseColors.accent)
+                    .font(PulseFonts.body(13, .semibold)).foregroundStyle(PulseColors.accentText)
                     .textCase(.uppercase).tracking(0.6)
                 Text(L10n.AIStudio.protoTitle)
                     .font(PulseFonts.display(30, .bold)).foregroundStyle(colors.textPrimary)
@@ -85,8 +84,8 @@ struct AIStudioView: View {
                 }
             }
             .padding(3)
-            .background(RoundedRectangle(cornerRadius: 12).fill(colors.cardBackground))
-            .overlay(RoundedRectangle(cornerRadius: 12).stroke(colors.border, lineWidth: 1))
+            
+            .voltCardSurface()
         }
     }
 
@@ -99,7 +98,7 @@ struct AIStudioView: View {
                 .fill(signalSymbolColor(symbol))
                 .frame(width: 48, height: 48)
                 .overlay(Text(signalSymbolInitials(symbol))
-                    .font(PulseFonts.display(16, .bold)).foregroundStyle(.white))
+                    .font(PulseFonts.display(16, .bold)).foregroundStyle(PulseColors.onAccent))
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(symbol).font(PulseFonts.body(16, .bold)).foregroundStyle(colors.textPrimary)
@@ -125,15 +124,15 @@ struct AIStudioView: View {
             // 开始研究按钮
             Text(isResearching ? L10n.AIStudio.analyzing : L10n.AIStudio.startResearch)
                 .font(PulseFonts.body(14, .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(PulseColors.onAccent)
                 .padding(.horizontal, 18).padding(.vertical, 10)
                 .background(RoundedRectangle(cornerRadius: 11).fill(PulseColors.accent))
                 .opacity(isResearching ? 0.5 : 1.0)
                 .onTapGesture { if !isResearching { Task { await startResearch() } } }
         }
         .padding(18)
-        .background(RoundedRectangle(cornerRadius: PulseRadii.card).fill(colors.cardBackground))
-        .overlay(RoundedRectangle(cornerRadius: PulseRadii.card).stroke(colors.border, lineWidth: 1))
+        
+        .voltCardSurface()
     }
 
     // MARK: - 研究中指示器
@@ -142,7 +141,7 @@ struct AIStudioView: View {
         HStack(spacing: PulseSpacing.sm) {
             ProgressView()
                 .controlSize(.small)
-                .tint(PulseColors.accent)
+                .tint(PulseColors.accentText)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(L10n.AIStudio.analyzing)
@@ -157,11 +156,11 @@ struct AIStudioView: View {
 
             Text(depth.estimatedTime)
                 .font(PulseFonts.body(12, .semibold))
-                .foregroundStyle(PulseColors.accent)
+                .foregroundStyle(PulseColors.accentText)
         }
         .padding(18)
-        .background(RoundedRectangle(cornerRadius: PulseRadii.card).fill(colors.cardBackground))
-        .overlay(RoundedRectangle(cornerRadius: PulseRadii.card).stroke(colors.border, lineWidth: 1))
+        
+        .voltCardSurface()
     }
 
     // MARK: - 多 Agent 观点网格
@@ -169,13 +168,13 @@ struct AIStudioView: View {
     private func agentGrid(_ result: ResearchResult) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 10) {
-                Image(systemName: "person.3").foregroundStyle(PulseColors.accent)
+                Image(systemName: "person.3").foregroundStyle(PulseColors.accentText)
                 Text(L10n.AIStudio.agentsTitle)
                     .font(PulseFonts.body(16, .semibold)).foregroundStyle(colors.textPrimary)
                 Text("\(result.perspectives.count) " + L10n.AIStudio.agentsCount)
                     .font(PulseFonts.body(12, .medium)).foregroundStyle(colors.textSecondary)
                     .padding(.horizontal, 9).padding(.vertical, 3)
-                    .background(Capsule().fill(colors.surface))
+                    .background(RoundedRectangle(cornerRadius: PulseRadii.badge).fill(colors.surface))
             }
 
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 300), spacing: 16)], spacing: 16) {
@@ -196,22 +195,22 @@ struct AIStudioView: View {
                 RoundedRectangle(cornerRadius: 9).fill(avatarColor)
                     .frame(width: 34, height: 34)
                     .overlay(Text(String(perspective.title.prefix(1)))
-                        .font(PulseFonts.display(14, .bold)).foregroundStyle(.white))
+                        .font(PulseFonts.display(14, .bold)).foregroundStyle(PulseColors.onAccent))
                 Text(perspective.title)
                     .font(PulseFonts.body(14.5, .semibold)).foregroundStyle(colors.textPrimary)
                 Spacer()
                 Text(stanceLabel(stance))
                     .font(PulseFonts.body(11.5, .semibold)).foregroundStyle(avatarColor)
                     .padding(.horizontal, 8).padding(.vertical, 3)
-                    .background(Capsule().fill(avatarColor.opacity(0.14)))
+                    .background(RoundedRectangle(cornerRadius: PulseRadii.badge).fill(avatarColor.opacity(0.14)))
             }
 
             // 置信度条
             HStack(spacing: 8) {
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
-                        Capsule().fill(colors.surface).frame(height: 6)
-                        Capsule().fill(avatarColor)
+                        RoundedRectangle(cornerRadius: 3).fill(colors.surface).frame(height: 6)
+                        RoundedRectangle(cornerRadius: 3).fill(avatarColor)
                             .frame(width: geo.size.width * min(max(perspective.confidence, 0), 1), height: 6)
                     }
                 }
@@ -232,9 +231,8 @@ struct AIStudioView: View {
                 .font(PulseFonts.body(11)).foregroundStyle(colors.textMuted)
         }
         .padding(18)
-        .background(RoundedRectangle(cornerRadius: PulseRadii.card).fill(colors.cardBackground))
-        .overlay(RoundedRectangle(cornerRadius: PulseRadii.card).stroke(colors.border, lineWidth: 1))
-        .applyShadow(PulseShadow.card(colors))
+        
+        .voltCardSurface()
     }
 
     private enum AgentStance { case bull, bear, neutral, risk }
@@ -297,7 +295,7 @@ struct AIStudioView: View {
         if let rating = result.finalRating {
             VStack(alignment: .leading, spacing: 16) {
                 HStack(spacing: 9) {
-                    Image(systemName: "checkmark.shield").foregroundStyle(PulseColors.accent)
+                    Image(systemName: "checkmark.shield").foregroundStyle(PulseColors.accentText)
                     Text(L10n.AIStudio.verdictTitle)
                         .font(PulseFonts.body(16, .semibold)).foregroundStyle(colors.textPrimary)
                 }
@@ -311,7 +309,7 @@ struct AIStudioView: View {
                     Text(L10n.AIStudio.riskLevel + " · " + rating.riskLevel)
                         .font(PulseFonts.body(12, .semibold)).foregroundStyle(riskColor(rating.riskLevel))
                         .padding(.horizontal, 9).padding(.vertical, 4)
-                        .background(Capsule().fill(riskColor(rating.riskLevel).opacity(0.14)))
+                        .background(RoundedRectangle(cornerRadius: PulseRadii.badge).fill(riskColor(rating.riskLevel).opacity(0.14)))
                     Spacer()
                 }
 
@@ -330,9 +328,7 @@ struct AIStudioView: View {
             }
             .padding(22)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(RoundedRectangle(cornerRadius: PulseRadii.card).fill(colors.cardBackground))
-            .overlay(RoundedRectangle(cornerRadius: PulseRadii.card).stroke(PulseColors.accent.opacity(0.3), lineWidth: 1))
-            .applyShadow(PulseShadow.card(colors))
+            .voltCardSurface(voltBorder: true)
         }
     }
 
@@ -594,60 +590,4 @@ struct FinalRating {
     let confidence: Double
     let riskLevel: String
     let recommendation: String
-}
-
-// MARK: - Mock 数据
-
-extension ResearchResult {
-    static func mock(symbol: String, depth: String) -> ResearchResult {
-        ResearchResult(
-            id: UUID().uuidString,
-            symbol: symbol,
-            depth: depth,
-            perspectives: [
-                ResearchPerspective(
-                    id: "bull", role: "bull",
-                    title: "多头观点", icon: "📈",
-                    content: "\(symbol) 目前处于上升趋势中，成交量配合良好。机构资金持续流入，ETF 通道带来增量资金。链上数据显示大户持续积累，供给侧收缩明显。RSI 未达超买区域，仍有上行空间。",
-                    confidence: 0.78
-                ),
-                ResearchPerspective(
-                    id: "bear", role: "bear",
-                    title: "空头观点", icon: "📉",
-                    content: "当前价格已接近前高阻力位，获利盘抛压较大。宏观环境存在加息预期，风险资产或承压。期货未平仓合约处于高位，一旦回调可能触发连锁清算。市场过度乐观，恐惧贪婪指数偏高。",
-                    confidence: 0.52
-                ),
-                ResearchPerspective(
-                    id: "technical", role: "technical",
-                    title: "技术分析", icon: "📊",
-                    content: "MACD 日线金叉，4H 级别多头排列。布林带中轨向上，价格运行在中轨与上轨之间。关键支撑位 65,800，阻力位 72,500。成交量温和放大，趋势健康。KDJ 处于中性区域。",
-                    confidence: 0.72
-                ),
-                ResearchPerspective(
-                    id: "sentiment", role: "sentiment",
-                    title: "情绪分析", icon: "🧠",
-                    content: "社交媒体情绪指数 72/100（偏乐观）。恐惧贪婪指数 68（贪婪区间）。Reddit/Twitter 讨论热度上升 35%。主流媒体报道偏正面，但需警惕过度乐观后的均值回归。",
-                    confidence: 0.65
-                ),
-                ResearchPerspective(
-                    id: "onchain", role: "onchain",
-                    title: "链上分析", icon: "⛓️",
-                    content: "鲸鱼地址（>1000 BTC）近 7 天净增持 12,400 BTC。交易所余额持续下降，净流出 8,200 BTC。矿工抛压减缓，持有不动比例上升。MVRV 指标 1.8，未达历史顶部区域。",
-                    confidence: 0.81
-                ),
-                ResearchPerspective(
-                    id: "risk", role: "risk",
-                    title: "风险评估", icon: "⚠️",
-                    content: "主要风险因素：1) 监管政策不确定性（中等）；2) 宏观流动性收紧（中高）；3) 杠杆清算风险（中等）；4) 黑天鹅事件（低概率高影响）。综合风险评分 6.2/10，建议控制仓位在总资产 15% 以内。",
-                    confidence: 0.70
-                ),
-            ],
-            finalRating: FinalRating(
-                direction: "看多",
-                confidence: 0.72,
-                riskLevel: "中",
-                recommendation: "综合多空论证，\(symbol) 当前处于上升趋势中段，技术面与链上数据支持看多。建议分批建仓，目标位 72,500，止损设置在 65,000 下方。仓位建议不超过总资产 15%，注意宏观风险事件。"
-            )
-        )
-    }
 }

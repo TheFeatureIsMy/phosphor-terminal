@@ -36,7 +36,7 @@ struct RiskSettingsView: View {
                 // Group 4: Auto
                 settingsRow(L10n.zh("自动暂停", en: "Auto Pause")) {
                     Toggle("", isOn: $s.autoPause)
-                        .tint(PulseColors.accent)
+                        .tint(PulseColors.accentText)
                 }
             }
             .cardStyle()
@@ -74,7 +74,7 @@ struct RiskSettingsView: View {
         settingsRow(label) {
             HStack(spacing: PulseSpacing.xs) {
                 TextField("", value: value, format: .number)
-                    .darkTextField()
+                    
                     .frame(width: 60)
                     .overlay(
                         RoundedRectangle(cornerRadius: 4)
@@ -92,14 +92,14 @@ struct RiskSettingsView: View {
     private func numRow(_ label: String, value: Binding<Double>) -> some View {
         settingsRow(label) {
             TextField("", value: value, format: .number)
-                .darkTextField()
+                
         }
     }
 
     private func intRow(_ label: String, value: Binding<Int>) -> some View {
         settingsRow(label) {
             TextField("", value: value, format: .number)
-                .darkTextField()
+                
         }
     }
 }

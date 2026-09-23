@@ -53,7 +53,7 @@ struct StrategyUpgradeRequestView: View {
                         .controlSize(.small)
                     Button(L10n.zh("批准升级", en: "Approve")) { onApprove?() }
                         .buttonStyle(.borderedProminent)
-                        .tint(PulseColors.accent)
+                        .tint(PulseColors.accentText)
                         .controlSize(.small)
                 }
             }

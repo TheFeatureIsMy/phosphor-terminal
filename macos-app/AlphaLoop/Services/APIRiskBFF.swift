@@ -42,6 +42,24 @@ struct KillSwitchResponse: Codable {
     let active: Bool
 }
 
+
+struct RiskRulesUpdateBody: Encodable {
+    let dailyLossLimit: Double?
+    let weeklyLossLimit: Double?
+    let consecutiveLossesLimit: Int?
+    let maxDrawdown: Double?
+    let correlationThreshold: Double?
+    let killSwitchActive: Bool?
+
+    enum CodingKeys: String, CodingKey {
+        case dailyLossLimit = "daily_loss_limit"
+        case weeklyLossLimit = "weekly_loss_limit"
+        case consecutiveLossesLimit = "consecutive_losses_limit"
+        case maxDrawdown = "max_drawdown"
+        case correlationThreshold = "correlation_threshold"
+        case killSwitchActive = "kill_switch_active"
+    }
+}
 struct ResolveCircuitBreakerResponse: Codable {
     let status: String
     let resolvedEventId: String?
@@ -213,6 +231,10 @@ struct APIRiskBFF {
         try await client.get("/api/risk/rules")
     }
 
+    func updateRiskRules(body: RiskRulesUpdateBody) async throws -> RiskRulesResponse {
+        try await client.put("/api/risk/rules", body: body)
+    }
+
     // MARK: - Circuit Breaker
 
     func resolveCircuitBreaker(eventId: String) async throws -> ResolveCircuitBreakerResponse {
@@ -224,6 +246,24 @@ struct APIRiskBFF {
     func emergencyStop() async throws -> EmergencyStopResult {
         let api = APIEmergency(client: client)
         return try await api.emergencyStop(reason: "manual")
+    }
+
+    // MARK: - Stop Protection actions
+
+    func refreshStopProtection(positionId: String) async throws -> [String: AnyCodable] {
+        try await client.post("/api/risk/stop-protection/\(positionId)/refresh", body: nil)
+    }
+
+    func forceLockPosition(positionId: String) async throws -> [String: AnyCodable] {
+        try await client.post("/api/risk/stop-protection/\(positionId)/force-lock", body: nil)
+    }
+
+    func releaseLockPosition(positionId: String) async throws -> [String: AnyCodable] {
+        try await client.post("/api/risk/stop-protection/\(positionId)/release-lock", body: nil)
+    }
+
+    func getExchangeProtectiveStops() async throws -> [String: AnyCodable] {
+        try await client.get("/api/risk/exchange-protective-stops")
     }
 }
 

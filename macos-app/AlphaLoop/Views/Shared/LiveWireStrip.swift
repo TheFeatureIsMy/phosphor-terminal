@@ -1,6 +1,5 @@
-// LiveWireStrip.swift — 2pt full-width ambient mode indicator
-// Shown at the top of every page to convey the current trading mode at a glance.
-// LIVE red / PAPER amber / DRYRUN purple / MOCK gray / STOPPED red pulse / else muted.
+// LiveWireStrip.swift — VOLT 2pt 全宽氛围模式指示条
+// LIVE 电光黄 / PAPER 琥珀 / DRYRUN 紫 / MOCK 灰 / STOPPED 红脉冲 / else 暗灰
 
 import SwiftUI
 
@@ -41,11 +40,12 @@ struct LiveWireStrip: View {
     private var stripColors: [Color] {
         switch mode {
         case .live:
-            return [PulseColors.danger.opacity(0.7), PulseColors.danger, PulseColors.danger.opacity(0.7)]
+            // VOLT: 电光黄氛围条
+            return [PulseColors.accent.opacity(0.5), PulseColors.accent, PulseColors.accent.opacity(0.5)]
         case .paper:
             return [PulseColors.warning.opacity(0.7), PulseColors.warning, PulseColors.warning.opacity(0.7)]
         case .dryRun:
-            return [PulseColors.purple.opacity(0.7), PulseColors.purple, PulseColors.purple.opacity(0.7)]
+            return [PulseColors.violet.opacity(0.7), PulseColors.violet, PulseColors.violet.opacity(0.7)]
         case .mock:
             return [Color.gray.opacity(0.5), Color.gray, Color.gray.opacity(0.5)]
         case .stopped:

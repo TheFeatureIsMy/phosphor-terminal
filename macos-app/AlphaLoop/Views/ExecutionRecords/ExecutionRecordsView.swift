@@ -82,7 +82,7 @@ struct ExecutionRecordsView: View {
 
             Text("\(vm.runs.count)")
                 .font(PulseFonts.monoLabel)
-                .foregroundStyle(PulseColors.accent)
+                .foregroundStyle(PulseColors.accentText)
                 .padding(.horizontal, 6)
                 .padding(.vertical, 2)
                 .background(
@@ -223,7 +223,7 @@ struct ExecutionRecordsView: View {
                 } label: {
                     Text(L10n.zh("查看订单", en: "Orders"))
                         .font(PulseFonts.monoLabel)
-                        .foregroundStyle(PulseColors.accent)
+                        .foregroundStyle(PulseColors.accentText)
                         .padding(.horizontal, PulseSpacing.xs)
                         .padding(.vertical, 3)
                         .background(

@@ -124,6 +124,69 @@ class AppDelegate: NSObject, NSApplicationDelegate {
            let iconImage = NSImage(contentsOf: iconURL) {
             NSApp.applicationIconImage = iconImage
         }
+
+        // 修复窗口框架恢复崩坏：当前即主线程，先试一次
+        Self.normalizeMainWindow()
+
+        // SwiftUI 窗口在 didFinishLaunching 之后才创建/恢复，需延后再规范化
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.6))
+            Self.normalizeMainWindow()
+        }
+        NotificationCenter.default.addObserver(
+            forName: NSWindow.didBecomeKeyNotification, object: nil, queue: nil
+        ) { _ in
+            Task { @MainActor in Self.normalizeMainWindow() }
+        }
+
+        // 调试：--capture <path> 在数据加载后抓取自身窗口为 PNG（无需录屏权限）
+        let args = ProcessInfo.processInfo.arguments
+        if let idx = args.firstIndex(of: "--capture"), idx + 1 < args.count {
+            let path = args[idx + 1]
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(7))
+                Self.captureMainWindow(to: path)
+            }
+        }
+    }
+
+    /// 抓取主窗口内容到 PNG（只渲染本 app 自身窗口，不需要屏幕录制权限）。
+    @MainActor
+    static func captureMainWindow(to path: String) {
+        guard let win = NSApp.mainWindow ?? NSApp.windows.first,
+              let view = win.contentView else { return }
+        view.layoutSubtreeIfNeeded()
+        let rect = view.bounds
+        guard let rep = view.bitmapImageRepForCachingDisplay(in: rect) else { return }
+        view.cacheDisplay(in: rect, to: rep)
+        if let png = rep.representation(using: .png, properties: [:]) {
+            try? png.write(to: URL(fileURLWithPath: path))
+            NSLog("[AlphaLoop] captured window -> \(path)")
+        }
+    }
+
+    /// 将主窗口拉回可见屏幕并规范尺寸（防止恢复出屏外/超小窗口）。
+    @MainActor
+    static func normalizeMainWindow() {
+        let visible = NSScreen.main?.visibleFrame
+            ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
+        for window in NSApp.windows where window.canBecomeMain {
+            window.isRestorable = false  // 禁止再次恢复坏 frame
+            let f = window.frame
+            let offScreen = !visible.intersects(f)
+            let tooSmall = f.width < 900 || f.height < 600
+            if offScreen || tooSmall {
+                let w = min(1280, visible.width - 60)
+                let h = min(840, visible.height - 60)
+                window.setFrame(
+                    NSRect(x: visible.midX - w / 2, y: visible.midY - h / 2, width: w, height: h),
+                    display: true
+                )
+                window.center()
+            }
+            window.makeKeyAndOrderFront(nil)
+        }
+        NSApp.activate(ignoringOtherApps: true)
     }
 
     /// SPM 可执行文件不会自动注册 bundle 内字体，需运行时手动注册。
@@ -223,7 +286,7 @@ struct LoginPlaceholderView: View {
                         .foregroundStyle(colors.textPrimary)
                     Text("AlphaLoop")
                         .font(PulseFonts.monoLabel)
-                        .foregroundStyle(PulseColors.accent)
+                        .foregroundStyle(PulseColors.accentText)
                         .tracking(2)
                 } else {
                     Text("AlphaLoop")
@@ -231,7 +294,7 @@ struct LoginPlaceholderView: View {
                         .foregroundStyle(colors.textPrimary)
                     Text("弈机")
                         .font(PulseFonts.monoLabel)
-                        .foregroundStyle(PulseColors.accent)
+                        .foregroundStyle(PulseColors.accentText)
                         .tracking(2)
                 }
 

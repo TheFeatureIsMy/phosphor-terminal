@@ -103,7 +103,7 @@ struct LiveReadinessCard: View {
     private var textBlock: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(stateLabel)
-                .font(.system(size: 15, weight: .semibold, design: .monospaced))
+                .font(PulseFonts.mono(15, .semibold))
                 .foregroundStyle(lampColor)
                 .tracking(0.5)
 

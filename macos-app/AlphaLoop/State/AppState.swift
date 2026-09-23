@@ -42,6 +42,16 @@ enum PrimaryWorkspace: String, CaseIterable, Identifiable {
 
 @Observable
 final class AppState {
+    init() {
+        // 调试/截图：--route <rawValue> 直接进入指定页面
+        let args = ProcessInfo.processInfo.arguments
+        if let idx = args.firstIndex(of: "--route"), idx + 1 < args.count,
+           let route = AppRoute(rawValue: args[idx + 1]) {
+            selectedRoute = route
+            hasLaunched = true
+        }
+    }
+
     /// 是否已完成启动页
     var hasLaunched: Bool = false
 

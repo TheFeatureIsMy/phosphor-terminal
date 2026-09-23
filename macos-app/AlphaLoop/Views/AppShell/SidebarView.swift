@@ -64,7 +64,7 @@ struct SidebarView: View {
                 Button { appState.toggleSidebar() } label: {
                     ZStack {
                         if isLogoHovered {
-                            PulseRing(color: PulseColors.accent.opacity(0.6), size: 44)
+                            PulseRing(color: PulseColors.accentText.opacity(0.6), size: 44)
                         }
                         AlphaLoopLogoView()
                             .frame(width: 28, height: 28)
@@ -119,10 +119,11 @@ struct SidebarButtonView: View {
             }
         } label: {
             HStack(spacing: PulseSpacing.xs) {
+                // 选中指示竖条 — 暗色=电光 lime 发光 / 亮色=近黑(荧光底上必须深色)
                 RoundedRectangle(cornerRadius: 1)
-                    .fill(isSelected ? PulseColors.accent : Color.clear)
+                    .fill(isSelected ? colors.navSelectionIndicator : Color.clear)
                     .frame(width: 3, height: 16)
-                    .shadow(color: isSelected ? PulseColors.accent.opacity(0.5) : .clear, radius: 4)
+                    .shadow(color: isSelected ? colors.navSelectionIndicator.opacity(0.6) : .clear, radius: 6)
 
                 Image(systemName: route.icon)
                     .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
@@ -141,30 +142,28 @@ struct SidebarButtonView: View {
                     if let idx = shortcutIndex, idx < 9 {
                         Text("\u{2318}\(idx + 1)")
                             .font(PulseFonts.micro)
-                            .foregroundStyle(colors.textMuted.opacity(0.5))
+                            .foregroundStyle(isSelected ? colors.onNavSelection.opacity(0.55) : colors.textMuted.opacity(0.5))
                     }
                 }
             }
             .padding(.vertical, 7).padding(.horizontal, PulseSpacing.xs)
             .frame(maxWidth: .infinity)
-            .modifier(ConditionalGlassModifier(isActive: isSelected, cornerRadius: PulseRadii.md))
-            .clipShape(RoundedRectangle(cornerRadius: PulseRadii.md))
+            // VOLT 选中态: volt-tinted 背景 + 电光边框
+            .background {
+                RoundedRectangle(cornerRadius: PulseRadii.md)
+                    .fill(isSelected ? colors.navSelection : (isHovering ? colors.surface.opacity(0.3) : Color.clear))
+            }
             .overlay {
                 if isSelected {
                     RoundedRectangle(cornerRadius: PulseRadii.md)
                         .stroke(LinearGradient(
-                            colors: [PulseColors.accent.opacity(0.2), PulseColors.accent.opacity(0.06)],
+                            colors: [PulseColors.accent.opacity(0.25), PulseColors.accent.opacity(0.06)],
                             startPoint: .topLeading, endPoint: .bottomTrailing
                         ), lineWidth: 0.5)
                         .glassEffectID("sidebar-selection", in: glassNamespace)
                 }
             }
-            .background {
-                if isHovering && !isSelected {
-                    RoundedRectangle(cornerRadius: PulseRadii.md)
-                        .fill(colors.surface.opacity(0.3))
-                }
-            }
+            .clipShape(RoundedRectangle(cornerRadius: PulseRadii.md))
             .contentShape(Rectangle())
             .onHover { hovering in withAnimation(PulseAnimation.easeOutFast) { isHovering = hovering } }
         }
@@ -174,13 +173,14 @@ struct SidebarButtonView: View {
     }
 
     private var iconColor: Color {
-        if isSelected { return PulseColors.accent }
+        // 选中图标:暗色=电光 lime(原设计) / 亮色=近黑(荧光底上可读)
+        if isSelected { return colors.navSelectionIndicator }
         if isHovering { return colors.textPrimary }
         return colors.textSecondary
     }
 
     private var textColor: Color {
-        if isSelected { return colors.textPrimary }
+        if isSelected { return colors.onNavSelection }
         if isHovering { return colors.textPrimary }
         return colors.textSecondary
     }

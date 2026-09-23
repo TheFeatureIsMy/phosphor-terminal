@@ -81,7 +81,7 @@ struct DryrunStatusPanel: View {
         return Text(run.status.uppercased())
             .font(PulseFonts.micro)
             .padding(.horizontal, PulseSpacing.sm).padding(.vertical, 2)
-            .background(Capsule().fill((isRunning ? PulseColors.accent : colors.textMuted).opacity(0.2)))
+            .background(RoundedRectangle(cornerRadius: PulseRadii.badge).fill((isRunning ? PulseColors.accent : colors.textMuted).opacity(0.2)))
             .foregroundStyle(isRunning ? PulseColors.accent : colors.textMuted)
     }
 
@@ -96,7 +96,7 @@ struct DryrunStatusPanel: View {
     private func metricCell(_ label: String, value: String, color: Color? = nil) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(value)
-                .font(.system(size: 22, weight: .semibold, design: .monospaced))
+                .font(PulseFonts.mono(22, .semibold))
                 .foregroundStyle(color ?? colors.textPrimary)
             Text(label)
                 .font(PulseFonts.micro)
