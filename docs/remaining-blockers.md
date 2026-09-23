@@ -3,6 +3,39 @@
 > 最后更新：2026-07-10
 > 关联：[mock-removal-report.md](./mock-removal-report.md) · [production-readiness/status.md](./production-readiness/status.md) · [ui/page-acceptance.md](./ui/page-acceptance.md)
 
+---
+
+## 2026-08-21 更新 — PRD 差距补齐（Phase 1–6）
+
+本轮按 `ia_backend_redesign.md` 逐项补齐，全部改动经 pytest 1415 passed / 0 failed + `swift build` 0 error 验证（详见 changelog 2026-08-21 条目）：
+
+| 原缺口 | 状态 |
+|---|---|
+| `/api/trading/start-paper\|start-live-small\|disable-auto` 缺失 | ✅ 已实现（live_small 受 `LIVE_SMALL_ENABLED` 门控，默认关） |
+| 执行 run pause/resume/stop 缺失 | ✅ `/api/v2/strategy-runs/{id}/pause\|resume\|stop` |
+| run 详情无 orders/positions 聚合 | ✅ `GET /api/v2/strategy-runs/{id}` 增 `execution` 聚合块 |
+| 止损保护操作端点未挂路由 | ✅ refresh / force-lock / release-lock / exchange-protective-stops |
+| StateLeaseService 零代码 | ✅ `state_leases` 表 + 服务 + `/api/state-leases`；对账前置租约 |
+| canvas compile/save-draft/publish/templates 缺失 | ✅ `/api/canvas/*` + `canvas_drafts` 表 |
+| Fast Track 延迟硬编码 0 / redis_rtt 伪值 | ✅ 真实探测（不可用=-1 + reason_code） |
+| data_source 恒 healthy / system gates 硬编码 | ✅ 改从 provider_configs 健康行推导 |
+| exchange_state 恒 unknown | ✅ 从 cex provider 健康推导 |
+| StructureMatrix 恒走 mock 矩阵 | ✅ 接 MarketDataService 真实 OHLCV，mock 已删 |
+| ManipulationRadar adapter 未注入 | ✅ LiveMarketDataAdapter 恒注入，无数据 503 |
+| sentiment 前缀不规范 + 缺 news/social | ✅ `/api/sentiment` 补齐，旧前缀保留别名 |
+| StrategyOptimizationWorkflow 缺失 | ✅ candidates advance 流水线（最终批准仍人工） |
+| Agent 平台端点缺失 | ✅ `/api/agents` + 任务队列入 Command Bus（RUN_AGENT_TASK + TradingAgents adapter） |
+| `/api/ai-risk-cache` 有服务无路由 | ✅ 已挂载 |
+| macos confirmLaunch 用 emergencyStop 占位（危险） | ✅ 改走真实 /api/trading 端点 |
+| ServiceManagementView 未挂路由 / AIStudio mock 死代码 | ✅ 已修复 |
+
+### 仍遗留（非代码缺口）
+
+1. **运营开关**：`LIVE_SMALL_ENABLED=true` 需在小资金 dry-run 验证通过后手动开启。
+2. **provider 凭据配置**：cex / market_data provider 需配置真实凭据后健康门控才会转 healthy。
+3. **Agent 执行运行时依赖**：`run_agent_task` 命令的实际执行需安装 `tradingagents`（requirements-ai.txt）并配置 LLM provider；缺失时命令以 HANDLER_ERROR 失败（Ledger 有记录，不静默）。
+4. **macOS APISentiment 仍用旧 `/sentiment` 前缀**（后端别名兼容，下次前端迭代迁移）。
+5. P2-1~P2-5（placeholder 注释文档化等）仍为可选。
 
 ---
 

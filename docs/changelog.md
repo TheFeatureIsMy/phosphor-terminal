@@ -7,6 +7,59 @@ Dates are in UTC.
 
 ---
 
+## 2026-08-21 — PRD 差距补齐 Phase 1–5（实盘闭环 / 真实探测 / 数据源接入）
+
+> Verified: backend pytest 1407 passed / 0 failed；macos-app `swift build` 0 error。
+
+### Backend — 实盘启动与执行控制（PRD §4.2 / §7.1 / §8.2）
+
+- **新 router `/api/trading`**（`routers/trading.py` + `schemas/trading.py`）：
+  - `POST /start-paper` — paper trading = Freqtrade dry-run，走 Command Bus（payload 带 `mode=paper`），前置 `pre_dryrun_check`。
+  - `POST /start-live-small` — 完整门控链：preconditions → `LiveSmallService.evaluate_approval` → 人工确认 → circuit breaker → `LIVE_SMALL_ENABLED` 开关 → paper_passed→live_pending 状态提升 → `REQUEST_LIVE_SMALL` 命令。开关默认关闭（`config.live_small_enabled`），批准但未开启时返回 `not_enabled` + `live_small_execution_not_enabled`。
+  - `POST /disable-auto` — 停止所有活跃 dry-run + `AccountRiskFirewall` 封锁新入场。
+- **strategy-runs 生命周期**：`POST /api/v2/strategy-runs/{run_id}/pause|resume|stop`（新增 `CommandType.RESUME_STRATEGY` + `ResumeStrategyHandler`；stop 同时级联停止该版本的活跃 dry-run）。
+- **止损保护操作端点挂路由**：`POST /api/risk/stop-protection/{position_id}/refresh|force-lock|release-lock`、`GET /api/risk/exchange-protective-stops`；`VolatilityLockService.force_lock()` 新增；`GET /api/risk/volatility-locks` 改为真实读取。
+
+### Backend — 健康指标真实性（PRD §13）
+
+- `RuntimeRedisStore` 新增 `is_degraded` / `ping_rtt_ms()` / `probe_fast_track_latency_ms()`。
+- `overview_aggregator._fetch_system`：`fast_track_latency_ms` / `redis_rtt_ms` 改真实探测（不可用=-1 + reason_code，不再造假 0）；`exchange_state` 从 `provider_configs` 健康行推导（ok/degraded/error/unconfigured）。
+- `LiveReadinessService`：`_check_data_source` / `_check_exchange` 改真实 provider 健康探测；per-strategy 5 个 system gates 由 `_probe_system_gates(db)` 推导（替代硬编码 healthy）。
+
+### Backend — 数据源接入（PRD §6.2 / §6.3 / §9.4）
+
+- `StructureMatrixService` 接入 `MarketDataService`（CCXT + 本地缓存）真实 OHLCV；删除 `_build_mock_matrix`，无数据时返回 `data_source_unavailable`，且不缓存不可用态。
+- 操纵雷达：新增 `LiveMarketDataAdapter`；`/api/v2/manipulation/scan` 恒定注入真实 adapter，数据不可用时 503 + `data_source_unavailable`（无静默 mock）。
+- Sentiment：前缀迁移 `/api/sentiment`，补齐 PRD 端点 `market`（全局）/`news`/`social`/`symbol/{symbol}`；旧 `/sentiment` 前缀保留为 deprecated 别名（macOS 客户端兼容）。
+
+### Backend — 缺失服务（PRD §7.3 / §5.2）
+
+- **StateLeaseService**（`state_leases` 表 + alembic 迁移 `c5d6e7f8a9b0`）：acquire/renew/release/过期接管；`GET /api/state-leases` + `POST /{lease_id}/release`；`ReconciliationService.start_reconciliation` 前置获取租约、`complete` 释放（并发对账被拒）。
+- **Canvas 编译发布链**（`routers/canvas.py`）：`GET /api/canvas/templates`（内置 RSI/EMA 模板，均过 DSL 校验）、`POST /compile`（校验 + dsl_hash）、`POST /save-draft`、`GET /strategies/{id}`（读取草稿）、`POST /publish`（校验通过后创建 draft StrategyVersion）；新表 `canvas_drafts`。
+
+### macOS App
+
+- `.serviceManagement` 路由改挂已实现的 `ServiceManagementView`（内含 AIProviders 区块，无信息丢失）。
+- `AIStudioView` 删除无调用的 `ResearchResult.mock` 死代码。
+- 新增 `APITrading.swift`（startPaper/startLiveSmall/disableAuto）；`APIStrategyRuns` 增 pause/resume/stop；`APIRiskBFF` 增止损保护操作端点。
+- **修复危险占位**：`LiveReadinessViewModel.confirmLaunch` 原先调用 emergencyStop 作为启动占位，现改走真实 `/api/trading/start-paper|start-live-small`；新增 `disableAutoTrading()`。
+- `StopProtectionView` 每行持仓接入刷新/强制锁定/解除锁定按钮（替换 placeholder）。
+
+### Tests
+
+- 新增 `test_trading_router.py`（19）、`test_health_probes.py`（14）、`test_data_source_wiring.py`（9）、`test_state_lease_and_canvas.py`（19）；`test_manipulation_api.py` fixture 改 patch `LiveMarketDataAdapter`；`test_enums.py` 更新 CommandType 计数（9）。
+
+### Backend — P2/P3 扩展（PRD §9.1 / §9.2 / §10.3）
+
+- **`/api/ai-risk-cache`**（`ai_research.cache_router`）：`GET` 读缓存（空时 `data_source_unavailable` + `ai_cache_empty`）、`POST /generate` 刷新（`AIRiskCacheService` 此前有服务无路由）。
+- **StrategyOptimizationWorkflow**（`services/growth/optimization_workflow.py` + `POST /api/growth/candidates/{id}/advance`）：draft→validated（DSL 校验）→backtesting（START_BACKTEST 命令）→paper_running（START_DRYRUN mode=paper）→pending_review；每阶段前置 RiskEngine 检查；最终批准仍走人工 `/confirm`，工作流永不自动上线。
+- **`/api/agents`**（PRD §9.2）：`GET` 真实列出 AgentProfile；任务队列入 Command Bus（新增 `CommandType.RUN_AGENT_TASK` + `RunAgentTaskHandler`，经 TradingAgents adapter 执行）：`POST /{agent_id}/run` 入队、`GET /tasks` 查队列、`POST /tasks/{id}/cancel` 取消。
+- **run 详情聚合**：`GET /api/v2/strategy-runs/{id}` 增 `execution` 聚合块（orders_total/open/pending、positions_open、last_ledger_event_at）。
+- **macOS**：FailureClustering 页增 reasonCodes 展示条（后端已下发的部分）。
+- 追加测试：`test_ai_risk_cache_router.py`、`test_optimization_workflow_and_agents.py`；`test_enums.py` CommandType 计数（10）。全量回归 1419+ passed / 0 failed；macos-app `swift build` 0 error。
+
+---
+
 ## 2026-07-09 — Growth Module: Real Data Closure & Evidence Tracking
 
 ### Backend
