@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlphaLoop V3 · 设计矩阵</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0F1115; --card:#15181F; --border:#262B36; --ink:#EDF0F5; --muted:#8B94A7;
+  --sentinel:#2DD4BF; --meridian:#2450A8; --glass:#67E8F9;
+  --aurora:#7C5CFF; --volt:#D8FF3D; --holo:#A78BFA;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter Tight',system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.6;-webkit-font-smoothing:antialiased;padding:48px 32px 96px}
+.wrap{max-width:1180px;margin:0 auto}
+.eyebrow{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted)}
+h1{font-size:clamp(30px,4vw,42px);font-weight:700;letter-spacing:-.02em;margin:8px 0 10px}
+.lede{color:var(--muted);max-width:720px}
+h2{font-size:13px;font-family:'IBM Plex Mono',monospace;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin:48px 0 16px;padding-top:24px;border-top:1px solid var(--border)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+.scheme{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;transition:border-color .2s, transform .2s}
+.scheme:hover{border-color:var(--muted);transform:translateY(-2px)}
+.swatch{height:140px;position:relative;overflow:hidden}
+.swatch .ghost{position:absolute;left:16px;bottom:10px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;color:rgba(255,255,255,.55)}
+.swatch.sentinel{background:linear-gradient(160deg,#0B0E13,#121820)}
+.swatch.sentinel::after{content:"";position:absolute;right:18px;top:18px;width:10px;height:10px;border-radius:50%;background:#2DD4BF;box-shadow:0 0 12px #2DD4BF;animation:pulse 2.4s ease-in-out infinite}
+.swatch.meridian{background:linear-gradient(160deg,#F4F3EF,#ECE9E0)}
+.swatch.meridian::after{content:"";position:absolute;right:18px;top:18px;width:56px;height:2px;background:#B4530F}
+.swatch.meridian .ghost{color:rgba(20,22,26,.55)}
+.swatch.glass{background:radial-gradient(120% 120% at 20% 0%,#122033,#06080D)}
+.swatch.glass::after{content:"";position:absolute;right:18px;top:18px;width:64px;height:24px;border-radius:12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18)}
+.scheme .body{padding:18px 18px 20px}
+.scheme h3{font-size:19px;letter-spacing:-.01em}
+.scheme .tagline{color:var(--muted);font-size:13px;margin:4px 0 14px}
+.scheme .motif{font-size:12px;color:var(--muted);font-family:'IBM Plex Mono',monospace}
+.links{display:flex;gap:8px;margin-top:14px}
+.links a{flex:1;text-align:center;padding:8px 10px;border-radius:9px;border:1px solid var(--border);color:var(--ink);text-decoration:none;font-size:12.5px;font-weight:500;transition:background .15s}
+.links a:hover{background:rgba(255,255,255,.06)}
+.links a::before{content:"◈ ";color:var(--accent,#8B94A7)}
+.scheme.a{--accent:var(--sentinel)} .scheme.b{--accent:var(--meridian)} .scheme.c{--accent:var(--glass)}
+.scheme.d{--accent:var(--aurora)} .scheme.e{--accent:var(--volt)} .scheme.f{--accent:var(--holo)}
+.swatch.aurora{background:linear-gradient(130deg,#0B0B18,#161226);overflow:hidden}
+.swatch.aurora::before{content:"";position:absolute;inset:-20%;background:radial-gradient(ellipse 40% 30% at 30% 40%,rgba(34,211,238,.35),transparent 60%),radial-gradient(ellipse 40% 30% at 70% 60%,rgba(124,92,255,.35),transparent 60%),radial-gradient(ellipse 30% 30% at 55% 30%,rgba(244,113,181,.25),transparent 60%)}
+.swatch.volt{background:linear-gradient(160deg,#0A0A0C,#121216)}
+.swatch.volt::after{content:"ALPHALOOP";position:absolute;left:16px;top:14px;font-family:'Inter Tight',sans-serif;font-weight:800;font-size:13px;letter-spacing:.02em;color:#0A0A0C;background:#D8FF3D;padding:4px 10px;clip-path:polygon(0 0,100% 0,92% 100%,0 100%)}
+.swatch.volt .ghost{top:auto}
+.swatch.holo{background:radial-gradient(100% 100% at 50% 0%,#1A1B25,#0D0E13)}
+.swatch.holo::after{content:"";position:absolute;right:18px;top:18px;width:64px;height:24px;border-radius:12px;background:linear-gradient(110deg,rgba(232,236,244,.25),rgba(167,139,250,.3),rgba(103,232,249,.25));animation:shimmer 2.6s linear infinite}
+@keyframes shimmer{0%{filter:hue-rotate(0deg)}100%{filter:hue-rotate(40deg)}}
+.note{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 18px;color:var(--muted);font-size:13px}
+.note b{color:var(--ink);font-weight:600}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">ALPHALOOP · DESIGN MATRIX · V3</div>
+  <h1>三套全新设计语言</h1>
+  <p class="lede">产品定位：AI 结构化自动交易运行控制台。三套方案从布局体系、动效语法、字体系统整体重构，与 v2 六套（账本/深度/机构 DeFi/星图/粗野/衬线）不重复。每套含 <b>总览 Dashboard</b> 与 <b>实盘准入 Live Readiness</b>、<b>风控中心</b>、<b>策略工作台</b> 共 4 页，覆盖控制台全部核心页面类型（总览/门禁/警示/工作台），共享同一套真实数据，便于横向对比。完整规格见 <code>_specs/STYLE-V3.md</code>。</p>
+
+  <h2>方案</h2>
+  <div class="grid">
+    <div class="scheme a">
+      <div class="swatch sentinel"><span class="ghost">GRAPHITE / SIGNAL TEAL / LED</span></div>
+      <div class="body">
+        <h3>A · SENTINEL 哨兵</h3>
+        <p class="tagline">任务指挥台。状态机与门禁是主角：左 rail + 状态 ribbon + 门禁链，模块方角 hairline，零玻璃零渐变。</p>
+        <p class="motif">Inter Tight + JetBrains Mono · 错峰入场 · LED 脉冲 · 门禁链逐级点亮</p>
+        <div class="links">
+          <a href="dashboard-sentinel.html">总览 Dashboard</a>
+          <a href="readiness-sentinel.html">实盘准入</a>
+        </div>
+        <div class="links" style="margin-top:8px">
+          <a href="risk-sentinel.html">风控中心</a>
+          <a href="workbench-sentinel.html">策略工作台</a>
+        </div>
+      </div>
+    </div>
+    <div class="scheme b">
+      <div class="swatch meridian"><span class="ghost">WARM PAPER / INK / INSTRUMENT</span></div>
+      <div class="body">
+        <h3>B · MERIDIAN 经线</h3>
+        <p class="tagline">精密仪器台。数据即度量：刻度尺、公差带、弧线量表、工程标注；暖纸墨钢，细线分隔，无圆角卡片感。</p>
+        <p class="motif">Inter Tight + IBM Plex Mono · 刻度 draw-in · 表针 sweep · 线性淡入</p>
+        <div class="links">
+          <a href="dashboard-meridian.html">总览 Dashboard</a>
+          <a href="readiness-meridian.html">实盘准入</a>
+        </div>
+        <div class="links" style="margin-top:8px">
+          <a href="risk-meridian.html">风控中心</a>
+          <a href="workbench-meridian.html">策略工作台</a>
+        </div>
+      </div>
+    </div>
+    <div class="scheme c">
+      <div class="swatch glass"><span class="ghost">LIQUID GLASS / LUMINOUS CYAN</span></div>
+      <div class="body">
+        <h3>C · GLASS OPS 深玻</h3>
+        <p class="tagline">原生深度控制台。玻璃模块悬浮于缓慢流动的市场氛围层上，氛围色随风险状态联动——最贴 macOS 原生质感。</p>
+        <p class="motif">SF Pro + SF Mono · 氛围漂移 · cross-dissolve · 描边扫光</p>
+        <div class="links">
+          <a href="dashboard-glass.html">总览 Dashboard</a>
+          <a href="readiness-glass.html">实盘准入</a>
+        </div>
+        <div class="links" style="margin-top:8px">
+          <a href="risk-glass.html">风控中心</a>
+          <a href="workbench-glass.html">策略工作台</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2>V3.1 · Web3 风格（新一轮 · 含 2026 趋势调研）</h2>
+  <div class="grid">
+    <div class="scheme e" style="border-color:rgba(216,255,61,.5)">
+      <div class="swatch volt"><span class="ghost">NEAR-BLACK / VOLT LIME / TAPE</span></div>
+      <div class="body">
+        <h3>E · VOLT 电光 <span style="font-size:10px;font-family:'IBM Plex Mono',monospace;color:var(--volt);letter-spacing:.1em;border:1px solid rgba(216,255,61,.4);padding:2px 8px;border-radius:999px;vertical-align:middle">当前候选</span></h3>
+        <p class="tagline">近黑底 + 电光柠檬黄主色 + 报价跑马灯 + 电路纹理 + 超粗大字数字。Blast / 新生代 Degen 气质，但收敛为控制台。</p>
+        <p class="motif">Archivo 800 + Space Grotesk + JetBrains Mono · 跑马灯 · 大字重排 · 发光状态点</p>
+        <div class="links"><a href="dashboard-volt.html">总览 Dashboard</a></div>
+      </div>
+    </div>
+    <div class="scheme g" style="--accent:#22D3EE">
+      <div class="swatch" style="background:radial-gradient(120% 100% at 50% 0%,#0B1430,#05070F);position:relative">
+        <span class="ghost">DEEP SPACE / ORBIT RINGS / 3D TILT</span>
+        <span style="position:absolute;right:18px;top:16px;width:34px;height:34px;border-radius:50%;border:1px dashed rgba(34,211,238,.6)"></span>
+        <span style="position:absolute;right:22px;top:20px;width:26px;height:26px;border-radius:50%;border:1.5px solid rgba(77,124,254,.7)"></span>
+      </div>
+      <div class="body">
+        <h3>G · ORBITAL 轨道 <span style="font-size:10px;font-family:'IBM Plex Mono',monospace;color:#22D3EE;letter-spacing:.1em;border:1px solid rgba(34,211,238,.4);padding:2px 8px;border-radius:999px;vertical-align:middle">本轮新</span></h3>
+        <p class="tagline">深空指挥舱：透视网格地板、星辰背景、旋转轨道环准入核心、卡片鼠标 3D 倾斜。直击「未来感 / 科技感 / 3D 元素」。</p>
+        <p class="motif">Orbitron + Sora + JetBrains Mono · 轨道环旋转 · 透视网格 · 3D 倾斜卡</p>
+        <div class="links"><a href="dashboard-orbital.html">总览 Dashboard</a></div>
+      </div>
+    </div>
+    <div class="scheme h" style="--accent:#A8C7FA">
+      <div class="swatch" style="background:linear-gradient(160deg,#121318,#1E2129);position:relative">
+        <span class="ghost">LIQUID METAL / CHROME TEXT / GLOSS</span>
+        <span style="position:absolute;right:18px;top:16px;width:60px;height:22px;border-radius:999px;background:linear-gradient(135deg,#F6F8FB,#8794A8 50%,#E8ECF2);opacity:.85"></span>
+      </div>
+      <div class="body">
+        <h3>H · CHROME 铬金 <span style="font-size:10px;font-family:'IBM Plex Mono',monospace;color:#A8C7FA;letter-spacing:.1em;border:1px solid rgba(168,199,250,.4);padding:2px 8px;border-radius:999px;vertical-align:middle">本轮新</span></h3>
+        <p class="tagline">2026 复古未来主义：液态金属氛围斑、铬字大数字、金属光泽按钮、哑光炭卡顶部高光棱线。克制但有质感。</p>
+        <p class="motif">Space Grotesk + Inter + JetBrains Mono · 水银漂移 · 铬字 · 金属按钮</p>
+        <div class="links"><a href="dashboard-chrome.html">总览 Dashboard</a></div>
+      </div>
+    </div>
+  </div>
+  <div class="note" style="margin-top:14px">已淘汰（保留文件供对照，不推荐）：D · AURORA 极光、F · HOLO 全息（AI 模板感过重，与产品定位不符）。</div>
+
+  <h2>选择维度</h2>
+  <div class="note">
+    <b>如果</b>强调“控制台/状态机/指挥”的专业可信度 → 选 <b>SENTINEL</b>；<br>
+    <b>如果</b>强调“度量/精确/读数”的工程严谨感、且保持浅色 → 选 <b>MERIDIAN</b>；<br>
+    <b>如果</b>强调 macOS 26 原生深度与氛围质感 → 选 <b>GLASS OPS</b>；<br>
+    <b>如果</b>要新生代 Degen 能量与冲击力（当前候选） → 选 <b>VOLT</b>；<br>
+    <b>如果</b>要未来感/科技感/3D 元素 → 选 <b>ORBITAL</b>；<br>
+    <b>如果</b>要 2026 液态金属/铬质感（复古未来） → 选 <b>CHROME</b>。<br><br>
+    所有方案均已内置：CountUp 数字入场、错峰模块入场、reduced-motion 降级、focus 描边、900px 响应式塌缩。
+  </div>
+</div>
+</body>
+</html>

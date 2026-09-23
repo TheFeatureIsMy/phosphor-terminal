@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlphaLoop · 策略工作台 — MERIDIAN</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F4F3EF; --card:#FBFAF7; --line:#E3E0D8; --line-2:#D2CEC2;
+  --ink:#14161A; --muted:#6B6E78; --dim:#9A978B;
+  --steel:#2450A8; --copper:#B4530F; --up:#0E7A4D; --down:#C0392B;
+  --sans:'Inter Tight',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased}
+:focus-visible{outline:2px solid var(--steel);outline-offset:2px}
+.mono{font-family:var(--mono)}
+.microlabel{font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+.wrap{max-width:1320px;margin:0 auto;padding:0 28px 96px}
+
+.masthead{border-bottom:2px solid var(--ink);padding:22px 0 16px}
+.mast-top{display:flex;align-items:baseline;justify-content:space-between}
+.mast-top h1{font-size:26px;font-weight:600;letter-spacing:-.02em}
+.mast-top h1 em{font-family:var(--mono);font-style:normal;font-size:11px;letter-spacing:.2em;color:var(--steel);margin-right:12px}
+.ruler{height:26px;margin-top:12px;background-image:repeating-linear-gradient(90deg,var(--line-2) 0 1px,transparent 1px 12px),repeating-linear-gradient(90deg,var(--ink) 0 1px,transparent 1px 120px);background-size:100% 8px,100% 26px;background-repeat:no-repeat;transform-origin:left;animation:ruleIn .8s cubic-bezier(.2,.7,.2,1) both .15s}
+@keyframes ruleIn{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.mast-meta{display:flex;gap:28px;margin-top:8px;font-family:var(--mono);font-size:10.5px;color:var(--muted);letter-spacing:.08em}
+.mast-meta b{color:var(--ink);font-weight:600}.mast-meta .ok{color:var(--up)}
+.backlink{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-decoration:none;color:var(--dim)}
+.backlink:hover{color:var(--steel)}
+
+.sect{display:flex;align-items:baseline;gap:14px;margin:30px 0 14px}
+.sect .n{font-family:var(--mono);font-size:11px;color:var(--steel);letter-spacing:.1em}
+.sect h2{font-size:14px;font-weight:600}
+.sect .rule{flex:1;height:1px;background:var(--line-2);transform-origin:left;animation:ruleIn .5s cubic-bezier(.2,.7,.2,1) both}
+.sect .unit{font-family:var(--mono);font-size:9.5px;color:var(--dim);letter-spacing:.14em}
+.fadein{opacity:0;transform:translateX(10px);animation:fadein .35s ease-out forwards}
+@keyframes fadein{to{opacity:1;transform:none}}
+
+.panel{background:var(--card);border:1px solid var(--line);border-radius:3px}
+.panel-head{display:flex;justify-content:space-between;align-items:baseline;padding:12px 16px;border-bottom:1px solid var(--line)}
+.panel-head .microlabel{color:var(--muted)}
+
+/* 工作台：左目录 + 右详情 */
+.bench{display:grid;grid-template-columns:300px 1fr;gap:16px}
+.strat{display:block;padding:13px 16px;border-bottom:1px solid var(--line);text-decoration:none;color:inherit;transition:background .12s}
+.strat:hover{background:#F6F4EE}
+.strat.on{background:rgba(36,80,168,.05);box-shadow:inset 3px 0 0 var(--steel)}
+.strat .nm{font-weight:600;font-size:13.5px;display:flex;justify-content:space-between;align-items:center}
+.strat .meta{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:4px;display:flex;gap:10px}
+.tag{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;padding:2px 8px;border:1px solid var(--line-2);color:var(--muted)}
+.tag.steel{color:var(--steel);border-color:var(--steel)} .tag.copper{color:var(--copper);border-color:var(--copper)}
+
+/* 详情区 */
+.detail-head{display:flex;align-items:center;gap:14px;padding:16px;border-bottom:1px solid var(--line)}
+.detail-head h3{font-size:18px;font-weight:600}
+.detail-head .acts{margin-left:auto;display:flex;gap:8px}
+.btn{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;padding:8px 14px;border:1px solid var(--ink);background:var(--card);color:var(--ink);border-radius:2px;cursor:pointer;transition:background .15s,color .15s}
+.btn:hover{background:var(--ink);color:var(--bg)}
+.btn.steel{border-color:var(--steel);color:var(--steel)}
+.btn.steel:hover{background:var(--steel);color:#fff}
+.btn.copper{border-color:var(--down);color:var(--down)}
+.btn.copper:hover{background:var(--down);color:#fff}
+
+/* 读数带 */
+.readband{display:grid;grid-template-columns:repeat(5,1fr);border-bottom:1px solid var(--line)}
+.readband .r{padding:12px 16px;border-right:1px solid var(--line)}
+.readband .r:last-child{border-right:none}
+.readband .v{font-family:var(--mono);font-size:19px;font-weight:600;font-variant-numeric:tabular-nums;margin-top:3px}
+.readband .v.up{color:var(--up)}
+
+.kv{display:grid;grid-template-columns:150px 1fr;font-size:12px}
+.kv dt{padding:10px 16px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--dim);text-transform:uppercase}
+.kv dd{padding:10px 16px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:11.5px}
+.kv dd .warn-t{color:var(--copper);font-weight:600}
+
+.code-block{font-family:var(--mono);font-size:11px;padding:14px 16px;white-space:pre;overflow-x:auto;line-height:1.75;color:var(--muted)}
+.code-block .cm{color:var(--dim)}
+.code-block .hl{color:var(--steel);font-weight:600}
+
+table{width:100%;border-collapse:collapse}
+th{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);font-weight:500;text-align:right;padding:10px 14px;border-bottom:1px solid var(--line-2)}
+th:first-child,td:first-child{text-align:left}
+td{font-family:var(--mono);font-size:12px;text-align:right;padding:10px 14px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+td:first-child{font-family:var(--sans)}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:#F6F4EE}
+
+.ver-row{display:flex;gap:10px;align-items:baseline;padding:10px 16px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:11px}
+.ver-row:last-child{border-bottom:none}
+.ver-row .vn{font-weight:600;min-width:44px}
+.ver-row .vs{color:var(--muted);flex:1}
+.ver-row .cur{color:var(--steel);font-size:9px;letter-spacing:.14em}
+@media(max-width:1000px){.bench{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="masthead">
+    <div class="mast-top">
+      <h1><em>ALPHALOOP</em>策略工作台 Strategy Workbench</h1>
+      <a class="backlink" href="index.html">← 返回矩阵</a>
+    </div>
+    <div class="ruler" aria-hidden="true"></div>
+    <div class="mast-meta">
+      <span>SYS <b class="ok">LIVE_SMALL_READY</b></span>
+      <span>RISK <b class="ok">NORMAL</b></span>
+      <span>STRATEGIES <b>3</b></span>
+      <span>SNAPSHOT <b>FRESH 3s</b></span>
+      <span style="margin-left:auto">MERIDIAN · STRATEGY-OPS</span>
+    </div>
+  </header>
+
+  <!-- §01 工作台 -->
+  <div class="sect"><span class="n">§01</span><h2>策略目录与运行台</h2><span class="rule"></span><span class="unit">SELECTED 结构突破 v4.2</span></div>
+  <div class="bench fadein">
+    <!-- 左：策略目录 -->
+    <div class="panel" style="overflow:hidden">
+      <div class="panel-head"><span class="microlabel">策略目录 CATALOG</span><span class="microlabel">4</span></div>
+      <a class="strat on" href="#">
+        <div class="nm">结构突破 <span class="tag steel">LIVE-SMALL</span></div>
+        <div class="meta"><span>v4.2</span><span>RUNNING</span><span>+1.86%</span></div>
+      </a>
+      <a class="strat" href="#">
+        <div class="nm">RSI 均值回归 <span class="tag copper">PAPER</span></div>
+        <div class="meta"><span>v2.1</span><span>PAPER</span><span>+0.62%</span></div>
+      </a>
+      <a class="strat" href="#">
+        <div class="nm">流动性清扫防御 <span class="tag copper">DRYRUN</span></div>
+        <div class="meta"><span>v1.4</span><span>DRYRUN</span><span>0.00%</span></div>
+      </a>
+      <a class="strat" href="#" style="opacity:.55">
+        <div class="nm">高频网格 <span class="tag">ARCHIVED</span></div>
+        <div class="meta"><span>v3.0</span><span>2026-07-28 归档</span></div>
+      </a>
+    </div>
+
+    <!-- 右：详情 -->
+    <div class="panel" style="overflow:hidden">
+      <div class="detail-head">
+        <h3>结构突破</h3>
+        <span class="tag steel">LIVE-SMALL</span>
+        <span class="mono" style="font-size:10px;color:var(--muted)">v4.2 · dsl 8f3a…e2c1</span>
+        <div class="acts">
+          <button class="btn steel">回测</button>
+          <button class="btn">暂停</button>
+          <button class="btn copper">停止</button>
+        </div>
+      </div>
+      <div class="readband">
+        <div class="r"><div class="microlabel">本周期盈亏</div><div class="v up">+1.86%</div></div>
+        <div class="r"><div class="microlabel">交易次数</div><div class="v">42</div></div>
+        <div class="r"><div class="microlabel">胜率</div><div class="v">58.2%</div></div>
+        <div class="r"><div class="microlabel">夏普</div><div class="v">1.84</div></div>
+        <div class="r"><div class="microlabel">快照</div><div class="v" style="color:var(--steel)">FRESH 3s</div></div>
+      </div>
+      <div class="panel-head"><span class="microlabel">当前决策快照 · 10:02:14</span><span class="microlabel">REASON-CODED</span></div>
+      <dl class="kv">
+        <dt>决策</dt><dd><span class="warn-t">REDUCE_SIZE −20%</span></dd>
+        <dt>原因码</dt><dd>ai_cache_soft_expired, shadow_warning</dd>
+        <dt>结构状态</dt><dd>1h 多头 OB 有效 · 强度 0.41 转弱</dd>
+        <dt>AI 风险缓存</dt><dd>软过期（12min）· 偏差中性偏多</dd>
+      </dl>
+      <div class="panel-head"><span class="microlabel">规则 DSL · v4.2</span><span class="microlabel">8 RULES</span></div>
+      <div class="code-block"><span class="cm"># entry — 结构突破入场（AND）</span>
+ob_breakout_1h      <span class="hl">structure.order_block</span>  direction=bullish  strength≥0.65
+volume_confirm      <span class="hl">volume.sma_ratio</span>       ≥1.5x
+regime_filter       <span class="hl">market.regime</span>          in [trend_up]
+manipulation_guard  <span class="hl">manipulation.score</span>    ≤0.35
+<span class="cm"># risk — 防御层</span>
+atr_stop            <span class="hl">risk.atr_stop</span>          2.2×ATR
+daily_loss_lock     <span class="hl">risk.daily_loss</span>        ≤3%
+account_firewall    <span class="hl">risk.account_cap</span>       ≤30% 敞口</div>
+    </div>
+  </div>
+
+  <!-- §02 版本与最近交易 -->
+  <div class="sect"><span class="n">§02</span><h2>版本与最近交易</h2><span class="rule"></span><span class="unit">AUDIT</span></div>
+  <div class="bench fadein" style="grid-template-columns:1fr 1fr">
+    <div class="panel" style="overflow:hidden">
+      <div class="panel-head"><span class="microlabel">版本 VERSIONS</span></div>
+      <div class="ver-row"><span class="vn">v4.2</span><span class="vs">08-19 发布 · 回测夏普 1.84 · 模拟 96h 通过</span><span class="cur">CURRENT</span></div>
+      <div class="ver-row"><span class="vn">v4.3</span><span class="vs">08-20 创建 · AI 优化候选 · 待校验</span><span class="tag">DRAFT</span></div>
+      <div class="ver-row"><span class="vn">v4.1</span><span class="vs">08-12 归档 · 被 v4.2 取代</span><span class="tag">ARCHIVED</span></div>
+    </div>
+    <div class="panel" style="overflow:hidden">
+      <div class="panel-head"><span class="microlabel">最近交易 TRADES</span><span class="microlabel">24H</span></div>
+      <table>
+        <thead><tr><th>时间</th><th>标的</th><th>方向</th><th>盈亏 %</th></tr></thead>
+        <tbody>
+          <tr><td>09:58</td><td>BTC/USDT</td><td>LONG</td><td style="color:var(--up)">+0.62</td></tr>
+          <tr><td>08:41</td><td>ETH/USDT</td><td>LONG</td><td style="color:var(--down)">−0.31</td></tr>
+          <tr><td>07:26</td><td>BTC/USDT</td><td>LONG</td><td style="color:var(--up)">+1.14</td></tr>
+          <tr><td>昨 22:14</td><td>SOL/USDT</td><td>LONG</td><td style="color:var(--up)">+0.48</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <footer style="margin-top:34px;font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;color:var(--dim)">MERIDIAN · 目录/详情双栏 · 读数带 · 版本审计 · 工程标注</footer>
+</div>
+</body>
+</html>

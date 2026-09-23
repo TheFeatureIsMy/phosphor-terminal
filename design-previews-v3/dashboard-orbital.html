@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlphaLoop · 总览 — ORBITAL</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#05070F; --card:rgba(13,18,32,.72); --edge:rgba(77,124,254,.22); --edge-hi:rgba(103,232,249,.5);
+  --ink:#EAF0FE; --muted:#8E9BBE; --dim:#4E5A78;
+  --cyan:#22D3EE; --blue:#4D7CFE; --magenta:#E935C1;
+  --up:#34F5A5; --down:#FF5C7A; --warn:#FFC85C;
+  --sans:'Sora',system-ui,sans-serif; --disp:'Orbitron',var(--sans); --mono:'JetBrains Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased;min-height:100vh;overflow-x:hidden}
+:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+.mono{font-family:var(--mono)}
+.eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--dim)}
+
+/* ── 深空 + 透视网格地板 ── */
+.space{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;background:
+  radial-gradient(120% 60% at 50% -10%,rgba(77,124,254,.14),transparent 60%),
+  radial-gradient(80% 50% at 80% 110%,rgba(233,53,193,.08),transparent 60%),
+  var(--bg)}
+.stars{position:absolute;inset:0;background-image:
+  radial-gradient(rgba(255,255,255,.5) .6px,transparent .7px),
+  radial-gradient(rgba(255,255,255,.28) .6px,transparent .7px);
+  background-size:170px 170px,110px 110px;background-position:0 0,60px 40px}
+.floor{position:absolute;left:-30%;right:-30%;bottom:-14%;height:52%;
+  background-image:linear-gradient(rgba(77,124,254,.14) 1px,transparent 1px),linear-gradient(90deg,rgba(77,124,254,.14) 1px,transparent 1px);
+  background-size:56px 56px;
+  transform:perspective(700px) rotateX(64deg);
+  mask-image:linear-gradient(to top,rgba(0,0,0,.85),transparent 92%);
+  animation:floorScroll 22s linear infinite}
+@keyframes floorScroll{to{background-position:0 56px,0 0}}
+.horizon{position:absolute;left:0;right:0;bottom:38%;height:1px;background:linear-gradient(90deg,transparent,rgba(103,232,249,.4),transparent);filter:blur(1px)}
+
+.stage{position:relative;z-index:1;max-width:1300px;margin:0 auto;padding:24px 30px 90px}
+
+/* ── 3D 悬浮卡 ── */
+.tilt{transform-style:preserve-3d;will-change:transform;transition:transform .25s ease,border-color .25s}
+.ocard{background:var(--card);border:1px solid var(--edge);border-radius:18px;backdrop-filter:blur(14px);position:relative;transition:border-color .25s, box-shadow .25s}
+.ocard:hover{border-color:var(--edge-hi);box-shadow:0 12px 44px rgba(34,211,238,.12), inset 0 0 0 1px rgba(103,232,249,.12)}
+
+.enter{opacity:0;transform:translateY(18px);animation:rise .6s cubic-bezier(.2,.8,.25,1) forwards}
+@keyframes rise{to{opacity:1;transform:none}}
+.d1{animation-delay:.05s}.d2{animation-delay:.12s}.d3{animation-delay:.19s}.d4{animation-delay:.26s}.d5{animation-delay:.33s}
+
+/* ── 顶栏 ── */
+.topbar{display:flex;align-items:center;gap:16px;padding:12px 18px;margin-bottom:24px}
+.logo{font-family:var(--disp);font-weight:700;font-size:15px;letter-spacing:.24em;color:var(--ink)}
+.logo span{color:var(--cyan)}
+.nav{display:flex;gap:2px;margin-left:14px}
+.nav a{font-size:12.5px;color:var(--muted);text-decoration:none;padding:7px 13px;border-radius:8px;transition:all .18s}
+.nav a:hover{color:var(--ink);background:rgba(77,124,254,.1)}
+.nav a.on{color:var(--cyan);background:rgba(34,211,238,.1);box-shadow:inset 0 0 0 1px rgba(34,211,238,.25)}
+.topbar .right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.stat-chip{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:10.5px;padding:6px 13px;border-radius:999px;background:rgba(34,245,165,.07);border:1px solid rgba(52,245,165,.28);color:var(--up)}
+.stat-chip .d{width:6px;height:6px;border-radius:50%;background:var(--up);box-shadow:0 0 10px var(--up);animation:pulse 2.6s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+.pagehead{display:flex;align-items:flex-end;justify-content:space-between;margin:2px 0 20px}
+.pagehead h1{font-family:var(--disp);font-size:26px;font-weight:600;letter-spacing:.1em}
+.pagehead h1 span{color:var(--cyan)}
+.pagehead .sub{color:var(--muted);font-size:12.5px;margin-top:4px}
+.backlink{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-decoration:none;color:var(--dim)}
+.backlink:hover{color:var(--cyan)}
+
+/* ── Hero：轨道核心 + 数据 ── */
+.hero{display:grid;grid-template-columns:1fr 1.15fr;gap:18px}
+.core-card{padding:26px;display:flex;flex-direction:column;align-items:center;text-align:center}
+.core{position:relative;width:230px;height:230px;margin:14px 0}
+.ring-svg{position:absolute;inset:0}
+.ring-svg .spin1{transform-origin:center;animation:spin 26s linear infinite}
+.ring-svg .spin2{transform-origin:center;animation:spin 38s linear infinite reverse}
+.ring-svg .spin3{transform-origin:center;animation:spin 54s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.core-center{position:absolute;inset:0;display:grid;place-items:center}
+.core-center .n{font-family:var(--disp);font-size:44px;font-weight:700;letter-spacing:-.01em;text-shadow:0 0 30px rgba(34,211,238,.65)}
+.core-center .s{font-family:var(--mono);font-size:9px;letter-spacing:.2em;color:var(--muted);margin-top:2px}
+.state-word{font-family:var(--mono);font-size:11px;letter-spacing:.18em;color:var(--up);font-weight:600;margin-top:4px}
+.core-cap{color:var(--muted);font-size:11.5px;margin-top:6px}
+
+.hero-data{padding:24px 26px;display:flex;flex-direction:column}
+.hero-data .big{font-family:var(--disp);font-size:42px;font-weight:700;letter-spacing:-.02em;line-height:1;margin:10px 0 4px;font-variant-numeric:tabular-nums}
+.hero-data .big .cur{font-size:14px;color:var(--muted);font-weight:500}
+.delta{display:inline-flex;gap:6px;align-items:center;font-family:var(--mono);font-size:11px;font-weight:600;padding:4px 10px;border-radius:8px}
+.delta.up{color:var(--up);background:rgba(52,245,165,.09);border:1px solid rgba(52,245,165,.25)}
+.delta.down{color:var(--down);background:rgba(255,92,122,.09);border:1px solid rgba(255,92,122,.25)}
+.metric-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;margin-top:16px;border-top:1px solid rgba(77,124,254,.15)}
+.metric-grid .m{padding:13px 4px;border-bottom:1px solid rgba(77,124,254,.12)}
+.metric-grid .m:nth-child(odd){border-right:1px solid rgba(77,124,254,.12);padding-right:12px}
+.metric-grid .m:nth-child(even){padding-left:12px}
+.metric-grid .v{font-family:var(--disp);font-size:19px;font-weight:600;font-variant-numeric:tabular-nums}
+.metric-grid .l{font-family:var(--mono);font-size:9px;letter-spacing:.16em;color:var(--dim);text-transform:uppercase;margin-top:2px}
+
+.obtn{font-family:var(--mono);font-size:11px;letter-spacing:.1em;padding:10px 16px;border-radius:10px;background:rgba(77,124,254,.08);border:1px solid var(--edge);color:var(--ink);cursor:pointer;transition:all .18s;text-transform:uppercase}
+.obtn:hover{border-color:var(--edge-hi);background:rgba(77,124,254,.16)}
+.obtn.primary{background:linear-gradient(120deg,rgba(34,211,238,.2),rgba(77,124,254,.24));border-color:rgba(34,211,238,.5);color:var(--cyan)}
+.obtn.danger{border-color:rgba(255,92,122,.4);color:var(--down)}
+
+/* ── 指标卡 ── */
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:18px}
+.stat{padding:16px 18px}
+.stat .v{font-family:var(--disp);font-size:23px;font-weight:700;letter-spacing:-.01em;margin:8px 0 3px;font-variant-numeric:tabular-nums}
+.stat .s{font-family:var(--mono);font-size:10px;color:var(--muted)}
+
+/* ── 表/流 ── */
+.grid2{display:grid;grid-template-columns:1.15fr .85fr;gap:18px;margin-top:18px}
+table{width:100%;border-collapse:collapse}
+th{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);font-weight:500;text-align:right;padding:11px 18px;border-bottom:1px solid rgba(77,124,254,.15)}
+th:first-child,td:first-child{text-align:left}
+td{font-family:var(--mono);font-size:12px;text-align:right;padding:11px 18px;border-bottom:1px solid rgba(77,124,254,.09);font-variant-numeric:tabular-nums}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:rgba(77,124,254,.06)}
+.tag{font-family:var(--mono);font-size:9px;letter-spacing:.08em;padding:3px 8px;border-radius:6px}
+.tag.up{color:var(--up);background:rgba(52,245,165,.1)}
+.tag.down{color:var(--down);background:rgba(255,92,122,.1)}
+.tag.live{color:var(--cyan);background:rgba(34,211,238,.12)}
+.tag.warn{color:var(--warn);background:rgba(255,200,92,.1)}
+
+.feed-item{display:grid;grid-template-columns:52px 1fr;gap:12px;padding:12px 20px;border-bottom:1px solid rgba(77,124,254,.09);font-size:12.5px}
+.feed-item:last-child{border-bottom:none}
+.feed-item time{font-family:var(--mono);font-size:10px;color:var(--dim);padding-top:2px}
+.feed-item .codes{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}
+.code{font-family:var(--mono);font-size:9px;color:var(--muted);background:rgba(77,124,254,.08);padding:2px 8px;border-radius:6px;border:1px solid rgba(77,124,254,.14)}
+
+.alert{display:flex;align-items:center;gap:12px;padding:12px 18px;border-radius:14px;background:rgba(255,200,92,.06);border:1px solid rgba(255,200,92,.24);backdrop-filter:blur(12px);margin-top:18px}
+.alert .eyebrow{color:var(--warn)}
+
+footer{margin-top:32px;font-family:var(--mono);font-size:9.5px;letter-spacing:.18em;color:var(--dim)}
+@media(max-width:1100px){.hero{grid-template-columns:1fr}.grid4{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}}
+@media(max-width:640px){.grid4{grid-template-columns:1fr}.nav{display:none}}
+@media (prefers-reduced-motion:reduce){.floor,.ring-svg .spin1,.ring-svg .spin2,.ring-svg .spin3{animation:none}.enter{animation:none;opacity:1;transform:none}.stat-chip .d{animation:none}}
+</style>
+</head>
+<body>
+<div class="space" aria-hidden="true"><div class="stars"></div><div class="floor"></div><div class="horizon"></div></div>
+
+<div class="stage">
+  <div class="ocard topbar enter d1">
+    <span class="logo">ALPHA<span>LOOP</span></span>
+    <nav class="nav">
+      <a href="#" class="on">总览</a><a href="#">策略</a><a href="#">结构</a><a href="#">执行</a><a href="#">风控</a><a href="#">AI 投研</a>
+    </nav>
+    <div class="right">
+      <span class="stat-chip"><i class="d"></i>LIVE_SMALL_READY · 86</span>
+      <button class="obtn danger" style="padding:8px 13px">紧急停止</button>
+    </div>
+  </div>
+
+  <div class="pagehead enter d1">
+    <div>
+      <a class="backlink" href="index.html">← 返回矩阵</a>
+      <h1>总览 <span>DASHBOARD</span></h1>
+      <div class="sub">交易运行总控台 · 深空指挥舱</div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="obtn primary">启动模拟</button>
+      <button class="obtn">刷新状态</button>
+    </div>
+  </div>
+
+  <div class="hero">
+    <div class="ocard core-card tilt enter d2">
+      <span class="eyebrow" style="color:var(--muted)">实盘准入核心 READINESS CORE</span>
+      <div class="core">
+        <svg class="ring-svg" viewBox="0 0 230 230" fill="none">
+          <circle class="spin1" cx="115" cy="115" r="106" stroke="rgba(34,211,238,.35)" stroke-width="1" stroke-dasharray="4 10"/>
+          <circle class="spin2" cx="115" cy="115" r="86" stroke="rgba(77,124,254,.5)" stroke-width="1.5" stroke-dasharray="60 22"/>
+          <circle class="spin3" cx="115" cy="115" r="64" stroke="rgba(233,53,193,.3)" stroke-width="1" stroke-dasharray="2 8"/>
+          <circle cx="115" cy="115" r="106" stroke="rgba(34,211,238,.12)" stroke-width="6"/>
+          <path d="M115 9 A106 106 0 0 1 206 66" stroke="var(--cyan)" stroke-width="3" stroke-linecap="round" filter="drop-shadow(0 0 6px rgba(34,211,238,.8))"/>
+        </svg>
+        <div class="core-center">
+          <div>
+            <div class="n"><span data-count="86">0</span></div>
+            <div class="s">SCORE / 100</div>
+          </div>
+        </div>
+      </div>
+      <div class="state-word">◉ LIVE_SMALL_READY</div>
+      <div class="core-cap">仅允许小仓实盘 · 全仓阈值 90 未达</div>
+      <button class="obtn primary" style="margin-top:14px">启动小仓实盘 →</button>
+    </div>
+
+    <div class="ocard hero-data tilt enter d3">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span class="eyebrow" style="color:var(--muted)">账户权益 TOTAL EQUITY</span>
+        <span class="delta up">▲ +1.24% 今日</span>
+      </div>
+      <div class="big"><span data-count="102483.62" data-dec="2">0</span><span class="cur"> USDT</span></div>
+      <div class="mono" style="font-size:11px;color:var(--muted)">本周 +3.81% · 最大回撤 <span style="color:var(--down)">−4.12%</span> · 夏普 1.84</div>
+      <div class="metric-grid">
+        <div class="m"><div class="v" style="color:var(--up)">+1,254.10</div><div class="l">今日盈亏 USDT</div></div>
+        <div class="m"><div class="v">3</div><div class="l">运行策略</div></div>
+        <div class="m"><div class="v">2 <span style="color:var(--dim)">/ 1</span></div><div class="l">持仓 / 挂单</div></div>
+        <div class="m"><div class="v" style="color:var(--cyan)">45ms</div><div class="l">Fast Track 延迟</div></div>
+        <div class="m"><div class="v">3ms</div><div class="l">Redis RTT</div></div>
+        <div class="m"><div class="v" style="color:var(--up)">OK</div><div class="l">交易所 BINANCE</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid4">
+    <div class="ocard stat tilt enter d2"><span class="eyebrow">风险水位</span><div class="v" style="color:var(--warn)">62%</div><div class="s">CAUTION · 警戒阈值 70%</div></div>
+    <div class="ocard stat tilt enter d3"><span class="eyebrow">日亏损预算剩余</span><div class="v"><span data-count="72">0</span>%</div><div class="s">已用 28% · 熔断 90%</div></div>
+    <div class="ocard stat tilt enter d4"><span class="eyebrow">风险敞口</span><div class="v">31.4%</div><div class="s">限额 60% · 余量健康</div></div>
+    <div class="ocard stat tilt enter d5"><span class="eyebrow">今日决策</span><div class="v">14</div><div class="s">2 拦截 · 1 降仓 · 11 放行</div></div>
+  </div>
+
+  <div class="alert enter d3">
+    <span class="eyebrow">ALERT</span>
+    <span style="font-size:12.5px">1h Shadow OB 临时违反 — BTC/USDT 订单块下沿被短暂击穿，已按规则降仓 20%。</span>
+    <span class="eyebrow" style="margin-left:auto">WATCHING</span>
+  </div>
+
+  <div class="grid2">
+    <div class="ocard tilt enter d4">
+      <div style="padding:14px 20px 2px;display:flex;justify-content:space-between"><span class="eyebrow" style="color:var(--muted)">持仓 POSITIONS</span><span class="eyebrow" style="color:var(--cyan)">ORBIT-LINKED</span></div>
+      <table>
+        <thead><tr><th>标的</th><th>方向</th><th>数量</th><th>现价</th><th>盈亏</th></tr></thead>
+        <tbody>
+          <tr><td>BTC/USDT</td><td><span class="tag up">LONG</span></td><td>0.250</td><td>62,716.8</td><td style="color:var(--up)">+2.41%</td></tr>
+          <tr><td>ETH/USDT</td><td><span class="tag up">LONG</span></td><td>4.000</td><td>3,356.3</td><td style="color:var(--down)">−0.82%</td></tr>
+          <tr><td>SOL/USDT</td><td><span class="tag warn">LIMIT</span></td><td>12.00</td><td>141.20</td><td style="color:var(--muted)">待成交</td></tr>
+        </tbody>
+      </table>
+      <div style="border-top:1px solid rgba(77,124,254,.15);padding:14px 20px 2px;display:flex;justify-content:space-between"><span class="eyebrow" style="color:var(--muted)">策略运行 RUNS</span><span class="eyebrow">3</span></div>
+      <table>
+        <tbody>
+          <tr><td>结构突破 v4.2</td><td><span class="tag live">LIVE-SMALL</span></td><td>6d 04h</td><td style="color:var(--up)">+1.86%</td></tr>
+          <tr><td>RSI 均值回归 v2.1</td><td><span class="tag warn">PAPER</span></td><td>4d 00h</td><td style="color:var(--up)">+0.62%</td></tr>
+          <tr><td>流动性清扫防御 v1.4</td><td><span class="tag warn">DRYRUN</span></td><td>1d 11h</td><td style="color:var(--muted)">0.00%</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="ocard tilt enter d5">
+      <div style="padding:14px 20px 2px;display:flex;justify-content:space-between"><span class="eyebrow" style="color:var(--muted)">决策流 DECISIONS</span><span class="eyebrow">REASON-CODED</span></div>
+      <div class="feed-item"><time>10:02</time><div>降仓 <b>BTC/USDT</b><div class="codes"><span class="code">ai_cache_soft_expired</span><span class="code">shadow_warning</span></div></div></div>
+      <div class="feed-item"><time>09:47</time><div>入场拦截 <b>ETH/USDT</b><div class="codes"><span class="code">volatility_lock_active</span></div></div></div>
+      <div class="feed-item"><time>09:12</time><div>规则部署 <b>v4.2 → fast track</b><div class="codes"><span class="code">dsl_hash_verified</span></div></div></div>
+      <div class="feed-item"><time>08:30</time><div>对账完成 <b>0 drift</b><div class="codes"><span class="code">ledger_consistent</span></div></div></div>
+    </div>
+  </div>
+
+  <footer class="enter d5">ORBITAL · 深空透视网格地板 · 轨道环核心 · 悬浮 3D 倾斜卡 · 星辰背景</footer>
+</div>
+
+<script>
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+document.querySelectorAll('[data-count]').forEach(el=>{
+  const t=parseFloat(el.dataset.count),d=parseInt(el.dataset.dec||0);
+  const fmt=v=>v.toFixed(d).replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  if(reduced){el.textContent=fmt(t);return}
+  const t0=performance.now(),dur=1000;
+  const tick=n=>{const p=Math.min(1,(n-t0)/dur),e=1-Math.pow(1-p,3);el.textContent=fmt(t*e);if(p<1)requestAnimationFrame(tick)};
+  requestAnimationFrame(tick);
+});
+/* 悬浮卡鼠标 3D 倾斜 */
+if(!reduced){
+  document.querySelectorAll('.tilt').forEach(card=>{
+    card.addEventListener('mousemove',e=>{
+      const r=card.getBoundingClientRect();
+      const x=(e.clientX-r.left)/r.width-.5, y=(e.clientY-r.top)/r.height-.5;
+      card.style.transform=`perspective(900px) rotateX(${-y*4}deg) rotateY(${x*5}deg) translateZ(4px)`;
+    });
+    card.addEventListener('mouseleave',()=>{card.style.transform='perspective(900px) rotateX(0) rotateY(0)'});
+  });
+}
+</script>
+</body>
+</html>

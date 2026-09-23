@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlphaLoop · 实盘准入 — SENTINEL</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0B0E13; --panel:#10141B; --panel-2:#0D1118; --line:#1C222B; --line-hi:#2A3442;
+  --ink:#E6EAF2; --muted:#8B94A7; --dim:#5A6476;
+  --signal:#2DD4BF; --warn:#F0B35E; --danger:#F45D5D;
+  --sans:'Inter Tight',system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased}
+:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
+.mono{font-family:var(--mono)}
+.label{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+
+.shell{display:grid;grid-template-columns:72px 1fr;min-height:100vh}
+.rail{position:sticky;top:0;height:100vh;border-right:1px solid var(--line);background:var(--panel-2);display:flex;flex-direction:column;align-items:center;padding:14px 0;gap:6px}
+.rail .logo{width:34px;height:34px;border:1px solid var(--line-hi);display:grid;place-items:center;font-family:var(--mono);font-weight:700;color:var(--signal);font-size:13px;border-radius:2px;margin-bottom:10px}
+.rail a{position:relative;width:44px;height:44px;display:grid;place-items:center;color:var(--muted);text-decoration:none;border:1px solid transparent;border-radius:2px}
+.rail a svg{width:18px;height:18px;stroke:currentColor;stroke-width:1.5;fill:none}
+.rail a .led{position:absolute;bottom:3px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--dim)}
+.rail a.active{color:var(--signal);border-color:var(--line-hi);background:var(--panel)}
+.rail a.active .led{background:var(--signal);animation:led 2.4s ease-in-out infinite}
+.rail a:hover{color:var(--ink);border-color:var(--line)}
+@keyframes led{0%,100%{opacity:1}50%{opacity:.3}}
+
+.ribbon{position:sticky;top:0;z-index:20;height:36px;display:flex;align-items:center;border-bottom:1px solid var(--line);background:rgba(11,14,19,.92);overflow-x:auto}
+.ribbon .cell{display:flex;align-items:center;gap:7px;padding:0 16px;height:100%;border-right:1px solid var(--line);font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap}
+.ribbon .cell b{color:var(--ink);font-weight:500}
+.ribbon .dot{width:6px;height:6px;border-radius:50%}
+.ribbon .dot.ok{background:var(--signal);animation:led 2.4s ease-in-out infinite}
+.ribbon .dot.warn{background:var(--warn)}
+.ribbon .brand{margin-left:auto;border-right:none;padding:0 16px;font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--dim)}
+
+.content{padding:22px 24px 72px;max-width:1440px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:2px}
+.panel:hover{border-color:var(--line-hi)}
+.p-head{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--line)}
+.p-head .label{color:var(--muted)}
+.enter{opacity:0;transform:translateY(6px);animation:enter .32s ease-out forwards}
+@keyframes enter{to{opacity:1;transform:none}}
+.d1{animation-delay:.04s}.d2{animation-delay:.10s}.d3{animation-delay:.16s}.d4{animation-delay:.22s}.d5{animation-delay:.28s}
+
+.pagehead{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:18px}
+.pagehead h1{font-size:22px;font-weight:600}
+.pagehead .sub{color:var(--muted);font-size:12.5px;margin-top:3px}
+.backlink{font-family:var(--mono);font-size:10.5px;text-decoration:none;color:var(--dim)}
+.backlink:hover{color:var(--signal)}
+
+/* ── 准入总状态阶梯 ── */
+.ladder-wrap{display:grid;grid-template-columns:1.1fr .9fr;gap:16px;margin-bottom:18px}
+.scoreblock{padding:20px 18px}
+.state-word{font-family:var(--mono);font-size:15px;font-weight:600;color:var(--signal)}
+.score-num{font-family:var(--mono);font-size:52px;font-weight:700;letter-spacing:-.03em;line-height:1.05;margin:10px 0 4px}
+.score-num small{font-size:15px;color:var(--dim);font-weight:400}
+.ladder{display:flex;flex-direction:column;gap:0;padding:8px 18px 18px}
+.rung{display:grid;grid-template-columns:18px 1fr;gap:10px;align-items:center;padding:6px 0;font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;color:var(--dim);position:relative}
+.rung::before{content:"";position:absolute;left:8.5px;top:24px;bottom:-6px;width:2px;background:var(--line)}
+.rung:last-child::before{display:none}
+.rung .pin{width:18px;height:18px;border:2px solid var(--dim);border-radius:50%;background:var(--panel)}
+.rung .pin svg{width:10px;height:10px;stroke:#fff;stroke-width:2.4;fill:none;margin:2px;opacity:0}
+.rung.passed{color:var(--muted)}
+.rung.passed .pin{border-color:var(--signal);background:var(--signal)}
+.rung.passed .pin svg{opacity:1}
+.rung.current{color:var(--ink)}
+.rung.current .pin{border-color:var(--signal);background:transparent;animation:led 2.4s ease-in-out infinite}
+.rung.locked{color:var(--dim)}
+
+/* ── 检查矩阵 ── */
+.checks{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:2px;overflow:hidden}
+.check{background:var(--panel);padding:12px 14px;position:relative}
+.check .k{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;color:var(--dim);text-transform:uppercase}
+.check .v{font-family:var(--mono);font-size:12.5px;margin-top:5px;color:var(--ink)}
+.check .st{position:absolute;top:12px;right:12px;width:7px;height:7px;border-radius:50%}
+.st.ok{background:var(--signal)} .st.warn{background:var(--warn)} .st.err{background:var(--danger)}
+.check .detail{margin-top:3px;font-size:10.5px;color:var(--muted)}
+
+/* ── 启动台 ── */
+.launch{padding:18px}
+.launch .row{display:flex;gap:8px;flex-wrap:wrap}
+.btn{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;padding:11px 18px;border:1px solid var(--line-hi);background:var(--panel);color:var(--ink);border-radius:2px;cursor:pointer;transition:border-color .15s}
+.btn:hover{border-color:var(--signal);color:var(--signal)}
+.btn.primary{border-color:var(--signal);color:var(--signal)}
+.btn.danger{border-color:rgba(244,93,93,.5);color:var(--danger)}
+.btn[disabled]{opacity:.35;cursor:not-allowed}
+.btn[disabled]:hover{border-color:var(--line-hi);color:var(--ink)}
+.perm-note{font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--dim);margin-top:10px}
+.warn-note{display:flex;gap:8px;align-items:center;border:1px solid rgba(240,179,94,.35);background:rgba(240,179,94,.05);padding:9px 12px;border-radius:2px;font-size:12px;margin-bottom:12px;color:var(--muted)}
+.warn-note .label{color:var(--warn)}
+
+@media(max-width:1100px){.ladder-wrap{grid-template-columns:1fr}.checks{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:900px){.shell{grid-template-columns:1fr}.rail{display:none}.checks{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <nav class="rail" aria-label="主导航">
+    <div class="logo">AL</div>
+    <a href="dashboard-sentinel.html" title="总览"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg><i class="led"></i></a>
+    <a href="readiness-sentinel.html" class="active" title="实盘准入"><svg viewBox="0 0 24 24"><path d="M12 2l7 4v6c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6z"/></svg><i class="led"></i></a>
+    <a href="#" title="策略"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><path d="M9 6h6v9"/></svg><i class="led"></i></a>
+    <a href="#" title="执行"><svg viewBox="0 0 24 24"><path d="M4 17l6-6-6-6M12 19h8"/></svg><i class="led"></i></a>
+    <a href="#" title="风控"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg><i class="led"></i></a>
+  </nav>
+
+  <div class="main">
+    <div class="ribbon">
+      <span class="cell"><i class="dot ok"></i>SYSTEM <b>LIVE_SMALL_READY</b></span>
+      <span class="cell"><i class="dot ok"></i>RISK <b>NORMAL</b></span>
+      <span class="cell"><i class="dot ok"></i>FAST TRACK <b>45ms</b></span>
+      <span class="cell"><i class="dot ok"></i>REDIS <b>3ms</b></span>
+      <span class="brand">SENTINEL · GATE-11</span>
+    </div>
+
+    <div class="content">
+      <div class="pagehead enter">
+        <div>
+          <a class="backlink" href="index.html">← 返回矩阵</a>
+          <h1>实盘准入 Live Readiness</h1>
+          <div class="sub">实盘总闸门 · 十一项门禁 · 五档总状态 · 三重确认启动</div>
+        </div>
+        <button class="btn">重新检查</button>
+      </div>
+
+      <div class="ladder-wrap">
+        <!-- 五档总状态阶梯 -->
+        <div class="panel scoreblock enter d1">
+          <div class="label">GRAND STATUS</div>
+          <div class="score-num"><span data-count="86">0</span><small>/100</small></div>
+          <div class="state-word">■ LIVE_SMALL_READY</div>
+          <div style="color:var(--muted);font-size:12px;margin:4px 0 16px">允许小仓实盘 · 全仓未授权（dry-run 96h &lt; 全仓阈值）</div>
+          <div class="ladder">
+            <div class="rung locked"><span class="pin"></span>READY_FOR_LIVE · 全仓就绪（未达）</div>
+            <div class="rung current"><span class="pin"></span>LIVE_SMALL_READY · 小仓就绪（当前）</div>
+            <div class="rung passed"><span class="pin"><svg viewBox="0 0 12 12"><path d="M2 6l3 3 5-6"/></svg></span>PAPER_PASSED · 模拟通过</div>
+            <div class="rung passed"><span class="pin"><svg viewBox="0 0 12 12"><path d="M2 6l3 3 5-6"/></svg></span>NEEDS_VALIDATION · 已验证</div>
+            <div class="rung passed"><span class="pin"><svg viewBox="0 0 12 12"><path d="M2 6l3 3 5-6"/></svg></span>NEEDS_CONFIG · 已配置</div>
+          </div>
+        </div>
+
+        <!-- 启动台 -->
+        <div class="panel launch enter d2">
+          <div class="label">LAUNCH CONSOLE</div>
+          <div style="margin:14px 0 14px">
+            <div class="warn-note"><span class="label">WARN</span>market_data provider 部分降级 · 通知渠道未配置</div>
+            <div class="mono" style="font-size:11px;color:var(--muted);margin-bottom:6px">模式 <b style="color:var(--ink)">LIVE_SMALL</b> · 策略 <b style="color:var(--ink)">结构突破 v4.2</b></div>
+            <div class="mono" style="font-size:11px;color:var(--muted);margin-bottom:6px">资金池 <b style="color:var(--ink)">小仓池 5,000 USDT</b> · 单笔 ≤3%</div>
+            <div class="mono" style="font-size:11px;color:var(--muted);margin-bottom:14px">交易所 <b style="color:var(--ink)">BINANCE SPOT</b> · 延迟 38ms</div>
+          </div>
+          <div class="row">
+            <button class="btn primary">启动模拟</button>
+            <button class="btn">启动小仓实盘</button>
+            <button class="btn danger">停用自动交易</button>
+          </div>
+          <div class="perm-note">小仓实盘启动需三重确认（摘要 → 勾选 → 输入确认短语）</div>
+        </div>
+      </div>
+
+      <!-- 十一项门禁 -->
+      <div class="panel enter d3" style="margin-bottom:16px">
+        <div class="p-head"><span class="label">十一项门禁 CHECKS</span><span class="label">9 PASS · 2 WARN · 0 FAIL</span></div>
+        <div class="checks">
+          <div class="check"><i class="st ok"></i><div class="k">MODE 模式</div><div class="v">LIVE_SMALL</div><div class="detail">已选择小仓模式</div></div>
+          <div class="check"><i class="st ok"></i><div class="k">STRATEGY 策略</div><div class="v">结构突破 v4.2</div><div class="detail">已绑定版本</div></div>
+          <div class="check"><i class="st ok"></i><div class="k">CAPITAL 资金</div><div class="v">5,000 USDT</div><div class="detail">小仓资金池就绪</div></div>
+          <div class="check"><i class="st ok"></i><div class="k">RISK 风控配置</div><div class="v">POLICY v7</div><div class="detail">日亏 3% · 连亏 3 笔熔断</div></div>
+          <div class="check"><i class="st ok"></i><div class="k">EXCHANGE 交易所</div><div class="v">BINANCE OK</div><div class="detail">REST 38ms · 密钥有效</div></div>
+          <div class="check"><i class="st warn"></i><div class="k">DATA 数据源</div><div class="v">DEGRADED</div><div class="detail">social 数据源超时，行情正常</div></div>
+          <div class="check"><i class="st ok"></i><div class="k">VALIDATION 验证</div><div class="v">DSL PASSED</div><div class="detail">4 天前通过静态校验</div></div>
+          <div class="check"><i class="st ok"></i><div class="k">BACKTEST 回测</div><div class="v">SHARPE 1.84</div><div class="detail">180 天 · 胜率 58.2%</div></div>
+          <div class="check"><i class="st ok"></i><div class="k">DRYRUN 模拟</div><div class="v">96h</div><div class="detail">≥72h 门禁通过</div></div>
+          <div class="check"><i class="st warn"></i><div class="k">NOTIFY 通知</div><div class="v">NOT SET</div><div class="detail">建议配置 Telegram 告警</div></div>
+          <div class="check"><i class="st ok"></i><div class="k">EMERGENCY 急停</div><div class="v">ARMED</div><div class="detail">紧急停止可用</div></div>
+        </div>
+      </div>
+
+      <div style="font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--dim)">SENTINEL · 门禁阶梯 · LED 状态 · 三重确认启动</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+document.querySelectorAll('[data-count]').forEach(el=>{
+  const t=parseFloat(el.dataset.count);
+  if(reduced){el.textContent=t;return}
+  const t0=performance.now(),dur=700;
+  const tick=n=>{const p=Math.min(1,(n-t0)/dur),e=1-Math.pow(1-p,3);
+    el.textContent=Math.round(t*e);
+    if(p<1)requestAnimationFrame(tick)};
+  requestAnimationFrame(tick);
+});
+</script>
+</body>
+</html>

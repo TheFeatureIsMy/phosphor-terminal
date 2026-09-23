@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlphaLoop · 总览 — AURORA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --void:#07070F; --card:rgba(255,255,255,.045); --card-hi:rgba(255,255,255,.075);
+  --edge:rgba(255,255,255,.09);
+  --ink:#F4F6FB; --muted:#98A0B8; --dim:#5C6478;
+  --violet:#7C5CFF; --cyan:#22D3EE; --pink:#F471B5;
+  --up:#34F5A5; --down:#FF5C7A; --warn:#FFC85C;
+  --grad:linear-gradient(100deg,var(--cyan),var(--violet) 55%,var(--pink));
+  --sans:'Inter',system-ui,sans-serif; --disp:'Sora',var(--sans); --mono:'JetBrains Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--void);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased;min-height:100vh;overflow-x:hidden}
+:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+.mono{font-family:var(--mono)}
+.eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--dim)}
+
+/* ── 极光氛围层 ── */
+.aurora{position:fixed;inset:-15%;z-index:0;pointer-events:none;overflow:hidden}
+.ribbon{position:absolute;border-radius:50%;filter:blur(90px);opacity:.55;animation:ribbonFlow 46s ease-in-out infinite alternate}
+.r1{width:60vw;height:38vw;left:-12%;top:-10%;background:radial-gradient(ellipse,rgba(34,211,238,.20),transparent 65%)}
+.r2{width:55vw;height:42vw;right:-14%;top:-6%;background:radial-gradient(ellipse,rgba(124,92,255,.22),transparent 65%);animation-delay:-14s}
+.r3{width:48vw;height:36vw;left:20%;bottom:-22%;background:radial-gradient(ellipse,rgba(244,113,181,.13),transparent 65%);animation-delay:-28s}
+@keyframes ribbonFlow{0%{transform:translate(0,0) rotate(0deg)}50%{transform:translate(4%,3%) rotate(6deg)}100%{transform:translate(-3%,-2%) rotate(-4deg)}}
+.grid-bg{position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.05) 1px,transparent 1px);background-size:26px 26px;mask-image:radial-gradient(75% 60% at 50% 30%,#000,transparent)}
+
+.stage{position:relative;z-index:1;max-width:1280px;margin:0 auto;padding:24px 32px 90px}
+
+/* ── 渐变描边玻璃卡 ── */
+.gcard{position:relative;border-radius:22px;background:var(--card);backdrop-filter:blur(20px) saturate(1.5);-webkit-backdrop-filter:blur(20px) saturate(1.5)}
+.gcard::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1.2px;background:linear-gradient(120deg,rgba(103,232,249,.35),rgba(124,92,255,.22) 45%,rgba(244,113,181,.25));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+.gcard:hover{background:var(--card-hi)}
+.gcard.lum::before{background:var(--grad)}
+
+.enter{opacity:0;transform:translateY(14px);animation:rise .55s cubic-bezier(.2,.7,.2,1) forwards}
+@keyframes rise{to{opacity:1;transform:none}}
+.d1{animation-delay:.05s}.d2{animation-delay:.12s}.d3{animation-delay:.19s}.d4{animation-delay:.26s}.d5{animation-delay:.33s}
+
+/* ── 顶栏 ── */
+.topbar{display:flex;align-items:center;gap:14px;padding:12px 20px;margin-bottom:22px}
+.logo-mark{width:30px;height:30px;border-radius:10px;background:var(--grad);display:grid;place-items:center;font-family:var(--disp);font-weight:700;font-size:12px;color:#07070F}
+.topbar .brand{font-family:var(--disp);font-weight:600;letter-spacing:.02em}
+.topbar .nav{margin-left:18px;display:flex;gap:2px}
+.topbar .nav a{font-size:13px;color:var(--muted);text-decoration:none;padding:6px 12px;border-radius:999px;transition:all .18s}
+.topbar .nav a:hover{color:var(--ink);background:rgba(255,255,255,.06)}
+.topbar .nav a.on{color:var(--ink);background:rgba(255,255,255,.09)}
+.topbar .right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.statuspill{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:10.5px;padding:6px 12px;border-radius:999px;background:rgba(52,245,165,.08);border:1px solid rgba(52,245,165,.3);color:var(--up)}
+.statuspill .d{width:6px;height:6px;border-radius:50%;background:var(--up);box-shadow:0 0 10px var(--up);animation:pulse 2.6s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.grad-text{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+.pagehead{display:flex;align-items:flex-end;justify-content:space-between;margin:4px 0 20px}
+.pagehead h1{font-family:var(--disp);font-size:30px;font-weight:700;letter-spacing:-.02em}
+.pagehead .sub{color:var(--muted);font-size:13px;margin-top:4px}
+.backlink{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-decoration:none;color:var(--dim)}
+.backlink:hover{color:var(--cyan)}
+
+/* ── Hero ── */
+.hero{display:grid;grid-template-columns:1.35fr .65fr;gap:18px}
+.hero-main{padding:28px 30px}
+.hero-main .big{font-family:var(--disp);font-size:52px;font-weight:700;letter-spacing:-.035em;line-height:1;margin:12px 0 6px;font-variant-numeric:tabular-nums}
+.hero-main .big .cur{font-size:16px;color:var(--muted);font-weight:500}
+.delta{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:12px;font-weight:600;padding:5px 11px;border-radius:999px}
+.delta.up{color:var(--up);background:rgba(52,245,165,.1);border:1px solid rgba(52,245,165,.25)}
+.sparkline{width:100%;height:90px;display:block;margin-top:18px}
+.sparkline .line{stroke:url(#gradStroke);stroke-width:2.5;fill:none;filter:drop-shadow(0 4px 14px rgba(124,92,255,.4))}
+.sparkline .area{fill:url(#gradArea)}
+.sparkline .line{stroke-dasharray:700;stroke-dashoffset:700;animation:drawline 1.6s cubic-bezier(.2,.7,.2,1) .3s forwards}
+@keyframes drawline{to{stroke-dashoffset:0}}
+
+.hero-side{padding:24px;display:flex;flex-direction:column;justify-content:space-between}
+.hero-side .score{font-family:var(--disp);font-size:40px;font-weight:700;letter-spacing:-.03em}
+.readiness-bar{height:8px;border-radius:999px;background:rgba(255,255,255,.07);overflow:hidden;margin:12px 0 8px}
+.readiness-bar i{display:block;height:100%;width:0;background:var(--grad);border-radius:999px;box-shadow:0 0 14px rgba(124,92,255,.6);transition:width 1.1s cubic-bezier(.2,.7,.2,1)}
+.state-line{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;color:var(--cyan);font-weight:600;letter-spacing:.08em}
+.minirow{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10.5px;color:var(--muted);padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.minirow:last-child{border-bottom:none}
+.minirow b{color:var(--ink);font-weight:500}
+
+/* 渐变 CTA */
+.gbtn{font-family:var(--sans);font-size:12.5px;font-weight:600;padding:11px 20px;border-radius:999px;border:none;cursor:pointer;color:#0A0A12;background:var(--grad);box-shadow:0 4px 22px rgba(124,92,255,.4);transition:box-shadow .2s,transform .2s}
+.gbtn:hover{box-shadow:0 6px 30px rgba(34,211,238,.5);transform:translateY(-1px)}
+.obtn{font-family:var(--sans);font-size:12.5px;font-weight:600;padding:11px 20px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid var(--edge);color:var(--ink);cursor:pointer;transition:all .2s}
+.obtn:hover{background:rgba(255,255,255,.1)}
+.obtn.danger{color:var(--down);border-color:rgba(255,92,122,.35)}
+.obtn.danger:hover{background:rgba(255,92,122,.1)}
+
+/* ── 指标卡 ── */
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:18px}
+.stat{padding:18px 20px}
+.stat .v{font-family:var(--disp);font-size:24px;font-weight:700;letter-spacing:-.02em;margin:8px 0 3px;font-variant-numeric:tabular-nums}
+.stat .s{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+
+/* 表格 */
+.grid2{display:grid;grid-template-columns:1.15fr .85fr;gap:18px;margin-top:18px}
+table{width:100%;border-collapse:collapse}
+th{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);font-weight:500;text-align:right;padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.06)}
+th:first-child,td:first-child{text-align:left}
+td{font-family:var(--mono);font-size:12px;text-align:right;padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.045);font-variant-numeric:tabular-nums}
+tbody tr:last-child td{border-bottom:none}
+tbody tr{transition:background .15s}
+tbody tr:hover{background:rgba(255,255,255,.035)}
+.tag{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;padding:3px 9px;border-radius:999px}
+.tag.up{color:var(--up);background:rgba(52,245,165,.1)}
+.tag.down{color:var(--down);background:rgba(255,92,122,.1)}
+.tag.live{color:var(--cyan);background:rgba(34,211,238,.12)}
+.tag.paper{color:var(--warn);background:rgba(255,200,92,.1)}
+
+.feed{padding:4px 0}
+.feed-item{display:grid;grid-template-columns:52px 1fr;gap:12px;padding:13px 20px;border-bottom:1px solid rgba(255,255,255,.045);font-size:12.5px}
+.feed-item:last-child{border-bottom:none}
+.feed-item time{font-family:var(--mono);font-size:10px;color:var(--dim);padding-top:2px}
+.feed-item .codes{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.code{font-family:var(--mono);font-size:9px;letter-spacing:.05em;color:var(--muted);background:rgba(255,255,255,.05);padding:2px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.07)}
+
+.alert{display:flex;align-items:center;gap:12px;padding:13px 20px;border-radius:18px;background:linear-gradient(90deg,rgba(255,200,92,.1),rgba(255,200,92,.03));border:1px solid rgba(255,200,92,.25);backdrop-filter:blur(16px);margin-top:18px}
+.alert .eyebrow{color:var(--warn)}
+
+footer{margin-top:32px;font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;color:var(--dim)}
+@media(max-width:1100px){.hero{grid-template-columns:1fr}.grid4{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}}
+@media(max-width:640px){.grid4{grid-template-columns:1fr}.topbar .nav{display:none}}
+@media (prefers-reduced-motion:reduce){.ribbon{animation:none}.enter{animation:none;opacity:1;transform:none}.sparkline .line{animation:none;stroke-dashoffset:0}.statuspill .d{animation:none}}
+</style>
+</head>
+<body>
+<div class="aurora" aria-hidden="true"><i class="ribbon r1"></i><i class="ribbon r2"></i><i class="ribbon r3"></i><div class="grid-bg"></div></div>
+
+<div class="stage">
+  <div class="gcard topbar enter d1">
+    <span class="logo-mark">AL</span>
+    <span class="brand">AlphaLoop</span>
+    <nav class="nav">
+      <a href="#" class="on">总览</a><a href="#">策略</a><a href="#">结构</a><a href="#">执行</a><a href="#">风控</a><a href="#">AI 投研</a>
+    </nav>
+    <div class="right">
+      <span class="statuspill"><i class="d"></i>LIVE_SMALL_READY · 86</span>
+      <button class="obtn danger" style="padding:8px 14px">紧急停止</button>
+    </div>
+  </div>
+
+  <div class="pagehead enter d1">
+    <div>
+      <a class="backlink" href="index.html">← 返回矩阵</a>
+      <h1>总览 <span class="grad-text">Dashboard</span></h1>
+      <div class="sub">交易运行总控台 · 全链路状态一屏掌握</div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="gbtn">启动模拟</button>
+      <button class="obtn">刷新状态</button>
+    </div>
+  </div>
+
+  <div class="hero">
+    <div class="gcard lum hero-main enter d2">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span class="eyebrow" style="color:var(--muted)">账户权益 TOTAL EQUITY</span>
+        <span class="delta up">▲ +1.24% 今日</span>
+      </div>
+      <div class="big"><span data-count="102483.62" data-dec="2">0</span><span class="cur"> USDT</span></div>
+      <div class="mono" style="font-size:11.5px;color:var(--muted)">本周 +3.81% · 最大回撤 <span style="color:var(--down)">−4.12%</span></div>
+      <svg class="sparkline" viewBox="0 0 600 120" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="gradStroke" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#22D3EE"/><stop offset="55%" stop-color="#7C5CFF"/><stop offset="100%" stop-color="#F471B5"/>
+          </linearGradient>
+          <linearGradient id="gradArea" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="rgba(124,92,255,.3)"/><stop offset="100%" stop-color="rgba(124,92,255,0)"/>
+          </linearGradient>
+        </defs>
+        <path class="area" d="M0,84 C45,80 75,88 115,76 S175,58 215,64 S295,50 335,56 S415,38 455,46 S545,26 600,32 L600,120 L0,120 Z"/>
+        <path class="line" d="M0,84 C45,80 75,88 115,76 S175,58 215,64 S295,50 335,56 S415,38 455,46 S545,26 600,32"/>
+      </svg>
+      <div style="display:flex;justify-content:space-between;margin-top:8px;font-family:var(--mono);font-size:9px;color:var(--dim)"><span>7D</span><span>6D</span><span>5D</span><span>4D</span><span>3D</span><span>2D</span><span>NOW</span></div>
+    </div>
+
+    <div class="gcard hero-side enter d3">
+      <div>
+        <span class="eyebrow" style="color:var(--muted)">实盘准入 READINESS</span>
+        <div class="score" style="margin-top:10px"><span data-count="86">0</span><span style="font-size:15px;color:var(--dim);font-weight:500"> / 100</span></div>
+        <div class="readiness-bar"><i id="rbar"></i></div>
+        <div class="state-line">◆ LIVE_SMALL_READY</div>
+        <div style="font-size:11.5px;color:var(--muted);margin-top:6px">仅允许小仓实盘 · 全仓阈值 90 未达</div>
+      </div>
+      <div style="margin-top:14px">
+        <div class="minirow"><span>FAST TRACK</span><b>45ms</b></div>
+        <div class="minirow"><span>FREQTRADE</span><b style="color:var(--up)">HEALTHY</b></div>
+        <div class="minirow"><span>EXCHANGE</span><b style="color:var(--up)">OK</b></div>
+      </div>
+      <button class="gbtn" style="margin-top:16px;width:100%">启动小仓实盘</button>
+    </div>
+  </div>
+
+  <div class="grid4">
+    <div class="gcard stat enter d2"><span class="eyebrow">今日盈亏</span><div class="v" style="color:var(--up)">+<span data-count="1254.10" data-dec="2">0</span></div><div class="s">USDT · 夏普 1.84</div></div>
+    <div class="gcard stat enter d3"><span class="eyebrow">运行策略</span><div class="v" data-count="3">0</div><div class="s">1 实盘小仓 · 1 模拟 · 1 干跑</div></div>
+    <div class="gcard stat enter d4"><span class="eyebrow">持仓 / 待成交</span><div class="v">2 <span style="color:var(--dim);font-size:14px">/ 1</span></div><div class="s">敞口 31.4% · 限额 60%</div></div>
+    <div class="gcard stat enter d5"><span class="eyebrow">日亏损预算剩余</span><div class="v"><span data-count="72">0</span>%</div><div class="s">已用 28% · 熔断线 90%</div></div>
+  </div>
+
+  <div class="alert enter d3">
+    <span class="eyebrow">ALERT</span>
+    <span style="font-size:12.5px">1h Shadow OB 临时违反 — BTC/USDT 订单块下沿被短暂击穿，已按规则降仓 20%。</span>
+    <span class="eyebrow" style="margin-left:auto">WATCHING</span>
+  </div>
+
+  <div class="grid2">
+    <div class="gcard enter d4">
+      <div style="padding:14px 20px 2px;display:flex;justify-content:space-between"><span class="eyebrow" style="color:var(--muted)">持仓 POSITIONS</span><span class="eyebrow">LIVE</span></div>
+      <table>
+        <thead><tr><th>标的</th><th>方向</th><th>数量</th><th>现价</th><th>盈亏</th></tr></thead>
+        <tbody>
+          <tr><td>BTC/USDT</td><td><span class="tag up">LONG</span></td><td>0.250</td><td>62,716.8</td><td style="color:var(--up)">+2.41%</td></tr>
+          <tr><td>ETH/USDT</td><td><span class="tag up">LONG</span></td><td>4.000</td><td>3,356.3</td><td style="color:var(--down)">−0.82%</td></tr>
+          <tr><td>SOL/USDT</td><td><span class="tag paper">LIMIT</span></td><td>12.00</td><td>141.20</td><td style="color:var(--muted)">待成交</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="gcard enter d5">
+      <div style="padding:14px 20px 2px;display:flex;justify-content:space-between"><span class="eyebrow" style="color:var(--muted)">决策流 DECISIONS</span><span class="eyebrow">REASON-CODED</span></div>
+      <div class="feed">
+        <div class="feed-item"><time>10:02</time><div>降仓 <b>BTC/USDT</b><div class="codes"><span class="code">ai_cache_soft_expired</span><span class="code">shadow_warning</span></div></div></div>
+        <div class="feed-item"><time>09:47</time><div>入场拦截 <b>ETH/USDT</b><div class="codes"><span class="code">volatility_lock_active</span></div></div></div>
+        <div class="feed-item"><time>09:12</time><div>规则部署 <b>v4.2 → fast track</b><div class="codes"><span class="code">dsl_hash_verified</span></div></div></div>
+        <div class="feed-item"><time>08:30</time><div>对账完成 <b>0 drift</b><div class="codes"><span class="code">ledger_consistent</span></div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="enter d5">AURORA · 极光渐变玻璃 · 渐变描边卡 · 流光 CTA · 网格点阵氛围</footer>
+</div>
+
+<script>
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+document.querySelectorAll('[data-count]').forEach(el=>{
+  const t=parseFloat(el.dataset.count),d=parseInt(el.dataset.dec||0);
+  const fmt=v=>v.toFixed(d).replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  if(reduced){el.textContent=fmt(t);return}
+  const t0=performance.now(),dur=1000;
+  const tick=n=>{const p=Math.min(1,(n-t0)/dur),e=1-Math.pow(1-p,3);el.textContent=fmt(t*e);if(p<1)requestAnimationFrame(tick)};
+  requestAnimationFrame(tick);
+});
+const rb=document.getElementById('rbar');
+requestAnimationFrame(()=>{rb.style.width='86%'});
+</script>
+</body>
+</html>

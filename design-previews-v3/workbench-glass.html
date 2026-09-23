@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlphaLoop · 策略工作台 — GLASS OPS</title>
+<style>
+:root{
+  --bg:#06080D;
+  --glass:rgba(255,255,255,.055); --glass-hi:rgba(255,255,255,.09);
+  --edge:rgba(255,255,255,.12); --edge-hi:rgba(103,232,249,.45);
+  --ink:#F2F5FA; --muted:#9AA4B8; --dim:#5F6B80;
+  --lum:#67E8F9; --lum-soft:rgba(103,232,249,.14);
+  --up:#34D399; --down:#FB7185; --warn:#FBBF24; --lav:#A5B4FC;
+  --sans:-apple-system,'SF Pro Display','SF Pro Text','Inter',system-ui,sans-serif;
+  --mono:ui-monospace,'SF Mono','JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh}
+:focus-visible{outline:2px solid var(--lum);outline-offset:2px}
+.mono{font-family:var(--mono)}
+.microlabel{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+
+.atmo{position:fixed;inset:-20%;z-index:0;pointer-events:none;filter:blur(10px)}
+.blob{position:absolute;border-radius:50%;opacity:.5;animation:drift 60s ease-in-out infinite alternate}
+.b1{width:52vw;height:52vw;left:-8%;top:-12%;background:radial-gradient(circle,rgba(34,211,238,.16),transparent 62%)}
+.b2{width:44vw;height:44vw;right:-10%;top:8%;background:radial-gradient(circle,rgba(129,140,248,.13),transparent 62%);animation-delay:-18s}
+.b3{width:40vw;height:40vw;left:28%;bottom:-18%;background:radial-gradient(circle,rgba(244,114,182,.07),transparent 62%);animation-delay:-36s}
+@keyframes drift{0%{transform:translate(0,0) scale(1)}33%{transform:translate(3%,2.5%) scale(1.04)}66%{transform:translate(-2.5%,1.5%) scale(.97)}100%{transform:translate(2%,-2%) scale(1.03)}}
+
+.stage{position:relative;z-index:1;max-width:1360px;margin:0 auto;padding:26px 30px 90px}
+.glass{background:var(--glass);border:1px solid var(--edge);border-radius:20px;backdrop-filter:blur(24px) saturate(1.6);-webkit-backdrop-filter:blur(24px) saturate(1.6);position:relative;overflow:hidden}
+.glass:hover{background:var(--glass-hi)}
+.dissolve{opacity:0;filter:blur(8px);animation:dissolve .5s ease-out forwards}
+@keyframes dissolve{to{opacity:1;filter:blur(0)}}
+.d1{animation-delay:.05s}.d2{animation-delay:.12s}.d3{animation-delay:.19s}.d4{animation-delay:.26s}
+
+.hud{display:flex;align-items:center;gap:18px;padding:10px 18px;font-family:var(--mono);font-size:11px}
+.hud .brand{font-size:12px;font-weight:600;letter-spacing:.18em}
+.hud .sep{width:1px;height:14px;background:var(--edge)}
+.hud .cell{display:flex;align-items:center;gap:6px;color:var(--muted);white-space:nowrap}
+.hud .cell b{color:var(--ink);font-weight:500}
+.led{width:6px;height:6px;border-radius:50%;background:var(--up);box-shadow:0 0 8px var(--up);animation:breath 3s ease-in-out infinite}
+@keyframes breath{0%,100%{opacity:1}50%{opacity:.4}}
+.hud .right{margin-left:auto}
+.pill{font-family:var(--mono);font-size:10px;letter-spacing:.1em;padding:4px 10px;border-radius:999px;border:1px solid var(--lum);color:var(--lum)}
+
+.pagehead{display:flex;align-items:flex-end;justify-content:space-between;margin:26px 0 18px}
+.pagehead h1{font-size:26px;font-weight:700;letter-spacing:-.02em}
+.pagehead .sub{color:var(--muted);font-size:12.5px;margin-top:4px}
+.backlink{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-decoration:none;color:var(--dim)}
+.backlink:hover{color:var(--lum)}
+
+/* 工作台：目录 + 详情 + 侧栏 */
+.bench{display:grid;grid-template-columns:280px 1fr 300px;gap:18px}
+@media(max-width:1100px){.bench{grid-template-columns:280px 1fr}.bench aside{display:none}}
+@media(max-width:900px){.bench{grid-template-columns:1fr}}
+
+.strat{display:block;padding:13px 16px;border-radius:14px;text-decoration:none;color:inherit;border:1px solid transparent;transition:background .15s, border-color .15s;margin-bottom:6px}
+.strat:hover{background:rgba(255,255,255,.04)}
+.strat.on{background:var(--lum-soft);border-color:var(--edge-hi)}
+.strat .nm{font-weight:600;font-size:13.5px;display:flex;justify-content:space-between;align-items:center}
+.strat .meta{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:4px;display:flex;gap:10px}
+.tag{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;border-radius:999px;border:1px solid var(--edge)}
+.tag.lum{color:var(--lum);border-color:var(--edge-hi)}
+.tag.warn{color:var(--warn);border-color:rgba(251,191,36,.4)}
+
+/* 详情头 */
+.detail{padding:22px 24px}
+.detail-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.detail-head h3{font-size:19px;font-weight:700;letter-spacing:-.01em}
+.detail-head .hash{font-family:var(--mono);font-size:10px;color:var(--dim)}
+.gbtn{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:8px 14px;border-radius:999px;border:1px solid var(--edge);background:rgba(255,255,255,.05);color:var(--ink);cursor:pointer;transition:border-color .2s,box-shadow .2s}
+.gbtn:hover{border-color:var(--edge-hi);box-shadow:0 0 16px rgba(103,232,249,.18)}
+.gbtn.lum{border-color:var(--lum);color:var(--lum)}
+.gbtn.danger{border-color:rgba(251,113,133,.5);color:var(--down)}
+
+.readband{display:flex;gap:0;margin-top:18px;border-radius:14px;overflow:hidden;border:1px solid var(--edge)}
+.readband .r{flex:1;padding:12px 16px;border-right:1px solid var(--edge);background:rgba(255,255,255,.03)}
+.readband .r:last-child{border-right:none}
+.readband .v{font-family:var(--mono);font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:3px}
+.readband .v.up{color:var(--up)} .readband .v.lum{color:var(--lum)}
+
+.kv{display:grid;grid-template-columns:130px 1fr;gap:8px 14px;font-family:var(--mono);font-size:12px;margin-top:16px}
+.kv .k{color:var(--dim);font-size:10px;letter-spacing:.12em;text-transform:uppercase;padding-top:2px}
+.kv .v{color:var(--ink)}
+.kv .v .warn-t{color:var(--warn);font-weight:600}
+
+.code-block{font-family:var(--mono);font-size:11px;background:rgba(6,10,16,.55);border:1px solid var(--edge);border-radius:14px;padding:14px 16px;white-space:pre;overflow-x:auto;line-height:1.75;color:var(--muted);margin-top:16px}
+.code-block .cm{color:var(--dim)}
+.code-block .hl{color:var(--lum)}
+
+/* 侧栏：版本 + 交易 */
+.ver{display:grid;grid-template-columns:12px 1fr;gap:12px;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.ver:last-child{border-bottom:none}
+.ver .pin{width:10px;height:10px;border-radius:50%;border:1px solid var(--dim);margin-top:4px}
+.ver.now .pin{border-color:var(--lum);background:var(--lum);box-shadow:0 0 10px rgba(103,232,249,.6);animation:breath 3s ease-in-out infinite}
+.ver .vn{font-family:var(--mono);font-weight:600;font-size:11.5px}
+.ver .vm{font-family:var(--mono);font-size:9.5px;color:var(--muted);margin-top:2px}
+
+table{width:100%;border-collapse:collapse}
+td{font-family:var(--mono);font-size:11.5px;text-align:right;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.05);font-variant-numeric:tabular-nums}
+td:first-child{text-align:left;color:var(--muted)}
+tr:last-child td{border-bottom:none}
+@media (prefers-reduced-motion:reduce){.blob{animation:none}.dissolve{animation:none;opacity:1;filter:none}.led{animation:none}.ver.now .pin{animation:none}}
+</style>
+</head>
+<body>
+<div class="atmo" aria-hidden="true"><i class="blob b1"></i><i class="blob b2"></i><i class="blob b3"></i></div>
+
+<div class="stage">
+  <div class="glass hud dissolve d1">
+    <span class="brand">ALPHALOOP</span>
+    <span class="sep"></span>
+    <span class="cell"><i class="led"></i>SYSTEM <b>LIVE_SMALL_READY</b></span>
+    <span class="cell"><i class="led"></i>RISK <b>NORMAL</b></span>
+    <span class="cell"><i class="led"></i>SNAPSHOT <b>FRESH 3s</b></span>
+    <div class="right"><span class="pill">STRATEGY-OPS</span></div>
+  </div>
+
+  <div class="pagehead dissolve d2">
+    <div>
+      <a class="backlink" href="index.html">← 返回矩阵</a>
+      <h1>策略工作台 Strategy Workbench</h1>
+      <div class="sub">策略生命周期 · 运行快照 · 版本审计 · 规则 DSL</div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="gbtn lum">打开画布编辑</button>
+      <button class="gbtn">新建策略</button>
+    </div>
+  </div>
+
+  <div class="bench">
+    <!-- 目录 -->
+    <div class="glass dissolve d3" style="padding:14px">
+      <div style="padding:0 4px 10px;display:flex;justify-content:space-between"><span class="microlabel" style="color:var(--muted)">策略目录</span><span class="microlabel">4</span></div>
+      <a class="strat on" href="#">
+        <div class="nm">结构突破 <span class="tag lum">LIVE-SMALL</span></div>
+        <div class="meta"><span>v4.2</span><span>● RUNNING</span><span>+1.86%</span></div>
+      </a>
+      <a class="strat" href="#">
+        <div class="nm">RSI 均值回归 <span class="tag warn">PAPER</span></div>
+        <div class="meta"><span>v2.1</span><span>● PAPER</span><span>+0.62%</span></div>
+      </a>
+      <a class="strat" href="#">
+        <div class="nm">流动性清扫防御 <span class="tag warn">DRYRUN</span></div>
+        <div class="meta"><span>v1.4</span><span>● DRYRUN</span><span>0.00%</span></div>
+      </a>
+      <a class="strat" href="#" style="opacity:.5">
+        <div class="nm">高频网格 <span class="tag">ARCHIVED</span></div>
+        <div class="meta"><span>v3.0</span><span>07-28 归档</span></div>
+      </a>
+    </div>
+
+    <!-- 详情 -->
+    <div class="glass detail dissolve d3">
+      <div class="detail-head">
+        <h3>结构突破</h3>
+        <span class="tag lum">LIVE-SMALL</span>
+        <span class="hash">v4.2 · dsl 8f3a…e2c1</span>
+        <span style="margin-left:auto;display:flex;gap:8px">
+          <button class="gbtn lum">回测</button>
+          <button class="gbtn">暂停</button>
+          <button class="gbtn danger">停止</button>
+        </span>
+      </div>
+      <div class="readband">
+        <div class="r"><div class="microlabel">本周期盈亏</div><div class="v up">+1.86%</div></div>
+        <div class="r"><div class="microlabel">交易次数</div><div class="v">42</div></div>
+        <div class="r"><div class="microlabel">胜率</div><div class="v">58.2%</div></div>
+        <div class="r"><div class="microlabel">夏普</div><div class="v">1.84</div></div>
+        <div class="r"><div class="microlabel">快照</div><div class="v lum">FRESH 3s</div></div>
+      </div>
+      <div class="kv">
+        <span class="k">决策</span><span class="v"><span class="warn-t">REDUCE_SIZE −20%</span> · 10:02:14</span>
+        <span class="k">原因码</span><span class="v">ai_cache_soft_expired, shadow_warning</span>
+        <span class="k">结构状态</span><span class="v">1h 多头 OB 有效 · 强度 0.41 转弱</span>
+        <span class="k">AI 风险缓存</span><span class="v">软过期（12min）· 偏差中性偏多</span>
+      </div>
+      <div class="code-block"><span class="cm"># entry — 结构突破入场（AND）</span>
+ob_breakout_1h      <span class="hl">structure.order_block</span>  direction=bullish  strength≥0.65
+volume_confirm      <span class="hl">volume.sma_ratio</span>       ≥1.5x
+regime_filter       <span class="hl">market.regime</span>          in [trend_up]
+manipulation_guard  <span class="hl">manipulation.score</span>    ≤0.35
+<span class="cm"># risk — 防御层</span>
+atr_stop            <span class="hl">risk.atr_stop</span>          2.2×ATR
+daily_loss_lock     <span class="hl">risk.daily_loss</span>        ≤3%
+account_firewall    <span class="hl">risk.account_cap</span>       ≤30% 敞口</div>
+    </div>
+
+    <!-- 侧栏 -->
+    <aside class="glass dissolve d4" style="padding:18px 20px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span class="microlabel" style="color:var(--muted)">版本</span><span class="microlabel">AUDIT</span></div>
+      <div class="ver now"><span class="pin"></span><div><div class="vn">v4.2 · LIVE-SMALL</div><div class="vm">08-19 发布 · 当前运行</div></div></div>
+      <div class="ver"><span class="pin"></span><div><div class="vn">v4.3 · DRAFT</div><div class="vm">08-20 · AI 优化候选 · 待校验</div></div></div>
+      <div class="ver"><span class="pin"></span><div><div class="vn">v4.1 · ARCHIVED</div><div class="vm">08-12 · 被 v4.2 取代</div></div></div>
+      <div style="display:flex;justify-content:space-between;margin:16px 0 6px"><span class="microlabel" style="color:var(--muted)">最近交易</span><span class="microlabel">24H</span></div>
+      <table>
+        <tbody>
+          <tr><td>09:58</td><td>BTC/USDT</td><td style="color:var(--up)">+0.62%</td></tr>
+          <tr><td>08:41</td><td>ETH/USDT</td><td style="color:var(--down)">−0.31%</td></tr>
+          <tr><td>07:26</td><td>BTC/USDT</td><td style="color:var(--up)">+1.14%</td></tr>
+          <tr><td>昨 22:14</td><td>SOL/USDT</td><td style="color:var(--up)">+0.48%</td></tr>
+        </tbody>
+      </table>
+    </aside>
+  </div>
+
+  <footer style="margin-top:30px;font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;color:var(--dim)">GLASS OPS · 三栏悬浮 · 版本时间线 · 发光版本节点 · 氛围漂移</footer>
+</div>
+</body>
+</html>

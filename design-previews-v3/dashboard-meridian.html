@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlphaLoop · 总览 — MERIDIAN</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F4F3EF; --card:#FBFAF7; --line:#E3E0D8; --line-2:#D2CEC2;
+  --ink:#14161A; --muted:#6B6E78; --dim:#9A978B;
+  --steel:#2450A8; --copper:#B4530F; --up:#0E7A4D; --down:#C0392B; --warn:#B4740B;
+  --sans:'Inter Tight',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased}
+:focus-visible{outline:2px solid var(--steel);outline-offset:2px}
+.mono{font-family:var(--mono)}
+.microlabel{font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+
+.wrap{max-width:1320px;margin:0 auto;padding:0 28px 96px}
+
+/* ── 顶部测量带 ── */
+.masthead{border-bottom:2px solid var(--ink);padding:22px 0 16px}
+.mast-top{display:flex;align-items:baseline;justify-content:space-between}
+.mast-top h1{font-size:26px;font-weight:600;letter-spacing:-.02em}
+.mast-top h1 em{font-family:var(--mono);font-style:normal;font-size:11px;letter-spacing:.2em;color:var(--steel);margin-right:12px}
+.ruler{height:26px;margin-top:12px;background-image:
+  repeating-linear-gradient(90deg,var(--line-2) 0 1px,transparent 1px 12px),
+  repeating-linear-gradient(90deg,var(--ink) 0 1px,transparent 1px 120px);
+  background-size:100% 8px,100% 26px;background-repeat:no-repeat;
+  transform-origin:left;animation:ruleIn .8s cubic-bezier(.2,.7,.2,1) both .15s}
+@keyframes ruleIn{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.mast-meta{display:flex;gap:28px;margin-top:8px;font-family:var(--mono);font-size:10.5px;color:var(--muted);letter-spacing:.08em}
+.mast-meta b{color:var(--ink);font-weight:600}
+.mast-meta .ok{color:var(--up)}
+.backlink{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-decoration:none;color:var(--dim)}
+.backlink:hover{color:var(--steel)}
+
+/* ── 分区标签行（hairline + 小标） ── */
+.sect{display:flex;align-items:baseline;gap:14px;margin:34px 0 14px}
+.sect .n{font-family:var(--mono);font-size:11px;color:var(--steel);letter-spacing:.1em}
+.sect h2{font-size:14px;font-weight:600;letter-spacing:-.01em}
+.sect .rule{flex:1;height:1px;background:var(--line-2)}
+.sect .unit{font-family:var(--mono);font-size:9.5px;color:var(--dim);letter-spacing:.14em}
+
+/* 区块入场：线先画、内容后淡入 */
+.sect .rule{transform-origin:left;animation:ruleIn .5s cubic-bezier(.2,.7,.2,1) both}
+.fadein{opacity:0;transform:translateX(10px);animation:fadein .35s ease-out forwards}
+@keyframes fadein{to{opacity:1;transform:none}}
+
+/* ── 读数卡（仪器面板） ── */
+.gauges{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.readout{background:var(--card);border:1px solid var(--line);border-radius:3px;padding:14px 16px 10px;position:relative}
+.readout .val{font-family:var(--mono);font-size:27px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin:8px 0 1px}
+.readout .val .unit{font-size:12px;color:var(--dim);font-weight:400}
+.readout .sub{font-family:var(--mono);font-size:10px;color:var(--muted)}
+.readout .sub .up{color:var(--up)} .readout .sub .down{color:var(--down)}
+/* 底部刻度尺 */
+.ticks{height:14px;margin-top:10px;background-image:
+  repeating-linear-gradient(90deg,var(--line-2) 0 1px,transparent 1px 14px);
+  background-size:100% 6px;background-position:bottom;background-repeat:no-repeat;
+  border-bottom:1px solid var(--line-2);position:relative}
+.ticks .mark{position:absolute;bottom:0;width:2px;height:10px;background:var(--steel)}
+.ticks .mark.copper{background:var(--copper);height:14px}
+
+/* ── Hero：量表 + 公差带 ── */
+.hero{display:grid;grid-template-columns:minmax(300px,380px) 1fr;gap:16px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:3px}
+.panel-head{display:flex;justify-content:space-between;align-items:baseline;padding:12px 16px;border-bottom:1px solid var(--line)}
+.panel-head .microlabel{color:var(--muted)}
+
+.gaugebox{padding:18px 16px 12px;text-align:center}
+.gauge-word{font-family:var(--mono);font-size:11px;letter-spacing:.16em;color:var(--up);font-weight:600}
+.needle{transform-origin:150px 140px;transition:transform .05s linear}
+.gauge-labels{font-family:var(--mono);font-size:9px;fill:var(--dim);letter-spacing:.08em}
+.gauge-val{font-family:var(--mono);font-size:26px;font-weight:600;fill:var(--ink);letter-spacing:-.02em}
+
+/* 表格（金融表格：hairline + 右对齐 mono） */
+table{width:100%;border-collapse:collapse}
+th{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);font-weight:500;text-align:right;padding:10px 14px;border-bottom:1px solid var(--line-2)}
+th:first-child,td:first-child{text-align:left}
+td{font-family:var(--mono);font-size:12px;text-align:right;padding:11px 14px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+td:first-child{font-family:var(--sans);font-weight:500}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:#F6F4EE}
+.tag{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;padding:2px 8px;border:1px solid var(--line-2);color:var(--muted)}
+.tag.up{color:var(--up);border-color:var(--up)} .tag.down{color:var(--down);border-color:var(--down)}
+.tag.steel{color:var(--steel);border-color:var(--steel)} .tag.copper{color:var(--copper);border-color:var(--copper)}
+
+/* 公差带条 */
+.band{position:relative;height:22px;background:var(--bg);border:1px solid var(--line);border-radius:2px;overflow:hidden}
+.band .zone{position:absolute;top:0;bottom:0}
+.band .zone.safe{left:0;width:70%;background:rgba(14,122,77,.08)}
+.band .zone.warn{left:70%;width:20%;background:rgba(180,116,11,.10)}
+.band .zone.risk{left:90%;width:10%;background:rgba(192,57,43,.12)}
+.band .needlebar{position:absolute;top:0;bottom:0;width:2px;background:var(--ink)}
+.band-labels{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;color:var(--dim);letter-spacing:.1em;margin-top:4px}
+
+/* 决策流 */
+.log{font-family:var(--mono);font-size:11.5px}
+.log-row{display:grid;grid-template-columns:56px 1fr;gap:12px;padding:9px 14px;border-bottom:1px solid var(--line)}
+.log-row:last-child{border-bottom:none}
+.log-row time{color:var(--dim);font-size:10.5px;padding-top:1px}
+.log-row .codes{color:var(--muted);font-size:10px;margin-top:2px}
+
+/* 按钮 = 仪器按键 */
+.btn{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;padding:9px 18px;border:1px solid var(--ink);background:var(--card);color:var(--ink);border-radius:2px;cursor:pointer;transition:background .15s,color .15s}
+.btn:hover{background:var(--ink);color:var(--bg)}
+.btn.steel{border-color:var(--steel);color:var(--steel)}
+.btn.steel:hover{background:var(--steel);color:#fff}
+.btn.copper{border-color:var(--copper);color:var(--copper)}
+.btn.copper:hover{background:var(--copper);color:#fff}
+
+.alertline{display:flex;gap:12px;align-items:center;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:10px 14px;font-family:var(--mono);font-size:11px}
+.alertline .microlabel{color:var(--copper)}
+.alertline .mk{margin-left:auto;color:var(--dim)}
+
+@media(max-width:1100px){.hero{grid-template-columns:1fr}.gauges{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:640px){.gauges{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- 顶部测量带 -->
+  <header class="masthead">
+    <div class="mast-top">
+      <h1><em>ALPHALOOP</em>总览 Dashboard</h1>
+      <a class="backlink" href="index.html">← 返回矩阵</a>
+    </div>
+    <div class="ruler" aria-hidden="true"></div>
+    <div class="mast-meta">
+      <span>SYS <b class="ok">LIVE_SMALL_READY</b></span>
+      <span>RISK <b class="ok">NORMAL</b></span>
+      <span>FAST TRACK <b>45ms</b></span>
+      <span>REDIS <b>3ms</b></span>
+      <span>FREQTRADE <b>HEALTHY</b></span>
+      <span>EXCHANGE <b>OK</b></span>
+      <span style="margin-left:auto">MERIDIAN · REV 3.1</span>
+    </div>
+  </header>
+
+  <!-- §01 账户度量 -->
+  <div class="sect"><span class="n">§01</span><h2>账户度量</h2><span class="rule"></span><span class="unit">UNIT USDT</span></div>
+  <div class="gauges fadein">
+    <div class="readout">
+      <div class="microlabel">账户权益 EQUITY</div>
+      <div class="val"><span data-count="102483.62" data-dec="2">0</span><span class="unit"> USDT</span></div>
+      <div class="sub"><span class="up">▲ +1.24%</span> 今日 · <span class="up">+3.81%</span> 本周</div>
+      <div class="ticks"><i class="mark" style="left:64%"></i></div>
+    </div>
+    <div class="readout">
+      <div class="microlabel">今日盈亏 PNL</div>
+      <div class="val"><span data-count="1254.10" data-dec="2" data-prefix="+">0</span><span class="unit"> USDT</span></div>
+      <div class="sub">最大回撤 <span class="down">-4.12%</span> · 夏普 1.84</div>
+      <div class="ticks"><i class="mark" style="left:71%"></i></div>
+    </div>
+    <div class="readout">
+      <div class="microlabel">风险敞口 EXPOSURE</div>
+      <div class="val"><span data-count="31.4" data-dec="1">0</span><span class="unit"> %</span></div>
+      <div class="sub">限额 60% · <span class="up">余量健康</span></div>
+      <div class="ticks"><i class="mark" style="left:52%"></i><i class="mark copper" style="left:88%"></i></div>
+    </div>
+    <div class="readout">
+      <div class="microlabel">日亏损预算 DAILY LOSS</div>
+      <div class="val"><span data-count="28" data-dec="0">0</span><span class="unit"> % 已用</span></div>
+      <div class="sub">预算 3% · 剩余 2.16%</div>
+      <div class="ticks"><i class="mark" style="left:28%"></i><i class="mark copper" style="left:100%"></i></div>
+    </div>
+  </div>
+
+  <!-- §02 门禁量表 + 持仓 -->
+  <div class="sect"><span class="n">§02</span><h2>实盘准入与持仓</h2><span class="rule"></span><span class="unit">SCALE 0–100</span></div>
+  <div class="hero fadein">
+    <div class="panel">
+      <div class="panel-head"><span class="microlabel">实盘准入 READINESS</span><span class="microlabel">FAST TRACK 45ms</span></div>
+      <div class="gaugebox">
+        <svg viewBox="0 0 300 150" width="100%" role="img" aria-label="实盘准入量表 86 分">
+          <!-- 弧带 -->
+          <path d="M20 140 A130 130 0 0 1 280 140" fill="none" stroke="var(--line)" stroke-width="10" stroke-linecap="butt"/>
+          <path id="gaugeArc" d="M20 140 A130 130 0 0 1 280 140" fill="none" stroke="var(--steel)" stroke-width="10" stroke-linecap="butt" stroke-dasharray="408.4" stroke-dashoffset="408.4"/>
+          <!-- 刻度 -->
+          <g class="gauge-labels" id="gaugeTicks"></g>
+          <!-- 表针 -->
+          <line class="needle" id="needle" x1="150" y1="140" x2="150" y2="34" stroke="var(--ink)" stroke-width="2.5" stroke-linecap="round"/>
+          <circle cx="150" cy="140" r="5" fill="var(--ink)"/>
+          <text class="gauge-val" x="150" y="112" text-anchor="middle"><tspan id="gaugeVal">0</tspan></text>
+        </svg>
+        <div class="gauge-word">■ LIVE_SMALL_READY</div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:5px">仅允许小仓实盘 · 全仓阈值 90 未达</div>
+      </div>
+      <div style="display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--line)">
+        <button class="btn steel">启动模拟</button>
+        <button class="btn">启动小仓实盘</button>
+        <button class="btn copper">停用自动交易</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><span class="microlabel">持仓 POSITIONS</span><span class="microlabel">2 OPEN · 1 PENDING</span></div>
+      <table>
+        <thead><tr><th>标的</th><th>方向</th><th>数量</th><th>成本</th><th>现价</th><th>盈亏 %</th></tr></thead>
+        <tbody>
+          <tr><td>BTC/USDT</td><td><span class="tag up">LONG</span></td><td>0.250</td><td>61,240.0</td><td>62,716.8</td><td style="color:var(--up)">+2.41</td></tr>
+          <tr><td>ETH/USDT</td><td><span class="tag up">LONG</span></td><td>4.000</td><td>3,384.0</td><td>3,356.3</td><td style="color:var(--down)">−0.82</td></tr>
+          <tr><td>SOL/USDT</td><td><span class="tag">LIMIT</span></td><td>12.00</td><td>138.50</td><td>141.20</td><td style="color:var(--muted)">待成交</td></tr>
+        </tbody>
+      </table>
+      <div style="padding:14px 16px">
+        <div class="microlabel" style="margin-bottom:6px">日亏损预算消耗 LOSS BUDGET CONSUMPTION</div>
+        <div class="band">
+          <span class="zone safe"></span><span class="zone warn"></span><span class="zone risk"></span>
+          <span class="needlebar" id="budgetNeedle" style="left:0%"></span>
+        </div>
+        <div class="band-labels"><span>0% 安全</span><span>70% 警戒</span><span>90% 熔断</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- §03 策略运行 -->
+  <div class="sect"><span class="n">§03</span><h2>策略运行</h2><span class="rule"></span><span class="unit">3 RUNS</span></div>
+  <div class="panel fadein">
+    <table>
+      <thead><tr><th>策略</th><th>版本</th><th>模式</th><th>状态</th><th>运行时长</th><th>本周期盈亏 %</th></tr></thead>
+      <tbody>
+        <tr><td>结构突破</td><td>v4.2</td><td><span class="tag steel">LIVE-SMALL</span></td><td>RUNNING</td><td>6d 04h</td><td style="color:var(--up)">+1.86</td></tr>
+        <tr><td>RSI 均值回归</td><td>v2.1</td><td><span class="tag copper">PAPER</span></td><td>PAPER</td><td>4d 00h</td><td style="color:var(--up)">+0.62</td></tr>
+        <tr><td>流动性清扫防御</td><td>v1.4</td><td><span class="tag copper">DRYRUN</span></td><td>DRYRUN</td><td>1d 11h</td><td style="color:var(--muted)">0.00</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- §04 决策流 -->
+  <div class="sect"><span class="n">§04</span><h2>决策与告警</h2><span class="rule"></span><span class="unit">LEDGER FEED</span></div>
+  <div class="alertline fadein"><span class="microlabel">ALERT</span><span>1h Shadow OB 临时违反 — BTC/USDT 订单块下沿被短暂击穿，已降仓 20%。</span><span class="mk">WATCHING</span></div>
+  <div class="panel fadein" style="margin-top:16px">
+    <div class="log">
+      <div class="log-row"><time>10:02</time><div>REDUCE_SIZE · BTC/USDT<div class="codes">reason: ai_cache_soft_expired, shadow_warning</div></div></div>
+      <div class="log-row"><time>09:47</time><div>ENTRY_BLOCKED · ETH/USDT<div class="codes">reason: volatility_lock_active</div></div></div>
+      <div class="log-row"><time>09:12</time><div>DEPLOY_RULES · v4.2 → fast track<div class="codes">reason: dsl_hash_verified</div></div></div>
+      <div class="log-row"><time>08:30</time><div>RECONCILE PASSED · 0 drift<div class="codes">reason: ledger_consistent</div></div></div>
+    </div>
+  </div>
+
+  <footer style="margin-top:34px;font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;color:var(--dim)">MERIDIAN · 暖纸/墨钢/铜 · 仪器读数 · 公差带 · 刻度 draw-in · 表针 sweep</footer>
+</div>
+
+<script>
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+/* CountUp */
+document.querySelectorAll('[data-count]').forEach(el=>{
+  const t=parseFloat(el.dataset.count),d=parseInt(el.dataset.dec||0),p=el.dataset.prefix||'';
+  const fmt=v=>p+v.toFixed(d).replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  if(reduced){el.textContent=fmt(t);return}
+  const t0=performance.now(),dur=900;
+  const tick=n=>{const q=Math.min(1,(n-t0)/dur),e=1-Math.pow(1-q,3);el.textContent=fmt(t*e);if(q<1)requestAnimationFrame(tick)};
+  requestAnimationFrame(tick);
+});
+/* 量表：刻度 + 表针 sweep */
+(function(){
+  const g=document.getElementById('gaugeTicks');
+  for(let i=0;i<=10;i++){
+    const a=Math.PI-(i/10)*Math.PI, x1=150+Math.cos(a)*108, y1=140-Math.sin(a)*108,
+          x2=150+Math.cos(a)*118, y2=140-Math.sin(a)*118;
+    const l=document.createElementNS('http://www.w3.org/2000/svg','line');
+    l.setAttribute('x1',x1);l.setAttribute('y1',y1);l.setAttribute('x2',x2);l.setAttribute('y2',y2);
+    l.setAttribute('stroke','var(--dim)');l.setAttribute('stroke-width',i%5===0?'2':'1');
+    g.appendChild(l);
+  }
+  const score=86, arc=document.getElementById('gaugeArc'), needle=document.getElementById('needle');
+  const total=408.4, targetOffset=total*(1-score/100), targetAngle=(score/100)*180-90;
+  if(reduced){arc.setAttribute('stroke-dashoffset',targetOffset);needle.style.transform=`rotate(${targetAngle}deg)`;needle.style.transformOrigin='150px 140px';document.getElementById('gaugeVal').textContent=score;
+    document.getElementById('budgetNeedle').style.left='28%';return}
+  const t0=performance.now(),dur=1100;
+  const step=n=>{
+    const p=Math.min(1,(n-t0)/dur),e=1-Math.pow(1-p,3);
+    arc.setAttribute('stroke-dashoffset', total-(total-targetOffset)*e);
+    needle.style.transform=`rotate(${targetAngle*e}deg)`;
+    needle.style.transformOrigin='150px 140px';
+    document.getElementById('gaugeVal').textContent=Math.round(score*e);
+    if(p<1)requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+  /* 公差带指针 0→28% */
+  const nb=document.getElementById('budgetNeedle'),t1=performance.now();
+  const step2=n=>{const p=Math.min(1,(n-t1)/800),e=1-Math.pow(1-p,3);
+    nb.style.left=(28*e)+'%';if(p<1)requestAnimationFrame(step2)};
+  setTimeout(()=>requestAnimationFrame(step2),300);
+})();
+</script>
+</body>
+</html>

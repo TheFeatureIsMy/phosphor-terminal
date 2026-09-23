@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlphaLoop · 总览 — HOLO</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0D0E13; --card:#15161D; --card-hi:#1B1D26; --edge:#262832; --edge-hi:#3B3E4E;
+  --ink:#EDEFF6; --muted:#9AA0B4; --dim:#63677A;
+  --lav:#A78BFA; --aqua:#67E8F9; --pearl:#E8ECF4;
+  --up:#4ADE80; --down:#F87171; --warn:#FBBF24;
+  --holo:linear-gradient(110deg,#E8ECF4,#A78BFA 45%,#67E8F9 90%);
+  --sans:'Inter',system-ui,sans-serif; --disp:'Outfit',var(--sans); --mono:'JetBrains Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);line-height:1.6;-webkit-font-smoothing:antialiased;min-height:100vh}
+:focus-visible{outline:2px solid var(--lav);outline-offset:2px}
+.mono{font-family:var(--mono)}
+.eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim)}
+
+/* 顶部柔光 */
+.glow-top{position:fixed;top:-20%;left:50%;transform:translateX(-50%);width:80vw;height:40vw;pointer-events:none;z-index:0;background:radial-gradient(ellipse,rgba(167,139,250,.10),transparent 65%)}
+.grain{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.35;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.03 0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+.stage{position:relative;z-index:1;max-width:1260px;margin:0 auto;padding:26px 34px 90px}
+
+/* 卡片：炭色 + hover 全息扫光 */
+.hcard{position:relative;border-radius:18px;background:var(--card);border:1px solid var(--edge);overflow:hidden;transition:border-color .25s, transform .25s, background .25s}
+.hcard:hover{border-color:var(--edge-hi);background:var(--card-hi);transform:translateY(-2px)}
+.hcard::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 30%,rgba(232,236,244,.05) 45%,rgba(167,139,250,.09) 50%,rgba(103,232,249,.05) 55%,transparent 70%);transform:translateX(-120%);transition:transform .8s ease;pointer-events:none}
+.hcard:hover::after{transform:translateX(120%)}
+
+.enter{opacity:0;transform:translateY(10px);animation:fadeup .6s cubic-bezier(.22,.9,.3,1) forwards}
+@keyframes fadeup{to{opacity:1;transform:none}}
+.d1{animation-delay:.06s}.d2{animation-delay:.14s}.d3{animation-delay:.22s}.d4{animation-delay:.3s}.d5{animation-delay:.38s}
+
+/* ── 顶栏 ── */
+.topbar{display:flex;align-items:center;gap:14px;padding:12px 20px;margin-bottom:24px}
+.logo{font-family:var(--disp);font-weight:700;font-size:15px;letter-spacing:.01em;background:var(--holo);-webkit-background-clip:text;background-clip:text;color:transparent}
+.nav{display:flex;gap:2px;margin-left:14px}
+.nav a{font-size:12.5px;font-weight:500;color:var(--muted);text-decoration:none;padding:7px 13px;border-radius:999px;transition:all .2s}
+.nav a:hover{color:var(--ink)}
+.nav a.on{color:var(--ink);background:rgba(255,255,255,.07)}
+.topbar .right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.stat-chip{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:10.5px;padding:6px 13px;border-radius:999px;background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.25);color:var(--up)}
+.stat-chip .d{width:6px;height:6px;border-radius:50%;background:var(--up);animation:soft 3s ease-in-out infinite}
+@keyframes soft{0%,100%{opacity:1}50%{opacity:.4}}
+
+.pagehead{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:22px}
+.pagehead h1{font-family:var(--disp);font-size:28px;font-weight:600;letter-spacing:-.015em}
+.pagehead .sub{color:var(--muted);font-size:12.5px;margin-top:4px}
+.backlink{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-decoration:none;color:var(--dim)}
+.backlink:hover{color:var(--lav)}
+
+/* ── Hero ── */
+.hero{display:grid;grid-template-columns:1.3fr .7fr;gap:18px}
+.hero-main{padding:28px 30px}
+.hero-main .big{font-family:var(--disp);font-size:50px;font-weight:600;letter-spacing:-.03em;line-height:1;margin:12px 0 6px;font-variant-numeric:tabular-nums}
+.hero-main .big .cur{font-size:15px;color:var(--muted);font-weight:500}
+.delta-line{display:flex;gap:10px;align-items:center;font-family:var(--mono);font-size:11.5px}
+.delta-line .up{color:var(--up)} .delta-line .down{color:var(--down)}
+.sparkline{width:100%;height:88px;display:block;margin-top:20px}
+.sparkline .line{stroke:url(#holoStroke);stroke-width:2;fill:none}
+.sparkline .area{fill:url(#holoArea)}
+.sparkline .line{stroke-dasharray:700;stroke-dashoffset:700;animation:drawline 1.5s cubic-bezier(.22,.9,.3,1) .4s forwards}
+@keyframes drawline{to{stroke-dashoffset:0}}
+
+.hero-side{padding:24px;display:flex;flex-direction:column;justify-content:space-between}
+.readiness-wrap{display:flex;align-items:center;gap:18px}
+.ring-rel{position:relative;width:104px;height:104px;flex:none}
+.ring-rel svg{transform:rotate(-90deg)}
+.ring-bg{stroke:rgba(255,255,255,.08)}
+.ring-fg{stroke:url(#ringGrad);stroke-linecap:round;transition:stroke-dashoffset 1.2s cubic-bezier(.22,.9,.3,1)}
+.ring-val{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--disp);font-size:26px;font-weight:600;font-variant-numeric:tabular-nums}
+.state-line{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--aqua)}
+.kv{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10.5px;color:var(--muted);padding:8px 0;border-bottom:1px solid var(--edge)}
+.kv:last-of-type{border-bottom:none}
+.kv b{color:var(--ink);font-weight:500}
+
+.pbtn{font-family:var(--sans);font-size:12.5px;font-weight:600;padding:11px 20px;border-radius:12px;border:none;cursor:pointer;color:#0D0E13;background:var(--pearl);transition:all .2s}
+.pbtn:hover{background:#fff;transform:translateY(-1px)}
+.obtn{font-family:var(--sans);font-size:12.5px;font-weight:500;padding:11px 18px;border-radius:12px;background:transparent;border:1px solid var(--edge);color:var(--ink);cursor:pointer;transition:all .2s}
+.obtn:hover{border-color:var(--edge-hi);background:rgba(255,255,255,.04)}
+.obtn.danger{color:var(--down);border-color:rgba(248,113,113,.3)}
+
+/* ── 四格 ── */
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:18px}
+.stat{padding:18px 20px}
+.stat .v{font-family:var(--disp);font-size:24px;font-weight:600;letter-spacing:-.02em;margin:8px 0 3px;font-variant-numeric:tabular-nums}
+.stat .s{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+
+/* ── 表与流 ── */
+.grid2{display:grid;grid-template-columns:1.15fr .85fr;gap:18px;margin-top:18px}
+table{width:100%;border-collapse:collapse}
+th{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);font-weight:500;text-align:right;padding:12px 18px;border-bottom:1px solid var(--edge)}
+th:first-child,td:first-child{text-align:left}
+td{font-family:var(--mono);font-size:12px;text-align:right;padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.04);font-variant-numeric:tabular-nums}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:rgba(255,255,255,.025)}
+.tag{font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;padding:3px 9px;border-radius:999px;border:1px solid var(--edge)}
+.tag.up{color:var(--up);border-color:rgba(74,222,128,.3)}
+.tag.down{color:var(--down);border-color:rgba(248,113,113,.3)}
+.tag.holo{color:var(--aqua);border-color:rgba(103,232,249,.35)}
+.tag.warn{color:var(--warn);border-color:rgba(251,191,36,.3)}
+
+.feed-item{display:grid;grid-template-columns:52px 1fr;gap:12px;padding:13px 20px;border-bottom:1px solid rgba(255,255,255,.04);font-size:12.5px}
+.feed-item:last-child{border-bottom:none}
+.feed-item time{font-family:var(--mono);font-size:10px;color:var(--dim);padding-top:2px}
+.feed-item .codes{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.code{font-family:var(--mono);font-size:9px;color:var(--muted);background:rgba(255,255,255,.04);padding:2px 8px;border-radius:999px}
+
+.alert{display:flex;align-items:center;gap:12px;padding:12px 18px;border-radius:14px;background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.22);margin-top:18px}
+.alert .eyebrow{color:var(--warn)}
+
+footer{margin-top:32px;font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;color:var(--dim)}
+@media(max-width:1100px){.hero{grid-template-columns:1fr}.grid4{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}}
+@media(max-width:640px){.grid4{grid-template-columns:1fr}.nav{display:none}}
+@media (prefers-reduced-motion:reduce){.enter{animation:none;opacity:1;transform:none}.sparkline .line{animation:none;stroke-dashoffset:0}.stat-chip .d{animation:none}.hcard::after{display:none}}
+</style>
+</head>
+<body>
+<div class="glow-top" aria-hidden="true"></div>
+<div class="grain" aria-hidden="true"></div>
+
+<div class="stage">
+  <div class="hcard topbar enter d1">
+    <span class="logo">AlphaLoop</span>
+    <nav class="nav">
+      <a href="#" class="on">总览</a><a href="#">策略</a><a href="#">结构</a><a href="#">执行</a><a href="#">风控</a><a href="#">AI 投研</a>
+    </nav>
+    <div class="right">
+      <span class="stat-chip"><i class="d"></i>LIVE_SMALL_READY · 86</span>
+      <button class="obtn danger" style="padding:8px 14px">紧急停止</button>
+    </div>
+  </div>
+
+  <div class="pagehead enter d1">
+    <div>
+      <a class="backlink" href="index.html">← 返回矩阵</a>
+      <h1>总览 Dashboard</h1>
+      <div class="sub">交易运行总控台 · 全链路状态一屏掌握</div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="pbtn">启动模拟</button>
+      <button class="obtn">刷新状态</button>
+    </div>
+  </div>
+
+  <div class="hero">
+    <div class="hcard hero-main enter d2">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span class="eyebrow" style="color:var(--muted)">账户权益 TOTAL EQUITY</span>
+        <span class="eyebrow">UTC+8</span>
+      </div>
+      <div class="big"><span data-count="102483.62" data-dec="2">0</span><span class="cur"> USDT</span></div>
+      <div class="delta-line"><span class="up">+1,254.10（+1.24%）今日</span><span class="up">+3.81% 本周</span><span class="down">最大回撤 −4.12%</span></div>
+      <svg class="sparkline" viewBox="0 0 600 120" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="holoStroke" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#A78BFA"/><stop offset="100%" stop-color="#67E8F9"/>
+          </linearGradient>
+          <linearGradient id="holoArea" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="rgba(167,139,250,.22)"/><stop offset="100%" stop-color="rgba(167,139,250,0)"/>
+          </linearGradient>
+        </defs>
+        <path class="area" d="M0,84 C45,80 75,88 115,76 S175,58 215,64 S295,50 335,56 S415,38 455,46 S545,26 600,32 L600,120 L0,120 Z"/>
+        <path class="line" d="M0,84 C45,80 75,88 115,76 S175,58 215,64 S295,50 335,56 S415,38 455,46 S545,26 600,32"/>
+      </svg>
+    </div>
+
+    <div class="hcard hero-side enter d3">
+      <div>
+        <span class="eyebrow" style="color:var(--muted)">实盘准入 READINESS</span>
+        <div class="readiness-wrap" style="margin-top:14px">
+          <div class="ring-rel">
+            <svg width="104" height="104" viewBox="0 0 104 104">
+              <defs><linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#A78BFA"/><stop offset="100%" stop-color="#67E8F9"/>
+              </linearGradient></defs>
+              <circle class="ring-bg" cx="52" cy="52" r="44" fill="none" stroke-width="7"/>
+              <circle class="ring-fg" id="ringFg" cx="52" cy="52" r="44" fill="none" stroke-width="7" stroke-dasharray="276.5" stroke-dashoffset="276.5"/>
+            </svg>
+            <div class="ring-val"><span data-count="86">0</span></div>
+          </div>
+          <div>
+            <div class="state-line">◈ LIVE_SMALL_READY</div>
+            <div style="font-size:11.5px;color:var(--muted);margin-top:5px">仅允许小仓实盘 · 全仓阈值 90 未达</div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:14px">
+        <div class="kv"><span>FAST TRACK</span><b>45ms</b></div>
+        <div class="kv"><span>FREQTRADE</span><b style="color:var(--up)">HEALTHY</b></div>
+        <div class="kv"><span>EXCHANGE</span><b style="color:var(--up)">BINANCE OK</b></div>
+      </div>
+      <button class="pbtn" style="margin-top:14px;width:100%">启动小仓实盘</button>
+    </div>
+  </div>
+
+  <div class="grid4">
+    <div class="hcard stat enter d2"><span class="eyebrow">今日盈亏</span><div class="v" style="color:var(--up)">+<span data-count="1254.10" data-dec="2">0</span></div><div class="s">USDT · 夏普 1.84</div></div>
+    <div class="hcard stat enter d3"><span class="eyebrow">运行策略</span><div class="v" data-count="3">0</div><div class="s">1 实盘小仓 · 1 模拟 · 1 干跑</div></div>
+    <div class="hcard stat enter d4"><span class="eyebrow">风险水位</span><div class="v" style="color:var(--warn)">62%</div><div class="s">CAUTION · 警戒阈值 70%</div></div>
+    <div class="hcard stat enter d5"><span class="eyebrow">日亏损预算剩余</span><div class="v"><span data-count="72">0</span>%</div><div class="s">已用 28% · 熔断 90%</div></div>
+  </div>
+
+  <div class="alert enter d3">
+    <span class="eyebrow">ALERT</span>
+    <span style="font-size:12.5px">1h Shadow OB 临时违反 — BTC/USDT 订单块下沿被短暂击穿，已按规则降仓 20%。</span>
+    <span class="eyebrow" style="margin-left:auto">WATCHING</span>
+  </div>
+
+  <div class="grid2">
+    <div class="hcard enter d4">
+      <div style="padding:14px 20px 2px;display:flex;justify-content:space-between"><span class="eyebrow" style="color:var(--muted)">持仓 POSITIONS</span><span class="eyebrow">LIVE</span></div>
+      <table>
+        <thead><tr><th>标的</th><th>方向</th><th>数量</th><th>现价</th><th>盈亏</th></tr></thead>
+        <tbody>
+          <tr><td>BTC/USDT</td><td><span class="tag up">LONG</span></td><td>0.250</td><td>62,716.8</td><td style="color:var(--up)">+2.41%</td></tr>
+          <tr><td>ETH/USDT</td><td><span class="tag up">LONG</span></td><td>4.000</td><td>3,356.3</td><td style="color:var(--down)">−0.82%</td></tr>
+          <tr><td>SOL/USDT</td><td><span class="tag warn">LIMIT</span></td><td>12.00</td><td>141.20</td><td style="color:var(--muted)">待成交</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="hcard enter d5">
+      <div style="padding:14px 20px 2px;display:flex;justify-content:space-between"><span class="eyebrow" style="color:var(--muted)">决策流 DECISIONS</span><span class="eyebrow">REASON-CODED</span></div>
+      <div class="feed-item"><time>10:02</time><div>降仓 <b>BTC/USDT</b><div class="codes"><span class="code">ai_cache_soft_expired</span><span class="code">shadow_warning</span></div></div></div>
+      <div class="feed-item"><time>09:47</time><div>入场拦截 <b>ETH/USDT</b><div class="codes"><span class="code">volatility_lock_active</span></div></div></div>
+      <div class="feed-item"><time>09:12</time><div>规则部署 <b>v4.2 → fast track</b><div class="codes"><span class="code">dsl_hash_verified</span></div></div></div>
+      <div class="feed-item"><time>08:30</time><div>对账完成 <b>0 drift</b><div class="codes"><span class="code">ledger_consistent</span></div></div></div>
+    </div>
+  </div>
+
+  <footer class="enter d5">HOLO · 全息扫光 · 炭色质感 · 珍珠按钮 · 薰衣草→青渐变</footer>
+</div>
+
+<script>
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+document.querySelectorAll('[data-count]').forEach(el=>{
+  const t=parseFloat(el.dataset.count),d=parseInt(el.dataset.dec||0);
+  const fmt=v=>v.toFixed(d).replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  if(reduced){el.textContent=fmt(t);return}
+  const t0=performance.now(),dur=950;
+  const tick=n=>{const p=Math.min(1,(n-t0)/dur),e=1-Math.pow(1-p,3);el.textContent=fmt(t*e);if(p<1)requestAnimationFrame(tick)};
+  requestAnimationFrame(tick);
+});
+(function(){
+  const C=276.5,score=86,fg=document.getElementById('ringFg');
+  const target=C*(1-score/100);
+  if(reduced){fg.style.strokeDashoffset=target;return}
+  requestAnimationFrame(()=>{fg.style.strokeDashoffset=target});
+})();
+</script>
+</body>
+</html>

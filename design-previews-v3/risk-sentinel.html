@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlphaLoop · 风控中心 — SENTINEL</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0B0E13; --panel:#10141B; --panel-2:#0D1118; --line:#1C222B; --line-hi:#2A3442;
+  --ink:#E6EAF2; --muted:#8B94A7; --dim:#5A6476;
+  --signal:#2DD4BF; --warn:#F0B35E; --danger:#F45D5D; --up:#34D399;
+  --sans:'Inter Tight',system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased}
+:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
+.mono{font-family:var(--mono)}
+.label{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+
+.shell{display:grid;grid-template-columns:72px 1fr;min-height:100vh}
+.rail{position:sticky;top:0;height:100vh;border-right:1px solid var(--line);background:var(--panel-2);display:flex;flex-direction:column;align-items:center;padding:14px 0;gap:6px}
+.rail .logo{width:34px;height:34px;border:1px solid var(--line-hi);display:grid;place-items:center;font-family:var(--mono);font-weight:700;color:var(--signal);font-size:13px;border-radius:2px;margin-bottom:10px}
+.rail a{position:relative;width:44px;height:44px;display:grid;place-items:center;color:var(--muted);text-decoration:none;border:1px solid transparent;border-radius:2px}
+.rail a svg{width:18px;height:18px;stroke:currentColor;stroke-width:1.5;fill:none}
+.rail a .led{position:absolute;bottom:3px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--dim)}
+.rail a.active{color:var(--signal);border-color:var(--line-hi);background:var(--panel)}
+.rail a.active .led{background:var(--signal);animation:led 2.4s ease-in-out infinite}
+@keyframes led{0%,100%{opacity:1}50%{opacity:.3}}
+
+.ribbon{position:sticky;top:0;z-index:20;height:36px;display:flex;align-items:center;border-bottom:1px solid var(--line);background:rgba(11,14,19,.92);overflow-x:auto}
+.ribbon .cell{display:flex;align-items:center;gap:7px;padding:0 16px;height:100%;border-right:1px solid var(--line);font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap}
+.ribbon .cell b{color:var(--ink);font-weight:500}
+.ribbon .dot{width:6px;height:6px;border-radius:50%}
+.ribbon .dot.ok{background:var(--signal);animation:led 2.4s ease-in-out infinite}
+.ribbon .dot.warn{background:var(--warn);animation:led 1.8s ease-in-out infinite}
+.ribbon .brand{margin-left:auto;border-right:none;padding:0 16px;font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--dim)}
+
+.content{padding:22px 24px 72px;max-width:1440px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:2px}
+.panel:hover{border-color:var(--line-hi)}
+.p-head{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--line)}
+.p-head .label{color:var(--muted)}
+.enter{opacity:0;transform:translateY(6px);animation:enter .32s ease-out forwards}
+@keyframes enter{to{opacity:1;transform:none}}
+.d1{animation-delay:.04s}.d2{animation-delay:.10s}.d3{animation-delay:.16s}.d4{animation-delay:.22s}.d5{animation-delay:.28s}
+
+.pagehead{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:18px}
+.pagehead h1{font-size:22px;font-weight:600}
+.pagehead .sub{color:var(--muted);font-size:12.5px;margin-top:3px}
+.backlink{font-family:var(--mono);font-size:10.5px;text-decoration:none;color:var(--dim)}
+.backlink:hover{color:var(--signal)}
+
+/* ── 风险水位 hero ── */
+.hero{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:16px;margin-bottom:18px}
+.waterlevel{padding:18px}
+.wl-num{font-family:var(--mono);font-size:44px;font-weight:700;letter-spacing:-.03em;line-height:1;margin:8px 0 2px;color:var(--warn)}
+.wl-state{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--warn);letter-spacing:.08em}
+.wl-bar{height:8px;background:var(--panel-2);border:1px solid var(--line);margin-top:14px;position:relative;overflow:hidden}
+.wl-fill{position:absolute;inset:0;right:auto;width:0;background:var(--warn);transition:width 1s cubic-bezier(.2,.7,.2,1)}
+.wl-marks{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;color:var(--dim);margin-top:5px;letter-spacing:.08em}
+
+/* 状态机 */
+.fsm{padding:16px 18px}
+.fsm-track{display:flex;align-items:center;overflow-x:auto;padding:6px 0}
+.fsm-node{flex:0 0 auto;text-align:center;position:relative;min-width:86px}
+.fsm-node .dot-node{width:12px;height:12px;border:2px solid var(--dim);border-radius:50%;margin:0 auto;background:var(--panel)}
+.fsm-node .nm{margin-top:7px;font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;color:var(--dim);text-transform:uppercase}
+.fsm-node .edge{position:absolute;top:6px;left:calc(-50% + 6px);width:calc(100% - 12px);height:2px;background:var(--line)}
+.fsm-node:first-child .edge{display:none}
+.fsm-node.now .dot-node{border-color:var(--warn);background:var(--warn);animation:led 1.8s ease-in-out infinite}
+.fsm-node.now .nm{color:var(--warn)}
+.fsm-node.done .dot-node{border-color:var(--signal);background:var(--signal)}
+.fsm-node.done .nm{color:var(--muted)}
+.fsm-node.done .edge{background:var(--signal)}
+
+/* guards */
+.guards{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:2px;overflow:hidden}
+.guard{background:var(--panel);padding:12px 14px}
+.guard .gv{font-family:var(--mono);font-size:19px;font-weight:600;margin:6px 0 2px;font-variant-numeric:tabular-nums}
+.guard .gd{font-family:var(--mono);font-size:10px;color:var(--muted)}
+.guard .arc{margin-top:8px;height:3px;background:var(--panel-2);position:relative;overflow:hidden}
+.guard .arc i{position:absolute;inset:0;right:auto;background:var(--signal);width:0;transition:width .9s cubic-bezier(.2,.7,.2,1)}
+.guard.warned .arc i{background:var(--warn)}
+
+/* 熔断记录 */
+table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px}
+th{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);font-weight:500;text-align:right;padding:9px 14px;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+td{text-align:right;padding:10px 14px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+.badge{font-family:var(--mono);font-size:10px;letter-spacing:.1em;padding:2px 7px;border:1px solid var(--line-hi);border-radius:2px;text-transform:uppercase}
+.badge.warn{color:var(--warn);border-color:rgba(240,179,94,.35)}
+.badge.ok{color:var(--signal);border-color:rgba(45,212,191,.4)}
+.badge.danger{color:var(--danger);border-color:rgba(244,93,93,.4)}
+
+.btn{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;padding:9px 16px;border:1px solid var(--line-hi);background:var(--panel);color:var(--ink);border-radius:2px;cursor:pointer}
+.btn.danger{border-color:rgba(244,93,93,.5);color:var(--danger)}
+.btn:hover{border-color:var(--signal);color:var(--signal)}
+.btn.danger:hover{border-color:var(--danger);color:var(--danger);background:rgba(244,93,93,.08)}
+
+@media(max-width:1100px){.hero{grid-template-columns:1fr}.guards{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:900px){.shell{grid-template-columns:1fr}.rail{display:none}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <nav class="rail" aria-label="主导航">
+    <div class="logo">AL</div>
+    <a href="dashboard-sentinel.html" title="总览"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg><i class="led"></i></a>
+    <a href="readiness-sentinel.html" title="实盘准入"><svg viewBox="0 0 24 24"><path d="M12 2l7 4v6c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6z"/></svg><i class="led"></i></a>
+    <a href="#" title="策略"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><path d="M9 6h6v9"/></svg><i class="led"></i></a>
+    <a href="#" title="执行"><svg viewBox="0 0 24 24"><path d="M4 17l6-6-6-6M12 19h8"/></svg><i class="led"></i></a>
+    <a href="risk-sentinel.html" class="active" title="风控"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg><i class="led"></i></a>
+  </nav>
+
+  <div class="main">
+    <div class="ribbon">
+      <span class="cell"><i class="dot ok"></i>SYSTEM <b>LIVE_SMALL_READY</b></span>
+      <span class="cell"><i class="dot warn"></i>RISK <b>CAUTION</b></span>
+      <span class="cell"><i class="dot ok"></i>FAST TRACK <b>45ms</b></span>
+      <span class="cell"><i class="dot ok"></i>FREQTRADE <b>HEALTHY</b></span>
+      <span class="brand">SENTINEL · RISK-OPS</span>
+    </div>
+
+    <div class="content">
+      <div class="pagehead enter">
+        <div>
+          <a class="backlink" href="index.html">← 返回矩阵</a>
+          <h1>风控中心 Risk Control</h1>
+          <div class="sub">风险水位 · 强制门禁 · 熔断记录 · 紧急停止</div>
+        </div>
+        <button class="btn danger">紧急停止 EMERGENCY STOP</button>
+      </div>
+
+      <div class="hero">
+        <!-- 风险水位 -->
+        <div class="panel waterlevel enter d1">
+          <div class="label">全局风险水位 RISK LEVEL</div>
+          <div class="wl-num" data-count="62" data-suffix="%">0</div>
+          <div class="wl-state">▲ CAUTION 警戒</div>
+          <div class="wl-bar"><i class="wl-fill" id="wlFill"></i></div>
+          <div class="wl-marks"><span>0 SAFE</span><span>70 CAUTION</span><span>90 LOCK</span></div>
+          <div style="margin-top:12px;font-family:var(--mono);font-size:10.5px;color:var(--muted)">触发原因：日亏损预算消耗加速 + ETH 连亏</div>
+        </div>
+
+        <!-- Freqtrade 连接状态机 -->
+        <div class="panel fsm enter d2">
+          <div class="label">FREQTRADE 连接状态机 CONNECTION FSM</div>
+          <div class="fsm-track">
+            <div class="fsm-node done"><div class="edge"></div><div class="dot-node"></div><div class="nm">Healthy</div></div>
+            <div class="fsm-node done"><div class="edge"></div><div class="dot-node"></div><div class="nm">Degraded</div></div>
+            <div class="fsm-node now"><div class="edge"></div><div class="dot-node"></div><div class="nm">Reconnecting</div></div>
+            <div class="fsm-node"><div class="edge"></div><div class="dot-node"></div><div class="nm">Stale</div></div>
+            <div class="fsm-node"><div class="edge"></div><div class="dot-node"></div><div class="nm">Offline</div></div>
+            <div class="fsm-node"><div class="edge"></div><div class="dot-node"></div><div class="nm">Safe Mode</div></div>
+          </div>
+          <div style="margin-top:12px;font-family:var(--mono);font-size:10.5px;color:var(--muted)">REST 最近心跳 38s 前 · 重连中（第 2 次）· 订单同步已降级为 REST 轮询</div>
+        </div>
+
+        <!-- 最近拦截 -->
+        <div class="panel enter d3">
+          <div class="p-head"><span class="label">最近拦截 BLOCKED</span><span class="label">24H</span></div>
+          <table>
+            <thead><tr><th>时间</th><th>动作</th><th>原因</th></tr></thead>
+            <tbody>
+              <tr><td>09:47</td><td>ETH 入场</td><td><span class="badge warn">volatility_lock</span></td></tr>
+              <tr><td>08:12</td><td>SOL 加仓</td><td><span class="badge warn">exposure_cap</span></td></tr>
+              <tr><td>昨 22:31</td><td>BTC 入场</td><td><span class="badge danger">daily_loss_lock</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 护栏 -->
+      <div class="guards enter d4" style="margin-bottom:18px">
+        <div class="guard"><div class="label">日亏损 DAILY LOSS</div><div class="gv" data-count="28" data-suffix="%">0</div><div class="gd">预算 3% · 剩 2.16%</div><div class="arc"><i data-w="28"></i></div></div>
+        <div class="guard"><div class="label">周亏损 WEEKLY LOSS</div><div class="gv" data-count="19" data-suffix="%">0</div><div class="gd">预算 6% · 剩 4.86%</div><div class="arc"><i data-w="19"></i></div></div>
+        <div class="guard"><div class="label">敞口 EXPOSURE</div><div class="gv" data-count="52" data-suffix="%">0</div><div class="gd">31.4% / 限额 60%</div><div class="arc"><i data-w="52"></i></div></div>
+        <div class="guard warned"><div class="label">连亏 CONSEC. LOSS</div><div class="gv" data-count="1" data-suffix="/3">0</div><div class="gd">ETH 昨收亏 · 达 3 熔断</div><div class="arc"><i data-w="34"></i></div></div>
+        <div class="guard"><div class="label">清算风险 LIQUIDATION</div><div class="gv">LOW</div><div class="gd">保证金率 18.4%</div><div class="arc"><i data-w="12"></i></div></div>
+      </div>
+
+      <!-- 熔断记录 -->
+      <div class="panel enter d5">
+        <div class="p-head"><span class="label">熔断记录 CIRCUIT BREAKERS</span><span class="label">30D</span></div>
+        <table>
+          <thead><tr><th>时间</th><th>类型</th><th>范围</th><th>关联命令</th><th>状态</th></tr></thead>
+          <tbody>
+            <tr><td>08-21 09:47</td><td><span class="badge warn">VOLATILITY_LOCK</span></td><td>ETH/USDT</td><td>cmd_8f3a…</td><td><span class="badge ok">RESOLVED</span></td></tr>
+            <tr><td>08-19 22:31</td><td><span class="badge danger">DAILY_LOSS_LOCK</span></td><td>账户</td><td>cmd_1c2e…</td><td><span class="badge ok">RESOLVED</span></td></tr>
+            <tr><td>08-17 14:05</td><td><span class="badge warn">SHADOW_VIOLATION</span></td><td>BTC/USDT</td><td>cmd_77d1…</td><td><span class="badge ok">RESOLVED</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="margin-top:26px;font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--dim)">SENTINEL · 水位条 · 连接状态机 · 护栏量程 · 熔断台账</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+document.querySelectorAll('[data-count]').forEach(el=>{
+  const t=parseFloat(el.dataset.count),s=el.dataset.suffix||'';
+  if(reduced){el.textContent=t+s;return}
+  const t0=performance.now(),dur=800;
+  const tick=n=>{const p=Math.min(1,(n-t0)/dur),e=1-Math.pow(1-p,3);el.textContent=Math.round(t*e)+s;if(p<1)requestAnimationFrame(tick)};
+  requestAnimationFrame(tick);
+});
+const wl=document.getElementById('wlFill');
+requestAnimationFrame(()=>{wl.style.width=reduced?'62%':'62%'});
+document.querySelectorAll('.arc i').forEach(i=>{requestAnimationFrame(()=>{i.style.width=i.dataset.w+'%'})});
+</script>
+</body>
+</html>

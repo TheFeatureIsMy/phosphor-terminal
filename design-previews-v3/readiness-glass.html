@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlphaLoop · 实盘准入 — GLASS OPS</title>
+<style>
+:root{
+  --bg:#06080D;
+  --glass:rgba(255,255,255,.055); --glass-hi:rgba(255,255,255,.09);
+  --edge:rgba(255,255,255,.12); --edge-hi:rgba(103,232,249,.45);
+  --ink:#F2F5FA; --muted:#9AA4B8; --dim:#5F6B80;
+  --lum:#67E8F9; --lum-soft:rgba(103,232,249,.14);
+  --up:#34D399; --down:#FB7185; --warn:#FBBF24; --lav:#A5B4FC;
+  --sans:-apple-system,'SF Pro Display','SF Pro Text','Inter',system-ui,sans-serif;
+  --mono:ui-monospace,'SF Mono','JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh}
+:focus-visible{outline:2px solid var(--lum);outline-offset:2px}
+.mono{font-family:var(--mono)}
+.microlabel{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+
+.atmo{position:fixed;inset:-20%;z-index:0;pointer-events:none;filter:blur(10px)}
+.blob{position:absolute;border-radius:50%;opacity:.5;animation:drift 60s ease-in-out infinite alternate}
+.b1{width:52vw;height:52vw;left:-8%;top:-12%;background:radial-gradient(circle,rgba(34,211,238,.16),transparent 62%)}
+.b2{width:44vw;height:44vw;right:-10%;top:8%;background:radial-gradient(circle,rgba(129,140,248,.13),transparent 62%);animation-delay:-18s}
+.b3{width:40vw;height:40vw;left:28%;bottom:-18%;background:radial-gradient(circle,rgba(244,114,182,.07),transparent 62%);animation-delay:-36s}
+@keyframes drift{0%{transform:translate(0,0) scale(1)}33%{transform:translate(3%,2.5%) scale(1.04)}66%{transform:translate(-2.5%,1.5%) scale(.97)}100%{transform:translate(2%,-2%) scale(1.03)}}
+
+.stage{position:relative;z-index:1;max-width:1240px;margin:0 auto;padding:26px 30px 90px}
+.glass{background:var(--glass);border:1px solid var(--edge);border-radius:20px;backdrop-filter:blur(24px) saturate(1.6);-webkit-backdrop-filter:blur(24px) saturate(1.6);position:relative;overflow:hidden}
+.glass:hover{background:var(--glass-hi)}
+.dissolve{opacity:0;filter:blur(8px);animation:dissolve .5s ease-out forwards}
+@keyframes dissolve{to{opacity:1;filter:blur(0)}}
+.d1{animation-delay:.05s}.d2{animation-delay:.12s}.d3{animation-delay:.19s}.d4{animation-delay:.26s}.d5{animation-delay:.33s}
+
+.hud{display:flex;align-items:center;gap:18px;padding:10px 18px;font-family:var(--mono);font-size:11px}
+.hud .brand{font-size:12px;font-weight:600;letter-spacing:.18em}
+.hud .sep{width:1px;height:14px;background:var(--edge)}
+.hud .cell{display:flex;align-items:center;gap:6px;color:var(--muted);white-space:nowrap}
+.hud .cell b{color:var(--ink);font-weight:500}
+.led{width:6px;height:6px;border-radius:50%;background:var(--up);box-shadow:0 0 8px var(--up);animation:breath 3s ease-in-out infinite}
+.led.warn{background:var(--warn);box-shadow:0 0 8px var(--warn)}
+@keyframes breath{0%,100%{opacity:1}50%{opacity:.4}}
+.hud .right{margin-left:auto}
+.pill{font-family:var(--mono);font-size:10px;letter-spacing:.1em;padding:4px 10px;border-radius:999px;border:1px solid var(--lum);color:var(--lum)}
+
+.pagehead{display:flex;align-items:flex-end;justify-content:space-between;margin:26px 0 18px}
+.pagehead h1{font-size:26px;font-weight:700;letter-spacing:-.02em}
+.pagehead .sub{color:var(--muted);font-size:12.5px;margin-top:4px}
+.backlink{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-decoration:none;color:var(--dim)}
+.backlink:hover{color:var(--lum)}
+
+/* ── Hero：光晕环 + 启动台 ── */
+.hero{display:grid;grid-template-columns:.9fr 1.1fr;gap:18px}
+.ringcard{padding:26px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.ring-wrap{position:relative;width:180px;height:180px}
+.ring-wrap svg{transform:rotate(-90deg)}
+.ring-bg{stroke:rgba(255,255,255,.08)}
+.ring-fg{stroke:var(--lum);filter:drop-shadow(0 0 12px rgba(103,232,249,.7));stroke-linecap:round;transition:stroke-dashoffset 1.2s cubic-bezier(.2,.7,.2,1)}
+.ring-val{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--mono);font-size:40px;font-weight:700;text-shadow:0 0 28px rgba(103,232,249,.45)}
+.ring-val small{font-size:12px;color:var(--dim);font-weight:400}
+.lumen-word{margin-top:14px;font-family:var(--mono);font-size:12px;letter-spacing:.18em;color:var(--lum);font-weight:600}
+.ringcard .cap{color:var(--muted);font-size:11.5px;margin-top:5px}
+
+/* 五档状态：发光阶梯 */
+.steps{display:flex;gap:8px;margin-top:18px;width:100%}
+.step{flex:1;padding:10px 4px;text-align:center;font-family:var(--mono);font-size:9px;letter-spacing:.1em;border-radius:12px;border:1px solid var(--edge);color:var(--dim)}
+.step.done{color:var(--up);border-color:rgba(52,211,153,.35)}
+.step.now{color:var(--lum);border-color:var(--edge-hi);background:var(--lum-soft);box-shadow:0 0 18px rgba(103,232,249,.22)}
+.step.lock{color:var(--dim)}
+
+/* 启动台 */
+.launch{padding:24px}
+.launch h3{font-size:15px;font-weight:600;margin-bottom:4px}
+.kv{display:grid;grid-template-columns:110px 1fr;gap:8px 14px;margin:16px 0 18px;font-family:var(--mono);font-size:12px}
+.kv .k{color:var(--dim);font-size:10px;letter-spacing:.12em;text-transform:uppercase;padding-top:2px}
+.kv .v{color:var(--ink)}
+.warnchip{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:10px;color:var(--warn);border:1px solid rgba(251,191,36,.35);background:rgba(251,191,36,.08);padding:4px 10px;border-radius:999px;margin:0 6px 6px 0}
+.btnrow{display:flex;gap:10px;flex-wrap:wrap}
+.gbtn{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;padding:10px 18px;border-radius:999px;border:1px solid var(--edge);background:rgba(255,255,255,.05);color:var(--ink);cursor:pointer;transition:border-color .2s, box-shadow .2s}
+.gbtn:hover{border-color:var(--edge-hi);box-shadow:0 0 18px rgba(103,232,249,.18)}
+.gbtn.lum{border-color:var(--lum);color:var(--lum)}
+.gbtn.danger{border-color:rgba(251,113,133,.5);color:var(--down)}
+.confirm-note{font-family:var(--mono);font-size:9.5px;color:var(--dim);margin-top:12px;letter-spacing:.08em}
+
+/* ── 门禁网格 ── */
+.gates{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:18px}
+.gate{padding:16px 18px;border-radius:16px}
+.gate .gh{display:flex;justify-content:space-between;align-items:center}
+.gate .st-dot{width:8px;height:8px;border-radius:50%}
+.st-dot.ok{background:var(--up);box-shadow:0 0 8px var(--up)}
+.st-dot.warn{background:var(--warn);box-shadow:0 0 8px var(--warn)}
+.gate .gv{font-family:var(--mono);font-size:13.5px;margin-top:8px;color:var(--ink)}
+.gate .gd{font-size:11px;color:var(--muted);margin-top:3px}
+
+@media(max-width:1100px){.hero{grid-template-columns:1fr}.gates{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:700px){.gates{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){.blob{animation:none}.dissolve{animation:none;opacity:1;filter:none}.led{animation:none}}
+</style>
+</head>
+<body>
+<div class="atmo" aria-hidden="true"><i class="blob b1"></i><i class="blob b2"></i><i class="blob b3"></i></div>
+
+<div class="stage">
+  <div class="glass hud dissolve d1">
+    <span class="brand">ALPHALOOP</span>
+    <span class="sep"></span>
+    <span class="cell"><i class="led"></i>SYSTEM <b>LIVE_SMALL_READY</b></span>
+    <span class="cell"><i class="led"></i>RISK <b>NORMAL</b></span>
+    <span class="cell"><i class="led"></i>FAST TRACK <b>45ms</b></span>
+    <span class="cell"><i class="led warn"></i>DATA <b>DEGRADED</b></span>
+    <span class="cell"><i class="led warn"></i>NOTIFY <b>NOT SET</b></span>
+    <div class="right"><span class="pill">GATE-11</span></div>
+  </div>
+
+  <div class="pagehead dissolve d2">
+    <div>
+      <a class="backlink" href="index.html">← 返回矩阵</a>
+      <h1>实盘准入 Live Readiness</h1>
+      <div class="sub">实盘总闸门 · 十一项门禁 · 三重确认启动</div>
+    </div>
+    <button class="gbtn">重新检查</button>
+  </div>
+
+  <div class="hero">
+    <!-- 光晕环 + 五档 -->
+    <div class="glass ringcard dissolve d3">
+      <div class="microlabel" style="color:var(--muted)">GRAND STATUS</div>
+      <div class="ring-wrap" style="margin-top:18px">
+        <svg width="180" height="180" viewBox="0 0 180 180">
+          <circle class="ring-bg" cx="90" cy="90" r="76" fill="none" stroke-width="10"/>
+          <circle class="ring-fg" id="ringFg" cx="90" cy="90" r="76" fill="none" stroke-width="10" stroke-dasharray="477.5" stroke-dashoffset="477.5"/>
+        </svg>
+        <div class="ring-val"><span><span data-count="86">0</span><br><small>/ 100</small></span></div>
+      </div>
+      <div class="lumen-word">◉ LIVE_SMALL_READY</div>
+      <div class="cap">允许小仓实盘 · 全仓阈值 90 未达</div>
+      <div class="steps">
+        <div class="step done">CONFIG</div>
+        <div class="step done">VALIDATION</div>
+        <div class="step done">PAPER</div>
+        <div class="step now">LIVE_SMALL</div>
+        <div class="step lock">LIVE_FULL</div>
+      </div>
+    </div>
+
+    <!-- 启动台 -->
+    <div class="glass launch dissolve d4">
+      <div class="microlabel" style="color:var(--muted)">LAUNCH CONSOLE</div>
+      <h3 style="margin-top:12px">启动授权</h3>
+      <div style="margin-top:10px">
+        <span class="warnchip">⚠ market_data 部分降级</span>
+        <span class="warnchip">⚠ 通知未配置</span>
+      </div>
+      <div class="kv">
+        <span class="k">模式</span><span class="v">LIVE_SMALL</span>
+        <span class="k">策略</span><span class="v">结构突破 v4.2</span>
+        <span class="k">资金池</span><span class="v">小仓池 5,000 USDT · 单笔 ≤3%</span>
+        <span class="k">交易所</span><span class="v">BINANCE SPOT · 38ms</span>
+      </div>
+      <div class="btnrow">
+        <button class="gbtn lum">启动模拟</button>
+        <button class="gbtn">启动小仓实盘</button>
+        <button class="gbtn danger">停用自动交易</button>
+      </div>
+      <div class="confirm-note">小仓实盘启动需三重确认（摘要 → 勾选 → 输入确认短语）</div>
+    </div>
+  </div>
+
+  <!-- 门禁网格 -->
+  <div class="gates">
+    <div class="glass gate dissolve d2"><div class="gh"><span class="microlabel">MODE 模式</span><i class="st-dot ok"></i></div><div class="gv">LIVE_SMALL</div><div class="gd">已选择小仓模式</div></div>
+    <div class="glass gate dissolve d2"><div class="gh"><span class="microlabel">STRATEGY 策略</span><i class="st-dot ok"></i></div><div class="gv">结构突破 v4.2</div><div class="gd">已绑定版本</div></div>
+    <div class="glass gate dissolve d3"><div class="gh"><span class="microlabel">CAPITAL 资金</span><i class="st-dot ok"></i></div><div class="gv">5,000 USDT</div><div class="gd">小仓资金池就绪</div></div>
+    <div class="glass gate dissolve d3"><div class="gh"><span class="microlabel">RISK 风控配置</span><i class="st-dot ok"></i></div><div class="gv">POLICY v7</div><div class="gd">日亏 3% · 连亏 3 笔熔断</div></div>
+    <div class="glass gate dissolve d3"><div class="gh"><span class="microlabel">EXCHANGE 交易所</span><i class="st-dot ok"></i></div><div class="gv">BINANCE OK</div><div class="gd">REST 38ms · 密钥有效</div></div>
+    <div class="glass gate dissolve d4"><div class="gh"><span class="microlabel">DATA 数据源</span><i class="st-dot warn"></i></div><div class="gv" style="color:var(--warn)">DEGRADED</div><div class="gd">social 数据源超时，行情正常</div></div>
+    <div class="glass gate dissolve d4"><div class="gh"><span class="microlabel">VALIDATION 验证</span><i class="st-dot ok"></i></div><div class="gv">DSL PASSED</div><div class="gd">4 天前通过静态校验</div></div>
+    <div class="glass gate dissolve d4"><div class="gh"><span class="microlabel">BACKTEST 回测</span><i class="st-dot ok"></i></div><div class="gv">SHARPE 1.84</div><div class="gd">180 天 · 胜率 58.2%</div></div>
+    <div class="glass gate dissolve d4"><div class="gh"><span class="microlabel">DRYRUN 模拟</span><i class="st-dot ok"></i></div><div class="gv">96h</div><div class="gd">≥72h 门禁通过</div></div>
+    <div class="glass gate dissolve d5"><div class="gh"><span class="microlabel">NOTIFY 通知</span><i class="st-dot warn"></i></div><div class="gv" style="color:var(--warn)">NOT SET</div><div class="gd">建议配置 Telegram 告警</div></div>
+    <div class="glass gate dissolve d5"><div class="gh"><span class="microlabel">EMERGENCY 急停</span><i class="st-dot ok"></i></div><div class="gv">ARMED</div><div class="gd">紧急停止可用</div></div>
+  </div>
+
+  <footer style="margin-top:30px;font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;color:var(--dim)">GLASS OPS · 光晕环 · 氛围状态联动 · 玻璃门禁网格</footer>
+</div>
+
+<script>
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+document.querySelectorAll('[data-count]').forEach(el=>{
+  const t=parseFloat(el.dataset.count);
+  if(reduced){el.textContent=t;return}
+  const t0=performance.now(),dur=900;
+  const tick=n=>{const p=Math.min(1,(n-t0)/dur),e=1-Math.pow(1-p,3);el.textContent=Math.round(t*e);if(p<1)requestAnimationFrame(tick)};
+  requestAnimationFrame(tick);
+});
+(function(){
+  const C=477.5,score=86,fg=document.getElementById('ringFg');
+  const target=C*(1-score/100);
+  if(reduced){fg.style.strokeDashoffset=target;return}
+  requestAnimationFrame(()=>{fg.style.strokeDashoffset=target});
+})();
+</script>
+</body>
+</html>

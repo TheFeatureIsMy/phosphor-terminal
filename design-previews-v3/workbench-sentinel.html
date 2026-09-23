@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlphaLoop · 策略工作台 — SENTINEL</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0B0E13; --panel:#10141B; --panel-2:#0D1118; --line:#1C222B; --line-hi:#2A3442;
+  --ink:#E6EAF2; --muted:#8B94A7; --dim:#5A6476;
+  --signal:#2DD4BF; --warn:#F0B35E; --danger:#F45D5D; --up:#34D399; --down:#F45D5D;
+  --sans:'Inter Tight',system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased}
+:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
+.mono{font-family:var(--mono)}
+.label{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+
+.shell{display:grid;grid-template-columns:72px 1fr;min-height:100vh}
+.rail{position:sticky;top:0;height:100vh;border-right:1px solid var(--line);background:var(--panel-2);display:flex;flex-direction:column;align-items:center;padding:14px 0;gap:6px}
+.rail .logo{width:34px;height:34px;border:1px solid var(--line-hi);display:grid;place-items:center;font-family:var(--mono);font-weight:700;color:var(--signal);font-size:13px;border-radius:2px;margin-bottom:10px}
+.rail a{position:relative;width:44px;height:44px;display:grid;place-items:center;color:var(--muted);text-decoration:none;border:1px solid transparent;border-radius:2px}
+.rail a svg{width:18px;height:18px;stroke:currentColor;stroke-width:1.5;fill:none}
+.rail a .led{position:absolute;bottom:3px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--dim)}
+.rail a.active{color:var(--signal);border-color:var(--line-hi);background:var(--panel)}
+.rail a.active .led{background:var(--signal);animation:led 2.4s ease-in-out infinite}
+@keyframes led{0%,100%{opacity:1}50%{opacity:.3}}
+
+.ribbon{position:sticky;top:0;z-index:20;height:36px;display:flex;align-items:center;border-bottom:1px solid var(--line);background:rgba(11,14,19,.92);overflow-x:auto}
+.ribbon .cell{display:flex;align-items:center;gap:7px;padding:0 16px;height:100%;border-right:1px solid var(--line);font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap}
+.ribbon .cell b{color:var(--ink);font-weight:500}
+.ribbon .dot{width:6px;height:6px;border-radius:50%;background:var(--signal);animation:led 2.4s ease-in-out infinite}
+.ribbon .brand{margin-left:auto;border-right:none;padding:0 16px;font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--dim)}
+
+/* ── 工作台三栏 ── */
+.bench{display:grid;grid-template-columns:264px 1fr 300px;min-height:calc(100vh - 36px)}
+.bench .col{border-right:1px solid var(--line);min-width:0}
+.bench .col:last-child{border-right:none}
+.col-head{padding:12px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.col-body{padding:14px 16px}
+.enter{opacity:0;transform:translateY(6px);animation:enter .32s ease-out forwards}
+@keyframes enter{to{opacity:1;transform:none}}
+
+/* 策略列表 */
+.strat{display:block;padding:11px 12px;border:1px solid var(--line);border-radius:2px;margin-bottom:8px;text-decoration:none;color:inherit;background:var(--panel)}
+.strat:hover{border-color:var(--line-hi)}
+.strat.on{border-color:var(--signal);border-left:3px solid var(--signal)}
+.strat .nm{font-weight:600;font-size:13px;display:flex;justify-content:space-between;align-items:center}
+.strat .meta{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:4px;display:flex;gap:8px}
+.badge{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;padding:1px 6px;border:1px solid var(--line-hi);border-radius:2px;text-transform:uppercase}
+.badge.live{color:var(--signal);border-color:rgba(45,212,191,.4)}
+.badge.paper{color:var(--warn);border-color:rgba(240,179,94,.35)}
+.badge.draft{color:var(--dim)}
+
+/* 中央详情 */
+.kv{display:grid;grid-template-columns:110px 1fr;gap:7px 14px;font-family:var(--mono);font-size:12px}
+.kv .k{color:var(--dim);font-size:10px;letter-spacing:.12em;text-transform:uppercase;padding-top:2px}
+.kv .v{color:var(--ink)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:2px}
+.panel:hover{border-color:var(--line-hi)}
+.p-head{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--line)}
+.p-head .label{color:var(--muted)}
+.strat-title{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.strat-title h1{font-size:19px;font-weight:600}
+.code-block{font-family:var(--mono);font-size:11px;background:var(--panel-2);border:1px solid var(--line);border-radius:2px;padding:12px 14px;white-space:pre;overflow-x:auto;color:var(--muted);line-height:1.7}
+.code-block .cm{color:var(--dim)}
+.code-block .hl{color:var(--signal)}
+
+/* 版本时间线 */
+.versions{display:flex;flex-direction:column;gap:0}
+.ver{display:grid;grid-template-columns:14px 1fr;gap:12px;padding:10px 0;position:relative}
+.ver::before{content:"";position:absolute;left:6px;top:22px;bottom:-10px;width:2px;background:var(--line)}
+.ver:last-child::before{display:none}
+.ver .pin{width:14px;height:14px;border:2px solid var(--dim);border-radius:50%;background:var(--panel);margin-top:2px}
+.ver.now .pin{border-color:var(--signal);background:var(--signal);animation:led 2.4s ease-in-out infinite}
+.ver .vn{font-family:var(--mono);font-weight:600;font-size:12px}
+.ver .vm{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:2px}
+
+table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11.5px}
+th{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);font-weight:500;text-align:right;padding:8px 10px;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+td{text-align:right;padding:9px 10px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+tr:last-child td{border-bottom:none}
+
+.btn{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;padding:8px 14px;border:1px solid var(--line-hi);background:var(--panel);color:var(--ink);border-radius:2px;cursor:pointer;transition:border-color .15s}
+.btn:hover{border-color:var(--signal);color:var(--signal)}
+.btn.primary{border-color:var(--signal);color:var(--signal)}
+.btn.danger{border-color:rgba(244,93,93,.5);color:var(--danger)}
+.stat-mini{display:flex;gap:18px;font-family:var(--mono)}
+.stat-mini .m .v{font-size:19px;font-weight:600;font-variant-numeric:tabular-nums}
+.stat-mini .m .l{font-size:9px;letter-spacing:.12em;color:var(--dim);text-transform:uppercase;margin-top:2px}
+
+@media(max-width:1100px){.bench{grid-template-columns:240px 1fr}.bench .col:last-child{display:none}}
+@media(max-width:900px){.shell{grid-template-columns:1fr}.rail{display:none}.bench{grid-template-columns:1fr}.bench .col{border-right:none}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <nav class="rail" aria-label="主导航">
+    <div class="logo">AL</div>
+    <a href="dashboard-sentinel.html" title="总览"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg><i class="led"></i></a>
+    <a href="readiness-sentinel.html" title="实盘准入"><svg viewBox="0 0 24 24"><path d="M12 2l7 4v6c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6z"/></svg><i class="led"></i></a>
+    <a href="workbench-sentinel.html" class="active" title="策略"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><path d="M9 6h6v9"/></svg><i class="led"></i></a>
+    <a href="#" title="执行"><svg viewBox="0 0 24 24"><path d="M4 17l6-6-6-6M12 19h8"/></svg><i class="led"></i></a>
+    <a href="risk-sentinel.html" title="风控"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg><i class="led"></i></a>
+  </nav>
+
+  <div class="main">
+    <div class="ribbon">
+      <span class="cell"><i class="dot"></i>SYSTEM <b>LIVE_SMALL_READY</b></span>
+      <span class="cell"><i class="dot"></i>RISK <b>NORMAL</b></span>
+      <span class="cell"><i class="dot"></i>FAST TRACK <b>45ms</b></span>
+      <span class="brand">SENTINEL · STRATEGY-OPS</span>
+    </div>
+
+    <div class="bench">
+      <!-- 左：策略列表 -->
+      <div class="col enter" style="animation-delay:.04s">
+        <div class="col-head"><span class="label">策略 STRATEGIES</span><span class="label">3</span></div>
+        <div class="col-body">
+          <a class="backlink" href="index.html" style="font-family:var(--mono);font-size:10px;color:var(--dim);text-decoration:none;display:block;margin-bottom:12px">← 返回矩阵</a>
+          <a class="strat on" href="#">
+            <div class="nm">结构突破 <span class="badge live">LIVE-SMALL</span></div>
+            <div class="meta"><span>v4.2</span><span>● running</span><span>+1.86%</span></div>
+          </a>
+          <a class="strat" href="#">
+            <div class="nm">RSI 均值回归 <span class="badge paper">PAPER</span></div>
+            <div class="meta"><span>v2.1</span><span>● paper</span><span>+0.62%</span></div>
+          </a>
+          <a class="strat" href="#">
+            <div class="nm">流动性清扫防御 <span class="badge paper">DRYRUN</span></div>
+            <div class="meta"><span>v1.4</span><span>● dryrun</span><span>0.00%</span></div>
+          </a>
+          <a class="strat" href="#" style="opacity:.65">
+            <div class="nm">高频网格（已归档） <span class="badge draft">ARCHIVED</span></div>
+            <div class="meta"><span>v3.0</span><span>2026-07-28 归档</span></div>
+          </a>
+        </div>
+      </div>
+
+      <!-- 中：运行台 -->
+      <div class="col enter" style="animation-delay:.12s">
+        <div class="col-head"><span class="label">运行台 RUNTIME</span><span class="label">SNAPSHOT 3s AGO</span></div>
+        <div class="col-body">
+          <div class="strat-title">
+            <h1>结构突破</h1>
+            <span class="badge live">LIVE-SMALL</span>
+            <span class="mono" style="font-size:10.5px;color:var(--muted)">v4.2 · dsl 8f3a…e2c1</span>
+            <span style="margin-left:auto;display:flex;gap:8px">
+              <button class="btn">回测</button>
+              <button class="btn">暂停</button>
+              <button class="btn danger">停止</button>
+            </span>
+          </div>
+
+          <div class="stat-mini" style="margin-bottom:16px">
+            <div class="m"><div class="v" style="color:var(--up)">+1.86%</div><div class="l">本周期盈亏</div></div>
+            <div class="m"><div class="v">42</div><div class="l">交易次数</div></div>
+            <div class="m"><div class="v">58.2%</div><div class="l">胜率</div></div>
+            <div class="m"><div class="v">1.84</div><div class="l">夏普</div></div>
+            <div class="m"><div class="v" style="color:var(--signal)">FRESH 3s</div><div class="l">快照</div></div>
+          </div>
+
+          <div class="panel" style="margin-bottom:14px">
+            <div class="p-head"><span class="label">当前决策快照 DECISION SNAPSHOT</span><span class="label">10:02:14</span></div>
+            <div class="col-body" style="padding:12px 14px">
+              <div class="kv">
+                <span class="k">决策</span><span class="v" style="color:var(--warn)">REDUCE_SIZE −20%</span>
+                <span class="k">原因码</span><span class="v mono">ai_cache_soft_expired, shadow_warning</span>
+                <span class="k">结构状态</span><span class="v">1h 多头 OB 有效 · 强度 0.41 转弱</span>
+                <span class="k">AI 风险缓存</span><span class="v">软过期（12min）· 偏差中性偏多</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="p-head"><span class="label">规则 DSL · v4.2</span><span class="label">8 RULES</span></div>
+            <div class="code-block"><span class="cm"># entry — 结构突破入场（AND）</span>
+ob_breakout_1h      <span class="hl">structure.order_block</span>  direction=bullish  strength≥0.65
+volume_confirm      <span class="hl">volume.sma_ratio</span>       ≥1.5x
+regime_filter       <span class="hl">market.regime</span>          in [trend_up]
+manipulation_guard  <span class="hl">manipulation.score</span>    ≤0.35
+<span class="cm"># risk — 防御层</span>
+atr_stop            <span class="hl">risk.atr_stop</span>          2.2×ATR
+daily_loss_lock     <span class="hl">risk.daily_loss</span>        ≤3%
+account_firewall    <span class="hl">risk.account_cap</span>       ≤30% 敞口</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 右：版本与最近交易 -->
+      <div class="col enter" style="animation-delay:.2s">
+        <div class="col-head"><span class="label">版本 VERSIONS</span></div>
+        <div class="col-body">
+          <div class="versions">
+            <div class="ver now"><span class="pin"></span><div><div class="vn">v4.2 · LIVE-SMALL</div><div class="vm">08-19 发布 · 回测夏普 1.84 · 当前运行</div></div></div>
+            <div class="ver"><span class="pin"></span><div><div class="vn">v4.3 · DRAFT</div><div class="vm">08-20 创建 · AI 优化候选 · 待校验</div></div></div>
+            <div class="ver"><span class="pin"></span><div><div class="vn">v4.1 · ARCHIVED</div><div class="vm">08-12 归档 · 被 v4.2 取代</div></div></div>
+          </div>
+        </div>
+        <div class="col-head" style="border-top:1px solid var(--line)"><span class="label">最近交易 TRADES</span><span class="label">24H</span></div>
+        <div class="col-body" style="padding:0">
+          <table>
+            <thead><tr><th>时间</th><th>标的</th><th>盈亏</th></tr></thead>
+            <tbody>
+              <tr><td>09:58</td><td>BTC/USDT</td><td style="color:var(--up)">+0.62%</td></tr>
+              <tr><td>08:41</td><td>ETH/USDT</td><td style="color:var(--down)">−0.31%</td></tr>
+              <tr><td>07:26</td><td>BTC/USDT</td><td style="color:var(--up)">+1.14%</td></tr>
+              <tr><td>昨 22:14</td><td>SOL/USDT</td><td style="color:var(--up)">+0.48%</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

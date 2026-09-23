@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlphaLoop · 实盘准入 — MERIDIAN</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F4F3EF; --card:#FBFAF7; --line:#E3E0D8; --line-2:#D2CEC2;
+  --ink:#14161A; --muted:#6B6E78; --dim:#9A978B;
+  --steel:#2450A8; --copper:#B4530F; --up:#0E7A4D; --down:#C0392B; --warn:#B4740B;
+  --sans:'Inter Tight',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased}
+:focus-visible{outline:2px solid var(--steel);outline-offset:2px}
+.mono{font-family:var(--mono)}
+.microlabel{font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+.wrap{max-width:1320px;margin:0 auto;padding:0 28px 96px}
+
+.masthead{border-bottom:2px solid var(--ink);padding:22px 0 16px}
+.mast-top{display:flex;align-items:baseline;justify-content:space-between}
+.mast-top h1{font-size:26px;font-weight:600;letter-spacing:-.02em}
+.mast-top h1 em{font-family:var(--mono);font-style:normal;font-size:11px;letter-spacing:.2em;color:var(--steel);margin-right:12px}
+.ruler{height:26px;margin-top:12px;background-image:
+  repeating-linear-gradient(90deg,var(--line-2) 0 1px,transparent 1px 12px),
+  repeating-linear-gradient(90deg,var(--ink) 0 1px,transparent 1px 120px);
+  background-size:100% 8px,100% 26px;background-repeat:no-repeat;
+  transform-origin:left;animation:ruleIn .8s cubic-bezier(.2,.7,.2,1) both .15s}
+@keyframes ruleIn{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.mast-meta{display:flex;gap:28px;margin-top:8px;font-family:var(--mono);font-size:10.5px;color:var(--muted);letter-spacing:.08em}
+.mast-meta b{color:var(--ink);font-weight:600}.mast-meta .ok{color:var(--up)}.mast-meta .warn-t{color:var(--copper)}
+.backlink{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-decoration:none;color:var(--dim)}
+.backlink:hover{color:var(--steel)}
+
+.sect{display:flex;align-items:baseline;gap:14px;margin:34px 0 14px}
+.sect .n{font-family:var(--mono);font-size:11px;color:var(--steel);letter-spacing:.1em}
+.sect h2{font-size:14px;font-weight:600}
+.sect .rule{flex:1;height:1px;background:var(--line-2);transform-origin:left;animation:ruleIn .5s cubic-bezier(.2,.7,.2,1) both}
+.sect .unit{font-family:var(--mono);font-size:9.5px;color:var(--dim);letter-spacing:.14em}
+.fadein{opacity:0;transform:translateX(10px);animation:fadein .35s ease-out forwards}
+@keyframes fadein{to{opacity:1;transform:none}}
+
+.panel{background:var(--card);border:1px solid var(--line);border-radius:3px}
+.panel-head{display:flex;justify-content:space-between;align-items:baseline;padding:12px 16px;border-bottom:1px solid var(--line)}
+.panel-head .microlabel{color:var(--muted)}
+
+.hero{display:grid;grid-template-columns:minmax(300px,380px) 1fr;gap:16px}
+.gaugebox{padding:18px 16px 14px;text-align:center}
+.gauge-word{font-family:var(--mono);font-size:11px;letter-spacing:.16em;color:var(--up);font-weight:600}
+.needle{transform-origin:150px 140px}
+.gauge-labels{font-family:var(--mono);font-size:9px;fill:var(--dim)}
+.gauge-val{font-family:var(--mono);font-size:28px;font-weight:600;fill:var(--ink)}
+
+/* 门禁清单 = 仪器校验表 */
+.gatelist{width:100%;border-collapse:collapse}
+.gatelist td{padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
+.gatelist tr:last-child td{border-bottom:none}
+.gatelist .idx{font-family:var(--mono);font-size:10px;color:var(--dim);width:34px}
+.gatelist .nm{font-family:var(--sans);font-size:13px;font-weight:500}
+.gatelist .th{font-family:var(--mono);font-size:10px;color:var(--muted)}
+.gatelist .st{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-align:right;font-weight:600}
+.st.ok{color:var(--up)} .st.warn{color:var(--copper)}
+.gatelist .mark{width:18px;font-size:12px}
+.mark.ok{color:var(--up)} .mark.warn{color:var(--copper)}
+tr.warnrow td{background:rgba(180,83,15,.045)}
+
+/* 五档状态条 */
+.ladder{display:flex;gap:0;border:1px solid var(--line-2);border-radius:3px;overflow:hidden}
+.ladder div{flex:1;padding:10px 6px;text-align:center;font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:var(--dim);border-right:1px solid var(--line-2);background:var(--card)}
+.ladder div:last-child{border-right:none}
+.ladder .done{color:var(--up);background:rgba(14,122,77,.05)}
+.ladder .now{color:var(--ink);background:rgba(36,80,168,.07);font-weight:700;box-shadow:inset 0 -2px 0 var(--steel)}
+.ladder .lock{color:var(--dim)}
+
+.btn{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;padding:9px 18px;border:1px solid var(--ink);background:var(--card);color:var(--ink);border-radius:2px;cursor:pointer;transition:background .15s,color .15s}
+.btn:hover{background:var(--ink);color:var(--bg)}
+.btn.steel{border-color:var(--steel);color:var(--steel)}
+.btn.steel:hover{background:var(--steel);color:#fff}
+.btn.copper{border-color:var(--copper);color:var(--copper)}
+.btn.copper:hover{background:var(--copper);color:#fff}
+.btn[disabled]{opacity:.35;cursor:not-allowed}
+.btn[disabled]:hover{background:var(--card);color:var(--ink)}
+
+.note{border-top:1px solid var(--line);padding:10px 16px;font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.06em}
+.note b{color:var(--copper);font-weight:600}
+@media(max-width:1100px){.hero{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="masthead">
+    <div class="mast-top">
+      <h1><em>ALPHALOOP</em>实盘准入 Live Readiness</h1>
+      <a class="backlink" href="index.html">← 返回矩阵</a>
+    </div>
+    <div class="ruler" aria-hidden="true"></div>
+    <div class="mast-meta">
+      <span>SYS <b class="ok">LIVE_SMALL_READY</b></span>
+      <span>RISK <b class="ok">NORMAL</b></span>
+      <span>FAST TRACK <b>45ms</b></span>
+      <span>DATA <b class="warn-t">DEGRADED</b></span>
+      <span>NOTIFY <b class="warn-t">NOT SET</b></span>
+      <span style="margin-left:auto">MERIDIAN · GATE-11</span>
+    </div>
+  </header>
+
+  <!-- §01 量表 -->
+  <div class="sect"><span class="n">§01</span><h2>准入量表</h2><span class="rule"></span><span class="unit">SCALE 0–100</span></div>
+  <div class="hero fadein">
+    <div class="panel">
+      <div class="panel-head"><span class="microlabel">GRAND STATUS</span><span class="microlabel">T+0</span></div>
+      <div class="gaugebox">
+        <svg viewBox="0 0 300 150" width="100%" role="img" aria-label="实盘准入量表 86 分">
+          <path d="M20 140 A130 130 0 0 1 280 140" fill="none" stroke="var(--line)" stroke-width="10"/>
+          <path id="gaugeArc" d="M20 140 A130 130 0 0 1 280 140" fill="none" stroke="var(--steel)" stroke-width="10" stroke-dasharray="408.4" stroke-dashoffset="408.4"/>
+          <g class="gauge-labels" id="gaugeTicks"></g>
+          <line class="needle" id="needle" x1="150" y1="140" x2="150" y2="34" stroke="var(--ink)" stroke-width="2.5" stroke-linecap="round"/>
+          <circle cx="150" cy="140" r="5" fill="var(--ink)"/>
+          <text class="gauge-val" x="150" y="112" text-anchor="middle"><tspan id="gaugeVal">0</tspan></text>
+        </svg>
+        <div class="gauge-word">■ LIVE_SMALL_READY</div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:5px">允许小仓实盘 · 全仓阈值 90 未达</div>
+      </div>
+      <div style="padding:0 16px 14px">
+        <div class="ladder">
+          <div class="done">CONFIG</div>
+          <div class="done">VALIDATION</div>
+          <div class="done">PAPER</div>
+          <div class="now">LIVE_SMALL</div>
+          <div class="lock">LIVE_FULL</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><span class="microlabel">启动授权 LAUNCH AUTH</span><span class="microlabel">TRIPLE-CONFIRM</span></div>
+      <div style="padding:16px">
+        <table style="border:1px solid var(--line);border-radius:3px;margin-bottom:14px">
+          <tr><td class="microlabel" style="border-bottom:1px solid var(--line);padding:9px 12px">模式</td><td class="mono" style="font-size:11.5px;border-bottom:1px solid var(--line);padding:9px 12px">LIVE_SMALL</td></tr>
+          <tr><td class="microlabel" style="border-bottom:1px solid var(--line);padding:9px 12px">策略</td><td class="mono" style="font-size:11.5px;border-bottom:1px solid var(--line);padding:9px 12px">结构突破 v4.2</td></tr>
+          <tr><td class="microlabel" style="border-bottom:1px solid var(--line);padding:9px 12px">资金池</td><td class="mono" style="font-size:11.5px;border-bottom:1px solid var(--line);padding:9px 12px">小仓池 5,000 USDT · 单笔 ≤3%</td></tr>
+          <tr><td class="microlabel" style="padding:9px 12px">交易所</td><td class="mono" style="font-size:11.5px;padding:9px 12px">BINANCE SPOT · 38ms</td></tr>
+        </table>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn steel">启动模拟</button>
+          <button class="btn">启动小仓实盘</button>
+          <button class="btn copper">停用自动交易</button>
+        </div>
+      </div>
+      <div class="note"><b>WARN</b> · market_data 部分降级、通知未配置 —— 不阻断小仓启动，建议先补齐</div>
+    </div>
+  </div>
+
+  <!-- §02 门禁校验表 -->
+  <div class="sect"><span class="n">§02</span><h2>门禁校验表</h2><span class="rule"></span><span class="unit">9 PASS · 2 WARN</span></div>
+  <div class="panel fadein">
+    <table class="gatelist">
+      <tbody>
+        <tr><td class="idx">01</td><td class="nm">运行模式</td><td class="th">paper | live_small | live_full</td><td class="st ok">LIVE_SMALL</td><td class="mark ok">✓</td></tr>
+        <tr><td class="idx">02</td><td class="nm">策略选择</td><td class="th">required</td><td class="st ok">结构突破 v4.2</td><td class="mark ok">✓</td></tr>
+        <tr><td class="idx">03</td><td class="nm">资金配置</td><td class="th">pool required</td><td class="st ok">5,000 USDT</td><td class="mark ok">✓</td></tr>
+        <tr><td class="idx">04</td><td class="nm">风控配置</td><td class="th">policy required</td><td class="st ok">POLICY v7</td><td class="mark ok">✓</td></tr>
+        <tr><td class="idx">05</td><td class="nm">交易所连接</td><td class="th">connected</td><td class="st ok">BINANCE 38ms</td><td class="mark ok">✓</td></tr>
+        <tr class="warnrow"><td class="idx">06</td><td class="nm">数据源健康</td><td class="th">online</td><td class="st warn">DEGRADED</td><td class="mark warn">!</td></tr>
+        <tr><td class="idx">07</td><td class="nm">策略 DSL 验证</td><td class="th">passed</td><td class="st ok">PASSED · 4d 前</td><td class="mark ok">✓</td></tr>
+        <tr><td class="idx">08</td><td class="nm">回测通过</td><td class="th">≥1</td><td class="st ok">SHARPE 1.84</td><td class="mark ok">✓</td></tr>
+        <tr><td class="idx">09</td><td class="nm">模拟时长</td><td class="th">≥72h</td><td class="st ok">96h</td><td class="mark ok">✓</td></tr>
+        <tr class="warnrow"><td class="idx">10</td><td class="nm">通知可用</td><td class="th">optional</td><td class="st warn">NOT SET</td><td class="mark warn">!</td></tr>
+        <tr><td class="idx">11</td><td class="nm">紧急停止</td><td class="th">available</td><td class="st ok">ARMED</td><td class="mark ok">✓</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <footer style="margin-top:34px;font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;color:var(--dim)">MERIDIAN · 校验表 · 量表表针 sweep · hairline 分隔</footer>
+</div>
+
+<script>
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+(function(){
+  const g=document.getElementById('gaugeTicks');
+  for(let i=0;i<=10;i++){
+    const a=Math.PI-(i/10)*Math.PI, x1=150+Math.cos(a)*108, y1=140-Math.sin(a)*108,
+          x2=150+Math.cos(a)*118, y2=140-Math.sin(a)*118;
+    const l=document.createElementNS('http://www.w3.org/2000/svg','line');
+    l.setAttribute('x1',x1);l.setAttribute('y1',y1);l.setAttribute('x2',x2);l.setAttribute('y2',y2);
+    l.setAttribute('stroke','var(--dim)');l.setAttribute('stroke-width',i%5===0?'2':'1');
+    g.appendChild(l);
+  }
+  const score=86, arc=document.getElementById('gaugeArc'), needle=document.getElementById('needle');
+  const total=408.4, targetOffset=total*(1-score/100), targetAngle=(score/100)*180-90;
+  if(reduced){arc.setAttribute('stroke-dashoffset',targetOffset);needle.style.transform=`rotate(${targetAngle}deg)`;needle.style.transformOrigin='150px 140px';document.getElementById('gaugeVal').textContent=score;return}
+  const t0=performance.now(),dur=1100;
+  const step=n=>{
+    const p=Math.min(1,(n-t0)/dur),e=1-Math.pow(1-p,3);
+    arc.setAttribute('stroke-dashoffset', total-(total-targetOffset)*e);
+    needle.style.transform=`rotate(${targetAngle*e}deg)`;
+    needle.style.transformOrigin='150px 140px';
+    document.getElementById('gaugeVal').textContent=Math.round(score*e);
+    if(p<1)requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+})();
+</script>
+</body>
+</html>

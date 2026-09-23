@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlphaLoop · 风控中心 — MERIDIAN</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F4F3EF; --card:#FBFAF7; --line:#E3E0D8; --line-2:#D2CEC2;
+  --ink:#14161A; --muted:#6B6E78; --dim:#9A978B;
+  --steel:#2450A8; --copper:#B4530F; --up:#0E7A4D; --down:#C0392B; --warn:#B4740B;
+  --sans:'Inter Tight',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased}
+:focus-visible{outline:2px solid var(--steel);outline-offset:2px}
+.mono{font-family:var(--mono)}
+.microlabel{font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+.wrap{max-width:1320px;margin:0 auto;padding:0 28px 96px}
+
+.masthead{border-bottom:2px solid var(--ink);padding:22px 0 16px}
+.mast-top{display:flex;align-items:baseline;justify-content:space-between}
+.mast-top h1{font-size:26px;font-weight:600;letter-spacing:-.02em}
+.mast-top h1 em{font-family:var(--mono);font-style:normal;font-size:11px;letter-spacing:.2em;color:var(--steel);margin-right:12px}
+.ruler{height:26px;margin-top:12px;background-image:repeating-linear-gradient(90deg,var(--line-2) 0 1px,transparent 1px 12px),repeating-linear-gradient(90deg,var(--ink) 0 1px,transparent 1px 120px);background-size:100% 8px,100% 26px;background-repeat:no-repeat;transform-origin:left;animation:ruleIn .8s cubic-bezier(.2,.7,.2,1) both .15s}
+@keyframes ruleIn{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.mast-meta{display:flex;gap:28px;margin-top:8px;font-family:var(--mono);font-size:10.5px;color:var(--muted);letter-spacing:.08em}
+.mast-meta b{color:var(--ink);font-weight:600}
+.mast-meta .warn-t{color:var(--copper)}
+.backlink{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-decoration:none;color:var(--dim)}
+.backlink:hover{color:var(--steel)}
+
+.sect{display:flex;align-items:baseline;gap:14px;margin:34px 0 14px}
+.sect .n{font-family:var(--mono);font-size:11px;color:var(--steel);letter-spacing:.1em}
+.sect h2{font-size:14px;font-weight:600}
+.sect .rule{flex:1;height:1px;background:var(--line-2);transform-origin:left;animation:ruleIn .5s cubic-bezier(.2,.7,.2,1) both}
+.sect .unit{font-family:var(--mono);font-size:9.5px;color:var(--dim);letter-spacing:.14em}
+.fadein{opacity:0;transform:translateX(10px);animation:fadein .35s ease-out forwards}
+@keyframes fadein{to{opacity:1;transform:none}}
+
+.panel{background:var(--card);border:1px solid var(--line);border-radius:3px}
+.panel-head{display:flex;justify-content:space-between;align-items:baseline;padding:12px 16px;border-bottom:1px solid var(--line)}
+.panel-head .microlabel{color:var(--muted)}
+
+.hero{display:grid;grid-template-columns:minmax(300px,380px) 1fr 1fr;gap:16px}
+.gaugebox{padding:18px 16px 12px;text-align:center}
+.gauge-word{font-family:var(--mono);font-size:11px;letter-spacing:.16em;color:var(--copper);font-weight:600}
+.needle{transform-origin:150px 140px}
+.gauge-labels{font-family:var(--mono);font-size:9px;fill:var(--dim)}
+.gauge-val{font-family:var(--mono);font-size:28px;font-weight:600;fill:var(--ink)}
+
+/* 护栏量程表 */
+.meter-row{display:grid;grid-template-columns:110px 1fr 64px;gap:12px;align-items:center;padding:11px 16px;border-bottom:1px solid var(--line)}
+.meter-row:last-child{border-bottom:none}
+.meter-row .nm{font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase}
+.meter-row .val{font-family:var(--mono);font-size:12.5px;font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
+.meter{position:relative;height:10px;background:var(--bg);border:1px solid var(--line)}
+.meter i{position:absolute;top:0;bottom:0;left:0;background:var(--steel);width:0;transition:width .9s cubic-bezier(.2,.7,.2,1)}
+.meter i.warnzone{background:var(--copper)}
+.meter .cap{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink)}
+.meter .cap.risk{background:var(--down)}
+
+table{width:100%;border-collapse:collapse}
+th{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);font-weight:500;text-align:right;padding:10px 14px;border-bottom:1px solid var(--line-2)}
+th:first-child,td:first-child{text-align:left}
+td{font-family:var(--mono);font-size:12px;text-align:right;padding:11px 14px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+td:first-child{font-family:var(--sans)}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:#F6F4EE}
+.tag{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;padding:2px 8px;border:1px solid var(--line-2);color:var(--muted)}
+.tag.ok{color:var(--up);border-color:var(--up)} .tag.warn{color:var(--warn);border-color:var(--warn)} .tag.down{color:var(--down);border-color:var(--down)}
+
+.btn{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;padding:9px 18px;border:1px solid var(--ink);background:var(--card);color:var(--ink);border-radius:2px;cursor:pointer;transition:background .15s,color .15s}
+.btn:hover{background:var(--ink);color:var(--bg)}
+.btn.copper{border-color:var(--copper);color:var(--copper)}
+.btn.copper:hover{background:var(--copper);color:#fff}
+.btn.danger{border-color:var(--down);color:var(--down)}
+.btn.danger:hover{background:var(--down);color:#fff}
+
+@media(max-width:1100px){.hero{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="masthead">
+    <div class="mast-top">
+      <h1><em>ALPHALOOP</em>风控中心 Risk Control</h1>
+      <a class="backlink" href="index.html">← 返回矩阵</a>
+    </div>
+    <div class="ruler" aria-hidden="true"></div>
+    <div class="mast-meta">
+      <span>SYS <b class="warn-t">CAUTION</b></span>
+      <span>RISK LEVEL <b class="warn-t">62%</b></span>
+      <span>FAST TRACK <b>45ms</b></span>
+      <span>FREQTRADE <b class="warn-t">RECONNECTING</b></span>
+      <span style="margin-left:auto">MERIDIAN · RISK-OPS</span>
+    </div>
+  </header>
+
+  <!-- §01 水位量表 + FSM + 护栏 -->
+  <div class="sect"><span class="n">§01</span><h2>风险水位与门禁护栏</h2><span class="rule"></span><span class="unit">SCALE 0–100</span></div>
+  <div class="hero fadein">
+    <div class="panel">
+      <div class="panel-head"><span class="microlabel">全局风险水位 RISK LEVEL</span><span class="microlabel">T+0</span></div>
+      <div class="gaugebox">
+        <svg viewBox="0 0 300 150" width="100%" role="img" aria-label="风险水位 62%">
+          <path d="M20 140 A130 130 0 0 1 280 140" fill="none" stroke="var(--line)" stroke-width="10"/>
+          <path id="gaugeArc" d="M20 140 A130 130 0 0 1 280 140" fill="none" stroke="var(--copper)" stroke-width="10" stroke-dasharray="408.4" stroke-dashoffset="408.4"/>
+          <g class="gauge-labels" id="gaugeTicks"></g>
+          <line class="needle" id="needle" x1="150" y1="140" x2="150" y2="34" stroke="var(--ink)" stroke-width="2.5" stroke-linecap="round"/>
+          <circle cx="150" cy="140" r="5" fill="var(--ink)"/>
+          <text class="gauge-val" x="150" y="112" text-anchor="middle"><tspan id="gaugeVal">0</tspan>%</text>
+        </svg>
+        <div class="gauge-word">▲ CAUTION 警戒</div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:5px">70% 以上触发新入场封锁 · 90% 熔断</div>
+      </div>
+      <div style="padding:0 16px 14px"><button class="btn danger" style="width:100%">紧急停止 EMERGENCY STOP</button></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><span class="microlabel">门禁护栏 GUARDS</span><span class="microlabel">5 GATES</span></div>
+      <div>
+        <div class="meter-row"><span class="nm">日亏损</span><div class="meter"><i data-w="28"></i><span class="cap risk" style="left:100%"></span></div><span class="val">28% / 3%</span></div>
+        <div class="meter-row"><span class="nm">周亏损</span><div class="meter"><i data-w="19"></i><span class="cap risk" style="left:100%"></span></div><span class="val">19% / 6%</span></div>
+        <div class="meter-row"><span class="nm">敞口</span><div class="meter"><i data-w="52"></i><span class="cap risk" style="left:100%"></span></div><span class="val">31.4% / 60%</span></div>
+        <div class="meter-row"><span class="nm">连亏</span><div class="meter"><i class="warnzone" data-w="34"></i><span class="cap risk" style="left:100%"></span></div><span class="val" style="color:var(--copper)">1 / 3</span></div>
+        <div class="meter-row"><span class="nm">清算风险</span><div class="meter"><i data-w="12"></i><span class="cap risk" style="left:100%"></span></div><span class="val">LOW</span></div>
+      </div>
+      <div class="panel-head" style="border-top:1px solid var(--line);border-bottom:none;padding-top:10px"><span class="microlabel">FREQTRADE 连接状态机</span></div>
+      <div style="padding:0 16px 14px;font-family:var(--mono);font-size:11px;color:var(--muted)">
+        <span style="color:var(--up)">HEALTHY</span> → DEGRADED → <span style="color:var(--copper);font-weight:600">RECONNECTING（当前）</span> → STALE → OFFLINE → SAFE MODE
+        <div style="margin-top:6px;font-size:10px">REST 心跳 38s 前 · 重连第 2 次 · 订单同步已降级为轮询</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><span class="microlabel">最近拦截 BLOCKED</span><span class="microlabel">24H</span></div>
+      <table>
+        <thead><tr><th>时间</th><th>动作</th><th>原因</th></tr></thead>
+        <tbody>
+          <tr><td>09:47</td><td>ETH 入场</td><td><span class="tag warn">volatility_lock</span></td></tr>
+          <tr><td>08:12</td><td>SOL 加仓</td><td><span class="tag warn">exposure_cap</span></td></tr>
+          <tr><td>昨 22:31</td><td>BTC 入场</td><td><span class="tag down">daily_loss_lock</span></td></tr>
+        </tbody>
+      </table>
+      <div style="padding:12px 16px;font-family:var(--mono);font-size:10px;color:var(--muted)">24h 内 3 次拦截 · 0 误报 · 全部有 reason_code</div>
+    </div>
+  </div>
+
+  <!-- §02 熔断台账 -->
+  <div class="sect"><span class="n">§02</span><h2>熔断记录</h2><span class="rule"></span><span class="unit">30D</span></div>
+  <div class="panel fadein">
+    <table>
+      <thead><tr><th>时间</th><th>类型</th><th>范围</th><th>关联命令</th><th>状态</th></tr></thead>
+      <tbody>
+        <tr><td>2026-08-21 09:47</td><td><span class="tag warn">VOLATILITY_LOCK</span></td><td>ETH/USDT</td><td>cmd_8f3a…</td><td><span class="tag ok">RESOLVED</span></td></tr>
+        <tr><td>2026-08-19 22:31</td><td><span class="tag down">DAILY_LOSS_LOCK</span></td><td>账户</td><td>cmd_1c2e…</td><td><span class="tag ok">RESOLVED</span></td></tr>
+        <tr><td>2026-08-17 14:05</td><td><span class="tag warn">SHADOW_VIOLATION</span></td><td>BTC/USDT</td><td>cmd_77d1…</td><td><span class="tag ok">RESOLVED</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <footer style="margin-top:34px;font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;color:var(--dim)">MERIDIAN · 水位量表 · 护栏量程 · 连接状态机 · 熔断台账</footer>
+</div>
+
+<script>
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+(function(){
+  const g=document.getElementById('gaugeTicks');
+  for(let i=0;i<=10;i++){
+    const a=Math.PI-(i/10)*Math.PI;
+    const l=document.createElementNS('http://www.w3.org/2000/svg','line');
+    l.setAttribute('x1',150+Math.cos(a)*108);l.setAttribute('y1',140-Math.sin(a)*108);
+    l.setAttribute('x2',150+Math.cos(a)*118);l.setAttribute('y2',140-Math.sin(a)*118);
+    l.setAttribute('stroke','var(--dim)');l.setAttribute('stroke-width',i%5===0?'2':'1');
+    g.appendChild(l);
+  }
+  const score=62,arc=document.getElementById('gaugeArc'),needle=document.getElementById('needle');
+  const total=408.4,targetOffset=total*(1-score/100),targetAngle=(score/100)*180-90;
+  if(reduced){arc.setAttribute('stroke-dashoffset',targetOffset);needle.style.transform=`rotate(${targetAngle}deg)`;needle.style.transformOrigin='150px 140px';document.getElementById('gaugeVal').textContent=score;return}
+  const t0=performance.now(),dur=1100;
+  const step=n=>{
+    const p=Math.min(1,(n-t0)/dur),e=1-Math.pow(1-p,3);
+    arc.setAttribute('stroke-dashoffset',total-(total-targetOffset)*e);
+    needle.style.transform=`rotate(${targetAngle*e}deg)`;
+    needle.style.transformOrigin='150px 140px';
+    document.getElementById('gaugeVal').textContent=Math.round(score*e);
+    if(p<1)requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+})();
+document.querySelectorAll('.meter i').forEach(i=>{requestAnimationFrame(()=>{i.style.width=i.dataset.w+'%'})});
+</script>
+</body>
+</html>
