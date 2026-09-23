@@ -1,0 +1,218 @@
+@import "tailwindcss";
+
+/* ============================================================
+   AlphaLoop 双主题设计 token(翻译自 SwiftUI DesignTokens.swift)
+   dark  = VOLT Terminal(夜盘终端):近黑 + 霓虹数据色 + 发光
+   light = VOLT Daylight(纸面研究):纯白 + 油墨数据色 + 柔和阴影
+   ============================================================ */
+
+:root,
+[data-theme="dark"] {
+  --bg: #0a0a0c;
+  --card: #121216;
+  --surface: #17171c;
+  --surface-elevated: #1b1b21;
+  --surface-hover: #1e1e25;
+  --surface-active: #22260f;
+
+  --text: #f5f6f8;
+  --text-2: #9ba0ae;
+  --text-3: #60656f;
+
+  --border: #26262c;
+  --border-hover: #3a3a44;
+
+  /* 品牌 accent:电光柠檬黄(两主题同签名) */
+  --accent: #d8ff3d;
+  --accent-light: #e4ff70;
+  --accent-text: #d8ff3d; /* accent 作文字(暗色=lime) */
+  --accent-shine: #ffffff; /* shine 扫光(暗色=白,亮色对比) */
+  --accent-soft: #22260f; /* accent 浅底 */
+  --on-accent: #0a0a0c; /* accent 实底之上的前景 */
+
+  /* 语义数据色(暗色=霓虹) */
+  --bull: #3df584;
+  --bear: #ff4d6d;
+  --warn: #ffb84d;
+  --violet: #8b7cff;
+  --on-bull: #0a0a0c;
+  --on-bear: #ffffff;
+
+  /* 导航选中态 */
+  --nav-sel: #22260f;
+  --on-nav-sel: #f5f6f8;
+  --nav-sel-ind: #d8ff3d;
+
+  /* 阴影(暗色:深度靠边框+发光) */
+  --shadow-card: 0 4px 10px rgb(0 0 0 / 0.35);
+  --shadow-elevated: 0 10px 20px rgb(0 0 0 / 0.5);
+  --shadow-modal: 0 12px 30px rgb(0 0 0 / 0.5);
+  --glow-accent: 0 0 18px rgb(216 255 61 / 0.35);
+}
+
+[data-theme="light"] {
+  --bg: #ffffff;
+  --card: #ffffff;
+  --surface: #eff0f3;
+  --surface-elevated: #ffffff;
+  --surface-hover: #f3f4f6;
+  --surface-active: #f1f7d8;
+
+  --text: #16181c;
+  --text-2: #4a5058;
+  --text-3: #8a9099;
+
+  --border: #d8dadf;
+  --border-hover: #bec2c9;
+
+  --accent: #d8ff3d;
+  --accent-light: #e4ff70;
+  --accent-text: #5a7a00; /* accent 作文字(亮色=深橄榄,对比 5.5:1) */
+  --accent-shine: #d8ff3d; /* shine 扫光(亮色=accent本身) */
+  --accent-soft: #e9f9c0;
+  --on-accent: #0a0a0c;
+
+  /* 语义数据色(亮色=印刷油墨) */
+  --bull: #15803d;
+  --bear: #e11d48;
+  --warn: #b45309;
+  --violet: #6b54e8;
+  --on-bull: #ffffff;
+  --on-bear: #ffffff;
+
+  /* 导航选中:荧光笔实底 + 近黑字 */
+  --nav-sel: #d8ff3d;
+  --on-nav-sel: #0a0a0c;
+  --nav-sel-ind: #0a0a0c;
+
+  /* 阴影(亮色:真实柔和投影) */
+  --shadow-card: 0 6px 16px rgb(20 22 26 / 0.1);
+  --shadow-elevated: 0 14px 28px rgb(20 22 26 / 0.14);
+  --shadow-modal: 0 12px 30px rgb(20 22 26 / 0.16);
+  --glow-accent: 0 0 16px rgb(90 122 0 / 0.14);
+}
+
+/* Tailwind v4:把 token 映射为工具类色名 */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-card: var(--card);
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-surface-hover: var(--surface-hover);
+  --color-surface-active: var(--surface-active);
+  --color-text: var(--text);
+  --color-text-2: var(--text-2);
+  --color-text-3: var(--text-3);
+  --color-border: var(--border);
+  --color-border-hover: var(--border-hover);
+  --color-accent: var(--accent);
+  --color-accent-light: var(--accent-light);
+  --color-accent-text: var(--accent-text);
+  --color-accent-soft: var(--accent-soft);
+  --color-on-accent: var(--on-accent);
+  --color-bull: var(--bull);
+  --color-bear: var(--bear);
+  --color-warn: var(--warn);
+  --color-violet: var(--violet);
+  --color-on-bull: var(--on-bull);
+  --color-on-bear: var(--on-bear);
+  --color-nav-sel: var(--nav-sel);
+  --color-on-nav-sel: var(--on-nav-sel);
+  --color-nav-sel-ind: var(--nav-sel-ind);
+
+  --font-display: "Archivo Variable", "Archivo", system-ui, sans-serif;
+  --font-body: "Space Grotesk", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --shadow-card: var(--shadow-card);
+  --shadow-elevated: var(--shadow-elevated);
+  --shadow-modal: var(--shadow-modal);
+  --glow-accent: var(--glow-accent);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+/* 数字一律 tabular */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 全局终端网格底纹(对应 Swift TerminalGridBackground,text 2.5% 发丝线) */
+.terminal-grid {
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--text) 2.5%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--text) 2.5%, transparent) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+
+/* 全局按钮/可点击元素按压反馈 */
+button,
+a,
+[role="button"] {
+  transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+  transition-duration: 0.15s;
+}
+button:active:not(:disabled),
+[role="button"]:active:not([aria-disabled]) {
+  transform: scale(0.97);
+}
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--accent-text);
+  outline-offset: 2px;
+}
+
+/* 统一滚动条 */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 5px;
+  border: 2px solid var(--bg);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-hover);
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* 主题切换时的全局颜色过渡 */
+[data-theme-transition] * {
+  transition:
+    background-color 0.25s ease,
+    border-color 0.25s ease,
+    color 0.25s ease,
+    box-shadow 0.25s ease !important;
+}
+
+/* ReactBits StarBorder 动画注册 */
+@theme {
+  --animate-star-movement-bottom: star-movement-bottom linear infinite alternate;
+  --animate-star-movement-top: star-movement-top linear infinite alternate;
+}
+
+@keyframes star-movement-bottom {
+  0% { transform: translate(0%, 0%); opacity: 1; }
+  100% { transform: translate(-100%, 0%); opacity: 0; }
+}
+
+@keyframes star-movement-top {
+  0% { transform: translate(0%, 0%); opacity: 1; }
+  100% { transform: translate(100%, 0%); opacity: 0; }
+}

@@ -1,0 +1,123 @@
+/* VOLT 画布映射层:把 canvas-web 的 --pa-* 变量桥接到 VOLT 双主题 token。
+   仅作用于 .volt-canvas 容器,不污染全局;不引入 canvas-web 的全局 reset。 */
+
+.volt-canvas {
+  --pa-bg: var(--bg);
+  --pa-card: var(--card);
+  --pa-card-translucent: color-mix(in srgb, var(--card) 82%, transparent);
+  --pa-surface: var(--surface);
+  --pa-surface-elevated: var(--surface-elevated);
+
+  --pa-border: var(--border);
+  --pa-border-strong: var(--border-hover);
+  --pa-border-accent: var(--accent);
+
+  --pa-accent: var(--accent-text);
+  --pa-warning: var(--warn);
+  --pa-danger: var(--bear);
+  --pa-amber: var(--warn);
+  --pa-purple: var(--violet);
+
+  --pa-text-primary: var(--text);
+  --pa-text-secondary: var(--text-2);
+  --pa-text-muted: var(--text-3);
+
+  --pa-edge-default: var(--border-hover);
+  --pa-edge-mtf: var(--violet);
+
+  --pa-font-sans: var(--font-body);
+  --pa-font-mono: var(--font-mono);
+  --pa-radius-sm: 8px;
+  --pa-radius-md: 10px;
+  --pa-space-1: 4px;
+  --pa-space-2: 8px;
+  --pa-space-3: 12px;
+  --pa-space-4: 16px;
+
+  /* 节点语义色 → VOLT */
+  --pa-node-signal: var(--accent-text);
+  --pa-node-condition: var(--text-2);
+  --pa-node-filter: var(--warn);
+  --pa-node-sizing: var(--bull);
+  --pa-node-risk: var(--bear);
+  --pa-node-output: var(--accent-text);
+  --pa-node-structure: var(--warn);
+  --pa-node-account: var(--bear);
+  --pa-node-mtf: var(--violet);
+}
+
+/* React Flow 主题适配(容器作用域) */
+.volt-canvas .react-flow,
+.volt-canvas .react-flow__background,
+.volt-canvas .react-flow__pane {
+  background: var(--pa-bg) !important;
+}
+
+.volt-canvas .react-flow__edge-path {
+  stroke: var(--pa-edge-default);
+  stroke-width: 1.5;
+}
+
+.volt-canvas .react-flow__edge.selected .react-flow__edge-path {
+  stroke: var(--pa-accent);
+}
+
+.volt-canvas .react-flow__connection-path {
+  stroke: var(--pa-accent) !important;
+  stroke-width: 1.5 !important;
+}
+
+.volt-canvas .react-flow__controls {
+  background: var(--pa-card-translucent) !important;
+  border: 1px solid var(--pa-border) !important;
+  border-radius: var(--pa-radius-md) !important;
+  overflow: hidden !important;
+}
+
+.volt-canvas .react-flow__controls button {
+  background: transparent !important;
+  border-bottom: 1px solid var(--pa-border) !important;
+  fill: var(--pa-text-secondary) !important;
+}
+
+.volt-canvas .react-flow__controls button:hover {
+  background: var(--pa-surface) !important;
+}
+
+.volt-canvas .react-flow__minimap {
+  background: var(--pa-card) !important;
+  border: 1px solid var(--pa-border) !important;
+  border-radius: var(--pa-radius-md) !important;
+}
+
+.volt-canvas .react-flow__attribution {
+  background: transparent !important;
+  color: var(--pa-text-muted) !important;
+}
+
+/* ── 流水追踪（点击节点高亮上下游链路） ─────────────────────────── */
+.volt-canvas .react-flow__node.flow-dimmed {
+  opacity: 0.28;
+  filter: grayscale(0.4);
+  transition: opacity 180ms ease;
+}
+.volt-canvas .react-flow__node.flow-traced {
+  opacity: 1;
+  transition: opacity 180ms ease;
+}
+
+/* 连线流动动画（dash 滚动 = 流水） */
+.volt-canvas .react-flow__edge.flow-traced-edge .react-flow__edge-path {
+  stroke: var(--pa-accent) !important;
+  stroke-width: 2px !important;
+  stroke-dasharray: 8 6;
+  animation: pa-flow-dash 0.9s linear infinite;
+}
+.volt-canvas .react-flow__edge.flow-dimmed-edge .react-flow__edge-path {
+  stroke: var(--pa-border) !important;
+  opacity: 0.25;
+}
+
+@keyframes pa-flow-dash {
+  to { stroke-dashoffset: -14; }
+}
