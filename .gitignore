@@ -30,6 +30,7 @@ data/
 # Freqtrade user data (keep config, ignore generated)
 freqtrade/user_data/logs/
 freqtrade/user_data/*.sqlite
+freqtrade/user_data/strategies/strategy_rules_*.json
 
 # PyInstaller build artifacts
 backend/dist/
@@ -54,6 +55,12 @@ canvas-web/dist/
 .agents/
 skills/
 .claude/worktrees/
+
+# web/ (Tauri + Vite) build artifacts
+web/dist/
+web/tsconfig.tsbuildinfo
+web/src-tauri/target/
+web/src-tauri/gen/schemas/
 
 # Local proxy override (VPN) — not for commit
 docker-compose.override.yml
