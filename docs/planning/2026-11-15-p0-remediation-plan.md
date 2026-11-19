@@ -1524,3 +1524,17 @@
 | 156.2 | k3d + kubectl | ✅ | 单节点集群，server dry-run 通过 |
 | 156.3 | GitHub CLI | ✅ 安装 | 未认证，无法触发 CI |
 | 156.4 | Stripe CLI | ✅ 安装 | 无测试密钥，无法联调 |
+
+## 批次 157 — GitHub Actions 全绿（2026-11-20）
+
+| Job | 结果 |
+|---|---|
+| Backend | ✅ 5m40s |
+| Backend on PostgreSQL | ✅ 17m38s |
+| Tenant isolation | ✅ 59s |
+| Web typecheck | ✅ 18s |
+| Web E2E | ✅ 1m13s |
+| Canvas tests | ✅ 15s |
+| macOS App + iOS UI | ✅ 12m10s |
+
+Run: https://github.com/TheFeatureIsMy/phosphor-terminal/actions/runs/44567150111

@@ -8,8 +8,8 @@ release steps cannot be performed from this environment:
 | Docker | verified locally via Colima | production host still needed |
 | Kubernetes | k3d server dry-run passed | real cluster + registry still needed |
 | Exchange network unreachable | `api.binance.com` request times out | network access to Binance |
-| CI not executed | workflow added, no authenticated push/run | push permission or GitHub token |
-| Live payment provider | no Stripe keys | test-mode Stripe account/keys |
+| Live payment provider | no Stripe test keys | test-mode Stripe account/keys |
+| Per-tenant Freqtrade | image not started yet | exchange access + runtime host |
 
 ## Verified before blocking
 
@@ -19,6 +19,8 @@ release steps cannot be performed from this environment:
 - Web Playwright E2E: 3 passed.
 - iOS simulator UI test: passed.
 - RLS: 47 tenant tables, 42 RLS, 5 allowlisted.
+- GitHub Actions: all jobs green (run 44567150111).
+- Local Docker full stack + k3d server-side validation passed.
 
 ## What remains after unblocking
 
