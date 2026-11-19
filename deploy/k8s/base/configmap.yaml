@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alphaloop-config
+  namespace: alphaloop
+data:
+  APP_ENV: production
+  AUTH_REQUIRED: "true"
+  BACKGROUND_LOOPS_ENABLED: "false"
+  CORS_ORIGINS: '["https://app.example.com"]'
+  PUBLIC_BASE_URL: https://app.example.com
+  REDIS_URL: redis://redis:6379/0
+  FREQTRADE_URL: http://freqtrade:8080
+  FREQTRADE_DB_PATH: /freqtrade/user_data/tradesv3.sqlite
+  TENANT_DATA_ROOT: /var/lib/alphaloop/tenants
+  LOG_FORMAT: json

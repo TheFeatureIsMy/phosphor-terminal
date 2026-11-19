@@ -38,13 +38,20 @@ class LLMResponse:
 
 
 class LLMService:
-    def __init__(self, config_service: ProviderConfigService | None = None) -> None:
+    def __init__(
+        self,
+        config_service: ProviderConfigService | None = None,
+        tenant_id: int | None = None,
+    ) -> None:
         self._config_service = config_service or ProviderConfigService()
+        self._tenant_id = tenant_id
 
     async def list_available(self) -> list[dict[str, Any]]:
         from app.database import SessionLocal
         with SessionLocal() as db:
-            rows = self._config_service.list(db, category=ProviderCategory.LLM.value)
+            rows = self._config_service.list(
+                db, category=ProviderCategory.LLM.value, tenant_id=self._tenant_id,
+            )
         return [
             {
                 "provider": r.provider_name,
@@ -61,7 +68,12 @@ class LLMService:
         return {"calls": 0, "tokens": 0, "providers": {}}
 
     def select_provider(self, db, instance_name: str | None = None) -> ProviderConfig | None:
-        rows = self._config_service.list(db, category=ProviderCategory.LLM.value, enabled_only=True)
+        rows = self._config_service.list(
+            db,
+            category=ProviderCategory.LLM.value,
+            enabled_only=True,
+            tenant_id=self._tenant_id,
+        )
         candidates = [r for r in rows if r.enabled and r.credential_status == "configured"]
         if instance_name:
             candidates = [r for r in candidates if r.instance_name == instance_name]
@@ -97,11 +109,9 @@ class LLMService:
         if adapter is None or not hasattr(adapter, "chat"):
             raise RuntimeError(f"Provider {provider_config.provider_name} does not support chat")
 
-        # Decrypt credentials
-        from app.services.crypto_service import crypto_service
+        # Decrypt with the row's tenant key (legacy rows fall back to master).
         try:
-            creds_json = crypto_service.decrypt(provider_config.credentials_ct)
-            credentials = _json.loads(creds_json) if creds_json else {}
+            credentials = self._config_service.decrypt_credentials(provider_config) or {}
         except Exception:
             credentials = {}
 
@@ -130,5 +140,5 @@ class LLMService:
         ]
 
 
-def create_llm_service_from_env() -> LLMService:
-    return LLMService()
+def create_llm_service_from_env(tenant_id: int | None = None) -> LLMService:
+    return LLMService(tenant_id=tenant_id)

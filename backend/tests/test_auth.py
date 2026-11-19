@@ -46,6 +46,20 @@ class TestRegister:
         assert resp.status_code == 400
         assert "already taken" in resp.json()["detail"]
 
+    def test_second_registration_is_closed(self, client: TestClient):
+        _register(client)
+        resp = _register(client, username="second", email="second@example.com")
+        assert resp.status_code == 403
+        assert "Registration is closed" in resp.json()["detail"]
+
+    def test_first_user_bootstraps_superuser(self, client: TestClient, session):
+        from app.models.user import User
+
+        _register(client)
+        user = session.query(User).filter(User.username == "testuser").first()
+        assert user is not None
+        assert user.is_superuser is True
+
 
 # ---------------------------------------------------------------------------
 # POST /auth/login

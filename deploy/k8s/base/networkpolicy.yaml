@@ -1,0 +1,20 @@
+# Tenant Freqtrade pods: only the API may reach the Freqtrade API port; egress
+# stays open for exchange/DNS traffic.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: alphaloop-tenant-runtime
+  namespace: alphaloop
+spec:
+  podSelector:
+    matchExpressions:
+      - { key: tenant, operator: Exists }
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels: { app: alphaloop-api }
+      ports:
+        - { protocol: TCP, port: 8080 }
+  egress:
+    - {}

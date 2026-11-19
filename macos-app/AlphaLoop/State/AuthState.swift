@@ -18,9 +18,15 @@ final class AuthState {
         createdAt: ISO8601DateFormatter().string(from: Date())
     )
 
-    init() {
-        // 登录已移除：默认注入身份，跳过登录页。
-        self.user = Self.mockUser
+    init(authenticated: Bool = true) {
+        // macOS 目前跳过登录页；iOS 传 authenticated: false 强制走登录。
+        if authenticated {
+            self.user = Self.mockUser
+            self.isAuthenticated = true
+        } else {
+            self.user = nil
+            self.isAuthenticated = false
+        }
     }
 
     /// 使用 mock 数据登录
@@ -63,6 +69,22 @@ final class AuthState {
         } catch {
             errorMessage = mapAuthError(error)
             isLoading = false
+        }
+    }
+
+    /// Restore a persisted session at app launch (iOS). A stale token is
+    /// cleared instead of leaving the UI in a fake authenticated state.
+    @MainActor
+    func restoreSession(client: any NetworkClientProtocol) async {
+        guard KeychainService.accessToken != nil else { return }
+        isLoading = true
+        defer { isLoading = false }
+        do {
+            let fetchedUser = try await APIAuth(client: client).getMe()
+            user = fetchedUser
+            isAuthenticated = true
+        } catch {
+            logout()
         }
     }
 

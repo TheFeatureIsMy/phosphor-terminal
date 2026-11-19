@@ -37,6 +37,9 @@ class AIResearchRun(Base):
 class AIResearchLink(Base):
     __tablename__ = "ai_research_links"
 
+    tenant_id = Column(
+        Integer, ForeignKey("tenants.id", ondelete="SET NULL"), nullable=True, index=True,
+    )
     id = Column(Integer, primary_key=True, autoincrement=True)
     research_run_id = Column(Integer, ForeignKey("ai_research_runs.id"), nullable=False, index=True)
     strategy_id = Column(Integer, nullable=True, index=True)

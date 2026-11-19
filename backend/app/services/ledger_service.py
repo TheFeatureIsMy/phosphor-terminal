@@ -81,6 +81,7 @@ class LedgerService:
         symbol: str | None = None,
         offset: int = 0,
         limit: int = 100,
+        tenant_id: int | None = None,
     ) -> list[ExecutionLedgerEvent]:
         return self._repo.list_events(
             strategy_run_id=strategy_run_id,
@@ -91,4 +92,5 @@ class LedgerService:
             symbol=symbol,
             offset=offset,
             limit=limit,
+            tenant_id=tenant_id,
         )

@@ -7,6 +7,7 @@ from sqlalchemy.exc import IntegrityError
 
 from app.database import get_db
 from app.domain.enums import StrategyVersionStatus
+from app.security.deps import get_current_tenant_id
 from app.domain.strategy import StrategyV2, StrategyVersion
 from app.repositories.strategy_repository import StrategyRepository
 from app.schemas.strategy_v2 import (
@@ -34,6 +35,24 @@ router = APIRouter(prefix="/api/v2/strategies", tags=["strategies-v2"])
 
 _validator = DSLValidator()
 
+def _tenant_int(raw: str | None) -> int | None:
+    if raw is None:
+        return None
+    try:
+        return int(raw)
+    except (TypeError, ValueError):
+        return None
+
+
+def _scoped_strategy(repo: StrategyRepository, strategy_id: uuid.UUID, raw: str | None):
+    tenant_id = _tenant_int(raw)
+    strategy = repo.get_strategy_by_id(strategy_id, tenant_id)
+    if not strategy:
+        raise HTTPException(status_code=404, detail="Strategy not found")
+    return strategy
+
+
+
 
 @router.get("", response_model=list[StrategyV2Response])
 def list_strategies(
@@ -41,23 +60,43 @@ def list_strategies(
     limit: int = 50,
     offset: int = 0,
     db: Session = Depends(get_db),
+    tenant_raw: str | None = Depends(get_current_tenant_id),
 ):
     repo = StrategyRepository(db)
     return [
         StrategyV2Response.model_validate(s)
-        for s in repo.list_strategies(status=status, offset=offset, limit=limit)
+        for s in repo.list_strategies(
+            status=status, offset=offset, limit=limit,
+            tenant_id=_tenant_int(tenant_raw),
+        )
     ]
 
 
 @router.post("", response_model=StrategyV2Response, status_code=201)
-def create_strategy(req: CreateStrategyRequest, db: Session = Depends(get_db)):
+def create_strategy(
+    req: CreateStrategyRequest,
+    db: Session = Depends(get_db),
+    tenant_raw: str | None = Depends(get_current_tenant_id),
+):
     repo = StrategyRepository(db)
+    tenant_id = _tenant_int(tenant_raw)
+    if tenant_id is not None:
+        from app.models.tenant import Tenant
+        from app.services.tenant_limits import enforce_strategy_limit
+
+        tenant = db.get(Tenant, tenant_id)
+        if tenant is not None:
+            count = db.query(StrategyV2).filter(
+                StrategyV2.tenant_id == tenant_id
+            ).count()
+            enforce_strategy_limit(db, tenant, count)
     strategy = StrategyV2(
         name=req.name,
         description=req.description,
         strategy_type=req.strategy_type,
         source_type=req.source_type,
         status="draft",
+        tenant_id=_tenant_int(tenant_raw),
     )
     repo.create_strategy(strategy)
     db.commit()
@@ -86,11 +125,13 @@ def validate_dsl(req: ValidateDSLRequest):
 
 
 @router.get("/{strategy_id}", response_model=StrategyV2Response)
-def get_strategy(strategy_id: uuid.UUID, db: Session = Depends(get_db)):
+def get_strategy(
+    strategy_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    tenant_raw: str | None = Depends(get_current_tenant_id),
+):
     repo = StrategyRepository(db)
-    strategy = repo.get_strategy_by_id(strategy_id)
-    if not strategy:
-        raise HTTPException(status_code=404, detail="Strategy not found")
+    strategy = _scoped_strategy(repo, strategy_id, tenant_raw)
     return StrategyV2Response.model_validate(strategy)
 
 
@@ -99,11 +140,10 @@ def update_strategy(
     strategy_id: uuid.UUID,
     req: UpdateStrategyRequest,
     db: Session = Depends(get_db),
+    tenant_raw: str | None = Depends(get_current_tenant_id),
 ):
     repo = StrategyRepository(db)
-    strategy = repo.get_strategy_by_id(strategy_id)
-    if not strategy:
-        raise HTTPException(status_code=404, detail="Strategy not found")
+    strategy = _scoped_strategy(repo, strategy_id, tenant_raw)
 
     updates = req.model_dump(exclude_unset=True)
     for field, value in updates.items():
@@ -121,11 +161,10 @@ def update_strategy(
 def delete_strategy(
     strategy_id: uuid.UUID,
     db: Session = Depends(get_db),
+    tenant_raw: str | None = Depends(get_current_tenant_id),
 ):
     repo = StrategyRepository(db)
-    strategy = repo.get_strategy_by_id(strategy_id)
-    if not strategy:
-        raise HTTPException(status_code=404, detail="Strategy not found")
+    strategy = _scoped_strategy(repo, strategy_id, tenant_raw)
     try:
         repo.delete_strategy(strategy)
         db.commit()
@@ -142,11 +181,10 @@ def create_version(
     strategy_id: uuid.UUID,
     req: CreateVersionRequest,
     db: Session = Depends(get_db),
+    tenant_raw: str | None = Depends(get_current_tenant_id),
 ):
     repo = StrategyRepository(db)
-    strategy = repo.get_strategy_by_id(strategy_id)
-    if not strategy:
-        raise HTTPException(status_code=404, detail="Strategy not found")
+    strategy = _scoped_strategy(repo, strategy_id, tenant_raw)
 
     report = _validator.validate(req.rule_dsl)
     if not report.valid:
@@ -169,6 +207,7 @@ def create_version(
         rule_dsl=req.rule_dsl,
         dsl_hash=dsl_hash,
         created_by=req.created_by,
+        tenant_id=strategy.tenant_id,
     )
     repo.create_version(version)
     db.commit()
@@ -177,11 +216,13 @@ def create_version(
 
 
 @router.get("/{strategy_id}/versions", response_model=list[StrategyVersionResponse])
-def list_versions(strategy_id: uuid.UUID, db: Session = Depends(get_db)):
+def list_versions(
+    strategy_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    tenant_raw: str | None = Depends(get_current_tenant_id),
+):
     repo = StrategyRepository(db)
-    strategy = repo.get_strategy_by_id(strategy_id)
-    if not strategy:
-        raise HTTPException(status_code=404, detail="Strategy not found")
+    _scoped_strategy(repo, strategy_id, tenant_raw)
 
     from sqlalchemy import select
     stmt = (
@@ -199,11 +240,10 @@ def diff_versions(
     from_vid: uuid.UUID = Query(..., description="Source version ID"),
     to_vid: uuid.UUID = Query(..., description="Target version ID"),
     db: Session = Depends(get_db),
+    tenant_raw: str | None = Depends(get_current_tenant_id),
 ):
     repo = StrategyRepository(db)
-    strategy = repo.get_strategy_by_id(strategy_id)
-    if not strategy:
-        raise HTTPException(status_code=404, detail="Strategy not found")
+    _scoped_strategy(repo, strategy_id, tenant_raw)
 
     v_from = repo.get_version_by_strategy_and_id(strategy_id, from_vid)
     if not v_from:
@@ -226,8 +266,10 @@ def get_version(
     strategy_id: uuid.UUID,
     version_id: uuid.UUID,
     db: Session = Depends(get_db),
+    tenant_raw: str | None = Depends(get_current_tenant_id),
 ):
     repo = StrategyRepository(db)
+    _scoped_strategy(repo, strategy_id, tenant_raw)
     version = repo.get_version_by_strategy_and_id(strategy_id, version_id)
     if not version:
         raise HTTPException(status_code=404, detail="Version not found")
@@ -240,8 +282,10 @@ def transition_version_status(
     version_id: uuid.UUID,
     req: TransitionVersionStatusRequest,
     db: Session = Depends(get_db),
+    tenant_raw: str | None = Depends(get_current_tenant_id),
 ):
     repo = StrategyRepository(db)
+    _scoped_strategy(repo, strategy_id, tenant_raw)
     version = repo.get_version_by_strategy_and_id(strategy_id, version_id)
     if not version:
         raise HTTPException(status_code=404, detail="Version not found")

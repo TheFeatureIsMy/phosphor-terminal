@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.security.deps import get_current_tenant_id
 from app.models.provider_config import ProviderAuditLog, ProviderConfig
 from app.schemas.provider_config import (
     HealthCheckResultSchema, ProviderConfigPayload, ProviderConfigView,
@@ -38,6 +39,13 @@ def _record_audit(db, provider_id, action, actor="api", before_hash=None, after_
     ))
 
 
+def _tenant_int(raw: str | None) -> int | None:
+    try:
+        return int(raw) if raw is not None else None
+    except (TypeError, ValueError):
+        return None
+
+
 def _hash_creds(credentials_ct):
     if not credentials_ct:
         return None
@@ -57,16 +65,27 @@ def list_categories() -> dict:
 
 
 @router.get("", response_model=list[ProviderConfigView])
-def list_providers(category: str | None = Query(default=None), db: Session = Depends(get_db)):
+def list_providers(
+    category: str | None = Query(default=None),
+    db: Session = Depends(get_db),
+    tenant_raw: str | None = Depends(get_current_tenant_id),
+):
     svc = ProviderConfigService()
-    rows = svc.list(db, category=category)
+    rows = svc.list(db, category=category, tenant_id=_tenant_int(tenant_raw))
     return [svc.to_view(r) for r in rows]
 
 
 
 @router.get("/health-summary", response_model=ProviderSummaryView)
-def health_summary(db: Session = Depends(get_db)):
-    rows = db.query(ProviderConfig).all()
+def health_summary(
+    db: Session = Depends(get_db),
+    tenant_raw: str | None = Depends(get_current_tenant_id),
+):
+    q = db.query(ProviderConfig)
+    tenant_id = _tenant_int(tenant_raw)
+    if tenant_id is not None:
+        q = q.filter(ProviderConfig.tenant_id == tenant_id)
+    rows = q.all()
     by_category = {}
     total_active = total_error = total_disabled = total_configured = 0
     for r in rows:
@@ -90,16 +109,25 @@ async def health_tick():
 
 
 @router.get("/{provider_id}", response_model=ProviderConfigView)
-def get_provider(provider_id: int, db: Session = Depends(get_db)):
+def get_provider(
+    provider_id: int,
+    db: Session = Depends(get_db),
+    tenant_raw: str | None = Depends(get_current_tenant_id),
+):
     svc = ProviderConfigService()
-    row = svc.get(db, provider_id)
+    row = svc.get(db, provider_id, tenant_id=_tenant_int(tenant_raw))
     if row is None:
         raise HTTPException(status_code=404, detail={"code": "not_found"})
     return svc.to_view(row)
 
 
 @router.post("", response_model=ProviderConfigView, status_code=201)
-def create_provider(payload: ProviderConfigPayload, request: Request, db: Session = Depends(get_db)):
+def create_provider(
+    payload: ProviderConfigPayload,
+    request: Request,
+    db: Session = Depends(get_db),
+    tenant_raw: str | None = Depends(get_current_tenant_id),
+):
     try:
         category = ProviderCategory(payload.category)
     except ValueError:
@@ -109,7 +137,8 @@ def create_provider(payload: ProviderConfigPayload, request: Request, db: Sessio
 
     svc = ProviderConfigService()
     try:
-        row = svc.upsert(db, payload.model_dump())
+        tenant_id = int(tenant_raw) if tenant_raw is not None else None
+        row = svc.upsert(db, payload.model_dump(), tenant_id=tenant_id)
         db.commit()
         db.refresh(row)
     except DuplicateProviderError as e:
@@ -122,9 +151,16 @@ def create_provider(payload: ProviderConfigPayload, request: Request, db: Sessio
 
 
 @router.put("/{provider_id}", response_model=ProviderConfigView)
-def update_provider(provider_id: int, payload: dict, request: Request, db: Session = Depends(get_db)):
+def update_provider(
+    provider_id: int,
+    payload: dict,
+    request: Request,
+    db: Session = Depends(get_db),
+    tenant_raw: str | None = Depends(get_current_tenant_id),
+):
     svc = ProviderConfigService()
-    row = svc.get(db, provider_id)
+    tenant_id = _tenant_int(tenant_raw)
+    row = svc.get(db, provider_id, tenant_id=tenant_id)
     if row is None:
         raise HTTPException(status_code=404, detail={"code": "not_found"})
     from app.schemas.provider_config import (
@@ -144,7 +180,7 @@ def update_provider(provider_id: int, payload: dict, request: Request, db: Sessi
         payload_with_id["instance_name"] = row.instance_name
     validated = Schema.model_validate(payload_with_id)
     before_hash = _hash_creds(row.credentials_ct)
-    updated = svc.update(db, provider_id, validated.model_dump())
+    updated = svc.update(db, provider_id, validated.model_dump(), tenant_id=tenant_id)
     if updated is None:
         raise HTTPException(status_code=404, detail={"code": "not_found"})
     db.commit()
@@ -156,21 +192,31 @@ def update_provider(provider_id: int, payload: dict, request: Request, db: Sessi
 
 
 @router.delete("/{provider_id}", status_code=204)
-def delete_provider(provider_id: int, request: Request, db: Session = Depends(get_db)):
+def delete_provider(
+    provider_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    tenant_raw: str | None = Depends(get_current_tenant_id),
+):
     svc = ProviderConfigService()
-    row = svc.get(db, provider_id)
+    tenant_id = _tenant_int(tenant_raw)
+    row = svc.get(db, provider_id, tenant_id=tenant_id)
     if row is None:
         raise HTTPException(status_code=404, detail={"code": "not_found"})
     # Insert audit log FIRST so the FK is satisfied when the row is deleted
     _record_audit(db, provider_id, "delete", ip=_get_client_ip(request))
-    svc.delete(db, provider_id)
+    svc.delete(db, provider_id, tenant_id=tenant_id)
     db.commit()
 
 
 @router.post("/{provider_id}/test", response_model=HealthCheckResultSchema)
-async def test_provider(provider_id: int, db: Session = Depends(get_db)):
+async def test_provider(
+    provider_id: int,
+    db: Session = Depends(get_db),
+    tenant_raw: str | None = Depends(get_current_tenant_id),
+):
     svc = ProviderConfigService()
-    row = svc.get(db, provider_id)
+    row = svc.get(db, provider_id, tenant_id=_tenant_int(tenant_raw))
     if row is None:
         raise HTTPException(status_code=404, detail={"code": "not_found"})
     health = ProviderHealthService(registry=registry)
@@ -200,9 +246,16 @@ async def test_ephemeral(body: ProviderTestRequest):
 
 
 @router.post("/{provider_id}/enable", response_model=ProviderConfigView)
-def enable_provider(provider_id: int, request: Request, db: Session = Depends(get_db)):
+def enable_provider(
+    provider_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    tenant_raw: str | None = Depends(get_current_tenant_id),
+):
     svc = ProviderConfigService()
-    row = svc.set_enabled(db, provider_id, True)
+    row = svc.set_enabled(
+        db, provider_id, True, tenant_id=_tenant_int(tenant_raw),
+    )
     if row is None:
         raise HTTPException(status_code=404, detail={"code": "not_found"})
     db.commit()
@@ -212,9 +265,16 @@ def enable_provider(provider_id: int, request: Request, db: Session = Depends(ge
 
 
 @router.post("/{provider_id}/disable", response_model=ProviderConfigView)
-def disable_provider(provider_id: int, request: Request, db: Session = Depends(get_db)):
+def disable_provider(
+    provider_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    tenant_raw: str | None = Depends(get_current_tenant_id),
+):
     svc = ProviderConfigService()
-    row = svc.set_enabled(db, provider_id, False)
+    row = svc.set_enabled(
+        db, provider_id, False, tenant_id=_tenant_int(tenant_raw),
+    )
     if row is None:
         raise HTTPException(status_code=404, detail={"code": "not_found"})
     db.commit()
@@ -229,7 +289,17 @@ def rotate_credentials(provider_id: int):
 
 
 @router.get("/{provider_id}/audit-log")
-def get_audit_log(provider_id: int, limit: int = Query(default=50, ge=1, le=500), db: Session = Depends(get_db)):
+def get_audit_log(
+    provider_id: int,
+    limit: int = Query(default=50, ge=1, le=500),
+    db: Session = Depends(get_db),
+    tenant_raw: str | None = Depends(get_current_tenant_id),
+):
+    row = ProviderConfigService().get(
+        db, provider_id, tenant_id=_tenant_int(tenant_raw),
+    )
+    if row is None:
+        raise HTTPException(status_code=404, detail={"code": "not_found"})
     rows = db.query(ProviderAuditLog).filter(
         ProviderAuditLog.provider_id == provider_id
     ).order_by(ProviderAuditLog.created_at.desc()).limit(limit).all()

@@ -7,6 +7,11 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- A deployment may serve a runtime-config.js before this document to
+         override apiBase / wsBase without rebuilding the bundle. -->
+    <script>
+      window.__ALPHALOOP_CONFIG__ = window.__ALPHALOOP_CONFIG__ || {};
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -1,6 +1,7 @@
 """ProviderConfigService — DB CRUD with encryption and uniqueness."""
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timezone
 from typing import Any
 
@@ -15,6 +16,8 @@ from app.services.crypto_service import CryptoService
 from app.services.providers.base import ProviderCategory
 from app.services.providers.crypto import ProviderSecretCodec
 
+logger = logging.getLogger(__name__)
+
 
 class DuplicateProviderError(ValueError):
     """Raised on (category, provider_name, instance_name) uniqueness violation."""
@@ -25,8 +28,13 @@ class ProviderConfigService:
         self._crypto = crypto or CryptoService()
         self._codec = ProviderSecretCodec(self._crypto)
 
-    def get(self, db: Session, row_id: int) -> ProviderConfig | None:
-        return db.query(ProviderConfig).filter(ProviderConfig.id == row_id).first()
+    def get(
+        self, db: Session, row_id: int, tenant_id: int | None = None,
+    ) -> ProviderConfig | None:
+        q = db.query(ProviderConfig).filter(ProviderConfig.id == row_id)
+        if tenant_id is not None:
+            q = q.filter(ProviderConfig.tenant_id == tenant_id)
+        return q.first()
 
     def get_by_identity(
         self,
@@ -34,11 +42,14 @@ class ProviderConfigService:
         category: str,
         provider_name: str,
         instance_name: str | None = None,
+        tenant_id: int | None = None,
     ) -> ProviderConfig | None:
         q = db.query(ProviderConfig).filter(
             ProviderConfig.category == category,
             ProviderConfig.provider_name == provider_name,
         )
+        if tenant_id is not None:
+            q = q.filter(ProviderConfig.tenant_id == tenant_id)
         if category == ProviderCategory.LLM.value:
             q = q.filter(ProviderConfig.instance_name == instance_name)
         else:
@@ -50,15 +61,20 @@ class ProviderConfigService:
         db: Session,
         category: str | None = None,
         enabled_only: bool = False,
+        tenant_id: int | None = None,
     ) -> list[ProviderConfig]:
         q = db.query(ProviderConfig)
+        if tenant_id is not None:
+            q = q.filter(ProviderConfig.tenant_id == tenant_id)
         if category:
             q = q.filter(ProviderConfig.category == category)
         if enabled_only:
             q = q.filter(ProviderConfig.enabled.is_(True))
         return q.order_by(ProviderConfig.category, ProviderConfig.provider_name).all()
 
-    def upsert(self, db: Session, payload: dict[str, Any]) -> ProviderConfig:
+    def upsert(
+        self, db: Session, payload: dict[str, Any], tenant_id: int | None = None,
+    ) -> ProviderConfig:
         """Create or update. Pydantic discriminated union validates shape."""
         validated = self._validate_payload(payload)
 
@@ -67,18 +83,21 @@ class ProviderConfigService:
         instance_name = validated.instance_name
         credentials_dict = validated.credentials
 
-        existing = self.get_by_identity(db, category, provider_name, instance_name)
+        existing = self.get_by_identity(
+            db, category, provider_name, instance_name, tenant_id=tenant_id,
+        )
         if existing is not None:
             raise DuplicateProviderError(
                 f"Provider already exists: {category}/{provider_name}"
                 + (f"/{instance_name}" if instance_name else "")
             )
 
-        ciphertext = self._codec.encrypt_dict(credentials_dict)
+        ciphertext = self._codec.encrypt_dict(credentials_dict, tenant_id=tenant_id)
         fields = self._codec.field_names(credentials_dict)
         cred_status = "configured" if credentials_dict else "missing"
 
         row = ProviderConfig(
+            tenant_id=tenant_id,
             category=category,
             provider_name=provider_name,
             instance_name=instance_name,
@@ -113,22 +132,24 @@ class ProviderConfigService:
             row.priority = validated.priority
         creds = validated.credentials
         if creds is not None:
-            row.credentials_ct = self._codec.encrypt_dict(creds)
+            row.credentials_ct = self._codec.encrypt_dict(creds, tenant_id=row.tenant_id)
             row.credentials_fields = self._codec.field_names(creds)
             row.credential_status = "configured"
         db.flush()
         return row
 
-    def delete(self, db: Session, row_id: int) -> bool:
-        row = self.get(db, row_id)
+    def delete(self, db: Session, row_id: int, tenant_id: int | None = None) -> bool:
+        row = self.get(db, row_id, tenant_id=tenant_id)
         if row is None:
             return False
         db.delete(row)
         db.flush()
         return True
 
-    def set_enabled(self, db: Session, row_id: int, enabled: bool) -> ProviderConfig | None:
-        row = self.get(db, row_id)
+    def set_enabled(
+        self, db: Session, row_id: int, enabled: bool, tenant_id: int | None = None,
+    ) -> ProviderConfig | None:
+        row = self.get(db, row_id, tenant_id=tenant_id)
         if row is None:
             return None
         row.enabled = enabled
@@ -138,7 +159,39 @@ class ProviderConfigService:
         return row
 
     def decrypt_credentials(self, row: ProviderConfig) -> dict | None:
-        return self._codec.decrypt_dict(row.credentials_ct)
+        return self._codec.decrypt_dict(row.credentials_ct, tenant_id=row.tenant_id)
+
+    def reencrypt_legacy(self, db: Session) -> int:
+        """Rewrite rows encrypted with the global key using their tenant key.
+
+        The tenant_id backfill in migration d0c6a2c13d8c does not change the
+        ciphertext, so rows written before that migration must be healed once.
+        """
+        rows = (
+            db.query(ProviderConfig)
+            .filter(ProviderConfig.tenant_id.isnot(None))
+            .filter(ProviderConfig.credentials_ct.isnot(None))
+            .all()
+        )
+        migrated = 0
+        for row in rows:
+            parsed, source = self._codec.decrypt_dict_with_source(
+                row.credentials_ct, tenant_id=row.tenant_id,
+            )
+            if parsed is None:
+                logger.warning(
+                    "provider %s credentials cannot be decrypted with tenant or master key",
+                    row.id,
+                )
+                continue
+            looks_plaintext = (row.credentials_ct or "").lstrip().startswith("{")
+            if source == "master" or looks_plaintext:
+                row.credentials_ct = self._codec.encrypt_dict(
+                    parsed, tenant_id=row.tenant_id,
+                )
+                migrated += 1
+        db.flush()
+        return migrated
 
     def to_view(self, row: ProviderConfig) -> ProviderConfigView:
         return ProviderConfigView(

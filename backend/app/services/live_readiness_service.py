@@ -112,6 +112,7 @@ class LiveReadinessService:
         selected_strategy_id: str = "",
         selected_capital_pool_id: str = "",
         selected_exchange: str = "binance",
+        db: "Session | None" = None,
     ) -> ReadinessResult:
         if self._store:
             try:
@@ -196,21 +197,32 @@ class LiveReadinessService:
             score -= 15
 
         # 7. validation
-        c = self._check_validation(selected_strategy_id)
+        c = self._strategy_gate_check("validation", selected_strategy_id, db,
+                                      label="策略 DSL 验证", threshold="passed",
+                                      group="strategy")
         checks.append(c)
         if c.status == "failed":
             blockers.append({"code": "validation_failed", "message": "策略 DSL 验证未通过"})
             score -= 15
+        elif c.status == "warning":
+            warns.append({"code": "validation_unverified", "message": c.detail or "策略验证状态不可用"})
+            score -= 5
 
         # 8. backtest
-        c = self._check_backtest(selected_strategy_id)
+        c = self._strategy_gate_check("backtest", selected_strategy_id, db,
+                                      label="回测通过", threshold="≥1", group="execution")
         checks.append(c)
         if c.status == "failed":
             blockers.append({"code": "no_backtest", "message": "缺少回测记录"})
             score -= 15
+        elif c.status == "warning":
+            warns.append({"code": "backtest_unverified", "message": c.detail or "回测状态不可用"})
+            score -= 5
 
         # 9. dryrun
-        c = self._check_dryrun(selected_strategy_id)
+        c = self._strategy_gate_check("dryrun", selected_strategy_id, db,
+                                      label="模拟/dry-run", threshold="≥72h",
+                                      group="execution")
         checks.append(c)
         if c.status == "failed":
             blockers.append({"code": "dryrun_insufficient", "message": "模拟时长不足 72h"})
@@ -897,6 +909,72 @@ class LiveReadinessService:
             group="risk",
         )
 
+    def _strategy_gate_check(
+        self,
+        key: str,
+        strategy_id: str,
+        db: "Session | None",
+        *,
+        label: str,
+        threshold: str,
+        group: str,
+    ) -> CheckResult:
+        """Resolve validation/backtest/dryrun from the database.
+
+        Without a session the gate is reported as `warning` (unverified), never
+        as healthy: a missing database must not be able to unlock live trading.
+        """
+        if not strategy_id:
+            return CheckResult(
+                key=key, label=label, status="failed",
+                value="未选择", threshold=threshold,
+                detail="请选择实盘策略", group=group,
+            )
+        if db is None:
+            return CheckResult(
+                key=key, label=label, status="warning",
+                value="unverified", threshold=threshold,
+                detail="数据库不可用，无法验证策略状态", group=group,
+            )
+        try:
+            strategy_uuid = uuid.UUID(str(strategy_id))
+        except (ValueError, AttributeError, TypeError):
+            return CheckResult(
+                key=key, label=label, status="failed",
+                value="invalid id", threshold=threshold,
+                detail="strategy_id 不是合法的 UUID", group=group,
+            )
+
+        try:
+            from app.domain.execution import StrategyRun
+            from app.domain.strategy import StrategyVersion
+            from app.models.strategy import BacktestRun
+
+            latest_version = (
+                db.query(StrategyVersion)
+                .filter(StrategyVersion.strategy_id == strategy_uuid)
+                .order_by(StrategyVersion.version_no.desc())
+                .first()
+            )
+            gates = {
+                "validation": self._compute_validation_gate(latest_version),
+                "backtest": self._compute_backtest_gate(strategy_uuid, db, BacktestRun),
+                "dryrun": self._compute_dryrun_gate(latest_version, db, StrategyRun),
+            }
+            gate = gates[key]
+            return CheckResult(
+                key=key, label=label, status=gate.status,
+                value=str(gate.value), threshold=threshold,
+                detail=gate.detail, group=group,
+            )
+        except Exception:
+            logger.exception("readiness gate %s failed to query database", key)
+            return CheckResult(
+                key=key, label=label, status="warning",
+                value="unverified", threshold=threshold,
+                detail="查询策略状态失败，按未验证处理", group=group,
+            )
+
     @staticmethod
     def _provider_rows(category: str) -> list:
         """Read enabled provider_configs rows for a category (real health rows)."""
@@ -975,43 +1053,6 @@ class LiveReadinessService:
         )
 
     @staticmethod
-    def _check_validation(strategy_id: str) -> CheckResult:
-        if not strategy_id:
-            return CheckResult(
-                key="validation", label="策略 DSL 验证", status="failed",
-                value="未验证", threshold="passed", group="strategy",
-            )
-        return CheckResult(
-            key="validation", label="策略 DSL 验证", status="healthy",
-            value="通过", threshold="passed", group="strategy",
-        )
-
-    @staticmethod
-    def _check_backtest(strategy_id: str) -> CheckResult:
-        if not strategy_id:
-            return CheckResult(
-                key="backtest", label="回测通过", status="failed",
-                value="无记录", threshold="≥1", group="execution",
-            )
-        return CheckResult(
-            key="backtest", label="回测通过", status="healthy",
-            value="通过", threshold="≥1", group="execution",
-        )
-
-    @staticmethod
-    def _check_dryrun(strategy_id: str) -> CheckResult:
-        if not strategy_id:
-            return CheckResult(
-                key="dryrun", label="模拟/dry-run", status="failed",
-                value="0h", threshold="≥72h", group="execution",
-            )
-        # Default mock: healthy (will be replaced by real RunHistoryStats lookup)
-        return CheckResult(
-            key="dryrun", label="模拟/dry-run", status="healthy",
-            value="100h", threshold="≥72h", group="execution",
-        )
-
-    @staticmethod
     def _check_notification() -> CheckResult:
         return CheckResult(
             key="notification", label="通知可用", status="healthy",
@@ -1062,6 +1103,14 @@ class LiveReadinessService:
             return CheckResult(key="postgres", label="PostgreSQL", status="failed", value="error", threshold="connected")
 
     async def _check_risk_state(self, account_id: str) -> CheckResult:
+        from app.services.account_risk_firewall import AccountRiskFirewall
+
+        if AccountRiskFirewall.current_locks():
+            return CheckResult(
+                key="risk", label="风控状态", status="failed",
+                value="manual block active", threshold="not locked",
+                detail="禁止新开仓开关处于开启状态", group="system",
+            )
         if not self._store:
             return CheckResult(key="risk", label="风控状态", status="healthy", value="no store", threshold="not locked")
         state = await self._store.read_account_risk_state(account_id)

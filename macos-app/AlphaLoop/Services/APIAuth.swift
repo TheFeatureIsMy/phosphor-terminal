@@ -25,6 +25,25 @@ struct APIAuth {
     func getMe() async throws -> User {
         try await client.get("/auth/me")
     }
+
+    /// GET /auth/tenant — 当前用户所属租户
+    func getTenant() async throws -> TenantInfo {
+        try await client.get("/auth/tenant")
+    }
+
+    /// PUT /api/admin/tenant-plan — 超级管理员修改套餐
+    func updateTenantPlan(_ plan: String) async throws -> TenantPlanInfo {
+        try await client.put("/api/admin/tenant-plan", body: ["plan": plan])
+    }
+}
+
+/// 当前租户（GET /auth/tenant）
+struct TenantInfo: Codable {
+    let id: Int
+    let name: String
+    let slug: String
+    let role: String
+    let plan: String?
 }
 
 // MARK: - 请求体
@@ -34,4 +53,15 @@ struct RegisterBody: Encodable {
     let username: String
     let email: String
     let password: String
+}
+
+struct TenantPlanInfo: Codable {
+    let tenantId: Int?
+    let plan: String
+    let limits: [String: Int]?
+
+    enum CodingKeys: String, CodingKey {
+        case plan, limits
+        case tenantId = "tenant_id"
+    }
 }

@@ -12,34 +12,27 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
-# Lazy-initialized LLM service singleton
-_llm_service = None
-_llm_service_initialized = False
+# Lazy-initialized LLM services, keyed by tenant.
+_llm_services: dict[int | None, object] = {}
 
 
-def _get_llm_service():
-    """Return the LLM service if available, None otherwise. Initialized once."""
-    global _llm_service, _llm_service_initialized
-    if _llm_service_initialized:
-        return _llm_service
-    _llm_service_initialized = True
+def _get_llm_service(tenant_id: int | None = None):
+    """Return the tenant's LLM service, or None if initialization fails."""
+    if tenant_id in _llm_services:
+        return _llm_services[tenant_id]
     try:
         from app.services.llm_service import create_llm_service_from_env
-        _llm_service = create_llm_service_from_env()
-        if not _llm_service.providers:
-            logger.info("No LLM providers configured; RAG will use template fallback")
-            _llm_service = None
+        service = create_llm_service_from_env(tenant_id=tenant_id)
     except Exception as exc:
         logger.warning("Failed to initialize LLM service: %s", exc)
-        _llm_service = None
-    return _llm_service
+        service = None
+    _llm_services[tenant_id] = service
+    return service
 
 
 def _reset_llm_service():
-    """Reset the cached LLM service (for testing)."""
-    global _llm_service, _llm_service_initialized
-    _llm_service = None
-    _llm_service_initialized = False
+    """Reset the cached LLM services (for testing)."""
+    _llm_services.clear()
 
 
 def parse_pdf_content(text: str, filename: str) -> dict[str, Any]:
@@ -69,12 +62,13 @@ async def generate_strategy(
     risk_level: str = "medium",
     market: str = "crypto",
     context: list[dict] | None = None,
+    tenant_id: int | None = None,
 ) -> dict[str, Any]:
     """
     Generate a trading strategy based on prompt and knowledge base.
     Tries LLM first, falls back to template matching if unavailable.
     """
-    llm = _get_llm_service()
+    llm = _get_llm_service(tenant_id)
     if llm is not None:
         try:
             return await _generate_strategy_via_llm(llm, prompt, risk_level, market, context)

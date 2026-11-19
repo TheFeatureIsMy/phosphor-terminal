@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alphaloop-worker
+  namespace: alphaloop
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: alphaloop-worker }
+  template:
+    metadata:
+      labels: { app: alphaloop-worker }
+    spec:
+      volumes:
+        - name: tenant-data
+          persistentVolumeClaim: { claimName: alphaloop-tenant-data }
+      containers:
+        - name: worker
+          image: ghcr.io/example/alphaloop-api:latest
+          command: ["python", "-m", "app.worker_main"]
+          envFrom:
+            - configMapRef: { name: alphaloop-config }
+            - secretRef: { name: alphaloop-secrets }
+          volumeMounts:
+            - { name: tenant-data, mountPath: /var/lib/alphaloop/tenants }
+          resources:
+            requests: { cpu: 250m, memory: 512Mi }
+            limits: { cpu: "1", memory: 1Gi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            capabilities: { drop: ["ALL"] }

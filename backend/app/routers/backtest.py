@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.security.deps import get_current_tenant_id
 from app.domain.enums import CommandType
 from app.domain.mtf_guard import MTFGuardBacktestStats
 from app.models.strategy import BacktestRun
@@ -29,6 +30,13 @@ router = APIRouter(prefix="/api/v2/backtest", tags=["backtest"])
 
 _risk_engine = RiskEngine()
 
+def _tenant_int(raw: str | None) -> int | None:
+    try:
+        return int(raw) if raw is not None else None
+    except (TypeError, ValueError):
+        return None
+
+
 
 @router.post("", response_model=StartBacktestResponse, status_code=202)
 def start_backtest(
@@ -38,6 +46,7 @@ def start_backtest(
         default=False,
         description="Enable MTF Guard replay analysis on backtest trades",
     ),
+    tenant_raw: str | None = Depends(get_current_tenant_id),
 ):
     risk_result = _risk_engine.pre_backtest_check(
         dsl=req.dsl,
@@ -52,9 +61,10 @@ def start_backtest(
 
     dsl_hash = compute_dsl_hash(req.dsl)
     today = datetime.now(timezone.utc).strftime("%Y%m%d")
+    request_token = req.client_request_id or today
     idempotency_key = (
         f"start_backtest:{req.strategy_version_id or req.strategy_id}"
-        f":{dsl_hash}:backtest:{today}"
+        f":{dsl_hash}:{req.timerange}:{request_token}"
     )
 
     payload = {
@@ -70,6 +80,7 @@ def start_backtest(
         "strategy_id": req.strategy_id,
         "strategy_version_id": req.strategy_version_id,
         "include_mtf_guard": include_mtf_guard,
+        "tenant_id": _tenant_int(tenant_raw),
     }
 
     svc = CommandBusService(db)
@@ -94,17 +105,23 @@ def start_backtest(
 
 
 @router.get("/status/{command_id}", response_model=BacktestStatusResponse)
-def get_backtest_status(command_id: uuid.UUID, db: Session = Depends(get_db)):
+def get_backtest_status(
+    command_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    tenant_raw: str | None = Depends(get_current_tenant_id),
+):
     svc = CommandBusService(db)
     cmd = svc.get_by_id(command_id)
     if cmd is None:
         raise HTTPException(status_code=404, detail="Command not found")
+    tenant_id = _tenant_int(tenant_raw)
+    if tenant_id is not None and (cmd.payload or {}).get("tenant_id") not in (None, tenant_id):
+        raise HTTPException(status_code=404, detail="Command not found")
 
-    run = (
-        db.query(BacktestRun)
-        .filter(BacktestRun.command_id == str(command_id))
-        .first()
-    )
+    query = db.query(BacktestRun).filter(BacktestRun.command_id == str(command_id))
+    if tenant_id is not None:
+        query = query.filter(BacktestRun.tenant_id == tenant_id)
+    run = query.first()
 
     return BacktestStatusResponse(
         command_id=cmd.id,
@@ -119,6 +136,7 @@ def get_backtest_status(command_id: uuid.UUID, db: Session = Depends(get_db)):
 def list_backtests(
     limit: int = 50,
     offset: int = 0,
+    summary: bool = Query(default=False, description="Omit equity, trades, and raw result"),
     strategy_id: int | None = None,
     strategy_uuid: uuid.UUID | None = Query(
         None, description="Filter by strategy UUID (BacktestRun.strategy_uuid). "
@@ -128,8 +146,12 @@ def list_backtests(
         None, description="Filter by strategy version UUID (BacktestRun.strategy_version_uuid)",
     ),
     db: Session = Depends(get_db),
+    tenant_raw: str | None = Depends(get_current_tenant_id),
 ):
     query = db.query(BacktestRun)
+    tenant_id = _tenant_int(tenant_raw)
+    if tenant_id is not None:
+        query = query.filter(BacktestRun.tenant_id == tenant_id)
     if strategy_id is not None:
         query = query.filter(BacktestRun.strategy_id == strategy_id)
     if strategy_uuid is not None:
@@ -143,12 +165,27 @@ def list_backtests(
         .limit(limit)
         .all()
     )
-    return [BacktestRunResponse.model_validate(r) for r in runs]
+    rows = [BacktestRunResponse.model_validate(r) for r in runs]
+    if summary:
+        for row in rows:
+            row.equity_curve = []
+            row.trades = []
+            row.result = {}
+            row.config = {}
+    return rows
 
 
 @router.get("/{backtest_id}", response_model=BacktestRunResponse)
-def get_backtest(backtest_id: int, db: Session = Depends(get_db)):
-    run = db.query(BacktestRun).filter(BacktestRun.id == backtest_id).first()
+def get_backtest(
+    backtest_id: int,
+    db: Session = Depends(get_db),
+    tenant_raw: str | None = Depends(get_current_tenant_id),
+):
+    query = db.query(BacktestRun).filter(BacktestRun.id == backtest_id)
+    tenant_id = _tenant_int(tenant_raw)
+    if tenant_id is not None:
+        query = query.filter(BacktestRun.tenant_id == tenant_id)
+    run = query.first()
     if not run:
         raise HTTPException(status_code=404, detail="Backtest not found")
     return BacktestRunResponse.model_validate(run)

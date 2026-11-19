@@ -17,13 +17,25 @@ class StrategyRepository:
         self._s.flush()
         return strategy
 
-    def get_strategy_by_id(self, strategy_id: uuid.UUID) -> Optional[StrategyV2]:
-        return self._s.get(StrategyV2, strategy_id)
+    def get_strategy_by_id(
+        self, strategy_id: uuid.UUID, tenant_id: int | None = None,
+    ) -> Optional[StrategyV2]:
+        if tenant_id is None:
+            return self._s.get(StrategyV2, strategy_id)
+        return self._s.scalar(
+            select(StrategyV2).where(
+                StrategyV2.id == strategy_id,
+                StrategyV2.tenant_id == tenant_id,
+            )
+        )
 
     def list_strategies(
         self, *, status: str | None = None, offset: int = 0, limit: int = 50,
+        tenant_id: int | None = None,
     ) -> list[StrategyV2]:
         stmt = select(StrategyV2)
+        if tenant_id is not None:
+            stmt = stmt.where(StrategyV2.tenant_id == tenant_id)
         if status:
             stmt = stmt.where(StrategyV2.status == status)
         stmt = stmt.order_by(StrategyV2.updated_at.desc()).offset(offset).limit(limit)
@@ -102,4 +114,5 @@ class StrategyRepository:
             rule_dsl=new_dsl,
             dsl_hash=compute_dsl_hash(new_dsl),
             created_by=created_by,
+            tenant_id=src_version.tenant_id,
         )

@@ -74,7 +74,9 @@ struct PulseDropdown<T: Hashable>: View {
             .clipShape(RoundedRectangle(cornerRadius: PulseRadii.sm))
         }
         .menuStyle(.borderlessButton)
+        #if os(macOS)
         .onHover { h in withAnimation(PulseAnimation.easeOutFast) { isHovering = h } }
+        #endif
     }
 
     private var currentLabel: String {
@@ -106,7 +108,9 @@ struct PulseFilterChip: View {
                 .clipShape(RoundedRectangle(cornerRadius: PulseRadii.sm))
         }
         .buttonStyle(.plain)
+        #if os(macOS)
         .onHover { h in withAnimation(PulseAnimation.easeOutFast) { isHovering = h } }
+        #endif
     }
 }
 
@@ -147,7 +151,9 @@ struct PulseActionButton: View {
         .buttonStyle(.plain)
         .disabled(isDisabled || isLoading)
         .opacity(isDisabled ? 0.5 : 1)
+        #if os(macOS)
         .onHover { h in withAnimation(PulseAnimation.easeOutFast) { isHovering = h } }
+        #endif
     }
 
     private var bgColor: Color {

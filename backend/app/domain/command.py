@@ -13,6 +13,7 @@ from app.database.base import Base, UUIDMixin
 class CommandBusCommand(UUIDMixin, Base):
     __tablename__ = "command_bus_commands"
 
+    tenant_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
     command_type: Mapped[str] = mapped_column(String(64), nullable=False)
     aggregate_type: Mapped[str] = mapped_column(String(64), nullable=False)
     aggregate_id: Mapped[uuid.UUID | None] = mapped_column(PG_UUID(as_uuid=True))

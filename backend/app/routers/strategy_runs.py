@@ -19,9 +19,32 @@ from app.schemas.strategy_runs import (
     StrategyRunView,
     FreqtradeRunView,
 )
+from app.security.deps import get_current_tenant_id
 from app.services.command_bus import CommandBusService
 
 router = APIRouter(prefix="/api/v2/strategy-runs", tags=["strategy-runs"])
+
+
+
+
+def _tenant_int(raw: str | None) -> int | None:
+    try:
+        return int(raw) if raw is not None else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _scoped_run(db: Session, run_id: uuid.UUID, raw: str | None) -> StrategyRun:
+    """Load a run and enforce that its version belongs to the token tenant."""
+    run = db.get(StrategyRun, run_id)
+    if run is None:
+        raise HTTPException(status_code=404, detail="StrategyRun not found")
+    tenant_id = _tenant_int(raw)
+    if tenant_id is not None:
+        version = db.get(StrategyVersion, run.strategy_version_id)
+        if version is None or version.tenant_id != tenant_id:
+            raise HTTPException(status_code=404, detail="StrategyRun not found")
+    return run
 
 
 @router.get("", response_model=list[StrategyRunView])
@@ -33,8 +56,14 @@ def list_strategy_runs(
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
+    tenant_raw: str | None = Depends(get_current_tenant_id),
 ):
     q = db.query(StrategyRun)
+    tenant_id = _tenant_int(tenant_raw)
+    if tenant_id is not None:
+        q = q.join(StrategyVersion, StrategyVersion.id == StrategyRun.strategy_version_id).filter(
+            StrategyVersion.tenant_id == tenant_id,
+        )
     if mode:
         q = q.filter(StrategyRun.mode == mode)
     if status:
@@ -50,10 +79,12 @@ def list_strategy_runs(
 
 
 @router.get("/{run_id}", response_model=StrategyRunDetail)
-def get_strategy_run(run_id: uuid.UUID, db: Session = Depends(get_db)):
-    run = db.get(StrategyRun, run_id)
-    if not run:
-        raise HTTPException(status_code=404, detail="StrategyRun not found")
+def get_strategy_run(
+    run_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    tenant_raw: str | None = Depends(get_current_tenant_id),
+):
+    run = _scoped_run(db, run_id, tenant_raw)
     detail = StrategyRunDetail.model_validate(run)
     detail.execution = _execution_summary(db, run_id)
     return detail
@@ -98,10 +129,9 @@ def get_run_orders(
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
+    tenant_raw: str | None = Depends(get_current_tenant_id),
 ):
-    run = db.get(StrategyRun, run_id)
-    if not run:
-        raise HTTPException(status_code=404, detail="StrategyRun not found")
+    _scoped_run(db, run_id, tenant_raw)
     orders = db.query(ExecutionOrder).filter(
         ExecutionOrder.strategy_run_id == run_id,
     ).order_by(desc(ExecutionOrder.opened_at)).offset(offset).limit(limit).all()
@@ -117,10 +147,9 @@ def get_run_ledger(
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
+    tenant_raw: str | None = Depends(get_current_tenant_id),
 ):
-    run = db.get(StrategyRun, run_id)
-    if not run:
-        raise HTTPException(status_code=404, detail="StrategyRun not found")
+    _scoped_run(db, run_id, tenant_raw)
     events = db.query(ExecutionLedgerEvent).filter(
         ExecutionLedgerEvent.strategy_run_id == run_id,
     ).order_by(desc(ExecutionLedgerEvent.event_time)).offset(offset).limit(limit).all()
@@ -160,11 +189,10 @@ def pause_strategy_run(
     run_id: uuid.UUID,
     payload: dict | None = Body(default=None),
     db: Session = Depends(get_db),
+    tenant_raw: str | None = Depends(get_current_tenant_id),
 ):
     """Pause a running strategy run (marks run stopped, version paused)."""
-    run = db.get(StrategyRun, run_id)
-    if not run:
-        raise HTTPException(status_code=404, detail="StrategyRun not found")
+    run = _scoped_run(db, run_id, tenant_raw)
     reason = (payload or {}).get("reason", "user_requested")
     return _enqueue_run_command(db, run, CommandType.PAUSE_STRATEGY.value, "pause_run", reason)
 
@@ -174,11 +202,10 @@ def resume_strategy_run(
     run_id: uuid.UUID,
     payload: dict | None = Body(default=None),
     db: Session = Depends(get_db),
+    tenant_raw: str | None = Depends(get_current_tenant_id),
 ):
     """Resume a paused/stopped strategy run."""
-    run = db.get(StrategyRun, run_id)
-    if not run:
-        raise HTTPException(status_code=404, detail="StrategyRun not found")
+    run = _scoped_run(db, run_id, tenant_raw)
     reason = (payload or {}).get("reason", "user_requested")
     return _enqueue_run_command(db, run, CommandType.RESUME_STRATEGY.value, "resume_run", reason)
 
@@ -188,11 +215,10 @@ def stop_strategy_run(
     run_id: uuid.UUID,
     payload: dict | None = Body(default=None),
     db: Session = Depends(get_db),
+    tenant_raw: str | None = Depends(get_current_tenant_id),
 ):
     """Stop a strategy run and any active dry-run processes bound to its version."""
-    run = db.get(StrategyRun, run_id)
-    if not run:
-        raise HTTPException(status_code=404, detail="StrategyRun not found")
+    run = _scoped_run(db, run_id, tenant_raw)
     reason = (payload or {}).get("reason", "user_requested")
     result = _enqueue_run_command(db, run, CommandType.PAUSE_STRATEGY.value, "stop_run", reason)
 

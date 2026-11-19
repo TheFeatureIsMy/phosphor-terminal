@@ -61,3 +61,21 @@ def test_scheduler_interval_zero_disables_loop():
     from app.services.providers.scheduler import ProviderHealthScheduler
     sched = ProviderHealthScheduler(interval_s=0)
     assert sched.enabled is False
+
+
+def test_tick_policy_caps_per_tenant():
+    rows = [
+        _row("cex", "a1"), _row("cex", "a2"), _row("cex", "a3"),
+        _row("cex", "b1"), _row("cex", "b2"),
+        _row("cex", "c1"),
+    ]
+    for row, tenant in zip(rows, [1, 1, 1, 2, 2, 3]):
+        row.tenant_id = tenant
+
+    policy = ProviderHealthTickPolicy(batch_size=4, per_tenant_limit=2)
+    selected = policy.select(rows, now=datetime.now(timezone.utc))
+    counts: dict[int, int] = {}
+    for row in selected:
+        counts[row.tenant_id] = counts.get(row.tenant_id, 0) + 1
+    assert len(selected) == 4
+    assert counts == {1: 2, 2: 2}

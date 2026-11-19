@@ -1,10 +1,11 @@
 """AlphaLoop 端到端流程审计 — 逐业务流程走通，输出断点清单。"""
-import json, urllib.request, urllib.error, datetime
+import json, os, sys, urllib.request, urllib.error, datetime
 
 BASE = "http://127.0.0.1:8000"
 SPEC = json.load(urllib.request.urlopen(BASE + "/openapi.json", timeout=10))
 COMPS = SPEC["components"]["schemas"]
-EMA_DSL = json.load(open("/Users/mr_csx/work-app/phosphor-terminal/backend/tests/fixtures/dsl/ema_cross.json"))
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+EMA_DSL = json.load(open(os.path.join(ROOT, "backend/tests/fixtures/dsl/ema_cross.json")))
 EXPIRES = (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=2)).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 def req(method, path, body=None):
@@ -55,9 +56,10 @@ cur = [""]
 
 def step(desc, method, path, body=None, ok=(200, 201, 202, 204), show=True):
     code, data = req(method, path, body)
-    if code in ok: verdict = "OK"
+    if code == 410 or code in (404, 500, 502, 503):
+        verdict = "BROKEN"
+    elif code in ok: verdict = "OK"
     elif code in (400, 422): verdict = "PARAM"
-    elif code in (404, 500, 502, 503): verdict = "BROKEN"
     elif code == 0: verdict = "NET"
     else: verdict = "CHECK"
     results.append((cur[0], desc, code, verdict, json.dumps(data, ensure_ascii=False)[:180] if data else ""))
@@ -66,6 +68,11 @@ def step(desc, method, path, body=None, ok=(200, 201, 202, 204), show=True):
     if verdict in ("BROKEN", "NET") and show and data:
         print(f"       -> {json.dumps(data, ensure_ascii=False)[:160]}")
     return code, data
+
+cur[0] = "0.健康"
+print(f"\n══ {cur[0]} ══")
+step("健康检查 1", "GET", "/health")
+step("健康检查 2", "GET", "/health")
 
 # ════════ 1. 策略闭环 ════════
 cur[0] = "1.策略闭环"
@@ -91,7 +98,7 @@ step("信号详情", "GET", f"/api/v2/signals/{sig}")
 step("next-actions", "GET", f"/api/v2/signals/{sig}/next-actions")
 step("流转 pending→active", "POST", f"/api/v2/signals/{sig}/transition", {"target_status": "active", "reason": "audit"}, ok=(200, 409, 422))
 step("流转 active→observed_in_paper", "POST", f"/api/v2/signals/{sig}/transition", {"target_status": "observed_in_paper", "reason": "audit"}, ok=(200, 409, 422))
-step("发布到策略", "POST", f"/api/v2/signals/{sig}/publish-to-strategy", ok=(200, 201, 404, 409, 422))
+step("发布到策略", "POST", f"/api/v2/signals/{sig}/publish-to-strategy", ok=(200, 201, 409, 422))
 step("归档", "POST", f"/api/v2/signals/{sig}/archive", ok=(200, 409, 422))
 
 # ════════ 3. 风控闭环 ════════
@@ -103,8 +110,8 @@ step("风控总览(守卫)", "GET", "/api/risk/overview")
 step("规则评估", "POST", "/api/risk/evaluate", auto_body("/api/risk/evaluate"), ok=(200, 400, 422))
 step("禁止新开仓", "POST", "/api/risk/block-new-entries", {}, ok=(200, 201, 400, 422))
 step("解除禁止", "POST", "/api/risk/unblock", {}, ok=(200, 201, 400, 422))
-step("紧急停止", "POST", "/api/risk/emergency-stop", {}, ok=(200, 201, 410))
-step("紧急恢复", "POST", "/api/risk/emergency-resume", {}, ok=(200, 201, 410))
+step("紧急停止", "POST", "/api/v2/emergency/stop", {"reason": "audit", "force_exit_positions": False})
+step("紧急恢复缺少运行", "POST", "/api/v2/emergency/resume", {"strategy_run_id": "00000000-0000-0000-0000-000000000001"}, ok=(200, 409, 422))
 step("熔断记录列表", "GET", "/api/risk/circuit-breakers")
 
 # ════════ 4. 就绪度 ════════
@@ -117,19 +124,31 @@ step("全局状态", "GET", "/api/overview/global-status")
 # ════════ 5. AI 研究闭环 ════════
 cur[0] = "5.AI研究闭环"
 print(f"\n══ {cur[0]} ══")
-body = auto_body("/api/ai-research/v2/runs"); body.setdefault("symbol", "BTC/USDT")
+body = {
+    "symbol": "BTC/USDT",
+    "market": "crypto",
+    "timeframe": "1d",
+    "analysis_date": datetime.date.today().isoformat(),
+    "selected_analysts": ["market"],
+    "llm_provider": "openai",
+}
 code, d = step("创建研究 run", "POST", "/api/ai-research/v2/runs", body)
 rid = None
 if isinstance(d, dict): rid = d.get("id") or d.get("run_id") or (d.get("run") or {}).get("id")
 step("研究 runs 列表(前端实际用 v1 路径)", "GET", "/api/ai-research/runs")
 if rid:
-    step("执行 run(需 LLM,允许业务失败)", "POST", f"/api/ai-research/v2/runs/{rid}/execute", {}, ok=(200, 202, 400, 409, 422, 502))
+    code, d = step("执行 run", "POST", f"/api/ai-research/v2/runs/{rid}/execute", {}, ok=(200,))
+    summary = (d or {}).get("summary") if isinstance(d, dict) else ""
+    facts = (d or {}).get("facts") if isinstance(d, dict) else None
+    if code != 200 or not facts or "Degraded report" in str(summary):
+        results.append((cur[0], "研究执行不是真实行情", code, "BROKEN", str(summary)[:160]))
+        print(f"  {VERDICT['BROKEN']} [{code}] BROKEN 研究执行不是真实行情")
     step("发布信号(允许前置未满足)", "POST", f"/api/ai-research/v2/runs/{rid}/publish-signal", ok=(200, 201, 400, 404, 409, 422))
 
 # ════════ 6. Agent 平台 ════════
 cur[0] = "6.Agent平台"
 print(f"\n══ {cur[0]} ══")
-code, d = step("创建 Agent", "POST", "/api/agents", auto_body("/api/agents"))
+code, d = step("创建 Agent", "POST", "/api/agents", {"name": f"审计 Agent {EXPIRES}", "kind": "research"})
 aid = (d or {}).get("id") or (d or {}).get("agent_id")
 step("Agent 列表", "GET", "/api/agents")
 if aid:
@@ -142,8 +161,12 @@ print(f"\n══ {cur[0]} ══")
 code, d = step("生成每日复盘", "POST", "/api/growth/reports/daily-review", {"days": 7})
 rid2 = (d or {}).get("id")
 step("复盘列表", "GET", "/api/growth/reports")
-code, d = step("生成候选策略", "POST", f"/api/growth/candidates/generate/{rid2}", ok=(200, 201, 400, 404, 422))
+code, d = step("生成候选策略", "POST", f"/api/growth/candidates/generate/{rid2}", ok=(201,))
 cid = (d or {}).get("id") if isinstance(d, dict) else None
+dsl = (d or {}).get("candidate_dsl") if isinstance(d, dict) else None
+if code != 201 or not cid or not isinstance(dsl, dict):
+    results.append((cur[0], "候选策略没有生成", code, "BROKEN", json.dumps(d, ensure_ascii=False)[:160] if d else ""))
+    print(f"  {VERDICT['BROKEN']} [{code}] BROKEN 候选策略没有生成")
 step("候选列表", "GET", "/api/growth/candidates")
 if cid:
     step("确认候选", "POST", f"/api/growth/candidates/{cid}/confirm", ok=(200, 400, 404, 409, 422))
@@ -152,31 +175,29 @@ if cid:
 # ════════ 8. 回测/模拟记录 ════════
 cur[0] = "8.回测记录"
 print(f"\n══ {cur[0]} ══")
-for p in ("/api/strategy-runs", "/api/v2/backtest/runs", "/api/v2/strategy-runs"):
-    code, d = step(f"运行记录列表 {p}", "GET", p, ok=(200, 404))
-    if code == 200: break
+step("运行记录列表", "GET", "/api/v2/strategy-runs")
+step("回测记录列表", "GET", "/api/v2/backtest")
 
 # ════════ 9. 执行/对账 ════════
 cur[0] = "9.执行对账"
 print(f"\n══ {cur[0]} ══")
-step("刷新交易所状态(交易所不可达属预期)", "POST", "/api/reconciliation/refresh-exchange-state", {}, ok=(200, 201, 400, 502))
-step("对账重试", "POST", "/api/reconciliation/retry", {}, ok=(200, 201, 400, 404, 422))
+step("刷新交易所状态", "POST", "/api/reconciliation/refresh-exchange-state", {}, ok=(200, 201, 400, 422))
+step("对账重试", "POST", "/api/reconciliation/retry", {}, ok=(200, 201, 400, 422))
 
 # ════════ 10. 系统管理 ════════
 cur[0] = "10.系统管理"
 print(f"\n══ {cur[0]} ══")
-pbody = auto_body("/api/admin/providers")
-pbody.setdefault("category", "llm"); pbody.setdefault("name", "audit-llm"); pbody.setdefault("provider", "openai")
+pbody = {"category": "llm", "provider_name": "openai", "instance_name": "audit-llm", "config": {"model": "gpt-4o"}}
 code, d = step("创建 Provider", "POST", "/api/admin/providers", pbody)
 pid = None
 if isinstance(d, dict): pid = d.get("id") or d.get("provider_id")
 step("Provider 列表", "GET", "/api/admin/providers")
 if pid:
-    step("测试连接(网络不可达属预期)", "POST", f"/api/admin/providers/{pid}/test", ok=(200, 400, 404, 502))
+    step("测试连接", "POST", f"/api/admin/providers/{pid}/test", ok=(200, 400, 422))
     step("禁用 Provider", "POST", f"/api/admin/providers/{pid}/disable", {})
     step("启用 Provider", "POST", f"/api/admin/providers/{pid}/enable", {})
     step("删除 Provider", "DELETE", f"/api/admin/providers/{pid}", ok=(200, 204, 404))
-step("系统设置写入", "PUT", "/api/admin/system-settings/audit_key", {"value": "v1", "category": "audit", "updated_by": "web"})
+step("系统设置写入", "PUT", "/api/admin/system-settings/audit_key", {"value": {"v": "v1"}, "category": "general", "updated_by": "web"})
 step("系统设置读取", "GET", "/api/admin/system-settings", ok=(200, 404))
 step("数据清理任务列表", "GET", "/api/admin/data-vacuum/jobs")
 code, d = step("创建告警规则", "POST", "/api/alert-rules", {"name": "审计-规则", "condition_type": "price_above", "threshold": 1})
@@ -196,5 +217,5 @@ for f, v in agg.items():
 broken = [(f, s, c, n) for f, s, c, v, n in results if v in ("BROKEN", "NET")]
 print(f"\n🔴 断点明细（{len(broken)} 条）:")
 for f, s, c, n in broken: print(f"  [{c}] {f} · {s}\n      {n}")
-json.dump(results, open("/Users/mr_csx/work-app/e2e_results.json", "w"), ensure_ascii=False, indent=1)
-print("\n明细已存 e2e_results.json")
+print(f"\nBROKEN={len(broken)}")
+sys.exit(1 if broken else 0)

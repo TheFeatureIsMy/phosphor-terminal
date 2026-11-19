@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.security.deps import get_current_tenant_id
 from app.models.ai import GeneratedStrategyArtifact, KnowledgeChunk, KnowledgeDocument
 from app.services.code_safety import scan_strategy_code
 from app.services.rag_service import parse_pdf_content, generate_strategy
@@ -48,14 +49,30 @@ def _score_chunk(query: str, content: str) -> float:
 
 
 @router.post("/upload")
-async def upload_document(file: UploadFile = File(...), db: Session = Depends(get_db)):
+async def upload_document(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    tenant_raw: str | None = Depends(get_current_tenant_id),
+):
     if not file.filename:
         raise HTTPException(400, "No file provided")
 
     content = await file.read()
     text = content.decode("utf-8", errors="ignore")
     content_hash = hashlib.sha256(content).hexdigest()
-    existing = db.query(KnowledgeDocument).filter(KnowledgeDocument.content_hash == content_hash).first()
+    try:
+        tenant_id = int(tenant_raw) if tenant_raw is not None else None
+    except (TypeError, ValueError):
+        tenant_id = None
+    existing_query = db.query(KnowledgeDocument).filter(
+        KnowledgeDocument.content_hash == content_hash
+    )
+    existing_query = (
+        existing_query.filter(KnowledgeDocument.tenant_id.is_(None))
+        if tenant_id is None
+        else existing_query.filter(KnowledgeDocument.tenant_id == tenant_id)
+    )
+    existing = existing_query.first()
     if existing:
         return {
             "doc_id": existing.id,
@@ -69,6 +86,7 @@ async def upload_document(file: UploadFile = File(...), db: Session = Depends(ge
     result = parse_pdf_content(text, file.filename)
     chunks = _extract_chunks(text)
     document = KnowledgeDocument(
+        tenant_id=tenant_id,
         filename=file.filename,
         content_hash=content_hash,
         content_type=file.content_type or "text/plain",
@@ -80,7 +98,10 @@ async def upload_document(file: UploadFile = File(...), db: Session = Depends(ge
 
     for idx, chunk in enumerate(chunks):
         keywords = [word.strip(".,:;()[]{}").lower() for word in chunk.split()[:16]]
-        db.add(KnowledgeChunk(document_id=document.id, chunk_index=idx, content=chunk, keywords=keywords))
+        db.add(KnowledgeChunk(
+            tenant_id=tenant_id, document_id=document.id,
+            chunk_index=idx, content=chunk, keywords=keywords,
+        ))
     db.commit()
 
     result.update({"doc_id": document.id, "chunks_created": len(chunks), "persisted": True})
@@ -88,9 +109,25 @@ async def upload_document(file: UploadFile = File(...), db: Session = Depends(ge
 
 
 @router.post("/search")
-def search(body: SearchRequest, db: Session = Depends(get_db)):
-    documents = {doc.id: doc for doc in db.query(KnowledgeDocument).all()}
-    chunks = db.query(KnowledgeChunk).order_by(KnowledgeChunk.created_at.desc()).limit(500).all()
+def search(
+    body: SearchRequest,
+    db: Session = Depends(get_db),
+    tenant_raw: str | None = Depends(get_current_tenant_id),
+):
+    try:
+        tenant_id = int(tenant_raw) if tenant_raw is not None else None
+    except (TypeError, ValueError):
+        tenant_id = None
+    doc_query = db.query(KnowledgeDocument)
+    chunk_query = db.query(KnowledgeChunk)
+    if tenant_id is None:
+        doc_query = doc_query.filter(KnowledgeDocument.tenant_id.is_(None))
+        chunk_query = chunk_query.filter(KnowledgeChunk.tenant_id.is_(None))
+    else:
+        doc_query = doc_query.filter(KnowledgeDocument.tenant_id == tenant_id)
+        chunk_query = chunk_query.filter(KnowledgeChunk.tenant_id == tenant_id)
+    documents = {doc.id: doc for doc in doc_query.all()}
+    chunks = chunk_query.order_by(KnowledgeChunk.created_at.desc()).limit(500).all()
     results = []
     for chunk in chunks:
         score = _score_chunk(body.query, chunk.content)
@@ -112,13 +149,30 @@ def search(body: SearchRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/generate")
-async def generate(body: GenerateRequest, db: Session = Depends(get_db)):
+async def generate(
+    body: GenerateRequest,
+    db: Session = Depends(get_db),
+    tenant_raw: str | None = Depends(get_current_tenant_id),
+):
     if not body.prompt.strip():
         raise HTTPException(400, "Prompt is required")
 
+    try:
+        tenant_id = int(tenant_raw) if tenant_raw is not None else None
+    except (TypeError, ValueError):
+        tenant_id = None
+
     context_chunks: list[dict[str, Any]] = []
-    db_chunks = db.query(KnowledgeChunk).order_by(KnowledgeChunk.created_at.desc()).limit(300).all()
-    docs = {doc.id: doc for doc in db.query(KnowledgeDocument).all()}
+    chunk_query = db.query(KnowledgeChunk)
+    doc_query = db.query(KnowledgeDocument)
+    if tenant_id is None:
+        chunk_query = chunk_query.filter(KnowledgeChunk.tenant_id.is_(None))
+        doc_query = doc_query.filter(KnowledgeDocument.tenant_id.is_(None))
+    else:
+        chunk_query = chunk_query.filter(KnowledgeChunk.tenant_id == tenant_id)
+        doc_query = doc_query.filter(KnowledgeDocument.tenant_id == tenant_id)
+    db_chunks = chunk_query.order_by(KnowledgeChunk.created_at.desc()).limit(300).all()
+    docs = {doc.id: doc for doc in doc_query.all()}
     for chunk in db_chunks:
         score = _score_chunk(body.prompt, chunk.content)
         if score <= 0:
@@ -134,10 +188,14 @@ async def generate(body: GenerateRequest, db: Session = Depends(get_db)):
     context_chunks.sort(key=lambda x: x["relevance"], reverse=True)
     context_chunks = context_chunks[:5]
 
-    result = await generate_strategy(body.prompt, body.risk_level, body.market, context=context_chunks or None)
+    result = await generate_strategy(
+        body.prompt, body.risk_level, body.market,
+        context=context_chunks or None, tenant_id=tenant_id,
+    )
 
     scan = scan_strategy_code(result["code"])
     artifact = GeneratedStrategyArtifact(
+        tenant_id=tenant_id,
         prompt=body.prompt,
         risk_level=body.risk_level,
         market=body.market,
@@ -163,8 +221,21 @@ async def generate(body: GenerateRequest, db: Session = Depends(get_db)):
 
 
 @router.get("/knowledge")
-def get_knowledge(db: Session = Depends(get_db)):
-    documents = db.query(KnowledgeDocument).order_by(KnowledgeDocument.created_at.desc()).all()
+def get_knowledge(
+    db: Session = Depends(get_db),
+    tenant_raw: str | None = Depends(get_current_tenant_id),
+):
+    try:
+        tenant_id = int(tenant_raw) if tenant_raw is not None else None
+    except (TypeError, ValueError):
+        tenant_id = None
+    query = db.query(KnowledgeDocument)
+    query = (
+        query.filter(KnowledgeDocument.tenant_id.is_(None))
+        if tenant_id is None
+        else query.filter(KnowledgeDocument.tenant_id == tenant_id)
+    )
+    documents = query.order_by(KnowledgeDocument.created_at.desc()).all()
     return {
         "documents": [
             {

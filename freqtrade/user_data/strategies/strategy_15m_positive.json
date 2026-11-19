@@ -1,0 +1,45 @@
+{
+  "schema_version": "2.5",
+  "timeframe": "15m",
+  "symbols": ["BTC/USDT"],
+  "entry": {
+    "logic": "AND",
+    "rules": [
+      {
+        "type": "indicator_cross",
+        "indicator": "ema",
+        "params": {"period": 8},
+        "cross_indicator": "ema",
+        "cross_params": {"period": 21},
+        "direction": "crosses_above"
+      }
+    ]
+  },
+  "exit": {
+    "logic": "OR",
+    "rules": [
+      {
+        "type": "indicator_threshold",
+        "indicator": "rsi",
+        "params": {"period": 14},
+        "operator": ">",
+        "value": 75
+      }
+    ]
+  },
+  "filters": [],
+  "position_sizing": {"type": "fixed_pct", "position_pct": 0.02},
+  "risk": {
+    "stoploss": -0.08,
+    "trailing_stop": true,
+    "trailing_stop_positive": 0.015,
+    "trailing_stop_positive_offset": 0.03,
+    "max_open_trades": 1
+  },
+  "metadata": {
+    "name": "15m EMA 追踪止盈",
+    "description": "15 分钟。EMA8 上穿 EMA21 开多，RSI 超过 75 离场。止损 8%，盈利超过 3% 后以 1.5% 跟踪止盈。",
+    "tags": ["15m", "ema", "trailing"],
+    "author": "local"
+  }
+}

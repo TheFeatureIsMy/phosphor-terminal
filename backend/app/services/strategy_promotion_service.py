@@ -23,6 +23,10 @@ def _utcnow() -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
+def _naive(value: datetime | None) -> datetime | None:
+    return value.replace(tzinfo=None) if value is not None and value.tzinfo else value
+
+
 @dataclass
 class PromotionCriteria:
     min_dryrun_hours: float = 72.0
@@ -64,7 +68,7 @@ class StrategyPromotionService:
         # 1. Duration check
         if not run.started_at:
             return PromotionResult(eligible=False, reason="not_started")
-        duration_hours = (_utcnow() - run.started_at).total_seconds() / 3600
+        duration_hours = (_utcnow() - _naive(run.started_at)).total_seconds() / 3600
         if duration_hours < self._criteria.min_dryrun_hours:
             return PromotionResult(
                 eligible=False,

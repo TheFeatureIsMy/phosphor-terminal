@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import func, String, Boolean, Integer, Numeric, DateTime, Index
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, Numeric, String, func
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -13,6 +13,9 @@ from app.database.base import Base, UUIDMixin
 class MTFGuardEvent(UUIDMixin, Base):
     __tablename__ = "mtf_guard_events"
 
+    tenant_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("tenants.id", ondelete="SET NULL"), nullable=True, index=True,
+    )
     strategy_id: Mapped[uuid.UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False)
     strategy_version_id: Mapped[uuid.UUID | None] = mapped_column(PG_UUID(as_uuid=True))
     symbol: Mapped[str] = mapped_column(String(32), nullable=False)
@@ -40,6 +43,9 @@ class MTFGuardEvent(UUIDMixin, Base):
 class MTFGuardBacktestStats(UUIDMixin, Base):
     __tablename__ = "mtf_guard_backtest_stats"
 
+    tenant_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("tenants.id", ondelete="SET NULL"), nullable=True, index=True,
+    )
     backtest_id: Mapped[uuid.UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False)
     strategy_id: Mapped[uuid.UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False)
     symbol: Mapped[str] = mapped_column(String(32), nullable=False)

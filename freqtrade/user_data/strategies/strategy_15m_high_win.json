@@ -1,0 +1,44 @@
+{
+  "schema_version": "2.5",
+  "timeframe": "15m",
+  "symbols": ["BTC/USDT"],
+  "entry": {
+    "logic": "AND",
+    "rules": [
+      {
+        "type": "indicator_threshold",
+        "indicator": "rsi",
+        "params": {"period": 14},
+        "operator": "<",
+        "value": 35
+      }
+    ]
+  },
+  "exit": {
+    "logic": "OR",
+    "rules": [
+      {
+        "type": "indicator_threshold",
+        "indicator": "rsi",
+        "params": {"period": 14},
+        "operator": ">",
+        "value": 75
+      }
+    ]
+  },
+  "filters": [],
+  "position_sizing": {
+    "type": "fixed_pct",
+    "position_pct": 0.02
+  },
+  "risk": {
+    "stoploss": -0.08,
+    "max_open_trades": 1
+  },
+  "metadata": {
+    "name": "15m RSI 高胜率",
+    "description": "15 分钟。RSI(14) 低于 35 开多，高于 75 平仓，止损 8%。在 2025-06 到 2025-10 的搜索里，成交不少于 30 笔的规则中胜率最高。",
+    "tags": ["15m", "rsi", "winrate"],
+    "author": "local"
+  }
+}

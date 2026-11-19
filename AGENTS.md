@@ -2,7 +2,9 @@
 
 This file provides guidance to Qoder (qoder.com) when working with code in this repository.
 
-AlphaLoop (phosphor-terminal) is an AI-driven crypto quant trading dashboard composed of three independent codebases that share no source code and communicate only via HTTP API. Product defaults to Chinese (zh-CN) with a dark cyberpunk theme. Deeper conventions live in `CLAUDE.md` (authoritative working spec) and `docs/README.md` (docs index; architecture docs read 00 → 17).
+AlphaLoop (phosphor-terminal) is an AI-driven crypto quant trading dashboard.
+
+> **Direction change (2026-11-15):** the product target is four apps (iOS / Android / Windows / macOS) plus a remote multi-tenant server. The macOS native client (`macos-app/`) is paused. The "three codebases / localhost" structure below describes the legacy tree, not the target architecture. See `docs/superpowers/specs/2026-11-15-multi-client-saas-architecture-design.md`.
 
 ## Project Structure
 
@@ -26,7 +28,7 @@ phosphor-terminal/
 **Backend** (`backend/`):
 - `pip3 install -r requirements.txt` — first-time setup (also `requirements-ai.txt` / `requirements-ml.txt` for AI/ML extras)
 - `python3 run.py` — start FastAPI on `:8000`
-- `python3 -m pytest tests/ -q --cov=app` — run tests (CI gate `--cov-fail-under=30`; CI runs Python 3.11)
+- `python3 -m pytest tests/ -q --cov=app` — run tests (CI gate `--cov-fail-under=65`; CI runs Python 3.11)
 - `python3 -m pytest tests/test_risk_rules.py -q` — single file; add `-k "pattern"` to filter by name
 - DB migrations: alembic (`backend/alembic/versions/`); `init_db()` in `app/main.py` lifespan also runs `create_all`. New ORM models must be imported in the `main.py` lifespan block before `init_db()`.
 - `scripts/build-backend.sh` is a legacy PyInstaller/Tauri-sidecar build script — not part of the normal dev loop.
@@ -64,7 +66,7 @@ phosphor-terminal/
 
 ## Testing Guidelines
 
-- Backend: `backend/tests/`, filenames mirror the module under test (`test_<module>.py`), pytest-asyncio for async code. CI enforces coverage ≥ 30%.
+- Backend: `backend/tests/`, filenames mirror the module under test (`test_<module>.py`), pytest-asyncio for async code. CI enforces coverage ≥ 65%.
 - macOS: XCTest in `macos-app/Tests/`. Canvas: vitest + `@testing-library/react` + `happy-dom`.
 - CI (`.github/workflows/ci.yml`): backend pytest w/ coverage on Python 3.11 + `swift build` on `macos-latest`.
 

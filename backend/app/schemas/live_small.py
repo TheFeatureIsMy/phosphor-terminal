@@ -67,6 +67,8 @@ class FreqtradeConfigPreview(BaseModel):
     stoploss: float = Field(lt=0)
     trailing_stop: bool = False
     exchange_name: str = "binance"
+    exchange_rest_base: str = "https://api.binance.com/api"
+    exchange_ccxt_urls: dict[str, str] = Field(default_factory=dict)
     pair_whitelist: list[str] = []
     protections: list[dict[str, Any]] = []
     api_server_listen_ip: Literal["127.0.0.1"] = "127.0.0.1"

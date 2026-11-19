@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 cd backend
 python3 run.py                          # Start FastAPI on :8000
 python3 -m pytest tests/ -q             # Run all tests (~146 files, ~1285 functions)
-python3 -m pytest tests/ -q --cov=app   # Tests with coverage (CI gate: ≥30%)
+python3 -m pytest tests/ -q --cov=app   # Tests with coverage (CI gate: ≥65%)
 python3 -m pytest tests/test_risk_rules.py -q          # Single file
 python3 -m pytest tests/ -q -k "structure"             # Filter by name
 ```
@@ -131,7 +131,7 @@ When adding chapters: write the HTML file under `content/{zh,en}/...`, register 
 ### CI
 
 GitHub Actions (`.github/workflows/ci.yml`):
-- **backend** job: `pytest backend/tests/` with `--cov-fail-under=30`.
+- **backend** job: `pytest backend/tests/` with `--cov-fail-under=65`.
 - **macos-app** job: `swift build` on `macos-latest`.
 
 ## Conventions

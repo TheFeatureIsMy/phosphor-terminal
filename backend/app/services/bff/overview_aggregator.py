@@ -71,6 +71,24 @@ class OverviewAggregator:
         global_status = await self.global_status()
         risk_state = await self._firewall.check("default")
 
+        equity = 0.0
+        open_positions = 0
+        running = 0
+        try:
+            from app.services.demo_process import read_demo_process
+
+            proc = await read_demo_process()
+            if proc.total is not None:
+                equity = float(proc.total)
+            elif proc.balances:
+                equity = float(sum(row.balance for row in proc.balances))
+            open_positions = proc.open_trades
+            running = 1 if proc.reachable and proc.state == "running" else 0
+            if proc.reachable:
+                global_status["freqtrade_state"] = "healthy"
+        except Exception:
+            logger.exception("dashboard could not read the simulation process")
+
         return {
             "state": "healthy" if risk_state.allowed else "blocked",
             "reason_codes": global_status.get("reason_codes", []),
@@ -78,11 +96,11 @@ class OverviewAggregator:
                 {"type": "emergency_stop", "enabled": True, "label": "紧急停止", "confirm_required": True},
             ],
             "account": {
-                "equity": 0, "currency": "USDT",
+                "equity": equity, "currency": "USDT",
                 "today_pnl_pct": 0, "week_pnl_pct": 0, "max_drawdown_pct": 0,
             },
             "runtime": {
-                "running_strategies": 0, "open_positions": 0,
+                "running_strategies": running, "open_positions": open_positions,
                 "pending_orders": 0, "reconciling_count": 0,
             },
             "risk": {

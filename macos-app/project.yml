@@ -1,0 +1,73 @@
+name: AlphaLoopIOS
+options:
+  bundleIdPrefix: com.alphaloop
+  deploymentTarget:
+    iOS: "26.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: minimal
+    OTHER_SWIFT_FLAGS: "-Xfrontend -disable-sandbox"
+
+targets:
+  AlphaLoopIOS:
+    type: application
+    platform: iOS
+    sources:
+      - path: AlphaLoop/Models
+      - path: AlphaLoop/ViewModels
+      - path: AlphaLoop/DesignSystem
+      - path: AlphaLoop/Localization
+      - path: AlphaLoop/State
+      - path: AlphaLoop/Services
+        excludes:
+          - UserGuide.swift
+          - DockerEnvironmentService.swift
+          - LocalEnvironmentService.swift
+      - path: AlphaLoopIOS
+      - path: AlphaLoop/Resources/canvas-web
+        type: folder
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.alphaloop.ios
+        TARGETED_DEVICE_FAMILY: "1,2"
+        CODE_SIGNING_ALLOWED: NO
+    info:
+      path: AlphaLoopIOS/Info.plist
+      properties:
+        CFBundleDisplayName: AlphaLoop
+        UILaunchScreen: {}
+        APIBaseURL: http://127.0.0.1:8000
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+          NSExceptionDomains:
+            127.0.0.1:
+              NSExceptionAllowsInsecureHTTPLoads: true
+            localhost:
+              NSExceptionAllowsInsecureHTTPLoads: true
+
+  AlphaLoopIOSUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: AlphaLoopIOSUITests
+    dependencies:
+      - target: AlphaLoopIOS
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.alphaloop.ios.uitests
+        TEST_TARGET_NAME: AlphaLoopIOS
+        CODE_SIGNING_ALLOWED: NO
+
+schemes:
+  AlphaLoopIOS:
+    build:
+      targets:
+        AlphaLoopIOS: all
+        AlphaLoopIOSUITests: [test]
+    test:
+      targets:
+        - AlphaLoopIOSUITests

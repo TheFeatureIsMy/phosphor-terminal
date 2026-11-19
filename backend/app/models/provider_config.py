@@ -31,6 +31,9 @@ class ProviderConfig(Base):
     __tablename__ = "provider_configs"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
+    tenant_id = Column(
+        Integer, ForeignKey("tenants.id", ondelete="SET NULL"), nullable=True, index=True,
+    )
     # Identity
     category = Column(String, nullable=False, index=True)
     provider_name = Column(String, nullable=False, index=True)
@@ -61,6 +64,7 @@ class ProviderConfig(Base):
             name="ck_instance_name_by_category",
         ),
         Index("ix_provider_config_cat_name", "category", "provider_name"),
+        Index("ix_provider_config_tenant", "tenant_id", "category"),
         Index("ix_provider_config_enabled", "enabled"),
     )
 

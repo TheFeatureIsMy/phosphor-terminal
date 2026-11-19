@@ -24,7 +24,7 @@ jobs:
             --cov=backend/app \
             --cov-report=term-missing \
             --cov-report=xml:coverage.xml \
-            --cov-fail-under=30 \
+            --cov-fail-under=65 \
             -q
       - name: Upload coverage
         if: always()
@@ -32,6 +32,108 @@ jobs:
         with:
           name: coverage-report
           path: coverage.xml
+
+
+
+  postgres-tests:
+    name: Backend on PostgreSQL
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: alphaloop_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      - name: Install dependencies
+        run: pip install -r backend/requirements.txt
+      - name: Run tests against PostgreSQL
+        env:
+          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/alphaloop_test
+        run: python -m pytest backend/tests/ -q
+
+
+  web-e2e:
+    name: Web E2E
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+      - name: Install backend
+        run: pip install -r backend/requirements.txt
+      - name: Install web dependencies
+        working-directory: web
+        run: npm ci
+      - name: Start backend
+        working-directory: backend
+        env:
+          DATABASE_URL: sqlite:////tmp/web_e2e.db
+          AUTH_REQUIRED: '1'
+          ALLOW_PUBLIC_REGISTRATION: 'true'
+          SECRET_KEY: web-ci-secret
+          PULSEDESK_ENCRYPTION_KEY: b2BPUaboInk_FQ-v5cTmO0SJ0uH9jXeMzfGzpsCzM18=
+          PROVIDER_HEALTH_INTERVAL_S: '0'
+        run: |
+          nohup python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 > /tmp/web_backend.log 2>&1 &
+          for _ in $(seq 1 40); do
+            curl -sf http://127.0.0.1:8000/health >/dev/null && break
+            sleep 1
+          done
+      - name: Start Vite
+        working-directory: web
+        run: |
+          nohup npm run dev -- --host 127.0.0.1 > /tmp/web_vite.log 2>&1 &
+          for _ in $(seq 1 40); do
+            curl -sf http://127.0.0.1:5173/ >/dev/null && break
+            sleep 1
+          done
+      - name: Run Playwright
+        working-directory: web
+        run: npm run test:e2e
+      - name: Stop servers
+        if: always()
+        run: pkill -f "uvicorn app.main:app" || true; pkill -f "vite" || true
+
+  tenant-isolation:
+    name: Tenant isolation (PostgreSQL + RLS)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      - name: Install backend dependencies
+        run: pip install -r backend/requirements.txt
+      - name: Install PostgreSQL server
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql
+      - name: Verify tenant isolation
+        run: |
+          export PATH="$(ls -d /usr/lib/postgresql/*/bin | tail -1):$PATH"
+          PYTHON=python3 bash scripts/verify-tenant-isolation.sh
 
   macos-app:
     name: macOS App
@@ -42,3 +144,86 @@ jobs:
         run: |
           cd macos-app
           swift build
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Build iOS app (simulator)
+        run: |
+          cd macos-app
+          xcodegen generate --spec project.yml
+          xcodebuild -project AlphaLoopIOS.xcodeproj \
+            -scheme AlphaLoopIOS \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath .iosbuild \
+            CODE_SIGNING_ALLOWED=NO build
+
+      - name: Install backend for iOS UI test
+        run: pip3 install -r backend/requirements.txt
+
+      - name: Start backend and register UI test user
+        run: |
+          rm -f /tmp/ios_e2e.db
+          cd backend
+          DATABASE_URL=sqlite:////tmp/ios_e2e.db \
+            AUTH_REQUIRED=1 \
+            SECRET_KEY=ios-ci-secret \
+            PULSEDESK_ENCRYPTION_KEY=b2BPUaboInk_FQ-v5cTmO0SJ0uH9jXeMzfGzpsCzM18= \
+            PROVIDER_HEALTH_INTERVAL_S=0 \
+            nohup python3 -m uvicorn app.main:app --host 127.0.0.1 --port 8000 \
+              > /tmp/ios_backend.log 2>&1 &
+          for _ in $(seq 1 40); do
+            curl -sf http://127.0.0.1:8000/health >/dev/null && break
+            sleep 1
+          done
+          curl -s -X POST http://127.0.0.1:8000/auth/register \
+            -H 'Content-Type: application/json' \
+            -d '{"username":"iosuser","email":"ios@example.com","password":"secret123"}'
+
+      - name: Run iOS UI tests
+        run: |
+          cd macos-app
+          DEVICE_ID=$(xcrun simctl list devices available | grep -m1 'iPhone' | grep -oE '[0-9A-F-]{36}')
+          xcodebuild test -project AlphaLoopIOS.xcodeproj -scheme AlphaLoopIOS \
+            -destination "platform=iOS Simulator,id=$DEVICE_ID" \
+            -derivedDataPath .iosbuild \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Stop backend
+        if: always()
+        run: pkill -f "uvicorn app.main:app" || true
+
+  web:
+    name: Web typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+      - name: Install
+        working-directory: web
+        run: npm ci
+      - name: Typecheck
+        working-directory: web
+        run: npx tsc -b
+
+  canvas:
+    name: Canvas tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: canvas-web/package-lock.json
+      - name: Install
+        working-directory: canvas-web
+        run: npm ci
+      - name: Test
+        working-directory: canvas-web
+        run: npm test

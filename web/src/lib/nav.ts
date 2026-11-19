@@ -3,7 +3,6 @@ import {
   BarChart3,
   Brain,
   Cpu,
-  Database,
   Grid3x3,
   History,
   LayoutGrid,
@@ -12,6 +11,7 @@ import {
   PlayCircle,
   Radio,
   RefreshCcw,
+  Link2,
   Server,
   Settings,
   Shield,
@@ -98,8 +98,8 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: "系统",
     routes: [
+      { id: "connections", path: "/connections", label: "连接", icon: Link2 },
       { id: "serviceManagement", path: "/services", label: "服务管理", icon: Server },
-      { id: "dataSourceManagement", path: "/data-sources", label: "数据源", icon: Database },
       { id: "systemSettings", path: "/settings", label: "系统设置", icon: Settings },
     ],
   },

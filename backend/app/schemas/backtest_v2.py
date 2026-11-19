@@ -21,6 +21,7 @@ class StartBacktestRequest(BaseModel):
         description="Slippage in basis points; applied by adjusting effective fee")
     strategy_id: int = Field(default=0)
     strategy_version_id: Optional[str] = None
+    client_request_id: Optional[str] = Field(default=None, max_length=80)
 
 
 class StartBacktestResponse(BaseModel):

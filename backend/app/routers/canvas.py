@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.security.deps import get_current_tenant_id
 from app.domain.strategy import CanvasDraft, StrategyVersion
 from app.repositories.strategy_repository import StrategyRepository
 from app.services.dsl_hasher import compute_dsl_hash
@@ -203,11 +204,19 @@ def load_draft(strategy_id: uuid.UUID, db: Session = Depends(get_db)):
 
 
 @router.post("/publish", status_code=201)
-def publish_canvas(req: CanvasPublishRequest, db: Session = Depends(get_db)):
+def publish_canvas(
+    req: CanvasPublishRequest,
+    db: Session = Depends(get_db),
+    tenant_raw: str | None = Depends(get_current_tenant_id),
+):
     """Publish canvas output: DSL must validate, then a draft StrategyVersion
     is created (draft → validated → backtested → … state machine applies)."""
     repo = StrategyRepository(db)
-    strategy = repo.get_strategy_by_id(req.strategy_id)
+    try:
+        tenant_id = int(tenant_raw) if tenant_raw is not None else None
+    except (TypeError, ValueError):
+        tenant_id = None
+    strategy = repo.get_strategy_by_id(req.strategy_id, tenant_id)
     if not strategy:
         raise HTTPException(status_code=404, detail="Strategy not found")
 
@@ -229,6 +238,7 @@ def publish_canvas(req: CanvasPublishRequest, db: Session = Depends(get_db)):
         rule_dsl=req.dsl,
         dsl_hash=dsl_hash,
         created_by=req.created_by,
+        tenant_id=strategy.tenant_id,
     )
     repo.create_version(version)
 

@@ -15,8 +15,10 @@ logger = logging.getLogger(__name__)
 
 class AIRiskCacheService:
     def __init__(self, redis_store: RuntimeRedisStore, llm_service=None,
-                 refresh_interval_s: int = 300, cache_ttl_s: int = 900):
+                 refresh_interval_s: int = 300, cache_ttl_s: int = 900,
+                 tenant_id: int | None = None):
         self._store = redis_store
+        self._tenant_id = tenant_id
         self._llm = llm_service
         self._refresh_interval = refresh_interval_s
         self._cache_ttl = cache_ttl_s
@@ -75,9 +77,11 @@ class AIRiskCacheService:
             } for r in results},
         }
 
-        await self._store.write_ai_cache(symbol, cache, ttl=self._cache_ttl)
+        await self._store.write_ai_cache(
+            symbol, cache, ttl=self._cache_ttl, tenant_id=self._tenant_id,
+        )
         logger.info("AI cache refreshed for %s: risk=%.2f flags=%s", symbol, max_score, all_flags)
         return cache
 
     async def get_cached(self, symbol: str) -> dict | None:
-        return await self._store.read_ai_cache(symbol)
+        return await self._store.read_ai_cache(symbol, tenant_id=self._tenant_id)

@@ -106,8 +106,11 @@ class TestRunSuccess:
     def test_run_success(self, ft_env):
         runner, ft_dir, results_dir = ft_env
 
-        # Pre-create the result JSON that freqtrade would produce.
-        result_file = results_dir / "backtest-result-run123.json"
+        # Freqtrade writes into the per-run directory passed via
+        # --backtest-directory.
+        run_dir = results_dir / "run_run123"
+        run_dir.mkdir(parents=True, exist_ok=True)
+        result_file = run_dir / "backtest-result-run123.json"
         result_file.write_text(json.dumps(_fake_result_json()), encoding="utf-8")
 
         fake_proc = subprocess.CompletedProcess(
@@ -140,6 +143,27 @@ class TestRunSuccess:
         # Trades list should be populated
         assert len(result.trades) == 2
         assert result.raw_result["strategy"]["PulseDeskUniversalStrategy"]["trade_count"] == 20
+
+
+class TestRunIsolation:
+    def test_does_not_parse_another_runs_result(self, ft_env):
+        runner, ft_dir, results_dir = ft_env
+        # A different run left a perfectly valid export in the shared dir.
+        (results_dir / "backtest-result-other.json").write_text(
+            json.dumps(_fake_result_json()), encoding="utf-8"
+        )
+        fake_proc = subprocess.CompletedProcess(
+            args=[], returncode=0, stdout="ok\n", stderr=""
+        )
+        with patch("app.services.backtest_runner.subprocess.run", return_value=fake_proc):
+            result = runner.run(
+                dsl=SAMPLE_DSL,
+                timerange="20240101-20240201",
+                symbols=["BTC/USDT"],
+                run_id="mine",
+            )
+        assert result.success is False
+        assert "no result file" in result.error_message
 
 
 class TestRunFailureNonzeroExit:

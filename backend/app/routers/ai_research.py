@@ -12,6 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.security.deps import get_current_tenant_id
 from app.models.research import AIResearchRun
 from app.models.research_v2 import (
     ResearchReport as ResearchReportModel,
@@ -33,14 +34,23 @@ from app.services.research.research_service import ResearchService
 
 router = APIRouter(prefix="/api/ai-research", tags=["ai-research"])
 
-_llm_service: LLMService | None = None
+_llm_services: dict[int | None, LLMService] = {}
 
 
-def _get_llm_service() -> LLMService:
-    global _llm_service
-    if _llm_service is None:
-        _llm_service = create_llm_service_from_env()
-    return _llm_service
+def _tenant_int(raw: str | None) -> int | None:
+    try:
+        return int(raw) if raw is not None else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _get_llm_service(tenant_raw: str | None = None) -> LLMService:
+    tenant_id = _tenant_int(tenant_raw)
+    service = _llm_services.get(tenant_id)
+    if service is None:
+        service = create_llm_service_from_env(tenant_id=tenant_id)
+        _llm_services[tenant_id] = service
+    return service
 
 
 def _utcnow() -> datetime:
@@ -153,6 +163,17 @@ def get_research_run(run_id: int, db: Session = Depends(get_db)):
     return run
 
 
+@router.post("/v2/runs/{run_id}/publish-signal", status_code=status.HTTP_201_CREATED)
+def publish_v2_research_signal(run_id: int, db: Session = Depends(get_db)):
+    """Publish a completed v2 research run. Incomplete runs stay blocked."""
+    run = db.query(AIResearchRun).filter(AIResearchRun.id == run_id).first()
+    if run is None:
+        raise HTTPException(status_code=404, detail="Research run not found")
+    if run.status != "completed":
+        raise HTTPException(status_code=409, detail="Research run is not completed")
+    return publish_research_signal(run_id, db)
+
+
 @router.post("/runs/{run_id}/publish-signal", status_code=status.HTTP_201_CREATED)
 def publish_research_signal(run_id: int, db: Session = Depends(get_db)):
     from app.models.agent_signal import AgentProfile, AgentSignal, AgentSignalScore
@@ -234,7 +255,11 @@ def create_research_run_v2(request: ResearchRunCreateV2, db: Session = Depends(g
 
 
 @router.post("/v2/runs/{run_id}/execute", response_model=ResearchReportResponse)
-async def execute_research_run_v2(run_id: int, db: Session = Depends(get_db)):
+async def execute_research_run_v2(
+    run_id: int,
+    db: Session = Depends(get_db),
+    tenant_raw: str | None = Depends(get_current_tenant_id),
+):
     """Execute a v2 research run → ResearchReport + SignalCandidates."""
     run = db.query(AIResearchRun).filter(AIResearchRun.id == run_id).first()
     if run is None:
@@ -243,7 +268,7 @@ async def execute_research_run_v2(run_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=409, detail="Research run is already running")
 
     config = run.runtime_config or {}
-    svc = ResearchService(db, _get_llm_service())
+    svc = ResearchService(db, _get_llm_service(tenant_raw))
 
     report = await svc.execute_research(
         run=run,
@@ -254,6 +279,11 @@ async def execute_research_run_v2(run_id: int, db: Session = Depends(get_db)):
         selected_analysts=config.get("selected_analysts", ["market", "social", "news", "fundamentals"]),
     )
     db.refresh(report)
+    db.refresh(run)
+    if run.status == "degraded" or str(report.summary or "").startswith("Degraded report"):
+        raise HTTPException(status_code=503, detail=report.summary or "research produced no market facts")
+    if not report.facts:
+        raise HTTPException(status_code=503, detail="research report has no facts")
     return report
 
 
@@ -300,6 +330,7 @@ async def generate_draft_from_candidate(
     candidate_id: str,
     body: GenerateDraftRequest | None = None,
     db: Session = Depends(get_db),
+    tenant_raw: str | None = Depends(get_current_tenant_id),
 ):
     """Generate a StrategyDraft from a SignalCandidate via LLM."""
     import uuid as _uuid
@@ -317,7 +348,7 @@ async def generate_draft_from_candidate(
     if report is None:
         raise HTTPException(status_code=404, detail="Research report not found")
 
-    svc = ResearchService(db, _get_llm_service())
+    svc = ResearchService(db, _get_llm_service(tenant_raw))
     name_hint = body.name_hint if body else None
     draft = await svc.generate_draft(candidate, report, name_hint)
     db.refresh(draft)
@@ -341,7 +372,11 @@ def get_strategy_draft(draft_id: str, db: Session = Depends(get_db)):
 
 
 @router.post("/v2/drafts/{draft_id}/confirm", response_model=ConfirmDraftResponse)
-def confirm_strategy_draft(draft_id: str, db: Session = Depends(get_db)):
+def confirm_strategy_draft(
+    draft_id: str,
+    db: Session = Depends(get_db),
+    tenant_raw: str | None = Depends(get_current_tenant_id),
+):
     """Confirm a valid StrategyDraft → create StrategyV2 + StrategyVersion(status=draft).
 
     Does NOT trigger backtest, dry-run, or any execution.
@@ -369,9 +404,9 @@ def confirm_strategy_draft(draft_id: str, db: Session = Depends(get_db)):
             detail="Draft already confirmed",
         )
 
-    svc = ResearchService(db, _get_llm_service())
+    svc = ResearchService(db, _get_llm_service(tenant_raw))
     try:
-        strategy, version = svc.confirm_draft(draft)
+        strategy, version = svc.confirm_draft(draft, tenant_id=_tenant_int(tenant_raw))
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
 
@@ -390,19 +425,26 @@ def confirm_strategy_draft(draft_id: str, db: Session = Depends(get_db)):
 cache_router = APIRouter(prefix="/api/ai-risk-cache", tags=["ai-risk-cache"])
 
 
-def _get_ai_risk_cache_service():
+def _get_ai_risk_cache_service(tenant_raw: str | None = None):
     from app.config import settings
     from app.services.runtime_redis_store import RuntimeRedisStore
     from app.services.ai_risk_cache import AIRiskCacheService
 
     store = RuntimeRedisStore(redis_url=settings.redis_url)
-    return AIRiskCacheService(redis_store=store, llm_service=_get_llm_service())
+    return AIRiskCacheService(
+        redis_store=store,
+        llm_service=_get_llm_service(tenant_raw),
+        tenant_id=_tenant_int(tenant_raw),
+    )
 
 
 @cache_router.get("")
-async def get_ai_risk_cache(symbol: str = "BTC/USDT"):
+async def get_ai_risk_cache(
+    symbol: str = "BTC/USDT",
+    tenant_raw: str | None = Depends(get_current_tenant_id),
+):
     """Read the cached AI risk assessment for a symbol (no refresh)."""
-    svc = _get_ai_risk_cache_service()
+    svc = _get_ai_risk_cache_service(tenant_raw)
     cached = await svc.get_cached(symbol)
     if cached is None:
         return {
@@ -424,9 +466,12 @@ async def get_ai_risk_cache(symbol: str = "BTC/USDT"):
 
 
 @cache_router.post("/generate")
-async def generate_ai_risk_cache(symbol: str = "BTC/USDT"):
+async def generate_ai_risk_cache(
+    symbol: str = "BTC/USDT",
+    tenant_raw: str | None = Depends(get_current_tenant_id),
+):
     """Refresh (or create) the AI risk cache for a symbol."""
-    svc = _get_ai_risk_cache_service()
+    svc = _get_ai_risk_cache_service(tenant_raw)
     try:
         result = await svc.refresh(symbol)
     except Exception as exc:

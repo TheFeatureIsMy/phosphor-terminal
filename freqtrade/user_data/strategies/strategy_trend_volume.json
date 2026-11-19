@@ -1,0 +1,76 @@
+{
+  "schema_version": "2.5",
+  "timeframe": "5m",
+  "symbols": ["BTC/USDT"],
+  "entry": {
+    "logic": "AND",
+    "rules": [
+      {
+        "type": "indicator_cross",
+        "indicator": "ema",
+        "params": {"period": 20},
+        "cross_indicator": "ema",
+        "cross_params": {"period": 60},
+        "direction": "crosses_above"
+      },
+      {
+        "type": "indicator_threshold",
+        "indicator": "rsi",
+        "params": {"period": 14},
+        "operator": "between",
+        "min_value": 40,
+        "max_value": 70
+      }
+    ]
+  },
+  "exit": {
+    "logic": "OR",
+    "rules": [
+      {
+        "type": "indicator_cross",
+        "indicator": "ema",
+        "params": {"period": 20},
+        "cross_indicator": "ema",
+        "cross_params": {"period": 60},
+        "direction": "crosses_below"
+      },
+      {
+        "type": "indicator_threshold",
+        "indicator": "rsi",
+        "params": {"period": 14},
+        "operator": ">",
+        "value": 75
+      }
+    ]
+  },
+  "filters": [
+    {
+      "type": "volume_filter",
+      "indicator": "volume",
+      "params": {},
+      "operator": ">",
+      "value": 24
+    },
+    {
+      "type": "volatility_filter",
+      "indicator": "atr",
+      "params": {"period": 14},
+      "operator": ">",
+      "value": 70
+    }
+  ],
+  "position_sizing": {
+    "type": "fixed_pct",
+    "position_pct": 0.02
+  },
+  "risk": {
+    "stoploss": -0.03,
+    "max_open_trades": 2
+  },
+  "metadata": {
+    "name": "趋势放量",
+    "description": "5 分钟。EMA20 上穿 EMA60，且 RSI 在 40 到 70。成交量高于安静行情，ATR 高于死水。EMA20 下穿 EMA60 或 RSI 超过 75 离场。止损 3%。",
+    "tags": ["trend", "volume", "volatility", "btc"],
+    "author": "local"
+  }
+}

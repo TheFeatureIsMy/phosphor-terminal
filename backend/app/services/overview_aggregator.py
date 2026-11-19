@@ -142,6 +142,15 @@ class OverviewAggregatorService:
                 )
             ) or 0
 
+            if running_strategies == 0 or open_positions == 0:
+                from app.services.demo_process import read_demo_process
+
+                proc = await read_demo_process()
+                if proc.reachable and proc.state.lower() == "running" and running_strategies == 0:
+                    running_strategies = 1
+                if proc.open_trades and open_positions == 0:
+                    open_positions = proc.open_trades
+
             return {
                 "running_strategies": running_strategies,
                 "open_positions": open_positions,

@@ -65,5 +65,5 @@ class RiskAggregator:
             "account_state": risk_state.decision,
             "emergency_locked": risk_state.reason_code == "kill_switch_active",
             "guards": guards,
-            "active_locks": [],
+            "active_locks": AccountRiskFirewall.current_locks(),
         }

@@ -53,6 +53,15 @@ def _mock_research_json() -> str:
         "confidence": 0.74,
         "risk_level": "medium",
         "summary": "BTC showing strong momentum",
+        "facts": [
+            "BTC/USDT closed at 60000 on 2025-01-01",
+            "24h volume increased 18% day over day",
+        ],
+        "uncertainty": 0.35,
+        "model_interpretation": "Momentum and volume both point to a short-term bounce.",
+        "trading_implication": "Consider a small long only after a confirmed reclaim.",
+        "risk_warning": "Invalidation below the prior swing low.",
+        "strategy_impact": "Would relax the RSI threshold for this pair only.",
         "evidence": ["RSI oversold", "Volume increasing"],
         "agent_opinions": {
             "technical": {
@@ -260,17 +269,44 @@ class TestReportBuilder:
         assert len(output_hash) > 0
 
     @pytest.mark.asyncio
-    async def test_report_builder_llm_failure_returns_degraded(self):
+    async def test_llm_failure_uses_public_klines(self, monkeypatch):
         llm = AsyncMock()
         llm.chat = AsyncMock(side_effect=RuntimeError("No LLM provider available"))
+        rows = [
+            [1, "100", "110", "90", "100", "1"],
+            [2, "100", "112", "99", "110.5", "2"],
+        ]
 
+        async def fake_klines(symbol, timeframe):
+            assert symbol == "BTC/USDT"
+            assert timeframe == "1d"
+            return rows
+
+        monkeypatch.setattr("app.services.research.report_builder.fetch_public_klines", fake_klines)
         report, llm_resp, input_hash, output_hash = await build_research_report(
             llm, "BTC/USDT", "crypto", "1d", "2025-01-01", ["market"],
         )
-        assert report.rating == "Hold"
-        assert report.confidence == 0.0
-        assert report.risk_level == "high"
         assert llm_resp is None
+        assert report.summary.startswith("Public Binance spot BTCUSDT")
+        assert "110.5" in report.summary
+        assert any("110.5" in fact for fact in report.facts)
+        assert not report.summary.startswith("Degraded report")
+
+    @pytest.mark.asyncio
+    async def test_report_builder_degrades_only_when_market_also_fails(self, monkeypatch):
+        llm = AsyncMock()
+        llm.chat = AsyncMock(side_effect=RuntimeError("No LLM provider available"))
+
+        async def fake_klines(symbol, timeframe):
+            raise RuntimeError("klines down")
+
+        monkeypatch.setattr("app.services.research.report_builder.fetch_public_klines", fake_klines)
+        report, llm_resp, input_hash, output_hash = await build_research_report(
+            llm, "BTC/USDT", "crypto", "1d", "2025-01-01", ["market"],
+        )
+        assert report.summary.startswith("Degraded report")
+        assert llm_resp is None
+        assert report.confidence == 0.0
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -575,7 +611,16 @@ class TestResearchV2API:
             # does not create any Command or trigger execution.
             assert data["version_no"] == 1
 
-    def test_research_failure_returns_degraded(self, client):
+    def test_research_without_llm_returns_public_klines(self, client, monkeypatch):
+        rows = [
+            [1, "100", "110", "90", "100", "1"],
+            [2, "100", "112", "99", "110.5", "2"],
+        ]
+
+        async def fake_klines(symbol, timeframe):
+            return rows
+
+        monkeypatch.setattr("app.services.research.report_builder.fetch_public_klines", fake_klines)
         with patch("app.routers.ai_research._get_llm_service") as mock_get:
             llm = AsyncMock()
             llm.chat = AsyncMock(side_effect=RuntimeError("No LLM provider available"))
@@ -587,10 +632,30 @@ class TestResearchV2API:
             run_id = resp.json()["id"]
 
             resp = client.post(f"/api/ai-research/v2/runs/{run_id}/execute")
-            assert resp.status_code == 200
+            assert resp.status_code == 200, resp.text
             data = resp.json()
-            assert data["rating"] == "Hold"
-            assert data["confidence"] == 0.0
+            assert "110.5" in data["summary"]
+            assert data["facts"]
+            assert "Degraded report" not in data["summary"]
+
+    def test_research_failure_without_market_is_not_success(self, client, monkeypatch):
+        async def fake_klines(symbol, timeframe):
+            raise RuntimeError("klines down")
+
+        monkeypatch.setattr("app.services.research.report_builder.fetch_public_klines", fake_klines)
+        with patch("app.routers.ai_research._get_llm_service") as mock_get:
+            llm = AsyncMock()
+            llm.chat = AsyncMock(side_effect=RuntimeError("No LLM provider available"))
+            mock_get.return_value = llm
+
+            resp = client.post("/api/ai-research/v2/runs", json={
+                "symbol": "BTC/USDT", "market": "crypto", "analysis_date": "2025-01-01",
+            })
+            run_id = resp.json()["id"]
+
+            resp = client.post(f"/api/ai-research/v2/runs/{run_id}/execute")
+            assert resp.status_code == 503
+            assert "Degraded report" in resp.json()["detail"]
 
 
 # ══════════════════════════════════════════════════════════════════════

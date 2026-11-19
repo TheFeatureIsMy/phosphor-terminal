@@ -2,7 +2,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import func, String, Text, Integer, Numeric, DateTime, Index
+from sqlalchemy import func, String, Text, Integer, Numeric, DateTime, Index, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -29,6 +29,9 @@ class TradeReviewLabel(UUIDMixin, Base):
 class FailureClusterRecord(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "failure_clusters"
 
+    tenant_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("tenants.id", ondelete="SET NULL"), nullable=True, index=True,
+    )
     strategy_id: Mapped[uuid.UUID | None] = mapped_column(PG_UUID(as_uuid=True))
     label: Mapped[str] = mapped_column(String(128), nullable=False)
     sample_size: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -69,6 +72,9 @@ class ShadowStrategyDraft(UUIDMixin, TimestampMixin, Base):
 class StrategyVersionUpgradeRequest(UUIDMixin, Base):
     __tablename__ = "strategy_version_upgrade_requests"
 
+    tenant_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("tenants.id", ondelete="SET NULL"), nullable=True, index=True,
+    )
     strategy_id: Mapped[uuid.UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False)
     from_version_id: Mapped[uuid.UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False)
     shadow_strategy_draft_id: Mapped[uuid.UUID | None] = mapped_column(PG_UUID(as_uuid=True))

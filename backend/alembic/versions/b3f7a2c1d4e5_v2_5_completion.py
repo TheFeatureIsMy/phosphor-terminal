@@ -57,7 +57,7 @@ def upgrade() -> None:
         sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.Column('job_type', sa.String(64), nullable=False),
         sa.Column('model_name', sa.String(128), nullable=False),
-        sa.Column('provider_id', PG_UUID(as_uuid=True), sa.ForeignKey('ai_provider_configs.id'), nullable=True),
+        sa.Column('provider_id', PG_UUID(as_uuid=True), nullable=True),
         sa.Column('status', sa.String(16), nullable=False, server_default='queued'),
         sa.Column('input_payload', sa.JSON(), nullable=True),
         sa.Column('output_payload', sa.JSON(), nullable=True),

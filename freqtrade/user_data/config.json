@@ -19,9 +19,7 @@
         "name": "binance",
         "key": "",
         "secret": "",
-        "ccxt_config": {
-            "sandbox": true
-        },
+        "ccxt_config": {},
         "ccxt_sync_config": {},
         "ccxt_async_config": {},
         "pair_whitelist": [
@@ -61,7 +59,7 @@
     },
     "bot_name": "PulseDesk",
     "initial_state": "running",
-    "force_entry_enable": false,
+    "force_entry_enable": true,
     "internals": {
         "process_throttle_secs": 5
     }

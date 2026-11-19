@@ -14,11 +14,13 @@ from app.domain.ledger import ExecutionLedgerEvent
 from app.domain.mtf_guard import MTFGuardBacktestStats
 from app.models.strategy import BacktestRun
 from app.repositories.ledger_repository import LedgerRepository
+from app.domain.strategy import StrategyVersion
 from app.services.backtest_runner import (
     FreqtradeBacktestRunner,
     BacktestResult,
     MTFGuardReplayEngine,
 )
+from app.services.strategy_transition import apply_backtest_success_status
 from app.workers.handlers import CommandHandler
 
 logger = logging.getLogger(__name__)
@@ -43,16 +45,19 @@ class StartBacktestHandler(CommandHandler):
         include_mtf_guard = payload.get("include_mtf_guard", False)
 
         run_id = str(command.id).replace("-", "")[:16]
+        raw_strategy_id = payload.get("strategy_id", 0)
+        strategy_id = raw_strategy_id if isinstance(raw_strategy_id, int) and not isinstance(raw_strategy_id, bool) else 0
 
         dates = timerange.split("-")
         start_date = f"{dates[0][:4]}-{dates[0][4:6]}-{dates[0][6:8]}" if len(dates) >= 1 else ""
         end_date = f"{dates[1][:4]}-{dates[1][4:6]}-{dates[1][6:8]}" if len(dates) >= 2 else ""
 
         backtest_run = BacktestRun(
-            strategy_id=payload.get("strategy_id", 0),
+            strategy_id=strategy_id,
             strategy_version_id=payload.get("strategy_version_id"),
             command_id=str(command.id),
             dsl_hash=payload.get("dsl_hash", ""),
+            tenant_id=payload.get("tenant_id"),
             status="running",
             start_date=start_date,
             end_date=end_date,
@@ -75,6 +80,9 @@ class StartBacktestHandler(CommandHandler):
             ledger, command, "FREQTRADE_BACKTEST_STARTED",
             {"backtest_run_id": backtest_run.id, "timerange": timerange, "symbols": symbols},
         )
+        # Persist the start event before the long-running subprocess so a crash
+        # or handler exception cannot erase the fact that the run was started.
+        session.commit()
 
         runner = FreqtradeBacktestRunner()
         result = runner.run(
@@ -94,6 +102,9 @@ class StartBacktestHandler(CommandHandler):
             self._handle_success(session, ledger, command, backtest_run, result)
         else:
             self._handle_failure(session, ledger, command, backtest_run, result)
+            # Keep the failure ledger even though the worker will roll back and
+            # record PULSEDESK_COMMAND_FAILED on its own session.
+            session.commit()
             raise RuntimeError(result.error_message or "backtest failed")
 
         response = {
@@ -246,6 +257,7 @@ class StartBacktestHandler(CommandHandler):
                 "win_rate": m.win_rate,
                 "profit_factor": m.profit_factor,
                 "total_trades": m.total_trades,
+                "absolute_profit": m.absolute_profit,
                 "avg_trade_duration": m.avg_trade_duration,
                 "best_trade": m.best_trade_pct,
                 "worst_trade": m.worst_trade_pct,
@@ -276,6 +288,7 @@ class StartBacktestHandler(CommandHandler):
             ],
         }
         backtest_run.completed_at = _utcnow()
+        self._mark_version_backtested(session, backtest_run.strategy_version_id)
         session.flush()
 
         self._write_ledger(
@@ -288,6 +301,18 @@ class StartBacktestHandler(CommandHandler):
                 "max_drawdown_pct": m.max_drawdown_pct,
             },
         )
+
+    def _mark_version_backtested(self, session: Session, version_id: str | None) -> None:
+        if not version_id:
+            return
+        try:
+            parsed = uuid.UUID(str(version_id))
+        except ValueError:
+            return
+        version = session.get(StrategyVersion, parsed)
+        if version is None:
+            return
+        apply_backtest_success_status(version)
 
     def _handle_failure(
         self,

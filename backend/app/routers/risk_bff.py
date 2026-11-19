@@ -18,6 +18,8 @@ from app.schemas.common import AvailableAction
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from app.database import get_db
+from app.models.user import User
+from app.security.deps import get_current_tenant_id, require_superuser
 
 from app.services.account_risk_firewall import AccountRiskFirewall
 from app.services.risk_rules_service import RiskRulesService
@@ -70,7 +72,7 @@ async def get_risk_overview(
                 account_state=account_state,
                 emergency_locked=readiness.grand_status == "not_live",
                 guards=guards,
-                active_locks=[],
+                active_locks=AccountRiskFirewall.current_locks(),
             ).model_dump()
         except Exception as e:
             logger.exception("[risk-overview] per-strategy path failed: %s", e)
@@ -81,7 +83,7 @@ async def get_risk_overview(
                 account_state="unknown",
                 emergency_locked=False,
                 guards=[],
-                active_locks=[],
+                active_locks=AccountRiskFirewall.current_locks(),
             ).model_dump()
 
     try:
@@ -97,7 +99,7 @@ async def get_risk_overview(
             account_state="unknown",
             emergency_locked=False,
             guards=[],
-            active_locks=[],
+            active_locks=AccountRiskFirewall.current_locks(),
         ).model_dump()
 
 
@@ -424,10 +426,12 @@ async def get_circuit_breakers(db: Session = Depends(get_db)):
 
 
 @router.post("/block-new-entries")
-async def block_new_entries(payload: dict | None = None):
+async def block_new_entries(payload: dict | None = None, db: Session = Depends(get_db)):
     try:
         reason = (payload or {}).get("reason", "manual")
-        locks = AccountRiskFirewall.activate_manual_block(reason=reason)
+        locks = AccountRiskFirewall.activate_manual_block(
+            reason=reason, db=db, updated_by="api:risk/block-new-entries",
+        )
         return {"status": "blocked", "active_locks": locks, "reason_codes": []}
     except Exception as e:
         logger.exception("[block-new-entries] failed: %s", e)
@@ -435,9 +439,11 @@ async def block_new_entries(payload: dict | None = None):
 
 
 @router.post("/unblock")
-async def unblock():
+async def unblock(db: Session = Depends(get_db)):
     try:
-        locks = AccountRiskFirewall.deactivate_manual_block()
+        locks = AccountRiskFirewall.deactivate_manual_block(
+            db=db, updated_by="api:risk/unblock",
+        )
         return {"status": "unblocked", "active_locks": locks, "reason_codes": []}
     except Exception as e:
         logger.exception("[unblock] failed: %s", e)
@@ -492,25 +498,36 @@ class RiskRulesUpdateRequest(BaseModel):
 
 
 @router.put("/rules", response_model=RiskRulesResponse)
-def update_risk_rules(body: RiskRulesUpdateRequest, db: Session = Depends(get_db)):
-    """Update the active risk policy's rule thresholds."""
+def update_risk_rules(
+    body: RiskRulesUpdateRequest,
+    db: Session = Depends(get_db),
+    _admin: User | None = Depends(require_superuser),
+    tenant_raw: str | None = Depends(get_current_tenant_id),
+):
+    """Update the active risk policy's rule thresholds (admin only)."""
     from app.domain.risk import RiskPolicy, RiskPolicyVersion
     from datetime import datetime, timezone
 
-    # Find or create active policy
-    active_version = (
-        db.query(RiskPolicyVersion)
-        .filter(RiskPolicyVersion.status == "active")
-        .order_by(RiskPolicyVersion.created_at.desc())
-        .first()
-    )
+    try:
+        tenant_id = int(tenant_raw) if tenant_raw is not None else None
+    except (TypeError, ValueError):
+        tenant_id = None
+
+    # Find or create the tenant's active policy.
+    query = db.query(RiskPolicyVersion).filter(RiskPolicyVersion.status == "active")
+    if tenant_id is None:
+        query = query.filter(RiskPolicyVersion.tenant_id.is_(None))
+    else:
+        query = query.filter(RiskPolicyVersion.tenant_id == tenant_id)
+    active_version = query.order_by(RiskPolicyVersion.created_at.desc()).first()
 
     if active_version is None:
-        # Create a default policy + version
+        # Create a default policy + version for this tenant.
         policy = RiskPolicy(
             name="default_risk_policy",
             policy_type="global",
             status="active",
+            tenant_id=tenant_id,
         )
         db.add(policy)
         db.flush()
@@ -523,6 +540,7 @@ def update_risk_rules(body: RiskRulesUpdateRequest, db: Session = Depends(get_db
             policy_json=policy_json,
             policy_hash=hash_string(json.dumps(policy_json, sort_keys=True)),
             created_by="web",
+            tenant_id=tenant_id,
         )
         db.add(active_version)
         db.flush()
@@ -543,6 +561,8 @@ def update_risk_rules(body: RiskRulesUpdateRequest, db: Session = Depends(get_db
         pj["kill_switch_active"] = body.kill_switch_active
 
     active_version.policy_json = pj
+    # Keep the audit hash in sync with the content it claims to describe.
+    active_version.policy_hash = hash_string(json.dumps(pj, sort_keys=True))
     db.commit()
 
     # Return updated rules

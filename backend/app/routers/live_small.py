@@ -13,6 +13,7 @@ from sqlalchemy import select, and_
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.security.deps import get_current_tenant_id
 from app.domain.order import ExecutionTrade
 from app.repositories.run_history_repository import RunHistoryStatsRepository
 from app.schemas.live_small import (
@@ -28,6 +29,13 @@ from app.services.live_small import LiveSmallService
 from app.services.live_small.circuit_breaker import TradeResult, check_circuit_breaker
 
 router = APIRouter(prefix="/api/live-small", tags=["live-small-safety"])
+
+
+def _tenant_int(raw: str | None) -> int | None:
+    try:
+        return int(raw) if raw is not None else None
+    except (TypeError, ValueError):
+        return None
 
 
 def _svc(db: Session = Depends(get_db)) -> LiveSmallService:
@@ -50,6 +58,7 @@ def evaluate_approval(
     body: PreconditionCheckRequest,
     exchange_name: str = "binance",
     svc: LiveSmallService = Depends(_svc),
+    tenant_raw: str | None = Depends(get_current_tenant_id),
 ):
     repo = RunHistoryStatsRepository(svc._db)
     stats = repo.build_stats(body.strategy_version_id)
@@ -58,6 +67,7 @@ def evaluate_approval(
         capital_pool_id=body.capital_pool_id,
         run_history=stats,
         exchange_name=exchange_name,
+        tenant_id=_tenant_int(tenant_raw),
     )
 
 

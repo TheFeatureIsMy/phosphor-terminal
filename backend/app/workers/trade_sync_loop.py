@@ -10,7 +10,7 @@ from sqlalchemy import select, and_
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.config import settings
-from app.database import SessionLocal
+from app.database import WorkerSessionLocal
 from app.domain.execution import StrategyRun, FreqtradeRun
 from app.domain.ledger import ExecutionLedgerEvent
 from app.domain.risk import CapitalPool
@@ -21,6 +21,10 @@ from app.services.freqtrade_client import FreqtradeClient
 from app.services.live_small.circuit_breaker import check_circuit_breaker, TradeResult
 
 logger = logging.getLogger(__name__)
+
+
+def _naive(value: datetime | None) -> datetime | None:
+    return value.replace(tzinfo=None) if value is not None and value.tzinfo else value
 
 
 def _utcnow() -> datetime:
@@ -35,7 +39,7 @@ class TradeSyncLoop:
         heartbeat_stale_s: int | None = None,
         enabled: bool | None = None,
     ) -> None:
-        self._session_factory = session_factory or SessionLocal
+        self._session_factory = session_factory or WorkerSessionLocal
         self._sync_interval = sync_interval_s if sync_interval_s is not None else settings.trade_sync_interval_s
         self._heartbeat_stale_s = heartbeat_stale_s if heartbeat_stale_s is not None else settings.trade_sync_heartbeat_stale_s
         self._enabled = enabled if enabled is not None else settings.trade_sync_enabled
@@ -251,7 +255,7 @@ class TradeSyncLoop:
 
     def _handle_heartbeat_failure(self, db: Session, ft_run: FreqtradeRun) -> None:
         if ft_run.last_heartbeat_at:
-            elapsed = (_utcnow() - ft_run.last_heartbeat_at).total_seconds()
+            elapsed = (_utcnow() - _naive(ft_run.last_heartbeat_at)).total_seconds()
         else:
             elapsed = float("inf")
 

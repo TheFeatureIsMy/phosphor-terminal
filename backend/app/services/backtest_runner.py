@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from app.config import settings
+from app.services.freqtrade_launch import rule_timeframe
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +33,7 @@ class BacktestMetrics:
     win_rate: float = 0.0
     profit_factor: float = 0.0
     total_trades: int = 0
+    absolute_profit: float = 0.0
     avg_trade_duration: str = ""
     best_trade_pct: float = 0.0
     worst_trade_pct: float = 0.0
@@ -79,6 +81,7 @@ class FreqtradeBacktestRunner:
         slippage_bps: float | None = None,
     ) -> BacktestResult:
         rules_path = self._write_rules(dsl, run_id)
+        timeframe = rule_timeframe(dsl)
         config_path = self._build_config(
             symbols=symbols,
             initial_capital=initial_capital,
@@ -97,7 +100,9 @@ class FreqtradeBacktestRunner:
                 rules_path=str(rules_path),
                 timerange=timerange,
                 export_filename=export_filename,
+                timeframe=timeframe,
                 timeout_sec=timeout_sec,
+                run_id=run_id,
             )
         finally:
             self._cleanup(config_path)
@@ -156,30 +161,69 @@ class FreqtradeBacktestRunner:
         logger.info("wrote backtest config: %s", path)
         return Path(path)
 
+    def backtest_command(
+        self,
+        *,
+        config_path: str,
+        timerange: str,
+        export_filename: str,
+        timeframe: str,
+        results_dir: str | None = None,
+    ) -> list[str]:
+        """Argv the worker runs. Timeframe is the rule package timeframe."""
+        directory = results_dir or str(self._user_data / "backtest_results")
+        return [
+            self._python,
+            str(self._start_py),
+            "backtesting",
+            "--config", config_path,
+            "--strategy", "PulseDeskUniversalStrategy",
+            "--timeframe", timeframe,
+            "--timerange", timerange,
+            "--cache", "none",
+            "--backtest-directory", directory,
+            "--export", "trades",
+            "--export-filename",
+            str(Path(directory) / export_filename),
+            "--user-data-dir", str(self._user_data),
+        ]
+
     def _execute(
         self,
         config_path: str,
         rules_path: str,
         timerange: str,
         export_filename: str,
+        timeframe: str,
         timeout_sec: int,
+        run_id: str = "",
     ) -> BacktestResult:
-        cmd = [
-            self._python,
-            str(self._start_py),
-            "backtesting",
-            "--config", config_path,
-            "--strategy", "PulseDeskUniversalStrategy",
-            "--timerange", timerange,
-            "--export", "trades",
-            "--export-filename",
-            str(self._user_data / "backtest_results" / export_filename),
-            "--user-data-dir", str(self._user_data),
-        ]
+        run_results = self._user_data / "backtest_results" / f"run_{run_id or 'adhoc'}"
+        run_results.mkdir(parents=True, exist_ok=True)
+        cmd = self.backtest_command(
+            config_path=config_path,
+            timerange=timerange,
+            export_filename=export_filename,
+            timeframe=timeframe,
+            results_dir=str(run_results),
+        )
 
-        env = {**os.environ, "PULSEDESK_RULES_PATH": rules_path}
+        backend_dir = Path(__file__).resolve().parent.parent.parent
+        ta_lib = Path.home() / ".local" / "ta-lib" / "lib"
+        library_path = os.environ.get("DYLD_LIBRARY_PATH", "")
+        if ta_lib.is_dir():
+            library_path = os.pathsep.join([str(ta_lib), library_path]).rstrip(os.pathsep)
+        env = {
+            **os.environ,
+            "PULSEDESK_RULES_PATH": rules_path,
+            "PYTHONPATH": os.pathsep.join(
+                [str(backend_dir), os.environ.get("PYTHONPATH", "")]
+            ).rstrip(os.pathsep),
+            "DYLD_LIBRARY_PATH": library_path,
+        }
 
         logger.info("running freqtrade backtest: %s", " ".join(cmd))
+        log_path = self._user_data / "logs" / f"backtest_{run_id or 'run'}.log"
 
         try:
             proc = subprocess.run(
@@ -191,6 +235,7 @@ class FreqtradeBacktestRunner:
                 cwd=str(self._ft_dir),
             )
         except subprocess.TimeoutExpired as exc:
+            self._write_run_log(log_path, cmd, exc.stdout or "", exc.stderr or "")
             return BacktestResult(
                 success=False,
                 stdout=exc.stdout or "",
@@ -199,6 +244,7 @@ class FreqtradeBacktestRunner:
                 error_message=f"freqtrade backtesting timed out after {timeout_sec}s",
             )
 
+        self._write_run_log(log_path, cmd, proc.stdout, proc.stderr)
         if proc.returncode != 0:
             return BacktestResult(
                 success=False,
@@ -208,28 +254,62 @@ class FreqtradeBacktestRunner:
                 error_message=f"freqtrade exited with code {proc.returncode}: {proc.stderr[-500:] if proc.stderr else ''}",
             )
 
-        parsed = self._parse_result(export_filename)
+        parsed = self._parse_result(export_filename, results_dir=run_results)
+        # Only ad-hoc runs may fall back to the shared results directory. A
+        # real run must never parse another run's export.
+        if (
+            not run_id
+            and not parsed.success
+            and "no result file" in parsed.error_message
+        ):
+            fallback = self._parse_result(export_filename)
+            if fallback.success:
+                parsed = fallback
         parsed.stdout = proc.stdout
         parsed.stderr = proc.stderr
         parsed.exit_code = proc.returncode
         return parsed
 
-    def _parse_result(self, export_filename: str) -> BacktestResult:
-        results_dir = self._user_data / "backtest_results"
-        candidates = sorted(results_dir.glob(f"{export_filename}*.json"), reverse=True)
-
-        if not candidates:
-            return BacktestResult(
-                success=True,
-                error_message="backtest succeeded but no result file found",
-            )
-
+    @staticmethod
+    def _write_run_log(path: Path, cmd: list[str], stdout: str, stderr: str) -> None:
         try:
-            raw = json.loads(candidates[0].read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, OSError) as exc:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(
+                "command: " + " ".join(cmd) + "\n" + (stdout or "") + "\n" + (stderr or ""),
+                encoding="utf-8",
+            )
+        except OSError:
+            logger.warning("could not write backtest log %s", path)
+
+    def _parse_result(self, export_filename: str, results_dir: Path | None = None) -> BacktestResult:
+        directory = results_dir or (self._user_data / "backtest_results")
+        prefixed = [path for path in directory.glob(f"{export_filename}*") if path.is_file()]
+        pooled = prefixed or [
+            path for path in directory.glob("backtest-result-*")
+            if path.is_file() and not path.name.endswith(".meta.json")
+        ]
+        candidates = sorted(pooled, key=lambda path: path.stat().st_mtime, reverse=True)
+        raw = None
+        parse_error = ""
+        for path in candidates:
+            try:
+                document = self._read_result_document(path)
+            except (json.JSONDecodeError, OSError, KeyError) as exc:
+                parse_error = str(exc)
+                continue
+            if document is not None:
+                raw = document
+                break
+
+        if raw is None:
+            if parse_error:
+                return BacktestResult(
+                    success=False,
+                    error_message=f"failed to parse result file: {parse_error}",
+                )
             return BacktestResult(
                 success=False,
-                error_message=f"failed to parse result file: {exc}",
+                error_message="backtest succeeded but no result file found",
             )
 
         strategy_data = raw.get("strategy", {})
@@ -250,16 +330,18 @@ class FreqtradeBacktestRunner:
 
         s = strategy_data[strat_key]
         trades_list = s.get("trades", [])
+        closed, win_rate = self._closed_and_win_rate(s)
         metrics = BacktestMetrics(
-            total_return_pct=s.get("profit_total", 0) * 100,
-            sharpe_ratio=s.get("sharpe", 0),
-            max_drawdown_pct=abs(s.get("max_drawdown", 0)) * 100,
-            win_rate=(s.get("wins", 0) / max(s.get("trade_count", 1), 1)),
-            profit_factor=s.get("profit_factor", 0),
-            total_trades=s.get("trade_count", 0),
-            avg_trade_duration=s.get("holding_avg", ""),
-            best_trade_pct=s.get("best_trade", 0) * 100,
-            worst_trade_pct=s.get("worst_trade", 0) * 100,
+            total_return_pct=float(s.get("profit_total") or 0) * 100,
+            sharpe_ratio=float(s.get("sharpe") or 0),
+            max_drawdown_pct=abs(float(s.get("max_drawdown") or 0)) * 100,
+            win_rate=win_rate,
+            profit_factor=float(s.get("profit_factor") or 0),
+            total_trades=closed,
+            absolute_profit=float(s.get("profit_total_abs") or 0),
+            avg_trade_duration=s.get("holding_avg", "") or "",
+            best_trade_pct=float(s.get("best_trade") or 0) * 100,
+            worst_trade_pct=float(s.get("worst_trade") or 0) * 100,
         )
 
         normalized_trades = [
@@ -274,6 +356,42 @@ class FreqtradeBacktestRunner:
             equity_curve=equity_curve,
             raw_result=raw,
         )
+
+    @staticmethod
+    def _read_result_document(path: Path) -> dict[str, Any] | None:
+        """Load a Freqtrade result JSON, including the JSON stored inside a zip."""
+        if path.name.endswith(".meta.json") or not path.is_file():
+            return None
+        if path.suffix == ".zip":
+            import zipfile
+            with zipfile.ZipFile(path) as archive:
+                for name in archive.namelist():
+                    if not name.endswith(".json") or name.endswith("_config.json"):
+                        continue
+                    raw = json.loads(archive.read(name))
+                    if isinstance(raw, dict) and "strategy" in raw:
+                        return raw
+            return None
+        if path.suffix != ".json":
+            return None
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        if isinstance(raw, dict) and ("strategy" in raw or "strategy_comparison" in raw):
+            return raw
+        return None
+
+    @staticmethod
+    def _closed_and_win_rate(summary: dict[str, Any]) -> tuple[int, float]:
+        """Closed-trade count and win rate from a Freqtrade strategy summary.
+
+        Current exports use total_trades. Older exports used trade_count.
+        """
+        closed = summary.get("total_trades")
+        if closed is None:
+            closed = summary.get("trade_count") or 0
+        closed = int(closed or 0)
+        wins = int(summary.get("wins") or 0)
+        win_rate = (wins / closed) if closed else 0.0
+        return closed, win_rate
 
     @staticmethod
     def _normalize_trade(t: dict[str, Any]) -> dict[str, Any]:

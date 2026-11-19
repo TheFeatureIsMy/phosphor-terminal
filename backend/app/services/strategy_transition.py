@@ -1,6 +1,8 @@
 """Strategy version status transition engine — pure logic, no DB dependency."""
 from __future__ import annotations
 
+from typing import Any
+
 from app.domain.enums import StrategyVersionStatus as S
 
 
@@ -38,3 +40,29 @@ def validate_transition(from_status: S, to_status: S) -> None:
 
 def is_system_only(from_status: S, to_status: S) -> bool:
     return (from_status, to_status) in SYSTEM_ONLY_TRANSITIONS
+
+
+def apply_backtest_success_status(version: Any) -> list[tuple[S, S]]:
+    """Move a version to backtested using only allowed steps.
+
+    Draft goes draft → validated → backtested. Validated goes straight to
+    backtested. Other states are left unchanged. Each step is checked with
+    validate_transition before it is written.
+    """
+    try:
+        current = S(str(version.status))
+    except ValueError:
+        return []
+    taken: list[tuple[S, S]] = []
+    while current != S.BACKTESTED:
+        if current == S.DRAFT:
+            nxt = S.VALIDATED
+        elif current == S.VALIDATED:
+            nxt = S.BACKTESTED
+        else:
+            break
+        validate_transition(current, nxt)
+        taken.append((current, nxt))
+        version.status = nxt.value
+        current = nxt
+    return taken

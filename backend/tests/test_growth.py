@@ -307,6 +307,44 @@ class TestGrowthAPI:
         resp = client.get(f"/api/growth/candidates/{fake_id}")
         assert resp.status_code == 404
 
+    def test_daily_review_links_version_and_generates_candidate(self, client, session):
+        from app.domain.strategy import StrategyV2, StrategyVersion
+
+        strategy = StrategyV2(name="growth-src", strategy_type="dsl", source_type="manual", status="active")
+        session.add(strategy)
+        session.flush()
+        version = StrategyVersion(
+            strategy_id=strategy.id,
+            version_no=1,
+            status="backtested",
+            dsl_version="2.5",
+            rule_dsl={
+                "schema_version": "2.5",
+                "timeframe": "15m",
+                "symbols": ["BTC/USDT"],
+                "entry": {"logic": "AND", "rules": []},
+                "exit": {"logic": "OR", "rules": []},
+                "risk": {"stoploss": -0.08, "max_open_trades": 1, "trailing_stop": False},
+            },
+            dsl_hash="growth-test",
+            created_by="test",
+        )
+        version.created_at = datetime(2099, 1, 1, tzinfo=timezone.utc)
+        session.add(version)
+        session.commit()
+
+        created = client.post("/api/growth/reports/daily-review", json={"days": 1})
+        assert created.status_code == 201, created.text
+        body = created.json()
+        assert body["strategy_version_id"] == str(version.id)
+
+        generated = client.post(f"/api/growth/candidates/generate/{body['id']}")
+        assert generated.status_code == 201, generated.text
+        candidate = generated.json()
+        assert candidate["source_strategy_version_id"] == str(version.id)
+        assert isinstance(candidate["candidate_dsl"], dict)
+        assert candidate["candidate_dsl"].get("risk", {}).get("stoploss") is not None
+
     def test_generate_candidate_missing_report_returns_400(self, client):
         fake_id = str(uuid.uuid4())
         resp = client.post(f"/api/growth/candidates/generate/{fake_id}")

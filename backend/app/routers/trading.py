@@ -20,6 +20,7 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.database import get_db
+from app.security.deps import get_current_tenant_id
 from app.domain.enums import CommandType, StrategyVersionStatus
 from app.domain.execution import StrategyRun
 from app.domain.order import ExecutionTrade
@@ -31,17 +32,51 @@ from app.schemas.trading import (
     DisableAutoResponse,
     StartLiveSmallRequest,
     StartLiveSmallResponse,
+    DemoProcessResponse,
     StartPaperRequest,
     TradingCommandResponse,
 )
 from app.services.command_bus import CommandBusService
 from app.services.dsl_hasher import compute_dsl_hash
 from app.services.live_small import LiveSmallService
+from app.services.providers.categories.cex.binance import CONFIRM_PHRASE
 from app.services.live_small.circuit_breaker import TradeResult, check_circuit_breaker
 from app.services.risk_engine import RiskEngine
 from app.services.strategy_transition import validate_transition, InvalidTransitionError
 
+def _tenant_int(raw: str | None) -> int | None:
+    try:
+        return int(raw) if raw is not None else None
+    except (TypeError, ValueError):
+        return None
+
+
+
+
+def _tenant_max_open_trades(db, tenant_id: int | None) -> int | None:
+    if tenant_id is None:
+        return None
+    from app.models.tenant import TenantExecutionProfile
+
+    profile = db.query(TenantExecutionProfile).filter(
+        TenantExecutionProfile.tenant_id == tenant_id
+    ).first()
+    if profile is None or not profile.enabled:
+        return None
+    return profile.max_open_trades
+
+
 router = APIRouter(prefix="/api/trading", tags=["trading-control"])
+
+
+@router.get("/demo-process", response_model=DemoProcessResponse)
+async def demo_process():
+    """Progress of the running simulation process. Empty trades are still a live process."""
+    from app.services.demo_process import read_demo_process
+
+    return await read_demo_process()
+
+
 logger = logging.getLogger(__name__)
 
 _risk_engine = RiskEngine()
@@ -78,7 +113,8 @@ def start_paper(req: StartPaperRequest, db: Session = Depends(get_db)):
 
     dsl_hash = compute_dsl_hash(dsl)
     today = datetime.now(timezone.utc).strftime("%Y%m%d")
-    idempotency_key = f"start_paper:{req.strategy_version_id}:{dsl_hash}:paper:{today}"
+    request_token = req.client_request_id or today
+    idempotency_key = f"start_paper:{req.strategy_version_id}:{dsl_hash}:paper:{request_token}"
 
     svc = CommandBusService(db)
     cmd, created = svc.enqueue(
@@ -117,7 +153,11 @@ def start_paper(req: StartPaperRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/start-live-small", response_model=StartLiveSmallResponse)
-def start_live_small(req: StartLiveSmallRequest, db: Session = Depends(get_db)):
+def start_live_small(
+    req: StartLiveSmallRequest,
+    db: Session = Depends(get_db),
+    tenant_raw: str | None = Depends(get_current_tenant_id),
+):
     """Start live_small trading — only after the full safety gate chain passes.
 
     Gate chain: human confirmation → preconditions → risk approval →
@@ -133,6 +173,7 @@ def start_live_small(req: StartLiveSmallRequest, db: Session = Depends(get_db)):
         capital_pool_id=req.capital_pool_id,
         run_history=stats,
         exchange_name=req.exchange_name,
+        tenant_id=_tenant_int(tenant_raw),
     )
 
     blocked_reasons = [
@@ -189,6 +230,18 @@ def start_live_small(req: StartLiveSmallRequest, db: Session = Depends(get_db)):
             config_preview=approval.config_preview,
         )
 
+    if req.confirmed_by != CONFIRM_PHRASE:
+        return StartLiveSmallResponse(
+            state="waiting_confirmation",
+            reason_codes=["confirm_phrase_required"],
+            available_actions=[{"type": "confirm_live_small", "enabled": True,
+                                "label": "人工确认启动小仓实盘", "confirm_required": True}],
+            can_proceed=True,
+            live_small_enabled=True,
+            preconditions=approval.preconditions,
+            config_preview=approval.config_preview,
+        )
+
     # Final state gate: promote paper_passed → live_pending (the
     # RequestLiveSmallHandler requires live_pending); anything else is blocked.
     version = db.get(StrategyVersion, req.strategy_version_id)
@@ -230,6 +283,10 @@ def start_live_small(req: StartLiveSmallRequest, db: Session = Depends(get_db)):
             "capital_pool_id": str(req.capital_pool_id),
             "exchange_name": req.exchange_name,
             "confirmed_by": req.confirmed_by,
+            "tenant_id": _tenant_int(tenant_raw),
+            "max_open_trades_cap": _tenant_max_open_trades(
+                db, _tenant_int(tenant_raw)
+            ),
         },
         idempotency_key=idempotency_key,
         requested_by=f"api:trading/start-live-small:{req.confirmed_by}",
@@ -334,7 +391,9 @@ def disable_auto(req: DisableAutoRequest, db: Session = Depends(get_db)):
         command_ids.append(cmd.id)
 
     try:
-        AccountRiskFirewall.activate_manual_block(reason=req.reason)
+        AccountRiskFirewall.activate_manual_block(
+            reason=req.reason, db=db, updated_by="api:trading/disable-auto",
+        )
         firewall_active = True
     except Exception as e:  # pragma: no cover — firewall is in-memory
         logger.exception("[disable-auto] firewall activation failed: %s", e)

@@ -29,6 +29,7 @@ class StartPaperRequest(BaseModel):
     initial_wallet: float = Field(default=10000, gt=0)
     exchange: str = "binance"
     api_port: int = Field(default=8080, ge=1024, le=65535)
+    client_request_id: Optional[str] = Field(default=None, max_length=80)
 
 
 class StartLiveSmallRequest(BaseModel):
@@ -44,6 +45,32 @@ class DisableAutoRequest(BaseModel):
 
 
 # ── Responses ─────────────────────────────────────────────────────────
+
+class DemoBalance(BaseModel):
+    currency: str
+    balance: float
+
+
+class DemoProcessResponse(BaseModel):
+    """The Freqtrade process on the demo port. No API keys."""
+
+    reachable: bool
+    state: str
+    strategy: str | None = None
+    timeframe: str | None = None
+    trading_mode: str | None = None
+    dry_run: bool | None = None
+    exchange: str | None = None
+    venue: str = "freqtrade"
+    rest_hosts: list[str] = []
+    stake_currency: str | None = None
+    stake_amount: str | None = None
+    max_open_trades: int | None = None
+    open_trades: int = 0
+    closed_trades: int = 0
+    total: float | None = None
+    balances: list[DemoBalance] = []
+
 
 class TradingCommandResponse(BaseModel):
     state: str

@@ -2,7 +2,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import func, String, Text, DateTime, ForeignKey, Index
+from sqlalchemy import func, String, Text, DateTime, ForeignKey, Index, Integer
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy import JSON as JSONB
 from sqlalchemy.orm import Mapped, mapped_column
@@ -13,6 +13,9 @@ from app.database.base import Base, UUIDMixin
 class CircuitBreakerEvent(UUIDMixin, Base):
     __tablename__ = "circuit_breaker_events"
 
+    tenant_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("tenants.id", ondelete="SET NULL"), nullable=True, index=True,
+    )
     event_type: Mapped[str] = mapped_column(
         String(32), nullable=False,
     )  # emergency_stop / kill_switch / daily_loss_lock / weekly_loss_lock / manual_force_close / system_safe_mode

@@ -1,37 +1,96 @@
-import { useEffect, useState } from "react";
-import { BrowserRouter, Route, Routes, useNavigate } from "react-router-dom";
+import { lazy, Suspense, useEffect, useState, type ComponentType } from "react";
+import { BrowserRouter, Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { Sidebar } from "@/components/shell/Sidebar";
 import { GlobalStatusBar } from "@/components/shell/GlobalStatusBar";
 import { CommandPalette } from "@/components/shell/CommandPalette";
 import { PageHeader } from "@/components/shell/PageHeader";
 import { ErrorBoundary } from "@/components/shell/ErrorBoundary";
 import { LandingPage } from "@/pages/Landing/LandingPage";
+import { InviteAcceptPage, LoginPage } from "@/features/auth";
+import { getAuthToken } from "@/lib/api";
 import { useLocation } from "react-router-dom";
 import { ALL_ROUTES } from "@/lib/nav";
-import DashboardPage from "@/pages/Dashboard/DashboardPage";
-import SignalCenterPage from "@/pages/SignalCenter/SignalCenterPage";
-import ExecutionCenterPage from "@/pages/Execution/ExecutionCenterPage";
-import OrdersPositionsPage from "@/pages/Execution/OrdersPositionsPage";
-import ReconciliationBusPage from "@/pages/Execution/ReconciliationBusPage";
-import RiskCenterPage from "@/pages/Risk/RiskCenterPage";
-import StopProtectionPage from "@/pages/Risk/StopProtectionPage";
-import CircuitBreakersPage from "@/pages/Risk/CircuitBreakersPage";
-import LiveReadinessPage from "@/pages/LiveReadiness/LiveReadinessPage";
-import MarketStructurePage from "@/pages/Structure/MarketStructurePage";
-import StructureMatrixPage from "@/pages/Structure/StructureMatrixPage";
-import ManipulationRadarPage from "@/pages/Manipulation/ManipulationRadarPage";
-import GrowthReviewPage from "@/pages/Growth/GrowthReviewPage";
-import FailureClusteringPage from "@/pages/Growth/FailureClusteringPage";
-import StrategyOptimizationPage from "@/pages/Growth/StrategyOptimizationPage";
-import AIResearchRoomPage from "@/pages/AIStudio/AIResearchRoomPage";
-import AgentPlatformPage from "@/pages/AgentPlatform/AgentPlatformPage";
-import MarketSentimentPage from "@/pages/Sentiment/MarketSentimentPage";
-import BacktestSimulationPage from "@/pages/Backtest/BacktestSimulationPage";
-import { ServiceManagementPage, DataSourcesPage } from "@/pages/System/SystemPages";
-import SystemSettingsPage from "@/pages/Settings/SystemSettingsPage";
-import StrategyWorkspacePage from "@/pages/StrategyWorkspace/StrategyWorkspacePage";
+import DesignPreviews from "@/pages/Previews/DesignPreviews";
 
-const EXTRA_ROUTES: Record<string, () => React.JSX.Element> = {
+const DashboardPage = lazy(() =>
+  import("@/features/dashboard").then((m) => ({ default: m.DashboardPage }))
+);
+const SignalCenterPage = lazy(() =>
+  import("@/features/signal-center").then((m) => ({ default: m.SignalCenterPage }))
+);
+const ExecutionCenterPage = lazy(() =>
+  import("@/features/execution").then((m) => ({ default: m.ExecutionCenterPage }))
+);
+const OrdersPositionsPage = lazy(() =>
+  import("@/features/execution").then((m) => ({ default: m.OrdersPositionsPage }))
+);
+const ReconciliationBusPage = lazy(() =>
+  import("@/features/execution").then((m) => ({ default: m.ReconciliationBusPage }))
+);
+const RiskCenterPage = lazy(() =>
+  import("@/features/risk").then((m) => ({ default: m.RiskCenterPage }))
+);
+const StopProtectionPage = lazy(() =>
+  import("@/features/risk").then((m) => ({ default: m.StopProtectionPage }))
+);
+const CircuitBreakersPage = lazy(() =>
+  import("@/features/risk").then((m) => ({ default: m.CircuitBreakersPage }))
+);
+const LiveReadinessPage = lazy(() =>
+  import("@/features/live-readiness").then((m) => ({ default: m.LiveReadinessPage }))
+);
+const MarketStructurePage = lazy(() =>
+  import("@/features/structure").then((m) => ({ default: m.MarketStructurePage }))
+);
+const StructureMatrixPage = lazy(() =>
+  import("@/features/structure").then((m) => ({ default: m.StructureMatrixPage }))
+);
+const ManipulationRadarPage = lazy(() =>
+  import("@/features/manipulation").then((m) => ({ default: m.ManipulationRadarPage }))
+);
+const GrowthReviewPage = lazy(() =>
+  import("@/features/growth").then((m) => ({ default: m.GrowthReviewPage }))
+);
+const FailureClusteringPage = lazy(() =>
+  import("@/features/growth").then((m) => ({ default: m.FailureClusteringPage }))
+);
+const StrategyOptimizationPage = lazy(() =>
+  import("@/features/growth").then((m) => ({ default: m.StrategyOptimizationPage }))
+);
+const AIResearchRoomPage = lazy(() =>
+  import("@/features/ai-studio").then((m) => ({ default: m.AIResearchRoomPage }))
+);
+const AgentPlatformPage = lazy(() =>
+  import("@/features/agent-platform").then((m) => ({ default: m.AgentPlatformPage }))
+);
+const MarketSentimentPage = lazy(() =>
+  import("@/features/sentiment").then((m) => ({ default: m.MarketSentimentPage }))
+);
+const BacktestSimulationPage = lazy(() =>
+  import("@/features/backtest").then((m) => ({ default: m.BacktestSimulationPage }))
+);
+const ServiceManagementPage = lazy(() =>
+  import("@/features/system").then((m) => ({ default: m.ServiceManagementPage }))
+);
+const SystemSettingsPage = lazy(() =>
+  import("@/features/settings").then((m) => ({ default: m.SystemSettingsPage }))
+);
+const ConnectionsPage = lazy(() =>
+  import("@/features/settings").then((m) => ({ default: m.ConnectionsPage }))
+);
+const StrategyWorkspacePage = lazy(() =>
+  import("@/features/strategy-workspace").then((m) => ({ default: m.StrategyWorkspacePage }))
+);
+
+function PageLoader() {
+  return (
+    <div className="flex h-full items-center justify-center text-text-3">
+      <span className="font-mono text-[11px] tracking-[0.2em]">LOADING…</span>
+    </div>
+  );
+}
+
+const EXTRA_ROUTES: Record<string, ComponentType> = {
   executionCenter: ExecutionCenterPage,
   ordersPositions: OrdersPositionsPage,
   reconciliationBus: ReconciliationBusPage,
@@ -50,7 +109,7 @@ const EXTRA_ROUTES: Record<string, () => React.JSX.Element> = {
   marketSentiment: MarketSentimentPage,
   backtestSimulation: BacktestSimulationPage,
   serviceManagement: ServiceManagementPage,
-  dataSourceManagement: DataSourcesPage,
+  connections: ConnectionsPage,
   systemSettings: SystemSettingsPage,
   strategyWorkspace: StrategyWorkspacePage,
 };
@@ -110,7 +169,9 @@ function Shell() {
           <GlobalStatusBar onOpenPalette={() => setPaletteOpen(true)} />
           <main className="terminal-grid flex min-h-0 flex-1 flex-col overflow-y-auto">
             <ErrorBoundary resetKey={pathname}>
+            <Suspense fallback={<PageLoader />}>
             <Routes>
+              <Route path="/data-sources" element={<Navigate to="/connections" replace />} />
               <Route path="/" element={<DashboardPage />} />
               <Route path="/signals" element={<SignalCenterPage />} />
               {ALL_ROUTES.filter(
@@ -126,6 +187,7 @@ function Shell() {
                 );
               })}
             </Routes>
+            </Suspense>
             </ErrorBoundary>
           </main>
         </div>
@@ -135,11 +197,39 @@ function Shell() {
   );
 }
 
+function AppFrame() {
+  const { pathname } = useLocation();
+  if (pathname.startsWith("/previews")) return <DesignPreviews />;
+  return <Shell />;
+}
+
 export default function App() {
-  // 启动过渡页(每次会话一次)
+  const preview = window.location.pathname.startsWith("/previews");
   const [launched, setLaunched] = useState(
-    () => sessionStorage.getItem("alphaloop-launched") === "1"
+    () => preview || sessionStorage.getItem("alphaloop-launched") === "1"
   );
+  const [authed, setAuthed] = useState(() => Boolean(getAuthToken()));
+
+  useEffect(() => {
+    const onUnauthorized = () => setAuthed(false);
+    window.addEventListener("alphaloop:unauthorized", onUnauthorized);
+    return () => window.removeEventListener("alphaloop:unauthorized", onUnauthorized);
+  }, []);
+
+  const inviteToken = new URLSearchParams(window.location.search).get("invite_token");
+  if (inviteToken) {
+    return (
+      <InviteAcceptPage
+        token={inviteToken}
+        onDone={() => {
+          window.history.replaceState({}, "", "/");
+          setLaunched(true);
+          setAuthed(false);
+        }}
+      />
+    );
+  }
+
   if (!launched) {
     return (
       <LandingPage
@@ -150,9 +240,12 @@ export default function App() {
       />
     );
   }
+  if (!authed) {
+    return <LoginPage onSuccess={() => setAuthed(true)} />;
+  }
   return (
     <BrowserRouter>
-      <Shell />
+      <AppFrame />
     </BrowserRouter>
   );
 }

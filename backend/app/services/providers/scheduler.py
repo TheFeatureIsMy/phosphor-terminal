@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.config import settings
-from app.database import SessionLocal
+from app.database import WorkerSessionLocal
 from app.models.provider_config import ProviderConfig
 from app.services.providers.health_service import ProviderHealthService
 
@@ -19,8 +19,9 @@ logger = logging.getLogger(__name__)
 class ProviderHealthTickPolicy:
     """Pure / unit-testable: pick which providers to test in a tick."""
 
-    def __init__(self, batch_size: int = 10) -> None:
+    def __init__(self, batch_size: int = 10, per_tenant_limit: int = 0) -> None:
         self.batch_size = batch_size
+        self.per_tenant_limit = max(0, per_tenant_limit)
 
     def select(
         self, rows: list[ProviderConfig], now: datetime | None = None
@@ -31,7 +32,18 @@ class ProviderHealthTickPolicy:
         eligible.sort(
             key=lambda r: (r.last_sync_at is not None, r.last_sync_at or now)
         )
-        return eligible[: self.batch_size]
+        if self.per_tenant_limit <= 0:
+            return eligible[: self.batch_size]
+        selected: list[ProviderConfig] = []
+        per_tenant: dict[int | None, int] = {}
+        for row in eligible:
+            if per_tenant.get(row.tenant_id, 0) >= self.per_tenant_limit:
+                continue
+            selected.append(row)
+            per_tenant[row.tenant_id] = per_tenant.get(row.tenant_id, 0) + 1
+            if len(selected) >= self.batch_size:
+                break
+        return selected
 
 
 class ProviderHealthScheduler:
@@ -50,7 +62,7 @@ class ProviderHealthScheduler:
             self.interval_s > 0
             and settings.provider_health_enabled
         )
-        self._session_factory = session_factory or SessionLocal
+        self._session_factory = session_factory or WorkerSessionLocal
         self._health = health_service or ProviderHealthService(
             registry=self._build_registry()
         )
@@ -97,7 +109,10 @@ class ProviderHealthScheduler:
                     ProviderConfig.last_sync_at.asc().nulls_first()
                 )
             ).scalars().all()
-            policy = ProviderHealthTickPolicy(batch_size=self.batch_size)
+            policy = ProviderHealthTickPolicy(
+                batch_size=self.batch_size,
+                per_tenant_limit=settings.provider_health_per_tenant_limit,
+            )
             selected = policy.select(rows)
             if not selected:
                 return 0

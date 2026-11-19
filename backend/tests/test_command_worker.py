@@ -167,6 +167,55 @@ class TestTimeoutRecovery:
         types = [e.event_type for e in events]
         assert "PULSEDESK_COMMAND_FAILED" in types
 
+    def test_recover_stale_requeues_safe_command(self, session: Session):
+        cmd = _enqueue_cmd(session, command_type="start_backtest", timeout_sec=60, max_retries=3)
+        cmd.status = CommandStatus.RUNNING.value
+        cmd.locked_by = "dead-worker"
+        cmd.locked_at = _utcnow() - timedelta(seconds=120)
+        session.commit()
+
+        worker = CommandWorker(session)
+        recovered = worker.recover_stale()
+        session.commit()
+
+        refreshed = session.get(CommandBusCommand, cmd.id)
+        assert recovered == 1
+        assert refreshed.status == CommandStatus.RETRY_WAITING.value
+        assert refreshed.retry_count == 1
+        assert refreshed.next_retry_at is not None
+        assert refreshed.locked_by is None
+
+    def test_recover_stale_terminal_for_money_moving_command(self, session: Session):
+        # request_live_small must never be retried automatically.
+        cmd = _enqueue_cmd(session, command_type="request_live_small", timeout_sec=60, max_retries=3)
+        cmd.status = CommandStatus.RUNNING.value
+        cmd.locked_by = "dead-worker"
+        cmd.locked_at = _utcnow() - timedelta(seconds=120)
+        session.commit()
+
+        worker = CommandWorker(session)
+        worker.recover_stale()
+        session.commit()
+
+        refreshed = session.get(CommandBusCommand, cmd.id)
+        assert refreshed.status == CommandStatus.TIMEOUT.value
+        assert refreshed.retry_count == 0
+
+    def test_recover_stale_timeout_when_retries_exhausted(self, session: Session):
+        cmd = _enqueue_cmd(session, command_type="start_backtest", timeout_sec=60, max_retries=1)
+        cmd.status = CommandStatus.RUNNING.value
+        cmd.locked_by = "dead-worker"
+        cmd.locked_at = _utcnow() - timedelta(seconds=120)
+        cmd.retry_count = 1
+        session.commit()
+
+        worker = CommandWorker(session)
+        worker.recover_stale()
+        session.commit()
+
+        refreshed = session.get(CommandBusCommand, cmd.id)
+        assert refreshed.status == CommandStatus.TIMEOUT.value
+
     def test_skip_healthy_running(self, session: Session):
         cmd = _enqueue_cmd(session, timeout_sec=300)
         cmd.status = CommandStatus.RUNNING.value
@@ -296,6 +345,25 @@ class TestReconciliationBlocking:
         acquired = worker.acquire_next()
         assert acquired is not None
 
+    def test_blocked_command_does_not_starve_others(self, session: Session):
+        run, ft_run = self._make_ft_run(session, status="reconciliating")
+        blocked = _enqueue_cmd(
+            session,
+            command_type="deploy_rules",
+            aggregate_type="strategy_run",
+            aggregate_id=run.id,
+        )
+        _enqueue_cmd(session, command_type="test_cmd", aggregate_type="test")
+
+        worker = CommandWorker(session)
+        acquired = worker.acquire_next()
+        session.commit()
+
+        assert acquired is not None
+        assert acquired.command_type == "test_cmd"
+        refreshed = session.get(CommandBusCommand, blocked.id)
+        assert refreshed.next_retry_at is not None
+
     def test_not_blocked_when_no_aggregate_id(self, session: Session):
         _enqueue_cmd(
             session,
@@ -307,3 +375,36 @@ class TestReconciliationBlocking:
         worker = CommandWorker(session)
         acquired = worker.acquire_next()
         assert acquired is not None
+
+
+def test_builtin_handlers_survive_registry_clear():
+    """Clearing test handlers must not permanently remove production handlers."""
+    from app.workers.handlers import _registry, get_handler
+
+    _registry.clear()
+    assert get_handler("start_backtest") is not None
+    assert get_handler("emergency_stop") is not None
+
+
+def test_acquire_prefers_tenant_with_fewer_running(session):
+    # Tenant 1 already has two running commands.
+    for i in range(2):
+        running = _enqueue_cmd(
+            session, payload={"tenant_id": 1},
+            idempotency_key=f"running-{i}",
+        )
+        running.status = CommandStatus.RUNNING.value
+    high_priority = _enqueue_cmd(
+        session, payload={"tenant_id": 1},
+        idempotency_key="tenant-1-pending", priority=1,
+    )
+    other_tenant = _enqueue_cmd(
+        session, payload={"tenant_id": 2},
+        idempotency_key="tenant-2-pending", priority=100,
+    )
+    session.commit()
+
+    acquired = CommandWorker(session).acquire_next()
+    assert acquired is not None
+    assert acquired.id == other_tenant.id
+    assert acquired.id != high_priority.id

@@ -105,7 +105,7 @@ class PulseDeskUniversalStrategy(IStrategy):
         self._safe_hold_reason = ""
         self._apply_risk_config(rules)
         self._indicator_cache = {}
-        logger.info("rules reloaded: hash=%s", self._rules_hash[:12])
+        logger.info("rules reloaded ok %s hash=%s", path.name, self._rules_hash[:12])
 
     def _validate_rules(self, rules: dict) -> dict:
         try:
@@ -153,6 +153,11 @@ class PulseDeskUniversalStrategy(IStrategy):
         self._safe_hold = True
         self._safe_hold_reason = reason
 
+    def __init__(self, config: dict) -> None:
+        # Load the package before Freqtrade copies timeframe off this instance.
+        self._try_reload_rules()
+        super().__init__(config)
+
     # ── Freqtrade lifecycle ─────────────────────────────────────────
 
     def bot_loop_start(self, current_time=None, **kwargs) -> None:
@@ -183,6 +188,9 @@ class PulseDeskUniversalStrategy(IStrategy):
 
     def populate_indicators(self, dataframe: pd.DataFrame,
                             metadata: dict) -> pd.DataFrame:
+        # Backtests call this before bot_loop_start, so rules must load here.
+        if not self._snapshot_mode:
+            self._try_reload_rules()
         if self._safe_hold or self._rules_cache is None:
             return dataframe
 

@@ -2,7 +2,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import func, String, Text, Numeric, DateTime, ForeignKey
+from sqlalchemy import func, String, Text, Numeric, DateTime, ForeignKey, Integer
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy import func, JSON as JSONB
 from sqlalchemy.orm import Mapped, mapped_column
@@ -13,6 +13,9 @@ from app.database.base import Base, UUIDMixin
 class TradeIntent(UUIDMixin, Base):
     __tablename__ = "trade_intents"
 
+    tenant_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("tenants.id", ondelete="SET NULL"), nullable=True, index=True,
+    )
     intent_type: Mapped[str] = mapped_column(String(32), nullable=False)
     strategy_run_id: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True), ForeignKey("strategy_runs.id"), nullable=False,
@@ -52,6 +55,9 @@ class TradeIntentSignalSnapshot(UUIDMixin, Base):
 class RiskDecision(UUIDMixin, Base):
     __tablename__ = "risk_decisions"
 
+    tenant_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("tenants.id", ondelete="SET NULL"), nullable=True, index=True,
+    )
     trade_intent_id: Mapped[uuid.UUID | None] = mapped_column(
         PG_UUID(as_uuid=True), ForeignKey("trade_intents.id"),
     )

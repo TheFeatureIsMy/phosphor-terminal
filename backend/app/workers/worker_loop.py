@@ -9,7 +9,7 @@ import time
 from sqlalchemy.orm import sessionmaker
 
 from app.config import settings
-from app.database import SessionLocal
+from app.database import WorkerSessionLocal
 from app.workers.command_worker import CommandWorker
 
 logger = logging.getLogger(__name__)
@@ -23,7 +23,7 @@ class CommandWorkerLoop:
         stale_recovery_interval_s: float | None = None,
         enabled: bool | None = None,
     ) -> None:
-        self._session_factory = session_factory or SessionLocal
+        self._session_factory = session_factory or WorkerSessionLocal
         self._poll_interval = poll_interval_s if poll_interval_s is not None else settings.command_worker_poll_interval_s
         self._stale_recovery_interval = stale_recovery_interval_s if stale_recovery_interval_s is not None else settings.command_worker_stale_recovery_s
         self._enabled = enabled if enabled is not None else settings.command_worker_enabled

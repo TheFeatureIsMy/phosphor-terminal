@@ -1,0 +1,159 @@
+.pv-frame {
+  height: 100%;
+  display: grid;
+  grid-template-rows: 36px minmax(0, 1fr);
+  background: #111;
+}
+.pv-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  background: #1a1a1a;
+  color: #d0d0d0;
+  font: 12px/1 "Space Grotesk", sans-serif;
+}
+.pv-bar button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  padding: 6px 8px;
+}
+.pv-bar button[aria-pressed="true"] {
+  background: #fff;
+  color: #111;
+}
+.pv-bar button:focus-visible { outline: 2px solid #fff; outline-offset: -2px; }
+.pv-stage { min-height: 0; }
+
+.floor {
+  height: 100%;
+  display: grid;
+  grid-template-columns: 196px minmax(0, 1fr) 268px;
+  grid-template-rows: 42px minmax(0, 1fr) 196px;
+  gap: 1px;
+  background: #2a3140;
+  color: #e7e9ee;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 13px;
+}
+.floor > * { background: #0e1116; min-width: 0; min-height: 0; }
+.floor-top { grid-column: 1 / -1; display: flex; align-items: center; gap: 16px; padding: 0 12px; }
+.floor-top b { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 16px; font-weight: 500; }
+.floor-side, .floor-ticket, .floor-book { overflow: auto; }
+.floor-side button, .floor-book button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+.floor-side button[aria-pressed="true"], .floor-book button[aria-pressed="true"] { background: #1a2230; }
+.floor-side button:focus-visible, .floor-book button:focus-visible, .floor-ticket button:focus-visible {
+  outline: 2px solid #8eb4ff;
+  outline-offset: -2px;
+}
+.floor-chart { display: flex; flex-direction: column; }
+.floor-chart .plot { flex: 1; min-height: 0; }
+.floor-ticket { padding: 10px 12px; }
+.floor-ticket h2 { margin: 0 0 8px; font-size: 14px; font-weight: 500; }
+.floor-row { display: flex; justify-content: space-between; gap: 8px; padding: 5px 0; border-top: 1px solid #232a36; }
+.floor-row span { color: #8b93a3; }
+.floor-row b { font-family: "JetBrains Mono", ui-monospace, monospace; font-weight: 500; }
+.up { color: #3dbe7a; }
+.down { color: #e85d6c; }
+
+.folio {
+  height: 100%;
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr) 260px;
+  background: #e7eaef;
+  color: #1b2128;
+  font-family: "Space Grotesk", sans-serif;
+}
+.folio nav, .folio aside { overflow: auto; padding: 20px 16px 28px; }
+.folio nav { background: #d5dbe3; }
+.folio aside { background: #f7f8fa; border-left: 1px solid #c5ccd6; }
+.folio main { overflow: auto; padding: 28px 36px 48px; }
+.folio h1 { margin: 0; font-size: 34px; font-weight: 500; letter-spacing: -0.03em; }
+.folio section { padding: 22px 0; border-top: 1px solid #c5ccd6; max-width: 62ch; }
+.folio h2 { margin: 0 0 8px; font-size: 18px; font-weight: 500; }
+.folio button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  padding: 7px 0;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+.folio button[aria-current="true"] { font-weight: 600; }
+.folio button:focus-visible { outline: 2px solid #1b2128; }
+.folio .num { font-family: "JetBrains Mono", ui-monospace, monospace; }
+
+.hud {
+  height: 100%;
+  position: relative;
+  background: #07080b;
+  color: #f2f4f8;
+  font-family: "Space Grotesk", sans-serif;
+}
+.hud-chart { position: absolute; inset: 0 0 52px 0; }
+.hud-read {
+  position: absolute;
+  top: 14px;
+  left: 16px;
+  z-index: 2;
+  text-shadow: 0 1px 2px #000;
+}
+.hud-read b { display: block; font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 28px; font-weight: 500; }
+.hud-panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 52px;
+  height: 220px;
+  background: rgba(12, 14, 18, 0.94);
+  border-top: 1px solid #2c3340;
+  overflow: auto;
+  padding: 14px 18px;
+  z-index: 2;
+}
+.hud-tools {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 52px;
+  display: flex;
+  z-index: 3;
+  background: #10141c;
+  border-top: 1px solid #2c3340;
+}
+.hud-tools button {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  color: #c5ccd6;
+  cursor: pointer;
+  font: 14px/1 "Space Grotesk", sans-serif;
+}
+.hud-tools button[aria-pressed="true"] { color: #fff; background: #1c2433; }
+.hud-tools button:focus-visible { outline: 2px solid #8eb4ff; outline-offset: -2px; }
+
+@media (max-width: 900px) {
+  .floor { grid-template-columns: 1fr; grid-template-rows: 42px 220px minmax(280px, 1fr) auto auto; }
+  .floor-top { grid-column: auto; }
+  .folio { grid-template-columns: 1fr; }
+  .folio nav, .folio aside { max-height: 180px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hud-panel { transition: none; }
+}

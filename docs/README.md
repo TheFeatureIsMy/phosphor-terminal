@@ -36,6 +36,7 @@
 | `15_execution_ledger_contract_v2_5.md` | 执行账本合约 |
 | `16_freqtrade_runtime_contract_v2_5.md` | Freqtrade 运行时合约 |
 | `17_phase_plan_v2_5.md` | 阶段计划总览 |
+| `18_componentization_web_ios_server.md` | **组件化与结构分析（Web + iOS + Server）** |
 
 子目录：
 
@@ -45,6 +46,8 @@
 ## 📅 planning/ — 开发计划
 
 - [`development_plan_v2_5.md`](planning/development_plan_v2_5.md) — 当前阶段任务、节奏、依赖
+- [`2026-11-15-skills-and-industry-gap-analysis.md`](planning/2026-11-15-skills-and-industry-gap-analysis.md) — GitHub 技能选型 + 工程审计 + 业界对标差距（P0/P1/P2 路线图）
+- [`2026-11-15-p0-remediation-plan.md`](planning/2026-11-15-p0-remediation-plan.md) — P0 修复批次：鉴权/密钥/准入真实化 + 验证记录
 
 ## ✨ superpowers/ — 页面级设计稿
 
@@ -84,3 +87,6 @@
 | 单页面设计 / 重设计 | `superpowers/specs/YYYY-MM-DD-<topic>-design.md` |
 | UI 截图 / 原型 | `ui-references/` |
 | 完结报告 / 弃用文档 | `archive/` |
+
+- [`2026-11-15-multi-client-saas-architecture-design.md`](superpowers/specs/2026-11-15-multi-client-saas-architecture-design.md) — 多端 App + 远程多租户架构
+- [`2026-11-15-web-ios-first-architecture-design.md`](superpowers/specs/2026-11-15-web-ios-first-architecture-design.md) — **Web + iOS 优先（当前方向）**

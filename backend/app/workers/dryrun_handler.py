@@ -35,8 +35,10 @@ class StartDryRunHandler(CommandHandler):
 
         run_id = str(command.id).replace("-", "")[:16]
 
+        raw_strategy_id = payload.get("strategy_id")
+        strategy_id = raw_strategy_id if isinstance(raw_strategy_id, int) else 0
         run = DryRunRun(
-            strategy_id=payload.get("strategy_id", 0),
+            strategy_id=strategy_id,
             strategy_version_id=payload.get("strategy_version_id"),
             command_id=str(command.id),
             dsl_hash=payload.get("dsl_hash", ""),

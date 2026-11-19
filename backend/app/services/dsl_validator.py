@@ -26,6 +26,20 @@ SAFE_HOLD_CODES = {
     "DSL_HASH_MISMATCH",
 }
 
+# Types declared in DSLRuleType but not yet present in the DSLRule union. They
+# must fail with an actionable error instead of Pydantic's union_tag_invalid.
+IMPLEMENTED_RULE_TYPES = {
+    "indicator_threshold",
+    "indicator_cross",
+    "signal_confirmation",
+    "manipulation_score_filter",
+    "volume_filter",
+    "volatility_filter",
+    "cooldown_filter",
+    "portfolio_exposure_filter",
+}
+UNIMPLEMENTED_RULE_TYPES = RULE_TYPE_VALUES - IMPLEMENTED_RULE_TYPES
+
 
 @dataclass
 class DSLError:
@@ -58,10 +72,47 @@ ValidationResult = ValidationReport
 
 class DSLValidator:
     def validate(self, dsl: dict[str, Any]) -> ValidationReport:
+        support = self._check_rule_support(dsl)
+        if not support.valid:
+            return support
         sv = dsl.get("schema_version")
         if sv == "3.0":
             return self._validate_v3(dsl)
         return self._validate_v25(dsl)
+
+    @staticmethod
+    def _check_rule_support(dsl: dict[str, Any]) -> ValidationReport:
+        """Fail fast for rule types the interpreter/schema cannot execute."""
+        report = ValidationReport()
+
+        def walk(group: Any, path: str) -> None:
+            if not isinstance(group, dict):
+                return
+            for idx, rule in enumerate(group.get("rules") or []):
+                if not isinstance(rule, dict):
+                    continue
+                rule_type = rule.get("type")
+                if rule_type in UNIMPLEMENTED_RULE_TYPES:
+                    report.add_error(
+                        "DSL_RULE_NOT_IMPLEMENTED",
+                        f"rule type '{rule_type}' is declared but not implemented; "
+                        "remove it or rewrite it as indicator_threshold",
+                        f"{path}.rules.{idx}",
+                    )
+
+        walk(dsl.get("entry"), "entry")
+        walk(dsl.get("exit"), "exit")
+        walk(dsl.get("entry_logic"), "entry_logic")
+        walk(dsl.get("exit_logic"), "exit_logic")
+        for idx, rule in enumerate(dsl.get("filters") or []):
+            if isinstance(rule, dict) and rule.get("type") in UNIMPLEMENTED_RULE_TYPES:
+                report.add_error(
+                    "DSL_RULE_NOT_IMPLEMENTED",
+                    f"rule type '{rule.get('type')}' is declared but not implemented; "
+                    "remove it or rewrite it as indicator_threshold",
+                    f"filters.{idx}",
+                )
+        return report
 
     def _validate_v3(self, dsl: dict[str, Any]) -> ValidationReport:
         report = ValidationReport()

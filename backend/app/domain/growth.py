@@ -13,6 +13,9 @@ from app.database.base import Base, UUIDMixin, TimestampMixin
 class GrowthReport(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "growth_reports"
 
+    tenant_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("tenants.id", ondelete="SET NULL"), nullable=True, index=True,
+    )
     strategy_run_id: Mapped[uuid.UUID | None] = mapped_column(
         PG_UUID(as_uuid=True), ForeignKey("strategy_runs.id"),
     )
@@ -52,6 +55,9 @@ class StrategyCandidate(UUIDMixin, TimestampMixin, Base):
 class OrderAttribution(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "order_attributions"
 
+    tenant_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("tenants.id", ondelete="SET NULL"), nullable=True, index=True,
+    )
     execution_order_id: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True), ForeignKey("execution_orders.id"), nullable=False,
     )

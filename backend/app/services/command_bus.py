@@ -45,7 +45,12 @@ class CommandBusService:
                 return existing, False
             return existing, False
 
+        tenant_id = payload.get("tenant_id")
+        if tenant_id is None:
+            from app.security.tenant_context import get_current_tenant
+            tenant_id = get_current_tenant()
         cmd = CommandBusCommand(
+            tenant_id=tenant_id,
             command_type=command_type, aggregate_type=aggregate_type,
             aggregate_id=aggregate_id, payload=payload,
             idempotency_key=idempotency_key, requested_by=requested_by,
@@ -86,7 +91,10 @@ class CommandBusService:
         stale = list(self._s.scalars(stmt).all())
         for cmd in stale:
             timeout = cmd.timeout_sec or 300
-            deadline = cmd.locked_at + timedelta(seconds=timeout)
+            locked_at = cmd.locked_at
+            if locked_at is not None and locked_at.tzinfo is not None:
+                locked_at = locked_at.replace(tzinfo=None)
+            deadline = locked_at + timedelta(seconds=timeout)
             if now > deadline:
                 cmd.status = CommandStatus.TIMEOUT.value
                 cmd.completed_at = now

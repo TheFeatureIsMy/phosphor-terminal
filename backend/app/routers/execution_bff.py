@@ -7,6 +7,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.security.deps import require_platform_admin
+from app.security.execution_access import get_execution_client
+from app.services.freqtrade_client import FreqtradeClient
 from app.schemas.execution_bff import (
     BatchActionResponse, CancelResponse, CloseResponse, ExecutionCenterResponse,
     ExecutionSession, OrdersPositionsResponse, OrderResponse, PositionResponse,
@@ -23,11 +26,12 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 @router.get("/center", response_model=ExecutionCenterResponse)
-async def get_execution_center():
+async def get_execution_center(
+    ft: FreqtradeClient = Depends(get_execution_client),
+):
     try:
         from app.services.freqtrade_client import FreqtradeClient
 
-        ft = FreqtradeClient()
 
         # Measure heartbeat latency
         t0 = time.time()
@@ -116,11 +120,12 @@ async def get_execution_center():
 
 
 @router.get("/orders", response_model=OrdersPositionsResponse)
-async def get_orders_positions():
+async def get_orders_positions(
+    ft: FreqtradeClient = Depends(get_execution_client),
+):
     try:
         from app.services.freqtrade_client import FreqtradeClient
 
-        ft = FreqtradeClient()
         status_data = await ft.get_status()
 
         if not FreqtradeClient.is_success(status_data):
@@ -198,11 +203,12 @@ async def get_orders_positions():
 
 
 @router.get("/positions", response_model=OrdersPositionsResponse)
-async def get_positions():
+async def get_positions(
+    ft: FreqtradeClient = Depends(get_execution_client),
+):
     try:
         from app.services.freqtrade_client import FreqtradeClient
 
-        ft = FreqtradeClient()
         status_data = await ft.get_status()
 
         if not FreqtradeClient.is_success(status_data):
@@ -265,11 +271,13 @@ async def get_positions():
 
 
 @router.post("/orders/{order_id}/cancel", response_model=CancelResponse)
-async def cancel_single_order(order_id: str):
+async def cancel_single_order(
+    order_id: str,
+    client: FreqtradeClient = Depends(get_execution_client),
+):
     try:
         from app.services.freqtrade_client import FreqtradeClient
 
-        client = FreqtradeClient()
         await client.cancel_order(order_id)
         return CancelResponse(cancelled_order_id=order_id, status="cancelled", reason_codes=[])
     except Exception as e:
@@ -278,11 +286,13 @@ async def cancel_single_order(order_id: str):
 
 
 @router.post("/positions/{position_id}/close", response_model=CloseResponse)
-async def close_single_position(position_id: str):
+async def close_single_position(
+    position_id: str,
+    client: FreqtradeClient = Depends(get_execution_client),
+):
     try:
         from app.services.freqtrade_client import FreqtradeClient
 
-        client = FreqtradeClient()
         await client.forceexit(position_id)
         return CloseResponse(closed_position_id=position_id, status="closed", reason_codes=[])
     except Exception as e:
@@ -291,11 +301,12 @@ async def close_single_position(position_id: str):
 
 
 @router.post("/orders/cancel-all", response_model=BatchActionResponse)
-async def cancel_all_orders():
+async def cancel_all_orders(
+    client: FreqtradeClient = Depends(get_execution_client),
+):
     try:
         from app.services.freqtrade_client import FreqtradeClient
 
-        client = FreqtradeClient()
         status_data = await client.get_status()
 
         trades = status_data if isinstance(status_data, list) else status_data.get("trades", [])
@@ -315,11 +326,12 @@ async def cancel_all_orders():
 
 
 @router.post("/positions/force-close-all", response_model=BatchActionResponse)
-async def force_close_all_positions():
+async def force_close_all_positions(
+    client: FreqtradeClient = Depends(get_execution_client),
+):
     try:
         from app.services.freqtrade_client import FreqtradeClient
 
-        client = FreqtradeClient()
         status_data = await client.get_status()
 
         trades = status_data if isinstance(status_data, list) else status_data.get("trades", [])
@@ -339,7 +351,11 @@ async def force_close_all_positions():
 # ---------------------------------------------------------------------------
 
 @router.get("/trades/{trade_id}/trace")
-async def get_trade_source_trace(trade_id: str, db: Session = Depends(get_db)):
+async def get_trade_source_trace(
+    trade_id: str,
+    db: Session = Depends(get_db),
+    _admin=Depends(require_platform_admin),
+):
     """Return the full source trace for a trade: Signal -> Strategy -> Snapshot -> RiskDecision -> Trade."""
     feature_snapshot_data = None
     runtime_snapshot_data = None
@@ -467,7 +483,12 @@ async def get_trade_source_trace(trade_id: str, db: Session = Depends(get_db)):
 
 
 @router.post("/trades/{trade_id}/labels")
-async def add_trade_review_label(trade_id: str, body: dict, db: Session = Depends(get_db)):
+async def add_trade_review_label(
+    trade_id: str,
+    body: dict,
+    db: Session = Depends(get_db),
+    _admin=Depends(require_platform_admin),
+):
     """Add a review label to a trade for failure clustering."""
     label = body.get("label", "")
     label_source = body.get("label_source", "human")
@@ -514,7 +535,11 @@ async def add_trade_review_label(trade_id: str, body: dict, db: Session = Depend
 
 
 @router.get("/trades/{trade_id}/labels")
-async def get_trade_labels(trade_id: str, db: Session = Depends(get_db)):
+async def get_trade_labels(
+    trade_id: str,
+    db: Session = Depends(get_db),
+    _admin=Depends(require_platform_admin),
+):
     """List all review labels for a trade."""
     try:
         from app.services.trade_reviewer import TradeReviewer
@@ -540,7 +565,11 @@ async def get_trade_labels(trade_id: str, db: Session = Depends(get_db)):
 
 
 @router.get("/trades/{trade_id}/review")
-async def get_trade_review(trade_id: str, db: Session = Depends(get_db)):
+async def get_trade_review(
+    trade_id: str,
+    db: Session = Depends(get_db),
+    _admin=Depends(require_platform_admin),
+):
     """Get trade review info including FeatureSnapshot and labels."""
     feature_snapshot = None
     labels = []

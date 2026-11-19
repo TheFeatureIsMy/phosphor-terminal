@@ -1,0 +1,16 @@
+# OPTIONAL and privileged: lets the API start per-tenant Freqtrade containers
+# through the host Docker socket. Only enable on a dedicated runtime host.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml \
+#     -f docker-compose.runtime.yml up -d
+services:
+  api:
+    volumes: !override
+      - ./freqtrade/user_data:/freqtrade/user_data
+      - tenantdata:/var/lib/alphaloop/tenants
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      TENANT_RUNTIME_PROVISIONING_ENABLED: "true"
+      TENANT_RUNTIME_DOCKER_BIN: docker
+      TENANT_RUNTIME_NETWORK: ${TENANT_RUNTIME_NETWORK:-phosphor-terminal_default}
+      TENANT_RUNTIME_IMAGE: ${TENANT_RUNTIME_IMAGE:-freqtradeorg/freqtrade:stable}

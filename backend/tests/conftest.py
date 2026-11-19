@@ -1,10 +1,21 @@
 import os
 import sys
 
-# Set SQLite as default DATABASE_URL for tests BEFORE any app imports.
-# Integration tests can override this with their own file-based SQLite.
-os.environ.setdefault("DATABASE_URL", "sqlite://")
+# Tests default to in-memory SQLite. Set TEST_DATABASE_URL to run the same
+# fixtures against PostgreSQL (e.g. postgresql://postgres@127.0.0.1:55440/test).
+TEST_DATABASE_URL = os.environ.get("TEST_DATABASE_URL")
+if TEST_DATABASE_URL:
+    os.environ["DATABASE_URL"] = TEST_DATABASE_URL
+else:
+    os.environ.setdefault("DATABASE_URL", "sqlite://")
 os.environ.setdefault("PROVIDER_HEALTH_INTERVAL_S", "0")
+# Auth middleware is exercised by tests/test_auth_middleware.py explicitly;
+# the rest of the suite talks to the app without a login handshake.
+os.environ.setdefault("AUTH_REQUIRED", "0")
+# Deterministic test-only Fernet key so credential paths use real encryption.
+os.environ.setdefault(
+    "PULSEDESK_ENCRYPTION_KEY", "b2BPUaboInk_FQ-v5cTmO0SJ0uH9jXeMzfGzpsCzM18="
+)
 
 import pytest
 from fastapi.testclient import TestClient
@@ -32,6 +43,7 @@ from app.database.base import Base
 
 import app.models.strategy  # noqa: F401
 import app.models.user  # noqa: F401
+import app.models.tenant  # noqa: F401
 import app.models.agent_signal  # noqa: F401
 import app.models.ai_provider  # noqa: F401
 import app.models.ai  # noqa: F401
@@ -56,11 +68,25 @@ import app.domain.archive  # noqa: F401
 
 @pytest.fixture(scope="session")
 def test_engine():
-    engine = create_engine(
-        "sqlite://",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
+    if TEST_DATABASE_URL:
+        engine = create_engine(TEST_DATABASE_URL, pool_pre_ping=True)
+        # SQLite tests do not enforce FKs; keep PostgreSQL parity for the suite.
+        # Foreign-key correctness is covered by real API/integration flows.
+        @event.listens_for(engine, "connect")
+        def _disable_fk_checks(dbapi_connection, connection_record):
+            cursor = dbapi_connection.cursor()
+            cursor.execute("SET session_replication_role = replica")
+            dbapi_connection.commit()
+            cursor.close()
+
+        Base.metadata.drop_all(engine)
+        Base.metadata.create_all(engine)
+    else:
+        engine = create_engine(
+            "sqlite://",
+            connect_args={"check_same_thread": False},
+            poolclass=StaticPool,
+        )
     yield engine
     engine.dispose()
 
@@ -81,9 +107,14 @@ def setup_db(test_engine, request):
 
 @pytest.fixture(autouse=True)
 def _disable_rate_limiting():
+    from app.services.account_risk_firewall import AccountRiskFirewall
+
     stack = getattr(fastapi_app, "middleware_stack", None)
     if stack is not None:
         _walk_and_clear(stack)
+    AccountRiskFirewall.deactivate_manual_block()
+    yield
+    AccountRiskFirewall.deactivate_manual_block()
 
 
 def _walk_and_clear(node):
@@ -119,7 +150,24 @@ def _patch_init_db(monkeypatch, test_engine, request):
 
 
 @pytest.fixture
-def client(test_engine):
+def client(test_engine, monkeypatch):
+    # Background loops make HTTP tests nondeterministic: the worker loop can
+    # steal a command before the test polls it. Disable them for this fixture.
+    import asyncio
+
+    from app.workers.trade_sync_loop import TradeSyncLoop
+    from app.workers.worker_loop import CommandWorkerLoop
+
+    async def _noop_start(self):
+        return None
+
+    async def _noop_ticker():
+        await asyncio.sleep(3600)
+
+    monkeypatch.setattr(CommandWorkerLoop, "start", _noop_start)
+    monkeypatch.setattr(TradeSyncLoop, "start", _noop_start)
+    monkeypatch.setattr("app.main.run_binance_ticker_stream", _noop_ticker)
+
     TestSession = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
 
     def override_get_db():

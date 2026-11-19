@@ -33,6 +33,9 @@ class Strategy(Base):
 class RiskEvent(Base):
     __tablename__ = "risk_events"
 
+    tenant_id = Column(
+        Integer, ForeignKey("tenants.id", ondelete="SET NULL"), nullable=True, index=True,
+    )
     id = Column(Integer, primary_key=True, autoincrement=True)
     event_type = Column(String, nullable=False)
     strategy_id = Column(Integer, nullable=True)
@@ -59,6 +62,9 @@ class CorrelationSnapshot(Base):
 class AttributionReport(Base):
     __tablename__ = "attribution_reports"
 
+    tenant_id = Column(
+        Integer, ForeignKey("tenants.id", ondelete="SET NULL"), nullable=True, index=True,
+    )
     id = Column(Integer, primary_key=True, autoincrement=True)
     trade_id = Column(Integer, nullable=False)
     strategy_id = Column(Integer, nullable=True)
@@ -123,6 +129,7 @@ class BacktestRun(Base):
     dsl_hash = Column(String, nullable=True)
     strategy_uuid = Column(PG_UUID(as_uuid=True), nullable=True, index=True)
     strategy_version_uuid = Column(PG_UUID(as_uuid=True), nullable=True)
+    tenant_id = Column(Integer, ForeignKey("tenants.id", ondelete="SET NULL"), nullable=True, index=True)
     status = Column(String, nullable=False, default="pending")
     start_date = Column(String, nullable=False)
     end_date = Column(String, nullable=False)
@@ -156,6 +163,9 @@ class NotificationRecord(Base):
 class CanvasWorkflow(Base):
     __tablename__ = "canvas_workflows"
 
+    tenant_id = Column(
+        Integer, ForeignKey("tenants.id", ondelete="SET NULL"), nullable=True, index=True,
+    )
     id = Column(String, primary_key=True, default=lambda: str(__import__('uuid').uuid4()))
     strategy_id = Column(Integer, ForeignKey("strategies.id"), nullable=False, index=True)
     graph_json = Column(Text, nullable=False)

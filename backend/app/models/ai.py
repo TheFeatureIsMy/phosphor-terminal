@@ -1,6 +1,8 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, JSON, String, Text
+from sqlalchemy import (
+    Column, DateTime, Float, ForeignKey, Integer, JSON, String, Text, UniqueConstraint,
+)
 
 from app.database import Base
 
@@ -11,10 +13,14 @@ def _utcnow() -> datetime:
 
 class KnowledgeDocument(Base):
     __tablename__ = "knowledge_documents"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "content_hash", name="uq_knowledge_doc_tenant_hash"),
+    )
 
     id = Column(Integer, primary_key=True, autoincrement=True)
+    tenant_id = Column(Integer, ForeignKey("tenants.id", ondelete="SET NULL"), nullable=True, index=True)
     filename = Column(String, nullable=False)
-    content_hash = Column(String, nullable=False, unique=True)
+    content_hash = Column(String, nullable=False)
     content_type = Column(String, nullable=False, default="text/plain")
     chunk_count = Column(Integer, default=0)
     created_at = Column(DateTime, default=_utcnow)
@@ -24,6 +30,7 @@ class KnowledgeChunk(Base):
     __tablename__ = "knowledge_chunks"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
+    tenant_id = Column(Integer, ForeignKey("tenants.id", ondelete="SET NULL"), nullable=True, index=True)
     document_id = Column(Integer, ForeignKey("knowledge_documents.id"), nullable=False, index=True)
     chunk_index = Column(Integer, nullable=False)
     content = Column(Text, nullable=False)
@@ -35,6 +42,7 @@ class GeneratedStrategyArtifact(Base):
     __tablename__ = "generated_strategy_artifacts"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
+    tenant_id = Column(Integer, ForeignKey("tenants.id", ondelete="SET NULL"), nullable=True, index=True)
     prompt = Column(Text, nullable=False)
     risk_level = Column(String, default="medium")
     market = Column(String, default="crypto")
@@ -76,6 +84,9 @@ class FactorResearchRun(Base):
 class FreqAIRun(Base):
     __tablename__ = "freqai_runs"
 
+    tenant_id = Column(
+        Integer, ForeignKey("tenants.id", ondelete="SET NULL"), nullable=True, index=True,
+    )
     id = Column(Integer, primary_key=True, autoincrement=True)
     strategy_id = Column(Integer, nullable=True, index=True)
     model_name = Column(String, nullable=False)

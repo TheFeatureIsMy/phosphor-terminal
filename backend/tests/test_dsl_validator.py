@@ -39,6 +39,46 @@ class TestValidDSL:
         assert result.valid is True
 
 
+class TestUnimplementedRuleTypes:
+    def test_alt_data_filter_returns_actionable_error(self):
+        dsl = _load("minimal.json")
+        dsl["filters"] = [{
+            "type": "sentiment_filter",
+            "indicator": "sentiment_score",
+            "operator": ">=",
+            "value": 0.3,
+        }]
+        result = DSLValidator().validate(dsl)
+        assert result.valid is False
+        errs = _find_error(result, "DSL_RULE_NOT_IMPLEMENTED")
+        assert len(errs) == 1
+        assert errs[0].path == "filters.0"
+        assert "sentiment_filter" in errs[0].message
+        # Must not leak Pydantic's union_tag_invalid as the primary error.
+        assert not any("union_tag_invalid" in e.message for e in result.errors)
+
+    def test_v3_entry_logic_is_checked(self):
+        dsl = _load("minimal.json")
+        dsl["schema_version"] = "3.0"
+        dsl["strategy"] = {
+            "id": "s1", "name": "t", "symbol": "BTC/USDT", "timeframe": "1h",
+        }
+        dsl["entry_logic"] = {
+            "logic": "AND",
+            "rules": [{
+                "type": "funding_filter",
+                "indicator": "funding_rate",
+                "operator": "<=",
+                "value": 0.0001,
+            }],
+        }
+        result = DSLValidator().validate(dsl)
+        assert result.valid is False
+        errs = _find_error(result, "DSL_RULE_NOT_IMPLEMENTED")
+        assert len(errs) == 1
+        assert errs[0].path == "entry_logic.rules.0"
+
+
 # ── Schema Version ──────────────────────────────────────────────────
 
 class TestSchemaVersion:

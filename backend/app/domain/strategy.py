@@ -2,7 +2,9 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import func, String, Text, Integer, DateTime, ForeignKey, UniqueConstraint, Index
+from sqlalchemy import (
+    DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint, event, func, select,
+)
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy import func, JSON as JSONB
 from sqlalchemy.orm import Mapped, mapped_column
@@ -19,6 +21,9 @@ class StrategyV2(UUIDMixin, TimestampMixin, Base):
     strategy_type: Mapped[str] = mapped_column(String(64), nullable=False)
     source_type: Mapped[str] = mapped_column(String(64), nullable=False)
     status: Mapped[str] = mapped_column(String(16), nullable=False, server_default="draft")
+    tenant_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("tenants.id", ondelete="SET NULL"), nullable=True, index=True,
+    )
 
 
 class StrategyVersion(UUIDMixin, Base):
@@ -29,6 +34,9 @@ class StrategyVersion(UUIDMixin, Base):
     )
     version_no: Mapped[int] = mapped_column(Integer, nullable=False)
     status: Mapped[str] = mapped_column(String(24), nullable=False, server_default="draft")
+    tenant_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("tenants.id", ondelete="SET NULL"), nullable=True, index=True,
+    )
     dsl_version: Mapped[str] = mapped_column(String(8), nullable=False)
     rule_dsl: Mapped[dict] = mapped_column(JSONB, nullable=False)
     dsl_hash: Mapped[str] = mapped_column(String(128), nullable=False)
@@ -44,6 +52,9 @@ class StrategyVersion(UUIDMixin, Base):
 class StrategyRuleDSLVersion(UUIDMixin, Base):
     __tablename__ = "strategy_rule_dsl_versions"
 
+    tenant_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("tenants.id", ondelete="SET NULL"), nullable=True, index=True,
+    )
     strategy_version_id: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True), ForeignKey("strategy_versions.id", ondelete="CASCADE"), nullable=False,
     )
@@ -65,6 +76,9 @@ class CanvasDraft(UUIDMixin, TimestampMixin, Base):
     """
     __tablename__ = "canvas_drafts"
 
+    tenant_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("tenants.id", ondelete="SET NULL"), nullable=True, index=True,
+    )
     strategy_id: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True), ForeignKey("strategies_v2.id", ondelete="CASCADE"), nullable=False, unique=True,
     )
@@ -72,3 +86,12 @@ class CanvasDraft(UUIDMixin, TimestampMixin, Base):
     dsl: Mapped[dict | None] = mapped_column(JSONB)
     dsl_hash: Mapped[str | None] = mapped_column(String(128))
     updated_by: Mapped[str] = mapped_column(String(128), nullable=False, server_default="canvas")
+
+
+@event.listens_for(CanvasDraft, "before_insert")
+def _fill_canvas_draft_tenant(mapper, connection, target) -> None:
+    if target.tenant_id is not None or target.strategy_id is None:
+        return
+    target.tenant_id = connection.execute(
+        select(StrategyV2.tenant_id).where(StrategyV2.id == target.strategy_id)
+    ).scalar()

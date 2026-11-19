@@ -2,20 +2,21 @@
 import os
 from unittest.mock import patch
 
+import pytest
 from cryptography.fernet import Fernet
 
 from app.services.crypto_service import CryptoService
 
 
 class TestCryptoService:
-    def test_passthrough_when_no_key(self):
-        """Without encryption key, values pass through unchanged."""
-        env = os.environ.copy()
-        env.pop("PULSEDESK_ENCRYPTION_KEY", None)
-        with patch.dict(os.environ, env, clear=True):
-            svc = CryptoService()
-            assert svc.encrypt("hello") == "hello"
-            assert svc.decrypt("hello") == "hello"
+    def test_encrypt_fails_closed_without_key(self):
+        """Without a key, encrypting must fail instead of writing plaintext."""
+        svc = CryptoService(key="")
+        assert svc.is_encrypted is False
+        with pytest.raises(RuntimeError, match="Encryption is not configured"):
+            svc.encrypt("hello")
+        # Legacy plaintext still decrypts for migration purposes.
+        assert svc.decrypt("hello") == "hello"
 
     def test_encrypt_decrypt_roundtrip(self):
         """With valid key, encrypt then decrypt returns original."""

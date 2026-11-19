@@ -32,8 +32,10 @@ class RuntimeRedisStore:
         return f"pd:runtime:account:{account_id}:risk_state"
 
     @staticmethod
-    def _ai_cache_key(symbol: str) -> str:
-        return f"pd:runtime:{symbol}:ai_risk_cache"
+    def _ai_cache_key(symbol: str, tenant_id: int | None = None) -> str:
+        if tenant_id is None:
+            return f"pd:runtime:{symbol}:ai_risk_cache"
+        return f"pd:runtime:tenant:{tenant_id}:{symbol}:ai_risk_cache"
 
     async def ping(self) -> bool:
         if self._redis:
@@ -135,12 +137,16 @@ class RuntimeRedisStore:
         key = self._account_risk_key(account_id)
         return await self._get(key)
 
-    async def write_ai_cache(self, symbol: str, cache: dict, ttl: int = 900) -> None:
-        key = self._ai_cache_key(symbol)
+    async def write_ai_cache(
+        self, symbol: str, cache: dict, ttl: int = 900, tenant_id: int | None = None,
+    ) -> None:
+        key = self._ai_cache_key(symbol, tenant_id)
         await self._set(key, cache, ttl)
 
-    async def read_ai_cache(self, symbol: str) -> dict | None:
-        key = self._ai_cache_key(symbol)
+    async def read_ai_cache(
+        self, symbol: str, tenant_id: int | None = None,
+    ) -> dict | None:
+        key = self._ai_cache_key(symbol, tenant_id)
         return await self._get(key)
 
     # ── BFF Keys ──

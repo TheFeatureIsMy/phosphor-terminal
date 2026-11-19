@@ -51,6 +51,13 @@ class DSLOperator(str, enum.Enum):
 
 
 class DSLRuleType(str, enum.Enum):
+    """Declared rule vocabulary.
+
+    The seven alt-data/platform filters after COOLDOWN_FILTER are reserved but
+    not executable yet: they are absent from the ``DSLRule`` union and the
+    interpreter. ``DSLValidator`` rejects them with DSL_RULE_NOT_IMPLEMENTED.
+    """
+
     INDICATOR_THRESHOLD = "indicator_threshold"
     INDICATOR_CROSS = "indicator_cross"
     SIGNAL_CONFIRMATION = "signal_confirmation"

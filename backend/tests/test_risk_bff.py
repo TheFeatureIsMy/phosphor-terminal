@@ -4,29 +4,30 @@ from fastapi.testclient import TestClient
 from app.main import app as fastapi_app
 
 
-def test_block_new_entries_real(monkeypatch):
-    client = TestClient(fastapi_app, raise_server_exceptions=False)
+def test_block_new_entries_real(client, session):
+    from app.models.system_settings import SystemSetting
+    from app.services.account_risk_firewall import AccountRiskFirewall
 
-    # activate_manual_block is a classmethod -- no self arg
-    monkeypatch.setattr(
-        "app.services.account_risk_firewall.AccountRiskFirewall.activate_manual_block",
-        lambda reason: [{"lock": "manual_block", "reason": reason}],
-    )
-    resp = client.post("/api/risk/block-new-entries", json={"reason": "manual"})
-    assert resp.status_code == 200
-    body = resp.json()
-    assert body["status"] == "blocked"
-    assert any(l["lock"] == "manual_block" for l in body["active_locks"])
+    try:
+        resp = client.post("/api/risk/block-new-entries", json={"reason": "manual"})
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["status"] == "blocked"
+        assert any(l["lock"] == "manual_block" for l in body["active_locks"])
+
+        row = (
+            session.query(SystemSetting)
+            .filter_by(key=AccountRiskFirewall.MANUAL_BLOCK_KEY)
+            .first()
+        )
+        assert row is not None
+        assert row.value["active"] is True
+    finally:
+        client.post("/api/risk/unblock")
 
 
-def test_unblock_real(monkeypatch):
-    client = TestClient(fastapi_app, raise_server_exceptions=False)
-
-    # deactivate_manual_block is a classmethod -- no self arg
-    monkeypatch.setattr(
-        "app.services.account_risk_firewall.AccountRiskFirewall.deactivate_manual_block",
-        lambda: [],
-    )
+def test_unblock_real(client):
+    client.post("/api/risk/block-new-entries", json={"reason": "manual"})
     resp = client.post("/api/risk/unblock")
     assert resp.status_code == 200
     assert resp.json()["status"] == "unblocked"
@@ -41,6 +42,25 @@ def test_get_risk_rules():
     assert "daily_loss_limit" in body
     assert "kill_switch" in body
     assert "active" in body["kill_switch"]
+
+
+def test_put_rules_recomputes_policy_hash(client, session):
+    import json
+
+    from app.domain.risk import RiskPolicyVersion
+    from app.utils import hash_string
+
+    resp = client.put("/api/risk/rules", json={"daily_loss_limit": 3.5})
+    assert resp.status_code == 200
+
+    session.expire_all()
+    row = (
+        session.query(RiskPolicyVersion)
+        .order_by(RiskPolicyVersion.created_at.desc())
+        .first()
+    )
+    assert row is not None
+    assert row.policy_hash == hash_string(json.dumps(row.policy_json, sort_keys=True))
 
 
 def test_resolve_circuit_breaker(monkeypatch):

@@ -13,6 +13,9 @@ from app.database.base import Base, UUIDMixin, TimestampMixin
 class ReconciliationEvent(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "reconciliation_events"
 
+    tenant_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("tenants.id", ondelete="SET NULL"), nullable=True, index=True,
+    )
     strategy_run_id: Mapped[uuid.UUID | None] = mapped_column(
         PG_UUID(as_uuid=True), ForeignKey("strategy_runs.id"),
     )

@@ -9,6 +9,10 @@ from __future__ import annotations
 from typing import Any, Literal
 
 from app.schemas.live_small import CapitalPoolParams, FreqtradeConfigPreview
+from app.services.providers.categories.cex.binance import (
+    ccxt_spot_api_urls,
+    rest_base_for_mode,
+)
 
 MANDATORY_PROTECTIONS = [
     {
@@ -34,6 +38,7 @@ def generate_config_preview(
     dsl: dict[str, Any],
     pool: CapitalPoolParams,
     exchange_name: str = "binance",
+    max_open_trades_cap: int | None = None,
 ) -> FreqtradeConfigPreview:
     risk = dsl.get("risk", {})
     stoploss = risk.get("stoploss", -0.05)
@@ -44,6 +49,8 @@ def generate_config_preview(
         risk.get("max_open_trades", 3),
         _max_trades_from_pool(pool),
     )
+    if max_open_trades_cap is not None:
+        max_open_trades = min(max_open_trades, max(1, max_open_trades_cap))
     if max_open_trades < 1:
         max_open_trades = 1
 
@@ -64,6 +71,8 @@ def generate_config_preview(
         stoploss=stoploss,
         trailing_stop=trailing,
         exchange_name=exchange_name,
+        exchange_rest_base=rest_base_for_mode("live"),
+        exchange_ccxt_urls=ccxt_spot_api_urls("live"),
         pair_whitelist=symbols,
         protections=list(MANDATORY_PROTECTIONS),
         api_server_listen_ip="127.0.0.1",
@@ -86,6 +95,14 @@ def validate_config_safety(config: FreqtradeConfigPreview, pool: CapitalPoolPara
         )
     if config.api_server_listen_ip != "127.0.0.1":
         errors.append("api_server must listen on 127.0.0.1")
+    live_base = rest_base_for_mode("live")
+    live_urls = ccxt_spot_api_urls("live")
+    if config.exchange_rest_base != live_base or "demo-api.binance.com" in config.exchange_rest_base:
+        errors.append(f"exchange_rest_base must be {live_base}")
+    if config.exchange_ccxt_urls != live_urls or any(
+        "demo-api.binance.com" in url for url in config.exchange_ccxt_urls.values()
+    ):
+        errors.append("exchange ccxt urls must be the official live spot map, including v1")
     if not config.protections:
         errors.append("protections must include MaxDrawdown and StoplossGuard")
 

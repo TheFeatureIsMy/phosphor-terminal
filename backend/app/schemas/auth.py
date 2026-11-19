@@ -13,6 +13,7 @@ class UserResponse(BaseModel):
     username: str
     email: str
     is_active: bool
+    is_superuser: bool = False
     avatar_url: Optional[str]
     created_at: datetime
     model_config = {"from_attributes": True}
@@ -41,3 +42,11 @@ class UserSettingsResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     model_config = {"from_attributes": True}
+
+
+class TenantResponse(BaseModel):
+    id: int
+    name: str
+    slug: str
+    role: str
+    plan: str

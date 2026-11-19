@@ -2,7 +2,10 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import func, String, Text, BigInteger, DateTime, Index, UniqueConstraint
+from sqlalchemy import (
+    BigInteger, DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint,
+    event, func, select,
+)
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy import JSON as JSONB
 from sqlalchemy.orm import Mapped, mapped_column
@@ -21,6 +24,9 @@ class ExecutionLedgerEvent(Base):
     source_event_id: Mapped[str | None] = mapped_column(String(256))
     event_hash: Mapped[str] = mapped_column(String(128), nullable=False)
 
+    tenant_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("tenants.id", ondelete="SET NULL"), nullable=True, index=True,
+    )
     strategy_run_id: Mapped[uuid.UUID | None] = mapped_column(PG_UUID(as_uuid=True))
     freqtrade_run_id: Mapped[uuid.UUID | None] = mapped_column(PG_UUID(as_uuid=True))
     command_id: Mapped[uuid.UUID | None] = mapped_column(PG_UUID(as_uuid=True))
@@ -48,3 +54,19 @@ class ExecutionLedgerEvent(Base):
         Index("idx_ledger_event_type", "event_type", "event_time"),
         Index("idx_ledger_symbol", "symbol", "event_time"),
     )
+
+
+@event.listens_for(ExecutionLedgerEvent, "before_insert")
+def _fill_tenant_from_run(mapper, connection, target) -> None:
+    """Derive tenant_id from the event's strategy run when not supplied."""
+    if target.tenant_id is not None or target.strategy_run_id is None:
+        return
+    from app.domain.execution import StrategyRun
+    from app.domain.strategy import StrategyVersion
+
+    target.tenant_id = connection.execute(
+        select(StrategyVersion.tenant_id)
+        .select_from(StrategyRun)
+        .join(StrategyVersion, StrategyVersion.id == StrategyRun.strategy_version_id)
+        .where(StrategyRun.id == target.strategy_run_id)
+    ).scalar()

@@ -1,13 +1,13 @@
 /**
  * Provider Schema 映射(与后端 ProviderConfigSchema 对齐):
  * 每个 provider 的 config/credentials 字段、默认值、标签。
- * 用于 AddProviderDialog 动态渲染表单。
+ * 用于连接页动态渲染表单。字段名与后端 adapter 的 config / credentials 对齐。
  */
 
 export interface FieldDef {
   key: string;
   label: string;
-  type: "text" | "password" | "number" | "url";
+  type: "text" | "password" | "number" | "url" | "boolean";
   defaultValue?: string;
   placeholder?: string;
   required?: boolean;
@@ -114,8 +114,9 @@ const LLM_PROVIDERS: ProviderSchema[] = [
   {
     category: "llm", name: "azure_openai", label: "Azure OpenAI",
     configFields: [
-      { key: "base_url", label: "Endpoint", type: "url", placeholder: "https://your-resource.openai.azure.com", required: true, hint: "Azure 资源端点" },
-      { key: "model", label: "部署名", type: "text", placeholder: "gpt-4o", required: true, hint: "Azure 部署名称" },
+      { key: "endpoint", label: "Endpoint", type: "url", placeholder: "https://your-resource.openai.azure.com", required: true, hint: "Azure 资源端点" },
+      { key: "deployment", label: "部署名", type: "text", placeholder: "gpt-4o", required: true, hint: "Azure 部署名称" },
+      { key: "model", label: "模型", type: "text", defaultValue: "gpt-4o", placeholder: "gpt-4o" },
     ],
     credentialFields: [
       { key: "api_key", label: "API Key", type: "password", required: true },
@@ -176,7 +177,7 @@ const NOTIFICATION_PROVIDERS: ProviderSchema[] = [
   {
     category: "notification", name: "telegram", label: "Telegram",
     configFields: [
-      { key: "dry_run", label: "Dry Run", type: "text", defaultValue: "true", hint: "true=只记录不发送" },
+      { key: "dry_run", label: "只记录不发送", type: "boolean", defaultValue: "true", hint: "打开时不向 Telegram 发消息" },
     ],
     credentialFields: [
       { key: "bot_token", label: "Bot Token", type: "password", required: true, placeholder: "123456:ABC-DEF..." },
@@ -192,17 +193,18 @@ const NOTIFICATION_PROVIDERS: ProviderSchema[] = [
   },
   {
     category: "notification", name: "webhook", label: "自定义 Webhook",
-    configFields: [],
+    configFields: [
+      { key: "url", label: "Webhook URL", type: "url", required: true, placeholder: "https://example.com/hook" },
+    ],
     credentialFields: [
-      { key: "url", label: "Webhook URL", type: "url", required: true },
-      { key: "secret", label: "Secret(可选)", type: "password" },
+      { key: "auth_header", label: "Authorization（可选）", type: "password", placeholder: "Bearer ..." },
     ],
   },
   {
     category: "notification", name: "email", label: "邮件",
     configFields: [
-      { key: "smtp_host", label: "SMTP 服务器", type: "text", required: true, placeholder: "smtp.gmail.com" },
-      { key: "smtp_port", label: "SMTP 端口", type: "number", defaultValue: "587" },
+      { key: "host", label: "SMTP 服务器", type: "text", required: true, placeholder: "smtp.gmail.com" },
+      { key: "port", label: "SMTP 端口", type: "number", defaultValue: "587" },
     ],
     credentialFields: [
       { key: "username", label: "用户名", type: "text", required: true },
@@ -293,6 +295,13 @@ const NEWS_PROVIDERS: ProviderSchema[] = [
 
 const SOCIAL_PROVIDERS: ProviderSchema[] = [
   {
+    category: "social", name: "x", label: "X",
+    configFields: [],
+    credentialFields: [
+      { key: "api_key", label: "Bearer Token", type: "password", required: true, placeholder: "AAAA..." },
+    ],
+  },
+  {
     category: "social", name: "cryptocompare_social", label: "CryptoCompare Social",
     configFields: [],
     credentialFields: [
@@ -359,17 +368,177 @@ export function findProviderSchema(category: string, name: string): ProviderSche
 
 /** 分类中文名 */
 export const CATEGORY_LABELS: Record<string, string> = {
-  llm: "LLM",
+  llm: "模型",
   cex: "交易所",
   dex: "DEX",
   notification: "通知",
-  market_data: "行情数据",
-  onchain: "链上数据",
+  market_data: "行情",
+  onchain: "链上",
   news: "新闻",
-  social: "社交舆情",
+  social: "社交",
 };
 
-/** 服务管理页可见的分类 */
-export const SERVICE_CATEGORIES = ["llm", "notification", "cex"];
-/** 数据源页可见的分类 */
-export const DATA_SOURCE_CATEGORIES = ["market_data", "onchain", "news", "social", "dex"];
+/** 连接页分组。外部账号只从这里进入。 */
+export const CONNECTION_GROUPS: { id: string; label: string; categories: string[] }[] = [
+  { id: "trade", label: "交易", categories: ["cex", "dex"] },
+  { id: "market", label: "行情", categories: ["market_data"] },
+  { id: "feed", label: "消息", categories: ["social", "news"] },
+  { id: "chain", label: "链上", categories: ["onchain"] },
+  { id: "notify", label: "通知", categories: ["notification"] },
+  { id: "model", label: "模型", categories: ["llm"] },
+];
+
+export interface ConnectionMeta {
+  purpose: string;
+  href?: string;
+  hrefLabel?: string;
+}
+
+/** 需要跳到对方平台、或一句话说明用途的连接。其余用分组默认说明。 */
+export const CONNECTION_META: Record<string, ConnectionMeta> = {
+  "cex/binance": {
+    purpose: "按币安现货模拟盘文档：登录主站后进 Demo Trading，在 API Key Management 创建密钥。请求把 https://api.binance.com/api 换成 https://demo-api.binance.com/api。两套密钥不能混用。只开交易，不要开提现。",
+    href: "https://demo.binance.com/en/my/settings/api-management",
+    hrefLabel: "去模拟盘 API 管理",
+  },
+  "cex/okx": {
+    purpose: "OKX 账户。创建密钥时记下 Passphrase。",
+    href: "https://www.okx.com/account/my-api",
+    hrefLabel: "去 OKX 创建密钥",
+  },
+  "cex/bybit": {
+    purpose: "Bybit 账户。只开交易权限。",
+    href: "https://www.bybit.com/app/user/api-management",
+    hrefLabel: "去 Bybit 创建密钥",
+  },
+  "cex/bitget": {
+    purpose: "Bitget 账户。创建密钥时记下 Passphrase。",
+    href: "https://www.bitget.com/account/newapi",
+    hrefLabel: "去 Bitget 创建密钥",
+  },
+  "dex/hyperliquid": {
+    purpose: "Hyperliquid 钱包私钥。拿到私钥就能动这笔钱。",
+    href: "https://app.hyperliquid.xyz/API",
+    hrefLabel: "打开 Hyperliquid",
+  },
+  "dex/dydx": {
+    purpose: "dYdX 钱包私钥。拿到私钥就能动这笔钱。",
+    href: "https://dydx.trade/",
+    hrefLabel: "打开 dYdX",
+  },
+  "dex/gmx": {
+    purpose: "GMX 钱包私钥。拿到私钥就能动这笔钱。",
+    href: "https://app.gmx.io/",
+    hrefLabel: "打开 GMX",
+  },
+  "social/x": {
+    purpose: "读取帖子。在开发者平台申请只读的 Bearer Token。",
+    href: "https://developer.x.com/",
+    hrefLabel: "去 X 开发者平台",
+  },
+  "social/lunarcrush": {
+    purpose: "币种社交热度。没有 X 密钥时可以先用这一路。",
+    href: "https://lunarcrush.com/developers",
+    hrefLabel: "去 LunarCrush 取 Key",
+  },
+  "social/cryptocompare_social": {
+    purpose: "CryptoCompare 社交统计。",
+    href: "https://www.cryptocompare.com/cryptopian/api-keys",
+    hrefLabel: "去 CryptoCompare 取 Key",
+  },
+  "news/cryptocompare_news": {
+    purpose: "CryptoCompare 新闻。",
+    href: "https://www.cryptocompare.com/cryptopian/api-keys",
+    hrefLabel: "去 CryptoCompare 取 Key",
+  },
+  "news/cryptopanic": {
+    purpose: "CryptoPanic 新闻流。",
+    href: "https://cryptopanic.com/developers/api/",
+    hrefLabel: "去 CryptoPanic 取 Key",
+  },
+  "onchain/whale_alert": {
+    purpose: "大额转账。三个链上来源至少配一个。",
+    href: "https://whale-alert.io/",
+    hrefLabel: "去 Whale Alert",
+  },
+  "onchain/glassnode": {
+    purpose: "链上指标，例如 SOPR。",
+    href: "https://studio.glassnode.com/settings/api",
+    hrefLabel: "去 Glassnode",
+  },
+  "onchain/cryptoquant": {
+    purpose: "交易所流入流出等链上数据。",
+    href: "https://cryptoquant.com/mypage/api",
+    hrefLabel: "去 CryptoQuant",
+  },
+  "notification/telegram": {
+    purpose: "把告警发到一个群。默认只记录，不真正发送。",
+    href: "https://t.me/BotFather",
+    hrefLabel: "去 BotFather",
+  },
+  "notification/discord": {
+    purpose: "把告警发到一个 Discord 频道。",
+    href: "https://discord.com/developers/applications",
+    hrefLabel: "去 Discord 开发者平台",
+  },
+  "notification/webhook": {
+    purpose: "把告警 POST 到你自己的地址。",
+  },
+  "notification/email": {
+    purpose: "用 SMTP 发告警邮件。",
+  },
+  "llm/openai": {
+    purpose: "研究用的模型。",
+    href: "https://platform.openai.com/api-keys",
+    hrefLabel: "去 OpenAI 取 Key",
+  },
+  "llm/anthropic": {
+    purpose: "研究用的模型。",
+    href: "https://console.anthropic.com/settings/keys",
+    hrefLabel: "去 Anthropic 取 Key",
+  },
+  "llm/deepseek": {
+    purpose: "研究用的模型。",
+    href: "https://platform.deepseek.com/api_keys",
+    hrefLabel: "去 DeepSeek 取 Key",
+  },
+  "llm/ollama": {
+    purpose: "本机模型，不需要密钥。先在这台机器上启动 Ollama。",
+    href: "https://ollama.com/download",
+    hrefLabel: "下载 Ollama",
+  },
+  "llm/qwen": {
+    purpose: "通义千问。",
+    href: "https://bailian.console.aliyun.com/",
+    hrefLabel: "去阿里云取 Key",
+  },
+  "llm/zhipu": {
+    purpose: "智谱 GLM。",
+    href: "https://open.bigmodel.cn/usercenter/apikeys",
+    hrefLabel: "去智谱取 Key",
+  },
+  "llm/moonshot": {
+    purpose: "Kimi / Moonshot。",
+    href: "https://platform.moonshot.cn/console/api-keys",
+    hrefLabel: "去 Moonshot 取 Key",
+  },
+  "llm/gemini": {
+    purpose: "Google Gemini。",
+    href: "https://aistudio.google.com/apikey",
+    hrefLabel: "去 Google AI Studio",
+  },
+  "llm/groq": {
+    purpose: "Groq 上的开源模型。",
+    href: "https://console.groq.com/keys",
+    hrefLabel: "去 Groq 取 Key",
+  },
+  "llm/azure_openai": {
+    purpose: "Azure 上的 OpenAI 部署。Endpoint 和部署名都要填。",
+    href: "https://portal.azure.com/",
+    hrefLabel: "打开 Azure 门户",
+  },
+  "market_data/kline": { purpose: "记下要看的 K 线标的。健康检查只探 Binance 公开接口。" },
+  "market_data/orderbook": { purpose: "记下要看的订单簿标的。健康检查只探 Binance 公开接口。" },
+  "market_data/funding": { purpose: "记下要看的资金费率标的。健康检查只探 Binance 公开接口。" },
+  "market_data/oi": { purpose: "记下要看的持仓量标的。健康检查只探 Binance 公开接口。" },
+};

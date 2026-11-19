@@ -11,6 +11,7 @@ struct User: Codable, Identifiable, Hashable {
     var name: String
     var email: String?
     var isActive: Bool?
+    var isSuperuser: Bool?
     var avatarUrl: String?
     var telegramId: String?
     var role: String?
@@ -20,6 +21,7 @@ struct User: Codable, Identifiable, Hashable {
         case id, email, role
         case name = "username"
         case isActive = "is_active"
+        case isSuperuser = "is_superuser"
         case avatarUrl = "avatar_url"
         case telegramId = "telegram_id"
         case createdAt = "created_at"
@@ -397,10 +399,34 @@ struct AnyCodable: Codable, Hashable, @unchecked Sendable {
 
     func encode(to encoder: Encoder) throws {
         var container = encoder.singleValueContainer()
-        if let v = value as? Int { try container.encode(v) }
-        else if let v = value as? Double { try container.encode(v) }
-        else if let v = value as? String { try container.encode(v) }
-        else if let v = value as? Bool { try container.encode(v) }
+        switch value {
+        case let v as Bool:
+            try container.encode(v)
+        case let v as Int:
+            try container.encode(v)
+        case let v as Double:
+            try container.encode(v)
+        case let v as String:
+            try container.encode(v)
+        case let v as [AnyCodable]:
+            try container.encode(v)
+        case let v as [String: AnyCodable]:
+            try container.encode(v)
+        case let v as [Any]:
+            try container.encode(v.map(AnyCodable.init))
+        case let v as [String: Any]:
+            try container.encode(v.mapValues(AnyCodable.init))
+        case is NSNull:
+            try container.encodeNil()
+        default:
+            throw EncodingError.invalidValue(
+                value,
+                EncodingError.Context(
+                    codingPath: container.codingPath,
+                    debugDescription: "AnyCodable cannot encode \(type(of: value))"
+                )
+            )
+        }
     }
 
     func hash(into hasher: inout Hasher) {

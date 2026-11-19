@@ -7,9 +7,17 @@ from typing import Optional
 class FreqtradeClient:
     """Control Freqtrade via its REST API."""
 
-    def __init__(self, base_url: Optional[str] = None):
+    def __init__(
+        self,
+        base_url: Optional[str] = None,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+    ):
         self.base_url = base_url or settings.freqtrade_url
-        self._auth = BasicAuth(settings.freqtrade_username, settings.freqtrade_password)
+        self._auth = BasicAuth(
+            username or settings.freqtrade_username,
+            password or settings.freqtrade_password,
+        )
 
     async def _get(self, path: str) -> dict:
         try:
@@ -48,6 +56,12 @@ class FreqtradeClient:
 
     async def get_status(self) -> dict:
         return await self._get("/api/v1/status")
+
+    async def get_show_config(self) -> dict:
+        return await self._get("/api/v1/show_config")
+
+    async def get_count(self) -> dict:
+        return await self._get("/api/v1/count")
 
     async def get_trades(self) -> dict:
         return await self._get("/api/v1/trades")

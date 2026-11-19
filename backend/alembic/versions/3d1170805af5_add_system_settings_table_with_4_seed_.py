@@ -5,6 +5,7 @@ Revises: f6d3a74173ea
 Create Date: 2026-06-17 02:08:06.167087
 
 """
+from datetime import datetime, timezone
 from typing import Sequence, Union
 
 from alembic import op
@@ -30,6 +31,7 @@ def upgrade() -> None:
     )
     op.create_index("ix_system_settings_category", "system_settings", ["category"])
 
+    seeded_at = datetime.now(timezone.utc).replace(tzinfo=None)
     op.bulk_insert(
         sa.table(
             "system_settings",
@@ -40,10 +42,10 @@ def upgrade() -> None:
             sa.column("updated_by", sa.String),
         ),
         [
-            {"key": "general.default_language", "value": {"value": "zh-CN"}, "category": "general", "updated_at": sa.func.now(), "updated_by": "system"},
-            {"key": "risk.max_single_loss", "value": {"value": 5.0}, "category": "risk", "updated_at": sa.func.now(), "updated_by": "system"},
-            {"key": "privacy.share_ai_prompts", "value": {"value": False}, "category": "privacy", "updated_at": sa.func.now(), "updated_by": "system"},
-            {"key": "retention.logs_days", "value": {"value": 30}, "category": "retention", "updated_at": sa.func.now(), "updated_by": "system"},
+            {"key": "general.default_language", "value": {"value": "zh-CN"}, "category": "general", "updated_at": seeded_at, "updated_by": "system"},
+            {"key": "risk.max_single_loss", "value": {"value": 5.0}, "category": "risk", "updated_at": seeded_at, "updated_by": "system"},
+            {"key": "privacy.share_ai_prompts", "value": {"value": False}, "category": "privacy", "updated_at": seeded_at, "updated_by": "system"},
+            {"key": "retention.logs_days", "value": {"value": 30}, "category": "retention", "updated_at": seeded_at, "updated_by": "system"},
         ],
     )
 

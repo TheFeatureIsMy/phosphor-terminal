@@ -3,6 +3,7 @@ strategy-run lifecycle (pause/resume/stop), stop-protection action endpoints.
 """
 from __future__ import annotations
 
+import json
 import uuid
 from datetime import datetime, timedelta, timezone
 
@@ -221,6 +222,20 @@ class TestStartLiveSmallGates:
         assert body["reason_codes"] == ["human_confirmation_required"]
         assert body["can_proceed"] is True
 
+    def test_phrase_required_before_enqueue(self, client, session, monkeypatch):
+        version, pool = _seed_live_small_ready(session)
+        monkeypatch.setattr(settings, "live_small_enabled", True)
+        r = client.post("/api/trading/start-live-small", json={
+            "strategy_version_id": str(version.id),
+            "capital_pool_id": str(pool.id),
+            "human_confirmed": True,
+            "confirmed_by": "tester",
+        })
+        body = r.json()
+        assert body["state"] == "waiting_confirmation"
+        assert body["reason_codes"] == ["confirm_phrase_required"]
+        assert body["command_id"] is None
+
     def test_not_enabled_by_default(self, client, session):
         version, pool = _seed_live_small_ready(session)
         assert settings.live_small_enabled is False
@@ -258,7 +273,7 @@ class TestStartLiveSmallGates:
             "strategy_version_id": str(version.id),
             "capital_pool_id": str(pool.id),
             "human_confirmed": True,
-            "confirmed_by": "tester",
+            "confirmed_by": "I confirm live trading",
         })
         body = r.json()
         assert body["state"] == "approved_enqueued", body["reason_codes"]
@@ -266,11 +281,24 @@ class TestStartLiveSmallGates:
 
         cmd = session.get(CommandBusCommand, uuid.UUID(body["command_id"]))
         assert cmd.command_type == "request_live_small"
-        assert cmd.payload["confirmed_by"] == "tester"
+        assert cmd.payload["confirmed_by"] == "I confirm live trading"
 
         # Version promoted paper_passed → live_pending for the handler
         session.refresh(version)
         assert version.status == "live_pending"
+
+        from app.services.providers.categories.cex.binance import ccxt_spot_api_urls
+        from app.workers.live_small_handler import RequestLiveSmallHandler
+        from tests.test_new_handlers import _RecordingLauncher
+
+        sink = _RecordingLauncher()
+        launched = RequestLiveSmallHandler(launcher=sink).execute(cmd, session)
+        assert launched["dry_run"] is False
+        assert launched["exchange_urls"] == ccxt_spot_api_urls("live")
+        assert "demo-api.binance.com" not in json.dumps(launched["exchange_urls"])
+        assert launched["api_port"] != 8080
+        assert sink.configs[0]["exchange"]["ccxt_config"]["urls"]["api"]["v1"] == "https://api.binance.com/api/v1"
+        assert "--dry-run" not in json.dumps(sink.configs[0])
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -429,3 +457,64 @@ class TestStopProtectionActions:
         assert r.status_code == 200
         body = r.json()
         assert "locks" in body and "state" in body
+
+
+class _DemoFreqtrade:
+    def __init__(self, *args, **kwargs):
+        pass
+
+    @staticmethod
+    def is_success(payload):
+        return not (isinstance(payload, dict) and payload.get("error"))
+
+    async def ping(self):
+        return True
+
+    async def get_show_config(self):
+        return {
+            "state": "running",
+            "strategy": "PulseDeskUniversalStrategy",
+            "timeframe": "15m",
+            "trading_mode": "spot",
+            "dry_run": False,
+            "exchange": "binance",
+            "stake_currency": "USDT",
+            "stake_amount": "100",
+            "max_open_trades": 1,
+        }
+
+    async def get_count(self):
+        return {"current": 0, "max": 1}
+
+    async def get_trades(self):
+        return {"trades_count": 0, "total_trades": 0}
+
+    async def get_balance(self):
+        return {
+            "total": 10004.8,
+            "currencies": [
+                {"currency": "USDT", "balance": 5000.0},
+                {"currency": "USDC", "balance": 5000.0},
+                {"currency": "BTC", "balance": 0},
+            ],
+        }
+
+
+class TestDemoProcess:
+    def test_running_process_with_no_trades_is_visible(self, client, monkeypatch):
+        monkeypatch.setattr("app.services.freqtrade_client.FreqtradeClient", _DemoFreqtrade)
+        response = client.get("/api/trading/demo-process")
+        assert response.status_code == 200, response.text
+        body = response.json()
+        assert body["reachable"] is True
+        assert body["state"] == "running"
+        assert body["strategy"] == "PulseDeskUniversalStrategy"
+        assert body["timeframe"] == "15m"
+        assert body["open_trades"] == 0
+        assert body["closed_trades"] == 0
+        assert body["balances"] == [
+            {"currency": "USDT", "balance": 5000.0},
+            {"currency": "USDC", "balance": 5000.0},
+        ]
+        assert "key" not in body
+        assert "secret" not in body

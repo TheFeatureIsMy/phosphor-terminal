@@ -3,6 +3,13 @@ from app.domain.dsl import AccountRiskPolicy
 from app.services.account_risk_firewall import AccountRiskFirewall, AccountRiskState
 from app.services.runtime_redis_store import RuntimeRedisStore
 
+@pytest.fixture(autouse=True)
+def _reset_manual_block():
+    AccountRiskFirewall.deactivate_manual_block()
+    yield
+    AccountRiskFirewall.deactivate_manual_block()
+
+
 @pytest.fixture
 def policy():
     return AccountRiskPolicy(
@@ -71,3 +78,31 @@ async def test_daily_reset(firewall):
     await firewall.reset_daily("acc1")
     state = await firewall.check("acc1")
     assert state.allowed is True
+
+
+@pytest.mark.asyncio
+async def test_manual_block_rejects_orders(firewall):
+    AccountRiskFirewall.activate_manual_block("operator")
+    state = await firewall.check("acc1")
+    assert state.allowed is False
+    assert state.reason_code == "manual_block_active"
+
+
+def test_manual_block_persists_and_reloads(session):
+    from app.models.system_settings import SystemSetting
+
+    AccountRiskFirewall.activate_manual_block("operator", db=session, updated_by="test")
+    row = session.query(SystemSetting).filter_by(key=AccountRiskFirewall.MANUAL_BLOCK_KEY).first()
+    assert row is not None
+    assert row.value["active"] is True
+    assert row.value["reason"] == "operator"
+
+    # Simulate a process restart: memory cleared, DB still has the lock.
+    AccountRiskFirewall.deactivate_manual_block()
+    assert AccountRiskFirewall.current_locks() == []
+    locks = AccountRiskFirewall.load_persisted_block(session)
+    assert locks and locks[0]["lock"] == "manual_block"
+    assert locks[0]["reason"] == "operator"
+
+    AccountRiskFirewall.deactivate_manual_block(db=session)
+    assert AccountRiskFirewall.load_persisted_block(session) == []

@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.security.deps import get_current_tenant_id
 from app.schemas.ledger import LedgerEventCreate, LedgerEventResponse, LedgerEventListResponse
 from app.services.ledger_service import LedgerService
 
@@ -57,8 +58,13 @@ def list_events(
     offset: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=500),
     db: Session = Depends(get_db),
+    tenant_raw: str | None = Depends(get_current_tenant_id),
 ):
     svc = LedgerService(db)
+    try:
+        tenant_id = int(tenant_raw) if tenant_raw is not None else None
+    except (TypeError, ValueError):
+        tenant_id = None
     items = svc.list_events(
         strategy_run_id=strategy_run_id,
         command_id=command_id,
@@ -68,5 +74,6 @@ def list_events(
         symbol=symbol,
         offset=offset,
         limit=limit,
+        tenant_id=tenant_id,
     )
     return LedgerEventListResponse(items=items, offset=offset, limit=limit)

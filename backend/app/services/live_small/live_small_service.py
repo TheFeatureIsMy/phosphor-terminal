@@ -46,8 +46,11 @@ class LiveSmallService:
         capital_pool_id: uuid.UUID,
         run_history: RunHistoryStats,
         exchange_name: str = "binance",
+        tenant_id: int | None = None,
     ) -> LiveSmallApprovalResponse:
         version = self._db.get(StrategyVersion, strategy_version_id)
+        if version is not None and tenant_id is not None and version.tenant_id != tenant_id:
+            version = None
         if not version:
             return LiveSmallApprovalResponse(
                 preconditions=PreconditionReport(
@@ -59,6 +62,8 @@ class LiveSmallService:
             )
 
         pool = self._db.get(CapitalPool, capital_pool_id)
+        if pool is not None and tenant_id is not None and pool.tenant_id != tenant_id:
+            pool = None
         if not pool:
             return LiveSmallApprovalResponse(
                 preconditions=PreconditionReport(

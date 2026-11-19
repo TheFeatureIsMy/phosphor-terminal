@@ -2,10 +2,12 @@
 .env
 .env.*
 !.env.example
+freqtrade/user_data/config.demo.json
 
-# Logs
+# Logs and local process state
 logs
 *.log
+.run/
 
 # Editor
 .vscode/
@@ -64,3 +66,34 @@ web/src-tauri/gen/schemas/
 
 # Local proxy override (VPN) — not for commit
 docker-compose.override.yml
+
+# SQLite runtime sidecars
+*.sqlite-wal
+*.sqlite-shm
+
+# Generated API contract (scripts/export-openapi.sh)
+docs/api/openapi.json
+
+web/src/shared/api/schema.d.ts
+
+web/.npm-cache
+
+.tools/
+
+macos-app/.tmp/
+
+macos-app/.home/
+
+macos-app/.caches/
+
+macos-app/.ioscache/
+
+macos-app/.iosbuild/
+
+macos-app/AlphaLoopIOS/Info.plist
+
+# Local agent config
+.grok/
+
+# Generated backtest data
+freqtrade/user_data/backtest_results/

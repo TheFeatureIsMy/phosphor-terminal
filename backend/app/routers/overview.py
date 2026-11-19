@@ -7,8 +7,10 @@ inspect `state` / `reason_codes` and render an empty/error state.
 """
 import logging
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 
+from app.database import get_db
 from app.schemas.overview import (
     DashboardResponse, LiveReadinessResponse, GlobalStatusResponse,
     AccountOverview, RuntimeOverview, RiskOverview, SystemOverview,
@@ -110,6 +112,7 @@ async def get_live_readiness(
     strategy_id: str = "",
     capital_pool_id: str = "",
     exchange: str = "binance",
+    db: Session = Depends(get_db),
 ):
     try:
         from app.services.live_readiness_service import LiveReadinessService
@@ -124,6 +127,7 @@ async def get_live_readiness(
             selected_strategy_id=strategy_id,
             selected_capital_pool_id=capital_pool_id,
             selected_exchange=exchange,
+            db=db,
         )
         return _build_live_readiness_response(result)
     except Exception as e:
@@ -132,7 +136,7 @@ async def get_live_readiness(
 
 
 @router.post("/live-readiness/check", response_model=LiveReadinessResponse)
-async def run_readiness_check(body: dict = {}):
+async def run_readiness_check(body: dict = {}, db: Session = Depends(get_db)):
     try:
         from app.services.live_readiness_service import LiveReadinessService
         from app.services.runtime_redis_store import RuntimeRedisStore
@@ -146,6 +150,7 @@ async def run_readiness_check(body: dict = {}):
             selected_strategy_id=body.get("strategy_id", ""),
             selected_capital_pool_id=body.get("capital_pool_id", ""),
             selected_exchange=body.get("exchange", "binance"),
+            db=db,
         )
         return _build_live_readiness_response(result)
     except Exception as e:

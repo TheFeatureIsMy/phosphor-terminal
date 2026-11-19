@@ -141,8 +141,18 @@ class LedgerRepository:
         symbol: str | None = None,
         offset: int = 0,
         limit: int = 100,
+        tenant_id: int | None = None,
     ) -> list[ExecutionLedgerEvent]:
         stmt = select(ExecutionLedgerEvent)
+        if tenant_id is not None:
+            from app.domain.execution import StrategyRun
+            from app.domain.strategy import StrategyVersion
+
+            stmt = (
+                stmt.join(StrategyRun, StrategyRun.id == ExecutionLedgerEvent.strategy_run_id)
+                .join(StrategyVersion, StrategyVersion.id == StrategyRun.strategy_version_id)
+                .where(StrategyVersion.tenant_id == tenant_id)
+            )
         filters = []
         if strategy_run_id:
             filters.append(ExecutionLedgerEvent.strategy_run_id == strategy_run_id)

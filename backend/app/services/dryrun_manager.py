@@ -15,6 +15,7 @@ from typing import Any
 import aiohttp
 
 from app.config import settings
+from app.services.freqtrade_launch import rule_timeframe, timeframe_overlay
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +68,8 @@ class DryRunProcessManager:
         ping_timeout: int = PING_TIMEOUT,
     ) -> DryRunStartResult:
         rules_path = self._write_rules(dsl, run_id)
+        timeframe = rule_timeframe(dsl)
+        self._write_timeframe_overlay(timeframe)
         config_path = self._build_config(
             symbols=symbols,
             stake_amount=stake_amount,
@@ -75,26 +78,36 @@ class DryRunProcessManager:
             exchange=exchange,
             api_port=api_port,
             run_id=run_id,
+            timeframe=timeframe,
         )
 
         log_dir = self._user_data / "logs"
         log_dir.mkdir(parents=True, exist_ok=True)
         log_file_path = log_dir / f"dryrun_{run_id}.log"
 
-        env = {**os.environ, "PULSEDESK_RULES_PATH": str(rules_path)}
+        backend_dir = Path(__file__).resolve().parent.parent.parent
+        ta_lib = Path.home() / ".local" / "ta-lib" / "lib"
+        library_path = os.environ.get("DYLD_LIBRARY_PATH", "")
+        if ta_lib.is_dir():
+            library_path = os.pathsep.join(
+                [str(ta_lib), library_path]
+            ).rstrip(os.pathsep)
+        env = {
+            **os.environ,
+            "PULSEDESK_RULES_PATH": str(rules_path),
+            "PYTHONPATH": os.pathsep.join(
+                [str(backend_dir), os.environ.get("PYTHONPATH", "")]
+            ).rstrip(os.pathsep),
+            "DYLD_LIBRARY_PATH": library_path,
+        }
 
-        cmd = [
-            self._python,
-            str(self._start_py),
-            "trade",
-            "--config", str(config_path),
-            "--strategy", "PulseDeskUniversalStrategy",
-            "--user-data-dir", str(self._user_data),
-        ]
+        cmd = self.trade_command(config_path=str(config_path), timeframe=timeframe)
 
         logger.info("starting dry-run: %s", " ".join(cmd))
 
         log_fh = open(log_file_path, "w")
+        log_fh.write("command: " + " ".join(cmd) + "\n")
+        log_fh.flush()
         proc = subprocess.Popen(
             cmd,
             stdout=log_fh,
@@ -177,6 +190,28 @@ class DryRunProcessManager:
         path.write_text(json.dumps(dsl, indent=2, ensure_ascii=False), encoding="utf-8")
         return path
 
+    def timeframe_overlay_path(self, timeframe: str) -> Path:
+        return self._user_data / "configs" / f"timeframe-{timeframe}.json"
+
+    def trade_command(self, *, config_path: str, timeframe: str) -> list[str]:
+        """Argv the worker runs. The second config file selects the package timeframe."""
+        return [
+            self._python,
+            str(self._start_py),
+            "trade",
+            "--config", config_path,
+            "--config", str(self.timeframe_overlay_path(timeframe)),
+            "--strategy", "PulseDeskUniversalStrategy",
+            "--dry-run",
+            "--user-data-dir", str(self._user_data),
+        ]
+
+    def _write_timeframe_overlay(self, timeframe: str) -> Path:
+        path = self.timeframe_overlay_path(timeframe)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(timeframe_overlay(timeframe)), encoding="utf-8")
+        return path
+
     def _build_config(
         self,
         symbols: list[str],
@@ -186,6 +221,7 @@ class DryRunProcessManager:
         exchange: str,
         api_port: int,
         run_id: str,
+        timeframe: str = "5m",
     ) -> Path:
         if self._base_config.exists():
             base = json.loads(self._base_config.read_text(encoding="utf-8"))
@@ -204,6 +240,7 @@ class DryRunProcessManager:
                 "name": exchange,
                 "pair_whitelist": symbols,
             },
+            "timeframe": timeframe,
             "api_server": {
                 "enabled": True,
                 "listen_ip_address": "127.0.0.1",

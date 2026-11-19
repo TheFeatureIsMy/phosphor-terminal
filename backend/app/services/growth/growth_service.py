@@ -78,6 +78,7 @@ class GrowthService:
 
         report = GrowthReport(
             report_type="daily_review",
+            strategy_version_id=self._version_for_daily_review(trades),
             period_start=start,
             period_end=now,
             metrics=metrics.model_dump(),
@@ -194,6 +195,7 @@ class GrowthService:
             dsl_version="2.5",
             rule_dsl=candidate.candidate_dsl,
             dsl_hash=compute_dsl_hash(candidate.candidate_dsl),
+            tenant_id=version.tenant_id,
             created_by="growth_engine",
          )
         repo.create_version(new_version)
@@ -232,6 +234,20 @@ class GrowthService:
         return self._db.get(StrategyCandidate, candidate_id)
 
     # ── Internal helpers ──────────────────────────────────────────────
+
+    def _version_for_daily_review(self, trades: list[ExecutionTrade]) -> uuid.UUID | None:
+        """A daily review must point at a real strategy version so a candidate can be built."""
+        for trade in trades:
+            run_id = getattr(trade, "strategy_run_id", None)
+            if not run_id:
+                continue
+            run = self._db.get(StrategyRun, run_id)
+            if run is not None and run.strategy_version_id:
+                return run.strategy_version_id
+        latest = self._db.scalar(
+            select(StrategyVersion).order_by(StrategyVersion.created_at.desc()).limit(1)
+        )
+        return latest.id if latest is not None else None
 
     def _get_trades_for_run(self, strategy_run_id: uuid.UUID) -> list[ExecutionTrade]:
         stmt = (

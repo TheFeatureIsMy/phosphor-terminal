@@ -9,9 +9,16 @@ from app.schemas.mcp import (
     McpTokenRotateRequest,
     McpTokenRotateResponse,
 )
+from app.services.binance_agent import BinanceAgentClient
 from app.services.mcp_service import McpService
 
 router = APIRouter(prefix="/api/mcp", tags=["mcp"])
+
+
+@router.get("/binance/quote")
+async def binance_agent_quote():
+    """Official Binance MCP quote. No local API key is attached."""
+    return await BinanceAgentClient().btc_quote()
 
 
 @router.get("/status", response_model=McpStatusView)

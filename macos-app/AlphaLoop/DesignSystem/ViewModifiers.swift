@@ -40,7 +40,9 @@ struct VoltCardSurfaceModifier: ViewModifier {
             .applyShadow(isHovering ? PulseShadow.elevated(colors) : PulseShadow.card(colors))
             .offset(y: isHovering ? -2 : 0)
             .animation(PulseAnimation.hoverLift, value: isHovering)
+            #if os(macOS)
             .onHover { isHovering = $0 }
+            #endif
     }
 }
 
@@ -115,9 +117,11 @@ struct HoverGlassModifier: ViewModifier {
                         lineWidth: 1
                     )
             )
+            #if os(macOS)
             .onHover { hovering in
                 withAnimation(PulseAnimation.easeOutFast) { isHovering = hovering }
             }
+            #endif
     }
 }
 

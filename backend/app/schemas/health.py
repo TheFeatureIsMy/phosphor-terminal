@@ -9,3 +9,6 @@ class HealthResponse(BaseModel):
 class ReadinessResponse(BaseModel):
     status: str
     database: str
+    redis: str = "unknown"
+    freqtrade: str = "unknown"
+    reason_codes: list[str] = []

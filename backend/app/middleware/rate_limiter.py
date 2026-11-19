@@ -28,14 +28,15 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         client_ip = request.client.host if request.client else "unknown"
         now = time.time()
 
-        # Clean old requests
-        self.requests[client_ip] = [
-            t for t in self.requests[client_ip]
-            if now - t < 60
-        ]
+        # Clean old requests; drop the key entirely so the dict cannot grow
+        # without bound as clients come and go.
+        recent = [t for t in self.requests.get(client_ip, []) if now - t < 60]
+        if recent:
+            self.requests[client_ip] = recent
+        else:
+            self.requests.pop(client_ip, None)
 
-        # Check rate limit
-        if len(self.requests[client_ip]) >= self.requests_per_minute:
+        if len(recent) >= self.requests_per_minute:
             return JSONResponse(
                 status_code=429,
                 content={
@@ -46,6 +47,6 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             )
 
         # Add request timestamp
-        self.requests[client_ip].append(now)
+        self.requests[client_ip] = recent + [now]
 
         return await call_next(request)

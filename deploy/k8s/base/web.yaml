@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alphaloop-web
+  namespace: alphaloop
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: alphaloop-web }
+  template:
+    metadata:
+      labels: { app: alphaloop-web }
+    spec:
+      containers:
+        - name: web
+          image: ghcr.io/example/alphaloop-web:latest
+          ports:
+            - { name: http, containerPort: 8080 }
+          readinessProbe:
+            httpGet: { path: /, port: http }
+          resources:
+            requests: { cpu: 50m, memory: 64Mi }
+            limits: { cpu: 250m, memory: 256Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            capabilities: { drop: ["ALL"] }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: alphaloop-web
+  namespace: alphaloop
+spec:
+  selector: { app: alphaloop-web }
+  ports:
+    - { name: http, port: 80, targetPort: 8080 }

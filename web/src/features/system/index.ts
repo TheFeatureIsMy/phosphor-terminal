@@ -1,0 +1,1 @@
+export { ServiceManagementPage } from "./SystemPages";

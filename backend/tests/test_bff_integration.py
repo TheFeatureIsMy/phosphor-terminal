@@ -67,6 +67,23 @@ class TestLiveReadiness:
             assert "value" in check
 
     @pytest.mark.anyio
+    async def test_unknown_strategy_is_not_ready(self, client):
+        import uuid
+
+        data = (
+            await client.get(
+                "/api/overview/live-readiness",
+                params={"strategy_id": str(uuid.uuid4())},
+            )
+        ).json()
+        # Missing infra may surface as not_live first; either way it must not
+        # be ready for live.
+        assert data["grand_status"] in ("needs_validation", "not_live")
+        assert data["can_start_live_small"] is False
+        validation = next(c for c in data["checks"] if c["key"] == "validation")
+        assert validation["status"] == "failed"
+
+    @pytest.mark.anyio
     async def test_live_readiness_check_post(self, client):
         r = await client.post("/api/overview/live-readiness/check")
         assert r.status_code == 200

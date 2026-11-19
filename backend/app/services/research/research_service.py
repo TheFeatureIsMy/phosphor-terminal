@@ -112,7 +112,7 @@ class ResearchService:
             )
             self._db.add(cand_model)
 
-        is_degraded = report_data.confidence == 0.0 and report_data.rating == "Hold"
+        is_degraded = str(report_data.summary).startswith("Degraded report")
         run.status = "degraded" if is_degraded else "completed"
         run.rating = report_data.rating
         run.confidence = report_data.confidence
@@ -181,7 +181,9 @@ class ResearchService:
 
     # ── Confirm draft → StrategyVersion ───────────────────────────────
 
-    def confirm_draft(self, draft: StrategyDraftModel) -> tuple[Any, Any]:
+    def confirm_draft(
+        self, draft: StrategyDraftModel, tenant_id: int | None = None,
+    ) -> tuple[Any, Any]:
         """Confirm a valid draft → create StrategyV2 + StrategyVersion(status=draft).
 
         Returns (strategy, version). Does NOT trigger backtest/dry-run/execution.
@@ -204,6 +206,7 @@ class ResearchService:
             strategy_type="rule_dsl",
             source_type="ai_research",
             status="draft",
+            tenant_id=tenant_id,
         )
         repo.create_strategy(strategy)
 
@@ -215,6 +218,7 @@ class ResearchService:
             rule_dsl=draft.rule_dsl,
             dsl_hash=compute_dsl_hash(draft.rule_dsl),
             created_by="ai_research",
+            tenant_id=tenant_id,
         )
         repo.create_version(version)
 

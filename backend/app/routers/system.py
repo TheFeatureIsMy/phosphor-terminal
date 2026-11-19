@@ -1,12 +1,44 @@
+import logging
 import os
 from datetime import datetime, timezone
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, Query
 
+from app.models.user import User
+from app.security.deps import get_current_tenant_id, get_optional_user
 from app.services.freqtrade_client import freqtrade_client
 from app.schemas.api import SystemStatusResponse
 
 router = APIRouter(prefix="/api/system", tags=["system"])
+logger = logging.getLogger(__name__)
+
+
+def _execution_counts() -> tuple[int, int]:
+    """Return (active_strategy_runs, open_orders) from the database."""
+    from sqlalchemy import func, select
+
+    from app.database import SessionLocal
+    from app.domain.execution import StrategyRun
+    from app.domain.order import ExecutionOrder
+
+    db = SessionLocal()
+    try:
+        active = db.scalar(
+            select(func.count()).select_from(StrategyRun).where(
+                StrategyRun.status.in_(["running", "starting"])
+            )
+        ) or 0
+        open_orders = db.scalar(
+            select(func.count()).select_from(ExecutionOrder).where(
+                ExecutionOrder.status == "open"
+            )
+        ) or 0
+        return int(active), int(open_orders)
+    except Exception:
+        logger.exception("failed to read execution counts")
+        return 0, 0
+    finally:
+        db.close()
 
 
 @router.get("/status", response_model=SystemStatusResponse)
@@ -21,11 +53,12 @@ async def get_system_status():
         open_pos = 0
         detail = str(exc)
 
+    active_strategies, pending_orders = _execution_counts()
     return SystemStatusResponse(
         uptime="unknown" if not api_ok else "connected",
-        active_strategies=2 if api_ok else 0,
+        active_strategies=active_strategies,
         open_positions=open_pos,
-        pending_orders=0,
+        pending_orders=pending_orders,
         last_data_update=datetime.now(timezone.utc),
         api_status="connected" if api_ok else "disconnected",
         data_source={
@@ -35,6 +68,84 @@ async def get_system_status():
             "detail": detail,
         },
     )
+
+
+@router.get("/command-queue")
+def get_command_queue(
+    scope: str = Query(default="tenant", pattern="^(tenant|platform)$"),
+    tenant_raw: str | None = Depends(get_current_tenant_id),
+    user: User | None = Depends(get_optional_user),
+):
+    """Command Bus queue depth, tenant-scoped unless a superuser asks for platform."""
+    from datetime import timedelta
+
+    from sqlalchemy import func, select
+
+    from app.database import SessionLocal
+    from app.domain.command import CommandBusCommand
+
+    try:
+        tenant_id = int(tenant_raw) if tenant_raw is not None else None
+    except (TypeError, ValueError):
+        tenant_id = None
+    platform = scope == "platform" and user is not None and user.is_superuser
+    queue_scope = "platform" if platform else "tenant"
+    filters = []
+    if not platform and tenant_id is not None:
+        filters.append(CommandBusCommand.tenant_id == tenant_id)
+
+    db = SessionLocal()
+    try:
+        count_query = select(CommandBusCommand.status, func.count()).group_by(
+            CommandBusCommand.status
+        )
+        if filters:
+            count_query = count_query.where(*filters)
+        rows = db.execute(count_query).all()
+        counts = {status: int(count) for status, count in rows}
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        oldest_query = select(func.min(CommandBusCommand.created_at)).where(
+            CommandBusCommand.status.in_(["pending", "retry_waiting"])
+        )
+        if filters:
+            oldest_query = oldest_query.where(*filters)
+        oldest = db.scalar(oldest_query)
+        if oldest is not None and oldest.tzinfo is not None:
+            oldest = oldest.astimezone(timezone.utc).replace(tzinfo=None)
+        stuck_query = select(func.count()).select_from(CommandBusCommand).where(
+            CommandBusCommand.status == "running",
+            CommandBusCommand.locked_at.isnot(None),
+            CommandBusCommand.locked_at < now - timedelta(minutes=10),
+        )
+        if filters:
+            stuck_query = stuck_query.where(*filters)
+        stuck = db.scalar(stuck_query) or 0
+        return {
+            "scope": queue_scope,
+            "tenant_id": tenant_id,
+            "counts": counts,
+            "oldest_pending_at": oldest.isoformat() if oldest else None,
+            "oldest_pending_age_s": int((now - oldest).total_seconds()) if oldest else None,
+            "running": counts.get("running", 0),
+            "stuck_running": int(stuck),
+            "state": "degraded" if stuck else "healthy",
+            "reason_codes": ["stuck_commands"] if stuck else [],
+        }
+    except Exception:
+        logger.exception("failed to read command queue stats")
+        return {
+            "scope": queue_scope,
+            "tenant_id": tenant_id,
+            "counts": {},
+            "oldest_pending_at": None,
+            "oldest_pending_age_s": None,
+            "running": 0,
+            "stuck_running": 0,
+            "state": "data_source_unavailable",
+            "reason_codes": ["data_source_unavailable"],
+        }
+    finally:
+        db.close()
 
 
 @router.get("/dependencies")

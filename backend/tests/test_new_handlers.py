@@ -9,8 +9,10 @@ from sqlalchemy.orm import Session
 
 from app.domain.command import CommandBusCommand
 from app.domain.execution import StrategyRun, FreqtradeRun
+from app.domain.risk import CapitalPool
 from app.domain.strategy import StrategyV2, StrategyVersion
 from app.domain.enums import StrategyVersionStatus, StrategyRunMode
+from app.services.providers.categories.cex.binance import ccxt_spot_api_urls
 from app.workers.deploy_rules_handler import DeployRulesHandler
 from app.workers.pause_handler import PauseStrategyHandler
 from app.workers.live_small_handler import RequestLiveSmallHandler
@@ -135,24 +137,69 @@ class TestPauseStrategyHandler:
             handler.execute(cmd, session)
 
 
+class _RecordingLauncher:
+    def __init__(self):
+        self.configs = []
+
+    def start(self, config, *, run_id):
+        self.configs.append(config)
+        urls = config["exchange"]["ccxt_config"]["urls"]["api"]
+        return {
+            "pid": 0,
+            "api_port": config["api_server"]["listen_port"],
+            "exchange_urls": urls,
+            "dry_run": False,
+        }
+
+
+def _make_pool(session: Session) -> CapitalPool:
+    pool = CapitalPool(
+        name="live-small-test",
+        pool_type="live_small",
+        currency="USDT",
+        total_budget=500,
+        max_position_pct_per_trade=0.03,
+        max_total_exposure_pct=0.30,
+        max_daily_loss_pct=0.03,
+        max_drawdown_pct=0.08,
+        allow_leverage=False,
+        allow_auto_trade=False,
+        requires_human_confirm=True,
+    )
+    session.add(pool)
+    session.flush()
+    return pool
+
+
 class TestRequestLiveSmallHandler:
     def test_creates_live_small_run(self, session: Session):
         version = _make_strategy_version(session, status="live_pending")
+        pool = _make_pool(session)
         session.commit()
+        sink = _RecordingLauncher()
 
         cmd = _make_command(session, "request_live_small", {
             "strategy_version_id": str(version.id),
+            "capital_pool_id": str(pool.id),
+            "exchange_name": "binance",
         })
-        handler = RequestLiveSmallHandler()
+        handler = RequestLiveSmallHandler(launcher=sink)
         result = handler.execute(cmd, session)
 
         assert result["mode"] == "live_small"
-        assert result["status"] == "created"
+        assert result["status"] == "running"
+        assert result["dry_run"] is False
+        assert result["exchange_urls"] == ccxt_spot_api_urls("live")
+        assert result["api_port"] != 8080
+        assert "demo-api.binance.com" not in json.dumps(result["exchange_urls"])
+        assert sink.configs[0]["dry_run"] is False
+        assert sink.configs[0]["exchange"]["key"] == ""
         assert version.status == "live_small"
 
         run = session.get(StrategyRun, uuid.UUID(result["strategy_run_id"]))
         assert run is not None
         assert run.mode == "live_small"
+        assert run.status == "running"
 
     def test_rejects_wrong_status(self, session: Session):
         version = _make_strategy_version(session, status="draft")
@@ -160,18 +207,44 @@ class TestRequestLiveSmallHandler:
 
         cmd = _make_command(session, "request_live_small", {
             "strategy_version_id": str(version.id),
+            "capital_pool_id": str(uuid.uuid4()),
         })
-        handler = RequestLiveSmallHandler()
+        handler = RequestLiveSmallHandler(launcher=_RecordingLauncher())
         with pytest.raises(RuntimeError, match="live_pending"):
             handler.execute(cmd, session)
 
     def test_version_not_found(self, session: Session):
         cmd = _make_command(session, "request_live_small", {
             "strategy_version_id": str(uuid.uuid4()),
+            "capital_pool_id": str(uuid.uuid4()),
         })
-        handler = RequestLiveSmallHandler()
+        handler = RequestLiveSmallHandler(launcher=_RecordingLauncher())
         with pytest.raises(RuntimeError, match="not found"):
             handler.execute(cmd, session)
+
+    def test_launcher_spawns_live_host_without_dry_run(self, monkeypatch):
+        import subprocess
+        from app.schemas.live_small import CapitalPoolParams
+        from app.services.live_small.launcher import LiveSmallLauncher, build_live_small_config
+
+        spawned = {}
+
+        class _Proc:
+            pid = 4242
+
+        def fake_popen(cmd, **kwargs):
+            spawned["cmd"] = cmd
+            return _Proc()
+
+        monkeypatch.setattr(subprocess, "Popen", fake_popen)
+        pool = CapitalPoolParams(total_budget=500, max_position_pct_per_trade=0.03, max_total_exposure_pct=0.3, max_daily_loss_pct=0.03, max_drawdown_pct=0.08)
+        config = build_live_small_config({"timeframe": "15m", "symbols": ["BTC/USDT"], "risk": {"stoploss": -0.05}}, pool, run_id="unit")
+        result = LiveSmallLauncher().start(config, run_id="unit")
+        assert "--dry-run" not in spawned["cmd"]
+        assert "trade" in spawned["cmd"]
+        assert result["exchange_urls"] == ccxt_spot_api_urls("live")
+        assert result["dry_run"] is False
+        assert result["pid"] == 4242
 
 
 class TestEmergencyStopHandler:

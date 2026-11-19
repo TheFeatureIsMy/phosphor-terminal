@@ -1,7 +1,7 @@
 """DryRunRun model — tracks Freqtrade dry-run process lifecycle."""
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, Integer, String, Float, JSON, DateTime
+from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, JSON, String
 
 from app.database import Base
 
@@ -13,6 +13,9 @@ def _utcnow() -> datetime:
 class DryRunRun(Base):
     __tablename__ = "dryrun_runs"
 
+    tenant_id = Column(
+        Integer, ForeignKey("tenants.id", ondelete="SET NULL"), nullable=True, index=True,
+    )
     id = Column(Integer, primary_key=True, autoincrement=True)
     strategy_id = Column(Integer, nullable=False, index=True)
     strategy_version_id = Column(String, nullable=True, index=True)

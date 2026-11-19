@@ -163,6 +163,7 @@ class StrategyUpgradeService:
             dsl_version=patched_dsl.get("schema_version", target_version.dsl_version),
             rule_dsl=patched_dsl,
             dsl_hash=patched_dsl["dsl_hash"],
+            tenant_id=target_version.tenant_id,
             created_by=f"shadow_upgrade:{approved_by}",
         )
         db_session.add(new_version)

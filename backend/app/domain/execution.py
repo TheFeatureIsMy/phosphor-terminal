@@ -2,7 +2,9 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import func, String, Text, DateTime, ForeignKey
+from sqlalchemy import (
+    DateTime, ForeignKey, Integer, String, Text, event, func, select,
+)
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -14,6 +16,9 @@ class StrategyRun(UUIDMixin, Base):
 
     strategy_version_id: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True), ForeignKey("strategy_versions.id", ondelete="CASCADE"), nullable=False,
+    )
+    tenant_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("tenants.id", ondelete="SET NULL"), nullable=True, index=True,
     )
     capital_pool_id: Mapped[uuid.UUID | None] = mapped_column(
         PG_UUID(as_uuid=True), ForeignKey("capital_pools.id"),
@@ -28,6 +33,9 @@ class StrategyRun(UUIDMixin, Base):
 class FreqtradeRun(UUIDMixin, Base):
     __tablename__ = "freqtrade_runs"
 
+    tenant_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("tenants.id", ondelete="SET NULL"), nullable=True, index=True,
+    )
     strategy_run_id: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True), ForeignKey("strategy_runs.id", ondelete="CASCADE"), nullable=False,
     )
@@ -45,3 +53,12 @@ class FreqtradeRun(UUIDMixin, Base):
     api_base_url: Mapped[str | None] = mapped_column(String(256))
     websocket_url: Mapped[str | None] = mapped_column(String(256))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+@event.listens_for(FreqtradeRun, "before_insert")
+def _fill_freqtrade_run_tenant(mapper, connection, target) -> None:
+    if target.tenant_id is not None or target.strategy_run_id is None:
+        return
+    target.tenant_id = connection.execute(
+        select(StrategyRun.tenant_id).where(StrategyRun.id == target.strategy_run_id)
+    ).scalar()

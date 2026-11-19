@@ -301,10 +301,95 @@ final class LiveNetworkClient: NetworkClientProtocol, @unchecked Sendable {
     }
 }
 
-// MARK: - Keychain 服务（macOS Keychain 持久化）
-// 登录已移除:改为进程内内存存储,不再访问 macOS 钥匙串。
-// 未签名的 SPM 可执行文件每次读钥匙串都会弹出授权框,内存存储可根除此问题。
+// MARK: - Token storage
+// iOS: real Keychain so a relaunch keeps the session.
+// macOS: in-memory (login is bypassed and unsigned SPM builds trigger prompts).
 enum KeychainService {
+#if os(iOS)
+    private static let service = "com.alphaloop.auth"
+    private static let accessAccount = "accessToken"
+    private static let refreshAccount = "refreshToken"
+    private static let lock = NSLock()
+    nonisolated(unsafe) private static var _accessToken: String?
+    nonisolated(unsafe) private static var _refreshToken: String?
+    nonisolated(unsafe) private static var _loaded = false
+
+    static var accessToken: String? {
+        get { _read(accessAccount) }
+        set { _write(newValue, account: accessAccount) }
+    }
+
+    static var refreshToken: String? {
+        get { _read(refreshAccount) }
+        set { _write(newValue, account: refreshAccount) }
+    }
+
+    static func clear() {
+        accessToken = nil
+        refreshToken = nil
+    }
+
+    private static func _read(_ account: String) -> String? {
+        lock.lock()
+        defer { lock.unlock() }
+        loadIfNeededLocked()
+        return account == accessAccount ? _accessToken : _refreshToken
+    }
+
+    private static func _write(_ value: String?, account: String) {
+        lock.lock()
+        defer { lock.unlock() }
+        loadIfNeededLocked()
+        if account == accessAccount { _accessToken = value } else { _refreshToken = value }
+        if let value, !value.isEmpty {
+            writeKeychain(value, account: account)
+        } else {
+            deleteKeychain(account: account)
+        }
+    }
+
+    private static func loadIfNeededLocked() {
+        guard !_loaded else { return }
+        _loaded = true
+        _accessToken = readKeychain(accessAccount)
+        _refreshToken = readKeychain(refreshAccount)
+    }
+
+    private static func baseQuery(_ account: String) -> [String: Any] {
+        [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account,
+        ]
+    }
+
+    private static func readKeychain(_ account: String) -> String? {
+        var query = baseQuery(account)
+        query[kSecReturnData as String] = true
+        query[kSecMatchLimit as String] = kSecMatchLimitOne
+        var item: CFTypeRef?
+        guard SecItemCopyMatching(query as CFDictionary, &item) == errSecSuccess,
+              let data = item as? Data else { return nil }
+        return String(data: data, encoding: .utf8)
+    }
+
+    private static func writeKeychain(_ value: String, account: String) {
+        let data = Data(value.utf8)
+        let query = baseQuery(account)
+        let attributes: [String: Any] = [kSecValueData as String: data]
+        let status = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
+        if status == errSecItemNotFound {
+            var insert = query
+            insert[kSecValueData as String] = data
+            insert[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+            SecItemAdd(insert as CFDictionary, nil)
+        }
+    }
+
+    private static func deleteKeychain(account: String) {
+        SecItemDelete(baseQuery(account) as CFDictionary)
+    }
+#else
     private static let lock = NSLock()
     nonisolated(unsafe) private static var _accessToken: String?
     nonisolated(unsafe) private static var _refreshToken: String?
@@ -323,6 +408,7 @@ enum KeychainService {
         accessToken = nil
         refreshToken = nil
     }
+#endif
 }
 
 // MARK: - x-www-form-urlencoded 编码
