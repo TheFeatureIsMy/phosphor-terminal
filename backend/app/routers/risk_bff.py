@@ -425,6 +425,16 @@ async def get_circuit_breakers(db: Session = Depends(get_db)):
         ).model_dump()
 
 
+async def _invalidate_readiness_cache() -> None:
+    from app.config import settings
+    from app.services.runtime_redis_store import RuntimeRedisStore
+
+    try:
+        await RuntimeRedisStore(redis_url=settings.redis_url).delete_live_readiness("default")
+    except Exception:
+        logger.warning("failed to invalidate live-readiness cache", exc_info=True)
+
+
 @router.post("/block-new-entries")
 async def block_new_entries(payload: dict | None = None, db: Session = Depends(get_db)):
     try:
@@ -432,6 +442,7 @@ async def block_new_entries(payload: dict | None = None, db: Session = Depends(g
         locks = AccountRiskFirewall.activate_manual_block(
             reason=reason, db=db, updated_by="api:risk/block-new-entries",
         )
+        await _invalidate_readiness_cache()
         return {"status": "blocked", "active_locks": locks, "reason_codes": []}
     except Exception as e:
         logger.exception("[block-new-entries] failed: %s", e)
@@ -444,6 +455,7 @@ async def unblock(db: Session = Depends(get_db)):
         locks = AccountRiskFirewall.deactivate_manual_block(
             db=db, updated_by="api:risk/unblock",
         )
+        await _invalidate_readiness_cache()
         return {"status": "unblocked", "active_locks": locks, "reason_codes": []}
     except Exception as e:
         logger.exception("[unblock] failed: %s", e)

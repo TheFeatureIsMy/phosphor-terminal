@@ -195,6 +195,16 @@ class RuntimeRedisStore:
     async def read_live_readiness(self, account_id: str) -> dict | None:
         return await self._get(self._live_readiness_key(account_id))
 
+    async def delete_live_readiness(self, account_id: str) -> None:
+        key = self._live_readiness_key(account_id)
+        if self._redis:
+            try:
+                await self._redis.delete(key)
+                return
+            except Exception:
+                logger.warning("redis delete failed for %s", key)
+        self._fallback.pop(key, None)
+
     async def write_structure_matrix(self, symbol: str, data: dict, ttl: int = 5) -> None:
         await self._set(self._structure_matrix_key(symbol), data, ttl)
 
