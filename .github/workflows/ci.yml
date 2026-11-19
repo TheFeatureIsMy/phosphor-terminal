@@ -160,7 +160,9 @@ jobs:
             CODE_SIGNING_ALLOWED=NO build
 
       - name: Install backend for iOS UI test
-        run: pip3 install -r backend/requirements.txt
+        run: |
+          python3 -m venv /tmp/alphaloop-ci-venv
+          /tmp/alphaloop-ci-venv/bin/pip install -r backend/requirements-ci.txt
 
       - name: Start backend and register UI test user
         run: |
@@ -171,7 +173,7 @@ jobs:
             SECRET_KEY=ios-ci-secret \
             PULSEDESK_ENCRYPTION_KEY=b2BPUaboInk_FQ-v5cTmO0SJ0uH9jXeMzfGzpsCzM18= \
             PROVIDER_HEALTH_INTERVAL_S=0 \
-            nohup python3 -m uvicorn app.main:app --host 127.0.0.1 --port 8000 \
+            nohup /tmp/alphaloop-ci-venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 \
               > /tmp/ios_backend.log 2>&1 &
           for _ in $(seq 1 40); do
             curl -sf http://127.0.0.1:8000/health >/dev/null && break
