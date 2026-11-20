@@ -1538,3 +1538,13 @@
 | macOS App + iOS UI | ✅ 12m10s |
 
 Run: https://github.com/TheFeatureIsMy/phosphor-terminal/actions/runs/44567150111
+
+## 批次 158 — iOS 延续 Web 视觉（2026-11-20）
+
+| # | 任务 | 状态 | 证据 |
+|---|---|---|---|
+| 158.1 | 共享 iOSTheme（近黑底/柠檬黄/等宽标签/描边卡片） | ✅ | `IOSTheme.swift` |
+| 158.2 | 登录页重做 | ✅ | `ios-webstyle-login.png` |
+| 158.3 | Dashboard 卡片/背景/指标 | ✅ | `ios-webstyle-dashboard.png` |
+| 158.4 | 列表/表单背景与 tint | ✅ | 策略/执行/风控/设置 |
+| 158.5 | iOS 构建 | ✅ | BUILD SUCCEEDED |

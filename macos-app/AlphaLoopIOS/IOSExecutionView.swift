@@ -128,6 +128,8 @@ struct IOSExecutionView: View {
                     }
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(IOSTheme.background)
             .navigationTitle("执行")
             .refreshable { await load() }
             .task { await load() }

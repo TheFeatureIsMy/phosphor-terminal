@@ -126,16 +126,17 @@ struct IOSDashboardView: View {
         VStack(alignment: .leading, spacing: 10, content: content)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(16)
-            .background(Color(uiColor: .secondarySystemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .background(IOSTheme.card)
+            .overlay(RoundedRectangle(cornerRadius: 14).stroke(IOSTheme.border, lineWidth: 1))
+            .clipShape(RoundedRectangle(cornerRadius: 14))
     }
 
     private func metric(_ label: String, _ value: Double, suffix: String = "") -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(label).font(.caption2).foregroundStyle(.secondary)
+            Text(label.uppercased()).font(IOSTheme.monoLabel).foregroundStyle(IOSTheme.textMuted)
             Text("\(value, specifier: "%.2f")\(suffix)")
-                .font(.subheadline.monospacedDigit())
-                .foregroundStyle(value < 0 ? .red : .primary)
+                .font(IOSTheme.mono)
+                .foregroundStyle(value < 0 ? IOSTheme.bear : IOSTheme.text)
         }
     }
 }

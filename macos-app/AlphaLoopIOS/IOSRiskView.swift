@@ -93,6 +93,8 @@ struct IOSRiskView: View {
                     }
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(IOSTheme.background)
             .navigationTitle("风控")
             .refreshable { await load() }
             .task { await load() }

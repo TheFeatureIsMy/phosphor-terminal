@@ -275,6 +275,8 @@ struct IOSSettingsView: View {
                     LabeledContent("版本", value: "0.1.0")
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(IOSTheme.background)
             .navigationTitle("设置")
             .sheet(isPresented: $showAddMember) {
                 NavigationStack {

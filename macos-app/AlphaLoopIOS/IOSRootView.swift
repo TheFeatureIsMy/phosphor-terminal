@@ -30,6 +30,8 @@ struct IOSRootView: View {
                 IOSLoginView(authState: authState, client: client)
             }
         }
+        .tint(IOSTheme.accent)
+        .preferredColorScheme(.dark)
         .task {
             await authState.restoreSession(client: client)
             #if DEBUG

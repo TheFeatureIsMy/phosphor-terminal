@@ -30,6 +30,8 @@ struct IOSStrategiesView: View {
                     }
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(IOSTheme.background)
             .navigationTitle("策略")
             .refreshable { await load() }
             .task { await load() }
