@@ -9,6 +9,8 @@ if TEST_DATABASE_URL:
 else:
     os.environ.setdefault("DATABASE_URL", "sqlite://")
 os.environ.setdefault("PROVIDER_HEALTH_INTERVAL_S", "0")
+# No Redis in unit/HTTP tests: avoid connection retries turning into hangs.
+os.environ.setdefault("REDIS_URL", "")
 # Auth middleware is exercised by tests/test_auth_middleware.py explicitly;
 # the rest of the suite talks to the app without a login handshake.
 os.environ.setdefault("AUTH_REQUIRED", "0")
