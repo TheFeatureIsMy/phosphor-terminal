@@ -179,6 +179,8 @@ def client(test_engine, monkeypatch):
     monkeypatch.setattr(CommandWorkerLoop, "start", _noop_start)
     monkeypatch.setattr(TradeSyncLoop, "start", _noop_start)
     monkeypatch.setattr("app.main.run_binance_ticker_stream", _noop_ticker)
+    # BackgroundLoops imported the function into its own module namespace.
+    monkeypatch.setattr("app.runtime_loops.run_binance_ticker_stream", _noop_ticker)
 
     TestSession = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
 
