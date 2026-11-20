@@ -149,6 +149,16 @@ def _patch_init_db(monkeypatch, test_engine, request):
     monkeypatch.setattr('app.database.SessionLocal', _sm(autocommit=False, autoflush=False, bind=test_engine))
 
 
+@pytest.fixture(autouse=True)
+def _disable_db_schedulers(monkeypatch):
+    """Keep maintenance schedulers from touching the test DB during HTTP tests."""
+    from app.config import settings
+
+    monkeypatch.setattr(settings, "tenant_audit_cleanup_interval_hours", 0)
+    monkeypatch.setattr(settings, "tenant_quota_warn_interval_hours", 0)
+    monkeypatch.setattr(settings, "subscription_expiry_interval_hours", 0)
+
+
 @pytest.fixture
 def client(test_engine, monkeypatch):
     # Background loops make HTTP tests nondeterministic: the worker loop can
