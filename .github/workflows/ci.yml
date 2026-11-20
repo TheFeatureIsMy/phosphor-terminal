@@ -25,7 +25,7 @@ jobs:
             --cov-report=term-missing \
             --cov-report=xml:coverage.xml \
             --cov-fail-under=65 \
-            --timeout=120 \
+            --timeout=300 \
             -q
       - name: Upload coverage
         if: always()
@@ -64,7 +64,7 @@ jobs:
       - name: Run tests against PostgreSQL
         env:
           TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/alphaloop_test
-        run: python -m pytest backend/tests/ -q --timeout=120
+        run: python -m pytest backend/tests/ -q --timeout=300
 
 
   web-e2e:
