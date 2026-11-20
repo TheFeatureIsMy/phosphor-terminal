@@ -26,6 +26,7 @@ jobs:
             --cov-report=xml:coverage.xml \
             --cov-fail-under=65 \
             --timeout=300 \
+            -n 2 \
             -q
       - name: Upload coverage
         if: always()
