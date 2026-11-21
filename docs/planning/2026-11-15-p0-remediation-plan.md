@@ -1545,6 +1545,6 @@ Run: https://github.com/TheFeatureIsMy/phosphor-terminal/actions/runs/4456715011
 |---|---|---|---|
 | 158.1 | 共享 iOSTheme（近黑底/柠檬黄/等宽标签/描边卡片） | ✅ | `IOSTheme.swift` |
 | 158.2 | 登录页重做 | ✅ | `ios-webstyle-login.png` |
-| 158.3 | Dashboard 卡片/背景/指标 | ✅ | `ios-webstyle-dashboard.png` |
+| 158.3 | Dashboard 复刻桌面卡片：页头/状态条/Hero/账户/运行/门禁/持仓 | ✅ | `ios-webstyle-dashboard.png` |
 | 158.4 | 列表/表单背景与 tint | ✅ | 策略/执行/风控/设置 |
 | 158.5 | iOS 构建 | ✅ | BUILD SUCCEEDED |
